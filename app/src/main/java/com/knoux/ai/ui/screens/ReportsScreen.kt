@@ -15,13 +15,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.Event
 import androidx.compose.material.icons.rounded.Groups
-import androidx.compose.material.icons.rounded.Trophy
+import androidx.compose.material.icons.rounded.EmojiEvents
 import androidx.compose.material.icons.rounded.TrendingUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
@@ -130,7 +131,7 @@ fun ReportsScreen(onBack: () -> Unit) {
                     }
                     Spacer(Modifier.width(14.dp))
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                        SummaryLine(Icons.Rounded.Trophy, "Best improvement:", "Storage Cleanup", KnouxAmber)
+                        SummaryLine(Icons.Rounded.EmojiEvents, "Best improvement:", "Storage Cleanup", KnouxAmber)
                         SummaryLine(Icons.Rounded.TrendingUp, "Current device score:", "92%  ▲ +6%", KnouxCyan)
                         SummaryLine(Icons.Rounded.Event, "Last report:", Fixtures.LAST_RUN, KnouxViolet)
                     }

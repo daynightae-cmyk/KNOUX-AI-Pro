@@ -107,8 +107,8 @@ fun MiniStatStrip(
 fun SelectableFindingRow(
     row: PreviewRow,
     checked: Boolean,
-    onToggle: () -> Unit,
     modifier: Modifier = Modifier,
+    onToggle: () -> Unit,
 ) {
     Row(
         modifier

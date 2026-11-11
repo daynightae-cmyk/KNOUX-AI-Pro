@@ -13,13 +13,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Event
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material.icons.rounded.TrendingUp
-import androidx.compose.material.icons.rounded.Trophy
+import androidx.compose.material.icons.rounded.EmojiEvents
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -114,7 +115,7 @@ fun StorageAnalyzerScreen(onBack: () -> Unit) {
                     )
                     Spacer(Modifier.width(14.dp))
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                        SummaryLine(Icons.Rounded.Trophy, "Largest category:", "Apps & Games", KnouxAmber)
+                        SummaryLine(Icons.Rounded.EmojiEvents, "Largest category:", "Apps & Games", KnouxAmber)
                         SummaryLine(Icons.Rounded.TrendingUp, "Unused space trend:", "+12.6 GB", KnouxCyan)
                         SummaryLine(Icons.Rounded.Event, "Last updated:", Fixtures.LAST_RUN, KnouxViolet)
                     }

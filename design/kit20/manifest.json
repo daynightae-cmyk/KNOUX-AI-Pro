@@ -1,0 +1,174 @@
+{
+  "product": "knoux ai",
+  "referenceCount": 20,
+  "origin": "Generated design references for the user, with user-supplied originals for regression and identity",
+  "visualReferences": [
+    {
+      "id": 1,
+      "path": "references/01_Splash_Logo_Smile.png",
+      "source_filename": "knoux_ai_neon_splash_screen.png",
+      "sha256": "21139c3c4531f2bc150a6f63c9491bf2fd68b968c6b6bcd8e7a2e4df63f53aa4"
+    },
+    {
+      "id": 2,
+      "path": "references/02_Home_Dashboard.png",
+      "source_filename": "knoux_ai_smart_clean_dashboard.png",
+      "sha256": "4c9e9925bb8da78597d1ab18926790e349234c07b98fcb17c5e704110885c661"
+    },
+    {
+      "id": 3,
+      "path": "references/03_Privacy_Sweep.png",
+      "source_filename": "knoux_ai_privacy_sweep_dashboard.png",
+      "sha256": "ee6b254ed2bc30b6a9c8349cb14ac48a63d6136d9370883f13da29114402b1e1"
+    },
+    {
+      "id": 4,
+      "path": "references/04_Duplicate_Files_Finder.png",
+      "source_filename": "knoux_ai_duplicate_files_finder_ui.png",
+      "sha256": "c575b7b48e867719b4c1671c94d40e32432fa64ef2a5f6d8c1999e3a78c3a21e"
+    },
+    {
+      "id": 5,
+      "path": "references/05_Deep_Scan.png",
+      "source_filename": "knoux_ai_deep_scan_dashboard.png",
+      "sha256": "b921150db160d5ecc85b39e560760f07b78f57d2741ffdb9cc7b1b2296214edc"
+    },
+    {
+      "id": 6,
+      "path": "references/06_Reports_Insights.png",
+      "source_filename": "neon_reports_insights_dashboard.png",
+      "sha256": "11755288ca150b3519bf3887a5654166483efa5bb7e246fb9bea1e7bc337f2a4"
+    },
+    {
+      "id": 7,
+      "path": "references/07_App_Residue_Cleanup.png",
+      "source_filename": "neon_app_residue_cleanup_interface.png",
+      "sha256": "be4760e1c62d722790243545fc4795ac1a70ccb840d90a0a66dc5c0ed1ec2ec7"
+    },
+    {
+      "id": 8,
+      "path": "references/08_Storage_Analyzer.png",
+      "source_filename": "neon_storage_analyzer_dashboard.png",
+      "sha256": "2797d5cafd37328b542390e6df36001d131a82176a112966c81de7df6ae5a590"
+    },
+    {
+      "id": 9,
+      "path": "references/09_Battery_Saver.png",
+      "source_filename": "neon_battery_saver_dashboard.png",
+      "sha256": "b008ef3f34417acac1e3a2111399c9a39fd81fd29e4275e6e893c33f312b789a"
+    },
+    {
+      "id": 10,
+      "path": "references/10_AI_Optimization.png",
+      "source_filename": "neon_ai_optimization_dashboard.png",
+      "sha256": "8499db2cf4f3da936bc1590f672a01179e6a7f83c8f33c39165ba58819d2f8f4"
+    },
+    {
+      "id": 11,
+      "path": "references/11_Smart_Clean_Center.png",
+      "source_filename": "smart_clean_center_dashboard.png",
+      "sha256": "4a1809556410a0451b49ad9a53709f8c7ba2c3bb2a2568d5bea05935b1027cc6"
+    },
+    {
+      "id": 12,
+      "path": "references/12_Duplicate_Group_Review.png",
+      "source_filename": "neon_duplicate_group_review_ui.png",
+      "sha256": "6612ee4e7bb0b0d193a6e903643368f746897d91bcf9ed9d5cb507ff31cee5c0"
+    },
+    {
+      "id": 13,
+      "path": "references/13_Privacy_Risk_Inspector.png",
+      "source_filename": "knoux_ai_privacy_risk_inspector.png",
+      "sha256": "4bbfdb3451039f72ba84e4671339c9a412d7fdc257df045c6ffbd3c68f5a59e1"
+    },
+    {
+      "id": 14,
+      "path": "references/14_Deep_Scan_Summary.png",
+      "source_filename": "neon_deep_scan_summary_dashboard.png",
+      "sha256": "5c6350cd5013ecddaaff24617e2690eeaa0f125329fb81ee6ee85859fd8cd777"
+    },
+    {
+      "id": 15,
+      "path": "references/15_Performance_Report_Detail.png",
+      "source_filename": "neon_performance_report_dashboard.png",
+      "sha256": "7208e02ba64fe016d865703922cf8095df112d002fec23378044f016f0a96fa8"
+    },
+    {
+      "id": 16,
+      "path": "references/16_Residue_Item_Review.png",
+      "source_filename": "neon_residue_cleanup_review.png",
+      "sha256": "e7b589afa953315755aa285e45cebf8b702936eda5807db5e7a70a6307ddb57b"
+    },
+    {
+      "id": 17,
+      "path": "references/17_Installed_Apps_Review.png",
+      "source_filename": "neon_social_apps_review_dashboard.png",
+      "sha256": "b5f0833d6b6193a7f4e4a8bfd0580d727e3f316c9f199464dec44142430d72b3"
+    },
+    {
+      "id": 18,
+      "path": "references/18_Storage_Breakdown.png",
+      "source_filename": "knoux_ai_storage_breakdown.png",
+      "sha256": "688453ba0ac2719eed198720e048527be0f32d30feb85504432a3abddcf042ae"
+    },
+    {
+      "id": 19,
+      "path": "references/19_Battery_Diagnostics.png",
+      "source_filename": "neon_battery_diagnostics_dashboard.png",
+      "sha256": "5e63ffdba675f1478dd043f2d76b0b3b69d31f1623d5213efc4271d95bc45dd8"
+    },
+    {
+      "id": 20,
+      "path": "references/20_AI_Recommendations.png",
+      "source_filename": "knoux_ai_optimization_dashboard.png",
+      "sha256": "f3421dd11f6744403f27cc7b982835d9f018da18acdeb8c386dc64239b1eda83"
+    }
+  ],
+  "sourceOriginals": [
+    {
+      "path": "source-originals/01_AI_Smart_Clean_Home.png",
+      "sha256": "f04650c31f8f640f5db2263ef4a5a8b3c949e960512e131351cea17dd4fd7fd6"
+    },
+    {
+      "path": "source-originals/02_Privacy_Sweep.png",
+      "sha256": "f702e84ad42f1755bb1a2120796907c83724e4bf55d60647a3c0aa6312b6e34e"
+    },
+    {
+      "path": "source-originals/03_Duplicate_Files_Finder.png",
+      "sha256": "fae7a87a4af7b4ba242659a36c29c77af7459f055f6ed0c78bf45d3ff5e9d47c"
+    },
+    {
+      "path": "source-originals/04_Deep_Scan.png",
+      "sha256": "c6348ff84f779a768059a588a5cbac05042d58d12e954a291e0c6dec49410c75"
+    },
+    {
+      "path": "source-originals/05_Reports_Insights.png",
+      "sha256": "ce87c24d7ddeb67c9459dc6af24c6e8a4d5e32d8083c6d5e3bd810551bbbd279"
+    },
+    {
+      "path": "source-originals/06_App_Residue_Cleanup.png",
+      "sha256": "e60a016d5462dfe85a1ccc28d7a2e1b2fd2ff4ef3669f1a14d5ac20f24f8a281"
+    },
+    {
+      "path": "source-originals/07_App_Manager.png",
+      "sha256": "d42148286ed13f293e2b89804fc13712d3a7671ad7c06e25a14ba2f692081951"
+    },
+    {
+      "path": "source-originals/08_Storage_Analyzer.png",
+      "sha256": "cfcefa6554f7364b2c582b55b746bb6f0deb67378fdccf91bbc9a37eb66f4d72"
+    },
+    {
+      "path": "source-originals/09_Battery_Saver.png",
+      "sha256": "6466f7dea95f52ef0c84b11de97cdde58ee9f19ed787b0f16804a85ca75dc665"
+    },
+    {
+      "path": "source-originals/10_AI_Optimization.png",
+      "sha256": "7d9843ba9c67873ba561f10a6cf50a99344326154b1588fa2b2cea922a9db208"
+    },
+    {
+      "path": "source-originals/11_Official_Knoux_AI_Logo.png",
+      "sha256": "5bcac1109b20e875980b7872d05115e119ba73879493d785c37c128fe36e071c"
+    }
+  ],
+  "note": "The original App Manager overview is source-originals/07_App_Manager.png; its detailed screen is references/17_Installed_Apps_Review.png."
+}

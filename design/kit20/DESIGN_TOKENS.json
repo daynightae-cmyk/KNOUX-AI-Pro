@@ -1,0 +1,35 @@
+{
+  "product": "knoux ai",
+  "purpose": "suggested visual convergence starting tokens, not immutable build configuration",
+  "colors": {
+    "bgDeep": "#080512",
+    "bgIndigo": "#0B0719",
+    "bgElevation": "#120826",
+    "electricViolet": "#843BFF",
+    "luminousPurple": "#B047FF",
+    "neonMagenta": "#E34CFF",
+    "electricCyan": "#00DCFF",
+    "spectralBlue": "#21B9FF",
+    "textPrimary": "#F8F6FF",
+    "textSecondary": "#B9B0D0",
+    "positive": "#20D8BB",
+    "warning": "#FFCA55",
+    "danger": "#FF6086"
+  },
+  "motionSuggestedMs": {
+    "tap": 120,
+    "cardEnter": 280,
+    "heroEnter": 480,
+    "pageTransition": 320,
+    "splashKStart": 180,
+    "splashKComplete": 1120,
+    "splashWordmarkStart": 1030,
+    "splashWordmarkComplete": 1680,
+    "splashSmileStart": 1600,
+    "splashSmileComplete": 2420,
+    "splashClick": 2440,
+    "splashExit": 3100
+  },
+  "preferences": {"reduceMotion": "respect_system", "sound": "respect_system_and_app_preferences"},
+  "requirements": ["no_painted_device_frame", "no_fake_telemetry", "no_inert_buttons", "real_runtime_visual_comparison", "independent_reference_pngs"]
+}

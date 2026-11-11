@@ -59,7 +59,9 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -553,16 +555,18 @@ private fun DrawScope.drawHero(kind: HeroKind, phase: Float, pulse: Float) {
                 ),
                 radius = r, center = c
             )
-            // segmented orbital ring
-            drawCircle(
+            // segmented orbital ring (paths so the dash effect applies)
+            val outerOrbit = Path().apply { addOval(Rect(c, r * 1.22f)) }
+            drawPath(
+                path = outerOrbit,
                 color = KnouxCyan.copy(alpha = 0.75f),
-                radius = r * 1.22f, center = c,
                 style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round),
                 pathEffect = PathEffect.dashPathEffect(floatArrayOf(46f, 26f), phase)
             )
-            drawCircle(
+            val innerOrbit = Path().apply { addOval(Rect(c, r * 1.40f)) }
+            drawPath(
+                path = innerOrbit,
                 color = KnouxMagenta.copy(alpha = 0.55f),
-                radius = r * 1.40f, center = c,
                 style = Stroke(width = 2.dp.toPx()),
                 pathEffect = PathEffect.dashPathEffect(floatArrayOf(18f, 34f), -phase)
             )
@@ -940,7 +944,17 @@ fun ScreenTitle(
     accent: String? = null,
     accentColors: List<Color> = listOf(KnouxMagenta, KnouxViolet),
 ) {
-    androidx.compose.foundation.text.BasicText(
+    Text(
+        text = buildAnnotatedString {
+            if (accent == null) {
+                append(text)
+            } else {
+                append(text)
+                withStyle(SpanStyle(brush = Brush.horizontalGradient(accentColors))) {
+                    append(accent)
+                }
+            }
+        },
         modifier = modifier,
         style = TextStyle(
             fontWeight = FontWeight.Bold,
@@ -949,20 +963,7 @@ fun ScreenTitle(
             lineHeight = 32.sp,
             color = KnouxText
         ),
-    ) {
-        if (accent == null) {
-            append(text)
-        } else {
-            append(text)
-            withStyle(
-                androidx.compose.ui.text.SpanStyle(
-                    brush = Brush.horizontalGradient(accentColors)
-                )
-            ) {
-                append(accent)
-            }
-        }
-    }
+    )
 }
 
 @Composable
