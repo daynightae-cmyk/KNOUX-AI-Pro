@@ -256,7 +256,7 @@ fun SummaryLine(
 
 /** "Select All (n)" pill used above lists of selectable findings. */
 @Composable
-fun SelectAllPill(label: String, allSelected: Boolean, onToggle: () -> Unit, modifier: Modifier = Modifier) {
+fun SelectAllPill(label: String, allSelected: Boolean, modifier: Modifier = Modifier, onToggle: () -> Unit) {
     Row(
         modifier
             .clip(RoundedCornerShape(50))

@@ -555,21 +555,31 @@ private fun DrawScope.drawHero(kind: HeroKind, phase: Float, pulse: Float) {
                 ),
                 radius = r, center = c
             )
-            // segmented orbital ring (paths so the dash effect applies)
-            val outerOrbit = Path().apply { addOval(Rect(c, r * 1.22f)) }
-            drawPath(
-                path = outerOrbit,
-                color = KnouxCyan.copy(alpha = 0.75f),
-                style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round),
-                pathEffect = PathEffect.dashPathEffect(floatArrayOf(46f, 26f), phase)
-            )
-            val innerOrbit = Path().apply { addOval(Rect(c, r * 1.40f)) }
-            drawPath(
-                path = innerOrbit,
-                color = KnouxMagenta.copy(alpha = 0.55f),
-                style = Stroke(width = 2.dp.toPx()),
-                pathEffect = PathEffect.dashPathEffect(floatArrayOf(18f, 34f), -phase)
-            )
+            // segmented orbital rings (arcs, so no path-effect API needed)
+            val outerR = r * 1.22f
+            for (i in 0 until 14) {
+                drawArc(
+                    color = KnouxCyan.copy(alpha = 0.75f),
+                    startAngle = i * (360f / 14f) + phase * 0.5f,
+                    sweepAngle = 9f,
+                    useCenter = false,
+                    topLeft = Offset(c.x - outerR, c.y - outerR),
+                    size = Size(outerR * 2, outerR * 2),
+                    style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
+                )
+            }
+            val innerR = r * 1.40f
+            for (i in 0 until 20) {
+                drawArc(
+                    color = KnouxMagenta.copy(alpha = 0.55f),
+                    startAngle = i * (360f / 20f) - phase * 0.35f,
+                    sweepAngle = 5f,
+                    useCenter = false,
+                    topLeft = Offset(c.x - innerR, c.y - innerR),
+                    size = Size(innerR * 2, innerR * 2),
+                    style = Stroke(width = 2.dp.toPx())
+                )
+            }
             drawArc(
                 color = Color.White.copy(alpha = 0.35f),
                 startAngle = 200f, sweepAngle = 80f, useCenter = false,
