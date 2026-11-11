@@ -55,7 +55,7 @@ fun DuplicateFilesScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
         onBack = onBack,
         bottomActions = {
             Box(Modifier.weight(1f)) { GhostButton("Preview Groups", onOpenDetail) }
-            Box(Modifier.weight(1f)) { GradientActionButton("Review & Remove", { }, Modifier.fillMaxWidth()) }
+            Box(Modifier.weight(1f)) { GradientActionButton("Review & Remove", onOpenDetail, Modifier.fillMaxWidth()) }
         },
     ) {
         item {
@@ -137,7 +137,7 @@ fun DuplicateFilesScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
             Spacer(Modifier.height(8.dp))
             FeatureRow(
                 row = Fixtures.duplicateGroups[index],
-                onClick = { },
+                onClick = onOpenDetail,
             )
         }
     }

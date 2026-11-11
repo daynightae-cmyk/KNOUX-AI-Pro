@@ -63,7 +63,7 @@ fun AiOptimizationScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
         onBack = onBack,
         bottomActions = {
             Box(Modifier.weight(1f)) { GhostButton("See Recommendations", onOpenDetail) }
-            Box(Modifier.weight(1f)) { GradientActionButton("Optimize Now", { }, Modifier.fillMaxWidth()) }
+            Box(Modifier.weight(1f)) { GradientActionButton("Optimize Now", onOpenDetail, Modifier.fillMaxWidth()) }
         },
     ) {
         item {

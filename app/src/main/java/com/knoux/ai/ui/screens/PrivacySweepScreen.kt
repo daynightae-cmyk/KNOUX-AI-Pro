@@ -68,7 +68,7 @@ fun PrivacySweepScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
         onBack = onBack,
         bottomActions = {
             Box(Modifier.weight(1f)) { GhostButton("Review Risks", onOpenDetail) }
-            Box(Modifier.weight(1f)) { GradientActionButton("Improve Privacy", { }, Modifier.fillMaxWidth()) }
+            Box(Modifier.weight(1f)) { GradientActionButton("Improve Privacy", onOpenDetail, Modifier.fillMaxWidth()) }
         },
     ) {
         item {

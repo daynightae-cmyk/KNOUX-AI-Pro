@@ -21,10 +21,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import com.knoux.ai.ui.components.HeroKind
-import com.knoux.ai.ui.components.IconCircle
 import com.knoux.ai.ui.components.KnouxTopBar
 import com.knoux.ai.ui.components.NeonHero
+import com.knoux.ai.ui.components.PreviewDisclosure
 import com.knoux.ai.ui.components.ScreenSubtitle
+import com.knoux.ai.ui.components.SettingsIconButton
 import com.knoux.ai.ui.components.ScreenTitle
 import com.knoux.ai.ui.components.TopLeading
 
@@ -47,10 +48,7 @@ fun ToolScreenScaffold(
         KnouxTopBar(
             leading = TopLeading.Back,
             onLeadingClick = onBack,
-            right = {
-                IconCircle(rightIcon, null, { })
-                IconCircle(Icons.Rounded.Settings, "Settings", { })
-            },
+            right = { SettingsIconButton() },
         )
         LazyColumn(
             modifier = Modifier.weight(1f),
@@ -60,7 +58,8 @@ fun ToolScreenScaffold(
             item { NeonHero(hero, height = 168.dp) }
             item { ScreenTitle(title, accent = accent) }
             item { ScreenSubtitle(subtitle) }
-            item { Spacer(Modifier.height(14.dp)) }
+            item { PreviewDisclosure() }
+            item { Spacer(Modifier.height(10.dp)) }
             body()
         }
         Row(

@@ -56,7 +56,7 @@ fun AppManagerScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
         onBack = onBack,
         bottomActions = {
             Box(Modifier.weight(1f)) { GhostButton("Review Apps", onOpenDetail) }
-            Box(Modifier.weight(1f)) { GradientActionButton("Manage Apps", { }, Modifier.fillMaxWidth()) }
+            Box(Modifier.weight(1f)) { GradientActionButton("Manage Apps", onOpenDetail, Modifier.fillMaxWidth()) }
         },
     ) {
         item {
@@ -132,8 +132,8 @@ fun AppManagerScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
                 actionLabel = when (index) {
                     0 -> "Optimize"; 1 -> "Review"; 2 -> "Manage"; 3 -> "Clean"; else -> "Open"
                 },
-                onAction = { },
-                onClick = { },
+                onAction = onOpenDetail,
+                onClick = onOpenDetail,
             )
         }
     }

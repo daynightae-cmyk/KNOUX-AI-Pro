@@ -64,7 +64,7 @@ fun StorageAnalyzerScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
         onBack = onBack,
         bottomActions = {
             Box(Modifier.weight(1f)) { GhostButton("View Breakdown", onOpenDetail) }
-            Box(Modifier.weight(1f)) { GradientActionButton("Manage Space", { }, Modifier.fillMaxWidth()) }
+            Box(Modifier.weight(1f)) { GradientActionButton("Manage Space", onOpenDetail, Modifier.fillMaxWidth()) }
         },
     ) {
         item {
@@ -148,7 +148,7 @@ fun StorageAnalyzerScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
                                 )
                             )
                             .border(1.dp, KnouxViolet.copy(alpha = 0.28f), RoundedCornerShape(20.dp))
-                            .clickable { }
+                            .clickable { onOpenDetail() }
                             .padding(12.dp),
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {

@@ -1,5 +1,8 @@
 package com.knoux.ai.ui.components
 
+import android.content.Intent
+import android.provider.Settings
+
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -59,6 +62,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -205,6 +209,21 @@ fun IconCircle(
     ) {
         Icon(icon, contentDescription, tint = tint, modifier = Modifier.size(size * 0.62f))
     }
+}
+
+@Composable
+fun SettingsIconButton() {
+    val context = LocalContext.current
+    IconCircle(Icons.Rounded.Settings, "App settings", {
+        runCatching {
+            context.startActivity(
+                Intent(
+                    Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    android.net.Uri.parse("package:${context.packageName}"),
+                )
+            )
+        }
+    })
 }
 
 @Composable
@@ -904,41 +923,63 @@ fun KnouxBottomBar(
                 )
             )
             .border(1.dp, KnouxBorder.copy(alpha = 0.45f), RoundedCornerShape(26.dp))
-            .padding(horizontal = 10.dp, vertical = 9.dp),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
+            .padding(horizontal = 8.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         MainTab.entries.forEach { tab ->
-            val active = tab == selected
-            Row(
-                Modifier
-                    .clip(RoundedCornerShape(50))
-                    .then(
-                        if (active)
-                            Modifier.background(
-                                Brush.horizontalGradient(listOf(KnouxViolet, KnouxMagenta))
-                            )
-                        else Modifier
-                    )
-                    .clickable { onSelect(tab) }
-                    .padding(horizontal = if (active) 14.dp else 8.dp, vertical = 9.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Icon(
-                    tab.icon, tab.label,
-                    tint = if (active) Color.White else KnouxSoftText,
-                    modifier = Modifier.size(18.dp)
+            BottomBarItem(
+                tab = tab,
+                active = tab == selected,
+                onClick = { onSelect(tab) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun RowScope.BottomBarItem(
+    tab: MainTab,
+    active: Boolean,
+    onClick: () -> Unit,
+) {
+    Box(
+        Modifier
+            .weight(1f)
+            .clip(RoundedCornerShape(22.dp))
+            .clickable { onClick() }
+            .padding(vertical = 4.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(
+            Modifier
+                .clip(RoundedCornerShape(20.dp))
+                .then(
+                    if (active)
+                        Modifier.background(
+                            Brush.horizontalGradient(listOf(KnouxViolet, KnouxMagenta))
+                        )
+                    else Modifier
                 )
-                Text(
-                    tab.label,
-                    style = TextStyle(
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 12.sp,
-                        color = if (active) Color.White else KnouxSoftText
-                    )
-                )
-            }
+                .padding(horizontal = 12.dp, vertical = 7.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(3.dp),
+        ) {
+            Icon(
+                tab.icon, tab.label,
+                tint = if (active) Color.White else KnouxSoftText,
+                modifier = Modifier.size(20.dp)
+            )
+            Text(
+                tab.label,
+                style = TextStyle(
+                    fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
+                    fontSize = 11.sp,
+                    color = if (active) Color.White else KnouxSoftText
+                ),
+                maxLines = 1,
+                softWrap = false,
+            )
         }
     }
 }

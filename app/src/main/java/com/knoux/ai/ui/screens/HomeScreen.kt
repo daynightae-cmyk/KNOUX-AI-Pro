@@ -21,14 +21,21 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Layers
+import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.RocketLaunch
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,6 +57,7 @@ import com.knoux.ai.ui.components.NeonIconTile
 import com.knoux.ai.ui.components.ProBadge
 import com.knoux.ai.ui.components.ProgressDonut
 import com.knoux.ai.ui.components.ScreenSubtitle
+import com.knoux.ai.ui.components.SettingsIconButton
 import com.knoux.ai.ui.components.ScreenTitle
 import com.knoux.ai.ui.components.TopLeading
 import com.knoux.ai.ui.components.iconFor
@@ -74,29 +82,29 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
     ) {
         item {
             Row(
-                Modifier.fillMaxWidth().height(52.dp),
+                Modifier.fillMaxWidth().height(48.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                IconCircle(Icons.Rounded.Bolt, "Menu", { })
+                HomeMenuButton(onNavigate)
                 Spacer(Modifier.width(8.dp))
                 BrandLockup(symbolSize = 26.dp, wordmarkHeight = 14.dp)
                 Spacer(Modifier.weight(1f))
                 ProBadge()
                 Spacer(Modifier.width(6.dp))
-                IconCircle(Icons.Rounded.Settings, "Settings", { })
+                SettingsIconButton()
             }
         }
 
-        item { NeonHero(com.knoux.ai.ui.components.HeroKind.Orb, height = 196.dp) }
+        item { NeonHero(com.knoux.ai.ui.components.HeroKind.Orb, height = 160.dp) }
 
         item {
             ScreenTitle("AI Smart ", accent = "Clean")
             Spacer(Modifier.height(2.dp))
-            ScreenSubtitle("Intelligent Cleaning & Device Optimization")
+            ScreenSubtitle("The All-in-One AI Cleaner, Optimizer & Device Care")
         }
 
         item {
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(10.dp))
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly,
@@ -128,92 +136,54 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
         }
 
         item {
-            Spacer(Modifier.height(18.dp))
+            Spacer(Modifier.height(14.dp))
             GradientActionButton(
-                text = "Open Smart Clean",
-                onClick = { onNavigate("smartclean") },
-                icon = Icons.Rounded.AutoAwesome,
+                text = "Start Deep Scan",
+                onClick = { onNavigate("deepscan") },
+                icon = Icons.Rounded.Search,
                 trailingChevron = true,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
 
         item {
-            Spacer(Modifier.height(16.dp))
-            GlassPanel(Modifier.fillMaxWidth(), padding = 14.dp) {
+            Spacer(Modifier.height(12.dp))
+            GlassPanel(Modifier.fillMaxWidth(), padding = 11.dp) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     ProgressDonut(
-                        progress = 0.93f,
-                        centerText = "93%",
+                        progress = 0.92f,
+                        centerText = "92%",
+                        caption = "Device\nScore",
                         arcColors = listOf(KnouxCyan, KnouxMagenta),
-                        size = 58.dp,
+                        size = 60.dp,
                         stroke = 6.dp,
                     )
-                    Spacer(Modifier.width(8.dp))
-                    Column {
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            HomeStat(Icons.Rounded.Layers, "12.6 GB", "Space saved", KnouxCyan)
+                            HomeStat(Icons.Rounded.Security, "7", "Privacy fixes", KnouxViolet)
+                            HomeStat(Icons.Rounded.Bolt, "+18%", "Battery gain", KnouxMagenta)
+                        }
+                        Spacer(Modifier.height(5.dp))
                         Text(
-                            "Optimization\nScore",
-                            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 11.sp, color = KnouxText)
-                        )
-                        Text(
-                            "↑ Excellent",
-                            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 10.sp, color = Color(0xFF3BE8A0))
-                        )
-                    }
-                    Box(
-                        Modifier
-                            .padding(horizontal = 10.dp)
-                            .width(1.dp)
-                            .height(40.dp)
-                            .background(Color.White.copy(alpha = 0.15f))
-                    )
-                    NeonIconTile(Icons.Rounded.Layers, size = 34.dp, iconSize = 17.dp)
-                    Spacer(Modifier.width(9.dp))
-                    Column {
-                        Text(
-                            "12.6 GB",
-                            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 16.sp, color = KnouxText)
-                        )
-                        Text(
-                            "Storage Saved",
-                            style = TextStyle(fontSize = 10.sp, color = KnouxSoftText)
-                        )
-                    }
-                    Box(
-                        Modifier
-                            .padding(horizontal = 10.dp)
-                            .width(1.dp)
-                            .height(40.dp)
-                            .background(Color.White.copy(alpha = 0.15f))
-                    )
-                    ProgressDonut(
-                        progress = 0.72f,
-                        centerText = "72%",
-                        arcColors = listOf(KnouxMagenta, KnouxCyan),
-                        size = 58.dp,
-                        stroke = 6.dp,
-                    )
-                    Spacer(Modifier.width(8.dp))
-                    Column {
-                        Text(
-                            "Scan Progress",
-                            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 11.sp, color = KnouxText)
-                        )
-                        Text(
-                            "Analyzing device...",
-                            style = TextStyle(fontSize = 9.5.sp, color = KnouxSoftText)
+                            "Design preview · sample values, not measured",
+                            style = TextStyle(fontSize = 8.sp, color = KnouxMutedText),
                         )
                     }
                 }
             }
         }
 
-        item { Spacer(Modifier.height(16.dp)) }
+        item { Spacer(Modifier.height(12.dp)) }
 
         items(Fixtures.homeServices.chunked(2)) { pair ->
             Row(
                 Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 pair.forEach { service ->
                     Box(Modifier.weight(1f)) {
@@ -231,19 +201,56 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
                 }
                 if (pair.size == 1) Box(Modifier.weight(1f))
             }
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(8.dp))
         }
     }
 }
 
 private fun routeFor(title: String): String = when (title) {
-    "Temporary Files" -> "residue"
+    "Clean" -> "smartclean"
     "Duplicate Files" -> "duplicates"
-    "Storage Analyzer" -> "storage"
-    "App Residue" -> "residue"
-    "Privacy Sweep" -> "privacy"
+    "Storage" -> "storage"
+    "Privacy" -> "privacy"
+    "Battery" -> "battery"
     "AI Optimization" -> "ai"
     else -> "home"
+}
+
+@Composable
+private fun HomeMenuButton(onNavigate: (String) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        IconCircle(Icons.Rounded.Menu, "Menu", { open = true })
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            val items = listOf(
+                "Smart Clean" to "smartclean",
+                "Deep Scan" to "deepscan",
+                "Duplicate Review" to "duplicates",
+                "Reports" to "reports",
+                "Tools" to "tools",
+            )
+            items.forEach { (label, route) ->
+                DropdownMenuItem(
+                    text = { Text(label, color = KnouxText) },
+                    onClick = { open = false; onNavigate(route) },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun HomeStat(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    value: String,
+    label: String,
+    tint: Color,
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Icon(icon, null, tint = tint, modifier = Modifier.size(15.dp))
+        Text(value, style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 12.sp, color = KnouxText))
+        Text(label, style = TextStyle(fontSize = 8.sp, color = KnouxSoftText))
+    }
 }
 
 @Composable
@@ -267,21 +274,21 @@ private fun ServiceCard(
             )
             .border(1.dp, accent.copy(alpha = 0.28f), RoundedCornerShape(20.dp))
             .clickable { onClick() }
-            .padding(12.dp)
+            .padding(10.dp)
     ) {
         Row(verticalAlignment = Alignment.Top) {
-            NeonIconTile(icon, size = 36.dp, iconSize = 18.dp, tint = accent)
+            NeonIconTile(icon, size = 32.dp, iconSize = 16.dp, tint = accent)
             Spacer(Modifier.width(9.dp))
             Column(Modifier.weight(1f)) {
                 Text(
                     title,
-                    style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 13.sp, color = KnouxText)
+                    style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 12.sp, color = KnouxText)
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
                     description,
-                    style = TextStyle(fontSize = 9.5.sp, lineHeight = 13.sp, color = KnouxSoftText),
-                    maxLines = 3,
+                    style = TextStyle(fontSize = 9.sp, lineHeight = 12.sp, color = KnouxSoftText),
+                    maxLines = 2,
                 )
             }
             Icon(
@@ -289,12 +296,12 @@ private fun ServiceCard(
                 tint = KnouxMutedText, modifier = Modifier.size(16.dp)
             )
         }
-        Spacer(Modifier.height(9.dp))
+        Spacer(Modifier.height(7.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(
                     metric,
-                    style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 14.sp, color = accent)
+                    style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 13.sp, color = accent)
                 )
                 if (metricCaption.isNotBlank()) {
                     Text(
@@ -304,7 +311,7 @@ private fun ServiceCard(
                 }
             }
             if (action != null) {
-                MiniPill(action, { })
+                MiniPill(action, onClick)
             }
         }
     }

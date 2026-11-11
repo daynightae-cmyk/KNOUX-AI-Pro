@@ -6,6 +6,8 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -115,7 +117,12 @@ fun KnouxTheme(
     referenceCapture: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    CompositionLocalProvider(LocalReferenceCapture provides referenceCapture) {
+    CompositionLocalProvider(
+        LocalReferenceCapture provides referenceCapture,
+        // The current UI is English-only and the 20 references are LTR.
+        // Force LTR so an Arabic system locale cannot mirror the whole layout.
+        LocalLayoutDirection provides LayoutDirection.Ltr,
+    ) {
         MaterialTheme(
             colorScheme = KnouxColors,
             typography = KnouxType,

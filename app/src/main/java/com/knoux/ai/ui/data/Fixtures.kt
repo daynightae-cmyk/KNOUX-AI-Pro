@@ -42,15 +42,15 @@ object Fixtures {
     const val LAST_RUN = "Today, 10:21 AM"
 
     val homeServices = listOf(
-        HomeService("Temporary Files", "Remove cached & unnecessary files", "2.4 GB", "removable", "Clean", Key.Folder, KnouxCyan),
-        HomeService("Duplicate Files", "Find and remove duplicate photos, videos and documents", "1,248", "duplicates found", "Review", Key.Image, KnouxMagenta),
-        HomeService("Storage Analyzer", "Analyze storage usage and large files", "128 GB / 256 GB", "used", null, Key.Storage, KnouxViolet),
-        HomeService("App Residue", "Clean leftover files from uninstalled apps", "836 MB", "residual data cleanup", null, Key.Folder, KnouxMagenta),
-        HomeService("Privacy Sweep", "Detect hidden trackers and privacy risks", "7", "trackers found", "Review", Key.Shield, KnouxCyan),
-        HomeService("AI Optimization", "Intelligent performance and battery tuning", "Boost device health", "", "Optimize", Key.Chip, KnouxMagenta),
+        HomeService("Clean", "Remove junk & temporary files", "2.4 GB", "removable", "Clean", Key.Folder, KnouxCyan),
+        HomeService("Duplicate Files", "Find and remove duplicate items", "1,248", "duplicates", "Review", Key.Image, KnouxMagenta),
+        HomeService("Storage", "Analyze usage & free up space", "128 GB / 256 GB", "50% used", null, Key.Storage, KnouxViolet),
+        HomeService("Privacy", "Detect trackers & protect your data", "7", "trackers found", "Review", Key.Shield, KnouxCyan),
+        HomeService("Battery", "Reduce drain & extend battery life", "6h 42m", "estimated gain · preview", null, Key.Bolt, KnouxMagenta),
+        HomeService("AI Optimization", "Boost performance & keep your device fast", "Score 94", "design preview", "Optimize", Key.Chip, KnouxMagenta),
     )
 
-    val benefits = listOf("Clean", "Optimize", "Protect", "More Space")
+    val benefits = listOf("Clean", "Optimize", "Protect", "Manage")
 
     // 02 Privacy Sweep
     val privacyIndicators = listOf(

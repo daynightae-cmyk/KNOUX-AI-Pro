@@ -118,6 +118,44 @@ fun KnouxSplashScreen(
                 radius = radius,
                 center = center,
             )
+            // ambient spectral waves (brand atmosphere, not UI chrome)
+            val w = size.width
+            val h = size.height
+            val topWave = androidx.compose.ui.graphics.Path().apply {
+                moveTo(w * 0.52f, 0f)
+                cubicTo(w * 0.70f, h * 0.04f, w * 0.86f, h * 0.15f, w, h * 0.21f)
+            }
+            drawPath(
+                path = topWave,
+                brush = Brush.linearGradient(
+                    colors = listOf(KnouxCyan.copy(alpha = 0.50f), Color.Transparent),
+                    start = Offset(w * 0.60f, 0f),
+                    end = Offset(w, h * 0.28f),
+                ),
+                style = Stroke(width = 2.2.dp.toPx(), cap = StrokeCap.Round),
+            )
+            val bottomWave = androidx.compose.ui.graphics.Path().apply {
+                moveTo(0f, h * 0.86f)
+                cubicTo(w * 0.28f, h * 0.92f, w * 0.55f, h * 0.73f, w, h * 0.79f)
+            }
+            drawPath(
+                path = bottomWave,
+                brush = Brush.linearGradient(
+                    colors = listOf(KnouxMagenta.copy(alpha = 0.45f), KnouxCyan.copy(alpha = 0.45f)),
+                    start = Offset(0f, h * 0.9f),
+                    end = Offset(w, h * 0.75f),
+                ),
+                style = Stroke(width = 2.6.dp.toPx(), cap = StrokeCap.Round),
+            )
+            drawPath(
+                path = bottomWave,
+                brush = Brush.linearGradient(
+                    colors = listOf(KnouxMagenta.copy(alpha = 0.14f), KnouxCyan.copy(alpha = 0.12f)),
+                    start = Offset(0f, h * 0.9f),
+                    end = Offset(w, h * 0.75f),
+                ),
+                style = Stroke(width = 9.dp.toPx(), cap = StrokeCap.Round),
+            )
         }
 
         Column(
@@ -132,23 +170,37 @@ fun KnouxSplashScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             // --- authentic K raster, revealed stroke by stroke with a light tip ---
-            Canvas(Modifier.size(196.dp)) {
+            Canvas(Modifier.size(width = 200.dp, height = 171.dp)) {
                 val bmp = kBitmap ?: return@Canvas
                 val dst = Size(size.width, size.height)
-                val m1 = if (calm) 1f else seg(t, 180f, 620f)
-                val m2 = if (calm) 1f else seg(t, 520f, 980f)
-                val m3 = if (calm) 1f else seg(t, 760f, 1120f)
-                drawWipeBand(bmp, dst, 0.00f, 0.48f, m1, KnouxMagenta, true)
-                drawWipeBand(bmp, dst, 0.28f, 0.78f, m2, KnouxViolet, true)
-                drawWipeBand(bmp, dst, 0.58f, 1.00f, m3, KnouxCyan, false)
+                if (calm || t >= 1120f) {
+                    // Draw the approved raster exactly once after the reveal.
+                    // Drawing the overlapping wipe bands a second time would
+                    // accumulate their soft alpha glow and leave horizontal
+                    // seams across the K.
+                    drawImage(
+                        image = bmp,
+                        srcOffset = IntOffset.Zero,
+                        srcSize = IntSize(bmp.width, bmp.height),
+                        dstOffset = IntOffset.Zero,
+                        dstSize = IntSize(dst.width.toInt(), dst.height.toInt()),
+                    )
+                } else {
+                    val m1 = seg(t, 180f, 620f)
+                    val m2 = seg(t, 520f, 980f)
+                    val m3 = seg(t, 760f, 1120f)
+                    drawWipeBand(bmp, dst, 0.00f, 0.48f, m1, KnouxMagenta, true)
+                    drawWipeBand(bmp, dst, 0.28f, 0.78f, m2, KnouxViolet, true)
+                    drawWipeBand(bmp, dst, 0.58f, 1.00f, m3, KnouxCyan, false)
+                }
             }
 
             Spacer(Modifier.height(10.dp))
 
             // --- lowercase wordmark write-on ---
-            Canvas(Modifier.fillMaxWidth().height(46.dp)) {
+            Canvas(Modifier.fillMaxWidth().height(52.dp)) {
                 val bmp = wordBitmap ?: return@Canvas
-                val h = size.height * 0.86f
+                val h = size.height * 0.88f
                 val w = h * (bmp.width.toFloat() / bmp.height.toFloat())
                 val left = (size.width - w) / 2f
                 val top = (size.height - h) / 2f
@@ -180,33 +232,33 @@ fun KnouxSplashScreen(
             Spacer(Modifier.height(2.dp))
 
             // --- luminous smile, drawn left to right under the name ---
-            Canvas(Modifier.fillMaxWidth().height(46.dp)) {
+            Canvas(Modifier.fillMaxWidth().height(40.dp)) {
                 val p = if (calm) 1f else seg(t, 1600f, 2420f)
                 if (p <= 0f) return@Canvas
-                val sw = size.width * 0.44f
+                val sw = size.width * 0.62f
                 val left = (size.width - sw) / 2f
-                val h = sw * 0.44f
-                val cy = 5.dp.toPx()
+                val h = sw * 0.22f
+                val cy = 4.dp.toPx()
                 val top = cy - h / 2f
                 val sweep = 180f * p
                 val brush = Brush.horizontalGradient(listOf(KnouxMagenta, KnouxViolet, KnouxCyan))
                 drawArc(
-                    brush = brush, alpha = 0.30f,
+                    brush = brush, alpha = 0.34f,
                     startAngle = 180f, sweepAngle = -sweep, useCenter = false,
                     topLeft = Offset(left, top), size = Size(sw, h),
-                    style = Stroke(width = 14.dp.toPx(), cap = StrokeCap.Round),
+                    style = Stroke(width = 18.dp.toPx(), cap = StrokeCap.Round),
                 )
                 drawArc(
                     brush = brush,
                     startAngle = 180f, sweepAngle = -sweep, useCenter = false,
                     topLeft = Offset(left, top), size = Size(sw, h),
-                    style = Stroke(width = 5.5.dp.toPx(), cap = StrokeCap.Round),
+                    style = Stroke(width = 6.2.dp.toPx(), cap = StrokeCap.Round),
                 )
                 drawArc(
                     color = Color.White, alpha = 0.55f,
                     startAngle = 180f, sweepAngle = -sweep, useCenter = false,
                     topLeft = Offset(left, top), size = Size(sw, h),
-                    style = Stroke(width = 1.6.dp.toPx(), cap = StrokeCap.Round),
+                    style = Stroke(width = 1.8.dp.toPx(), cap = StrokeCap.Round),
                 )
                 if (!calm && p < 1f) {
                     val ang = Math.toRadians((180f - sweep).toDouble())
@@ -225,22 +277,29 @@ fun KnouxSplashScreen(
                 // one-time sparkle at the final tip (click frame)
                 val s = seg(t, 2420f, 2780f)
                 if (!calm && t >= 2420f) {
-                    val fade = 1f - s
+                    val fade = if (t < 2560f) 1f else 1f - seg(t, 2560f, 2780f)
                     val tip = Offset(left + sw, cy)
-                    val ray = (6.dp + 20.dp * s).toPx()
-                    repeat(4) { i ->
-                        val a = Math.toRadians((i * 45).toDouble())
+                    val ray = (8.dp + 24.dp * s).toPx()
+                    drawCircle(
+                        brush = Brush.radialGradient(
+                            listOf(Color.White.copy(alpha = 0.55f * fade), Color.Transparent)
+                        ),
+                        radius = 20.dp.toPx(), center = tip,
+                    )
+                    // Four-point star: long vertical + horizontal axes.
+                    repeat(2) { i ->
+                        val a = Math.toRadians((i * 90).toDouble())
                         val dx = cos(a).toFloat() * ray
                         val dy = sin(a).toFloat() * ray
                         drawLine(
-                            color = Color.White.copy(alpha = 0.85f * fade),
+                            color = Color.White.copy(alpha = 0.95f * fade),
                             start = tip - Offset(dx, dy),
                             end = tip + Offset(dx, dy),
-                            strokeWidth = 1.6.dp.toPx(),
+                            strokeWidth = 2.dp.toPx(),
                             cap = StrokeCap.Round,
                         )
                     }
-                    drawCircle(Color.White.copy(alpha = fade), radius = 3.2.dp.toPx(), center = tip)
+                    drawCircle(Color.White.copy(alpha = fade), radius = 3.6.dp.toPx(), center = tip)
                 }
             }
         }

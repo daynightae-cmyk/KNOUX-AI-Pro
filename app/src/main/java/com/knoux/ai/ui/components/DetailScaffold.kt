@@ -42,7 +42,7 @@ fun DetailScaffold(
         KnouxTopBar(
             leading = TopLeading.Back,
             onLeadingClick = onBack,
-            right = { IconCircle(Icons.Rounded.Settings, "Settings", { }) },
+            right = { SettingsIconButton() },
         )
         LazyColumn(
             modifier = Modifier.weight(1f),

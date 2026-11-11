@@ -56,7 +56,7 @@ fun BatterySaverScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
         onBack = onBack,
         bottomActions = {
             Box(Modifier.weight(1f)) { GhostButton("View Details", onOpenDetail) }
-            Box(Modifier.weight(1f)) { GradientActionButton("Save Battery", { }, Modifier.fillMaxWidth()) }
+            Box(Modifier.weight(1f)) { GradientActionButton("Save Battery", onOpenDetail, Modifier.fillMaxWidth()) }
         },
     ) {
         item {
@@ -142,7 +142,7 @@ fun BatterySaverScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
                     0 -> "Auto Optimize"; 1 -> "Restrict Sync"; 2 -> "Limit Wakeups"
                     3 -> "Use While Active"; else -> "Smart Charging"
                 },
-                onAction = { },
+                onAction = onOpenDetail,
             )
         }
     }

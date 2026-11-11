@@ -1,0 +1,5 @@
+APK: app/build/outputs/apk/debug/app-debug.apk
+SIZE: 19130812 bytes
+SHA256: e6d929e6377eda1a595ebbb0b2fb2f9f93125d6059c7bd1939dd1fb0d2276a4e
+PACKAGE: com.knoux.ai.debug
+GENERATED: 2026-11-11T04:15:22Z

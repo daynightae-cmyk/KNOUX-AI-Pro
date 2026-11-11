@@ -62,7 +62,7 @@ fun AppResidueScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
         onBack = onBack,
         bottomActions = {
             Box(Modifier.weight(1f)) { GhostButton("Preview Residue", onOpenDetail) }
-            Box(Modifier.weight(1f)) { GradientActionButton("Clean Remnants", { }, Modifier.fillMaxWidth()) }
+            Box(Modifier.weight(1f)) { GradientActionButton("Clean Remnants", onOpenDetail, Modifier.fillMaxWidth()) }
         },
     ) {
         item {

@@ -1,5 +1,6 @@
 package com.knoux.ai
 
+import android.app.Activity
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -12,12 +13,15 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -25,15 +29,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.knoux.ai.splash.KnouxSplashScreen
 import com.knoux.ai.ui.components.KnouxBackground
 import com.knoux.ai.ui.components.KnouxBottomBar
 import com.knoux.ai.ui.components.MainTab
+import com.knoux.ai.ui.debug.RuntimeProbe
 import com.knoux.ai.ui.screens.AiOptimizationScreen
 import com.knoux.ai.ui.screens.AppManagerScreen
 import com.knoux.ai.ui.screens.AppResidueScreen
@@ -56,6 +64,7 @@ import com.knoux.ai.ui.screens.ReportsScreen
 import com.knoux.ai.ui.screens.StorageAnalyzerScreen
 import com.knoux.ai.ui.screens.ToolIndexScreen
 import com.knoux.ai.ui.theme.KnouxTheme
+import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,7 +72,12 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             KnouxTheme {
-                KnouxApp()
+                // The visual references are LTR English screens. Keep layout
+                // direction stable until a real Arabic/RTL localization pass
+                // (with translated strings) is added.
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    KnouxApp(activity = this@MainActivity)
+                }
             }
         }
     }
@@ -75,10 +89,22 @@ private const val ROUTE_TOOLS = "tools"
 private const val ROUTE_REPORTS = "reports"
 
 @Composable
-fun KnouxApp() {
+fun KnouxApp(activity: Activity? = null) {
     var splashDone by rememberSaveable { mutableStateOf(false) }
     val nav = rememberNavController()
     var tab by rememberSaveable { mutableStateOf(MainTab.Home) }
+    val backStackEntry by nav.currentBackStackEntryAsState()
+    val route = backStackEntry?.destination?.route
+
+    LaunchedEffect(route, splashDone) {
+        if (!splashDone) {
+            delay(2600)
+            RuntimeProbe.capture(activity, "00_splash")
+        } else {
+            delay(900)
+            RuntimeProbe.capture(activity, route ?: "unknown")
+        }
+    }
 
     Box(Modifier.fillMaxSize()) {
         KnouxBackground()
@@ -96,7 +122,7 @@ fun KnouxApp() {
             bottomBar = {
                 Column(
                     Modifier
-                        .fillMaxSize()
+                        .fillMaxWidth()
                         .windowInsetsPadding(WindowInsets.navigationBars),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {

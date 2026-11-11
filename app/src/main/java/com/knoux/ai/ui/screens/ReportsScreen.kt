@@ -57,7 +57,7 @@ fun ReportsScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
         onBack = onBack,
         bottomActions = {
             Box(Modifier.weight(1f)) { GhostButton("View History", onOpenDetail) }
-            Box(Modifier.weight(1f)) { GradientActionButton("Generate Report", { }, Modifier.fillMaxWidth()) }
+            Box(Modifier.weight(1f)) { GradientActionButton("Generate Report", onOpenDetail, Modifier.fillMaxWidth()) }
         },
     ) {
         item {
@@ -141,7 +141,7 @@ fun ReportsScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
 
         items(Fixtures.reportRows.size) { index ->
             Spacer(Modifier.height(8.dp))
-            FeatureRow(row = Fixtures.reportRows[index], onClick = { })
+            FeatureRow(row = Fixtures.reportRows[index], onClick = onOpenDetail)
         }
     }
 }
