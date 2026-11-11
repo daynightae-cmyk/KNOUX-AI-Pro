@@ -1,0 +1,95 @@
+{
+  "generated": "2026-11-11T05:25:00Z",
+  "source": "design/original_hi_res",
+  "resolution": "941x1672",
+  "authority": "newest collected reference set; supersedes earlier overview variants",
+  "screens": [
+    {
+      "screen": "Home",
+      "file": "file_00000000a56c8243bae7a2ee9ea9ce46.png",
+      "legacy_aliases": [
+        "design/refs20/02_Home_Dashboard.png",
+        "design/reference/01_AI_Smart_Clean_Home.png"
+      ]
+    },
+    {
+      "screen": "Temporary Files Cleanup",
+      "file": "file_0000000067e4820abd858040a8fe7f92.png",
+      "legacy_aliases": []
+    },
+    {
+      "screen": "Duplicate Files Finder",
+      "file": "file_000000009b9481f486d30a054678c35c.png",
+      "legacy_aliases": [
+        "design/refs20/04_Duplicate_Files_Finder.png",
+        "design/original_jpeg/03_Duplicate_Files_Finder.jpg"
+      ]
+    },
+    {
+      "screen": "Storage Analyzer",
+      "file": "file_000000000d6481f4878c25f891db3c18.png",
+      "legacy_aliases": [
+        "design/original_jpeg/08_Storage_Analyzer.jpg",
+        "design/reference/08_Storage_Analyzer.png"
+      ]
+    },
+    {
+      "screen": "App Residue Cleanup",
+      "file": "file_000000007df481f48bf5952a39394596.png",
+      "legacy_aliases": [
+        "design/refs20/07_App_Residue_Cleanup.png",
+        "design/original_jpeg/06_App_Residue_Cleanup.jpg"
+      ]
+    },
+    {
+      "screen": "Privacy Sweep",
+      "file": "file_00000000a2208210a5048f290a47b5ad.png",
+      "legacy_aliases": [
+        "design/refs20/03_Privacy_Sweep.png",
+        "design/original_jpeg/02_Privacy_Sweep.jpg"
+      ]
+    },
+    {
+      "screen": "AI Optimization",
+      "file": "file_0000000024b882439f77718e6d32e106.png",
+      "legacy_aliases": [
+        "design/original_jpeg/10_AI_Optimization.jpg"
+      ]
+    },
+    {
+      "screen": "Deep Scan",
+      "file": "file_000000000e24820aa66c80b3a113c5f9.png",
+      "legacy_aliases": [
+        "design/refs20/05_Deep_Scan.png",
+        "design/original_jpeg/04_Deep_Scan.jpg"
+      ]
+    },
+    {
+      "screen": "Battery Saver",
+      "file": "file_0000000008c88243ad9bb32594ec2550.png",
+      "legacy_aliases": [
+        "design/original_jpeg/09_Battery_Saver.jpg"
+      ]
+    },
+    {
+      "screen": "App Manager",
+      "file": "file_000000003d3481f49a1867d4d95ef508.png",
+      "legacy_aliases": [
+        "design/original_jpeg/07_App_Manager.jpg"
+      ]
+    },
+    {
+      "screen": "Reports & Insights",
+      "file": "file_000000006aa48210bbc473eba2635170.png",
+      "legacy_aliases": [
+        "design/refs20/06_Reports_Insights.png",
+        "design/original_jpeg/05_Reports_Insights.jpg"
+      ]
+    }
+  ],
+  "splash_reference": "design/refs20/01_Splash_Logo_Smile.png",
+  "missing": {
+    "detail_references": "11-20",
+    "note": "No detail-screen reference images were found in the collected assets."
+  }
+}
