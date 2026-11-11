@@ -55,7 +55,7 @@ import com.knoux.ai.ui.theme.KnouxText
 import com.knoux.ai.ui.theme.KnouxViolet
 
 @Composable
-fun PrivacySweepScreen(onBack: () -> Unit) {
+fun PrivacySweepScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
     val selected = remember { mutableStateListOf<Int>() }
     val allSelected = selected.size == Fixtures.privacyItems.size
 
@@ -67,7 +67,7 @@ fun PrivacySweepScreen(onBack: () -> Unit) {
         rightIcon = Icons.Rounded.Shield,
         onBack = onBack,
         bottomActions = {
-            Box(Modifier.weight(1f)) { GhostButton("Review Risks", { }) }
+            Box(Modifier.weight(1f)) { GhostButton("Review Risks", onOpenDetail) }
             Box(Modifier.weight(1f)) { GradientActionButton("Improve Privacy", { }, Modifier.fillMaxWidth()) }
         },
     ) {

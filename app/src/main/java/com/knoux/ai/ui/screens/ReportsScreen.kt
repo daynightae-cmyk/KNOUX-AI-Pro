@@ -47,7 +47,7 @@ import com.knoux.ai.ui.theme.KnouxText
 import com.knoux.ai.ui.theme.KnouxViolet
 
 @Composable
-fun ReportsScreen(onBack: () -> Unit) {
+fun ReportsScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
     ToolScreenScaffold(
         hero = HeroKind.Bars,
         title = "Reports & ",
@@ -56,7 +56,7 @@ fun ReportsScreen(onBack: () -> Unit) {
         rightIcon = Icons.Rounded.BarChart,
         onBack = onBack,
         bottomActions = {
-            Box(Modifier.weight(1f)) { GhostButton("View History", { }) }
+            Box(Modifier.weight(1f)) { GhostButton("View History", onOpenDetail) }
             Box(Modifier.weight(1f)) { GradientActionButton("Generate Report", { }, Modifier.fillMaxWidth()) }
         },
     ) {

@@ -46,7 +46,7 @@ import com.knoux.ai.ui.theme.KnouxText
 import com.knoux.ai.ui.theme.KnouxViolet
 
 @Composable
-fun AppManagerScreen(onBack: () -> Unit) {
+fun AppManagerScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
     ToolScreenScaffold(
         hero = HeroKind.Grid,
         title = "App ",
@@ -55,7 +55,7 @@ fun AppManagerScreen(onBack: () -> Unit) {
         rightIcon = Icons.Rounded.Apps,
         onBack = onBack,
         bottomActions = {
-            Box(Modifier.weight(1f)) { GhostButton("Review Apps", { }) }
+            Box(Modifier.weight(1f)) { GhostButton("Review Apps", onOpenDetail) }
             Box(Modifier.weight(1f)) { GradientActionButton("Manage Apps", { }, Modifier.fillMaxWidth()) }
         },
     ) {

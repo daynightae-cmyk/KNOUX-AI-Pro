@@ -4,6 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -35,10 +37,20 @@ import com.knoux.ai.ui.components.MainTab
 import com.knoux.ai.ui.screens.AiOptimizationScreen
 import com.knoux.ai.ui.screens.AppManagerScreen
 import com.knoux.ai.ui.screens.AppResidueScreen
+import com.knoux.ai.ui.screens.AiRecommendationsScreen
+import com.knoux.ai.ui.screens.BatteryDiagnosticsScreen
 import com.knoux.ai.ui.screens.BatterySaverScreen
 import com.knoux.ai.ui.screens.DeepScanScreen
+import com.knoux.ai.ui.screens.DeepScanSummaryScreen
 import com.knoux.ai.ui.screens.DuplicateFilesScreen
+import com.knoux.ai.ui.screens.DuplicateGroupReviewScreen
 import com.knoux.ai.ui.screens.HomeScreen
+import com.knoux.ai.ui.screens.InstalledAppsReviewScreen
+import com.knoux.ai.ui.screens.PerformanceReportDetailScreen
+import com.knoux.ai.ui.screens.PrivacyRiskInspectorScreen
+import com.knoux.ai.ui.screens.ResidueItemReviewScreen
+import com.knoux.ai.ui.screens.SmartCleanCenterScreen
+import com.knoux.ai.ui.screens.StorageBreakdownScreen
 import com.knoux.ai.ui.screens.PrivacySweepScreen
 import com.knoux.ai.ui.screens.ReportsScreen
 import com.knoux.ai.ui.screens.StorageAnalyzerScreen
@@ -70,11 +82,14 @@ fun KnouxApp() {
 
     Box(Modifier.fillMaxSize()) {
         KnouxBackground()
-        if (!splashDone) {
+        Crossfade(
+            targetState = splashDone,
+            animationSpec = tween(380),
+            label = "splash-handoff",
+        ) { done ->
+        if (!done) {
             KnouxSplashScreen(onFinished = { splashDone = true })
-            return@Box
-        }
-
+        } else {
         Scaffold(
             containerColor = Color.Transparent,
             contentWindowInsets = WindowInsets.statusBars,
@@ -130,17 +145,85 @@ fun KnouxApp() {
                         onOpen = { nav.navigate(it) },
                     )
                 }
-                composable(ROUTE_REPORTS) { ReportsScreen(onBack = { nav.popBackStack() }) }
-                composable("privacy") { PrivacySweepScreen(onBack = { nav.popBackStack() }) }
-                composable("duplicates") { DuplicateFilesScreen(onBack = { nav.popBackStack() }) }
-                composable("deepscan") { DeepScanScreen(onBack = { nav.popBackStack() }) }
-                composable("residue") { AppResidueScreen(onBack = { nav.popBackStack() }) }
-                composable("appmanager") { AppManagerScreen(onBack = { nav.popBackStack() }) }
-                composable("storage") { StorageAnalyzerScreen(onBack = { nav.popBackStack() }) }
-                composable("battery") { BatterySaverScreen(onBack = { nav.popBackStack() }) }
-                composable("ai") { AiOptimizationScreen(onBack = { nav.popBackStack() }) }
+                composable(ROUTE_REPORTS) {
+                    ReportsScreen(
+                        onBack = { nav.popBackStack() },
+                        onOpenDetail = { nav.navigate("performance-report") },
+                    )
+                }
+                composable("privacy") {
+                    PrivacySweepScreen(
+                        onBack = { nav.popBackStack() },
+                        onOpenDetail = { nav.navigate("privacy-risk") },
+                    )
+                }
+                composable("duplicates") {
+                    DuplicateFilesScreen(
+                        onBack = { nav.popBackStack() },
+                        onOpenDetail = { nav.navigate("duplicate-group") },
+                    )
+                }
+                composable("deepscan") {
+                    DeepScanScreen(
+                        onBack = { nav.popBackStack() },
+                        onOpenSummary = { nav.navigate("deep-scan-summary") },
+                    )
+                }
+                composable("residue") {
+                    AppResidueScreen(
+                        onBack = { nav.popBackStack() },
+                        onOpenDetail = { nav.navigate("residue-item") },
+                    )
+                }
+                composable("appmanager") {
+                    AppManagerScreen(
+                        onBack = { nav.popBackStack() },
+                        onOpenDetail = { nav.navigate("installed-apps") },
+                    )
+                }
+                composable("storage") {
+                    StorageAnalyzerScreen(
+                        onBack = { nav.popBackStack() },
+                        onOpenDetail = { nav.navigate("storage-breakdown") },
+                    )
+                }
+                composable("battery") {
+                    BatterySaverScreen(
+                        onBack = { nav.popBackStack() },
+                        onOpenDetail = { nav.navigate("battery-diagnostics") },
+                    )
+                }
+                composable("ai") {
+                    AiOptimizationScreen(
+                        onBack = { nav.popBackStack() },
+                        onOpenDetail = { nav.navigate("ai-recommendations") },
+                    )
+                }
+
+                composable("smartclean") {
+                    SmartCleanCenterScreen(
+                        onBack = { nav.popBackStack() },
+                        onOpenDeepScan = { nav.navigate("deepscan") },
+                    )
+                }
+                composable("privacy-risk") { PrivacyRiskInspectorScreen(onBack = { nav.popBackStack() }) }
+                composable("duplicate-group") { DuplicateGroupReviewScreen(onBack = { nav.popBackStack() }) }
+                composable("deep-scan-summary") {
+                    DeepScanSummaryScreen(
+                        onBack = { nav.popBackStack() },
+                        onOpenSmartClean = { nav.navigate("smartclean") },
+                    )
+                }
+                composable("performance-report") { PerformanceReportDetailScreen(onBack = { nav.popBackStack() }) }
+                composable("residue-item") { ResidueItemReviewScreen(onBack = { nav.popBackStack() }) }
+                composable("installed-apps") { InstalledAppsReviewScreen(onBack = { nav.popBackStack() }) }
+                composable("storage-breakdown") { StorageBreakdownScreen(onBack = { nav.popBackStack() }) }
+                composable("battery-diagnostics") { BatteryDiagnosticsScreen(onBack = { nav.popBackStack() }) }
+                composable("ai-recommendations") { AiRecommendationsScreen(onBack = { nav.popBackStack() }) }
             }
         }
+        }
+    }
     }
 }
 

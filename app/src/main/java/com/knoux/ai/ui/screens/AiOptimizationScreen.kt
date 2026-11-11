@@ -50,7 +50,7 @@ import com.knoux.ai.ui.theme.KnouxText
 import com.knoux.ai.ui.theme.KnouxViolet
 
 @Composable
-fun AiOptimizationScreen(onBack: () -> Unit) {
+fun AiOptimizationScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
     val selected = remember { mutableStateListOf<Int>() }
     val allSelected = selected.size == Fixtures.aiTools.size
 
@@ -62,7 +62,7 @@ fun AiOptimizationScreen(onBack: () -> Unit) {
         rightIcon = Icons.Rounded.Memory,
         onBack = onBack,
         bottomActions = {
-            Box(Modifier.weight(1f)) { GhostButton("See Recommendations", { }) }
+            Box(Modifier.weight(1f)) { GhostButton("See Recommendations", onOpenDetail) }
             Box(Modifier.weight(1f)) { GradientActionButton("Optimize Now", { }, Modifier.fillMaxWidth()) }
         },
     ) {

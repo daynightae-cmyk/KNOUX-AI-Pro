@@ -46,7 +46,7 @@ import com.knoux.ai.ui.theme.KnouxText
 import com.knoux.ai.ui.theme.KnouxViolet
 
 @Composable
-fun BatterySaverScreen(onBack: () -> Unit) {
+fun BatterySaverScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
     ToolScreenScaffold(
         hero = HeroKind.Battery,
         title = "Battery ",
@@ -55,7 +55,7 @@ fun BatterySaverScreen(onBack: () -> Unit) {
         rightIcon = Icons.Rounded.BatteryChargingFull,
         onBack = onBack,
         bottomActions = {
-            Box(Modifier.weight(1f)) { GhostButton("View Details", { }) }
+            Box(Modifier.weight(1f)) { GhostButton("View Details", onOpenDetail) }
             Box(Modifier.weight(1f)) { GradientActionButton("Save Battery", { }, Modifier.fillMaxWidth()) }
         },
     ) {

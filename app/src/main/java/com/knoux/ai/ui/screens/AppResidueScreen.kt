@@ -49,7 +49,7 @@ import com.knoux.ai.ui.theme.KnouxText
 import com.knoux.ai.ui.theme.KnouxViolet
 
 @Composable
-fun AppResidueScreen(onBack: () -> Unit) {
+fun AppResidueScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
     val selected = remember { mutableStateListOf<Int>() }
     val allSelected = selected.size == Fixtures.residueItems.size
 
@@ -61,7 +61,7 @@ fun AppResidueScreen(onBack: () -> Unit) {
         rightIcon = Icons.Rounded.Layers,
         onBack = onBack,
         bottomActions = {
-            Box(Modifier.weight(1f)) { GhostButton("Preview Residue", { }) }
+            Box(Modifier.weight(1f)) { GhostButton("Preview Residue", onOpenDetail) }
             Box(Modifier.weight(1f)) { GradientActionButton("Clean Remnants", { }, Modifier.fillMaxWidth()) }
         },
     ) {

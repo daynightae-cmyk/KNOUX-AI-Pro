@@ -52,7 +52,7 @@ import com.knoux.ai.ui.theme.KnouxText
 import com.knoux.ai.ui.theme.KnouxViolet
 
 @Composable
-fun DeepScanScreen(onBack: () -> Unit) {
+fun DeepScanScreen(onBack: () -> Unit, onOpenSummary: () -> Unit) {
     var running by remember { mutableStateOf(true) }
 
     ToolScreenScaffold(
@@ -72,8 +72,8 @@ fun DeepScanScreen(onBack: () -> Unit) {
             }
             Box(Modifier.weight(1f)) {
                 GradientActionButton(
-                    text = if (running) "Continue Scan" else "Scan Running",
-                    onClick = { running = true },
+                    text = "View Summary",
+                    onClick = onOpenSummary,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }

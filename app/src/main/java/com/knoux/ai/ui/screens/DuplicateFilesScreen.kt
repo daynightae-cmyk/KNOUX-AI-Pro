@@ -45,7 +45,7 @@ import com.knoux.ai.ui.theme.KnouxText
 import com.knoux.ai.ui.theme.KnouxViolet
 
 @Composable
-fun DuplicateFilesScreen(onBack: () -> Unit) {
+fun DuplicateFilesScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
     ToolScreenScaffold(
         hero = HeroKind.Images,
         title = "Duplicate Files ",
@@ -54,7 +54,7 @@ fun DuplicateFilesScreen(onBack: () -> Unit) {
         rightIcon = Icons.Rounded.Groups,
         onBack = onBack,
         bottomActions = {
-            Box(Modifier.weight(1f)) { GhostButton("Preview Groups", { }) }
+            Box(Modifier.weight(1f)) { GhostButton("Preview Groups", onOpenDetail) }
             Box(Modifier.weight(1f)) { GradientActionButton("Review & Remove", { }, Modifier.fillMaxWidth()) }
         },
     ) {

@@ -22,6 +22,7 @@ import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.RocketLaunch
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material.icons.rounded.Settings
@@ -129,9 +130,9 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
         item {
             Spacer(Modifier.height(18.dp))
             GradientActionButton(
-                text = "Start Deep Scan",
-                onClick = { onNavigate("deepscan") },
-                icon = Icons.Rounded.Search,
+                text = "Open Smart Clean",
+                onClick = { onNavigate("smartclean") },
+                icon = Icons.Rounded.AutoAwesome,
                 trailingChevron = true,
                 modifier = Modifier.fillMaxWidth(),
             )

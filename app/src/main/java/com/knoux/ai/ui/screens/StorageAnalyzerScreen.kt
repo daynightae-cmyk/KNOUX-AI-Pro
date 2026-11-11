@@ -54,7 +54,7 @@ import com.knoux.ai.ui.theme.KnouxText
 import com.knoux.ai.ui.theme.KnouxViolet
 
 @Composable
-fun StorageAnalyzerScreen(onBack: () -> Unit) {
+fun StorageAnalyzerScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
     ToolScreenScaffold(
         hero = HeroKind.Disks,
         title = "Storage ",
@@ -63,7 +63,7 @@ fun StorageAnalyzerScreen(onBack: () -> Unit) {
         rightIcon = Icons.Rounded.Storage,
         onBack = onBack,
         bottomActions = {
-            Box(Modifier.weight(1f)) { GhostButton("View Breakdown", { }) }
+            Box(Modifier.weight(1f)) { GhostButton("View Breakdown", onOpenDetail) }
             Box(Modifier.weight(1f)) { GradientActionButton("Manage Space", { }, Modifier.fillMaxWidth()) }
         },
     ) {
