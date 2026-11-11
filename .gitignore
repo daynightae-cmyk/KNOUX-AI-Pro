@@ -1,0 +1,56 @@
+# ===== Gradle =====
+.gradle/
+build/
+gradle-app.setting
+!gradle/wrapper/gradle-wrapper.jar
+.kotlin/
+local.properties
+
+# ===== Android build output =====
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+bin/
+gen/
+out/
+release/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# ===== Signing material / secrets =====
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.key
+google-services.json
+service-account*.json
+.env
+.env.*
+secrets.properties
+keystore.properties
+signing.properties
+
+# ===== IDE / OS =====
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+.DS_Store
+Thumbs.db
+
+# ===== Logs / temp =====
+*.log
+*.hprof
+captures/
+tmp/
+temp/
+
+# ===== QA artifacts that may embed device data =====
+qa-evidence/**/*.apk
+qa-evidence/**/logcat*.txt
