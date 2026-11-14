@@ -9,9 +9,11 @@ posted by the debug build:
     -> stored in qa-evidence/runtime/<label>-<timestamp>.png
 """
 
+import collections
 import os
 import re
 import sys
+import threading
 import time
 import http.server
 import socketserver
@@ -24,6 +26,11 @@ PORT = int(os.environ.get("KNOUX_PORT", "8099"))
 
 os.makedirs(SHOTS, exist_ok=True)
 
+# Debug-only route queue for the visual QA bridge. The debug app polls
+# /qa/next, navigates there, and uploads a real PixelCopy screenshot.
+QA_QUEUE = collections.deque()
+QA_LOCK = threading.Lock()
+
 
 class Handler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *a, **kw):
@@ -32,8 +39,49 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     def log_message(self, fmt, *args):
         sys.stderr.write("[dev-server] %s\n" % (fmt % args))
 
+    def _text(self, code, body):
+        raw = body.encode("utf-8")
+        self.send_response(code)
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self.send_header("Content-Length", str(len(raw)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(raw)
+
+    def do_GET(self):
+        parsed = urllib.parse.urlparse(self.path)
+        if parsed.path == "/qa/next":
+            with QA_LOCK:
+                route = QA_QUEUE.popleft() if QA_QUEUE else None
+            if route is None:
+                self.send_response(204)
+                self.send_header("Cache-Control", "no-store")
+                self.end_headers()
+            else:
+                self._text(200, route)
+            return
+        if parsed.path == "/qa/status":
+            with QA_LOCK:
+                pending = list(QA_QUEUE)
+            self._text(200, "%d\n%s" % (len(pending), "\n".join(pending)))
+            return
+        return super().do_GET()
+
     def do_POST(self):
         parsed = urllib.parse.urlparse(self.path)
+        if parsed.path == "/qa/enqueue":
+            length = int(self.headers.get("Content-Length") or 0)
+            body = self.rfile.read(length).decode("utf-8", "replace") if length else ""
+            routes = [part.strip() for part in re.split(r"[\s,]+", body) if part.strip()]
+            with QA_LOCK:
+                QA_QUEUE.extend(routes)
+            self._text(200, "queued %d" % len(routes))
+            return
+        if parsed.path == "/qa/clear":
+            with QA_LOCK:
+                QA_QUEUE.clear()
+            self._text(200, "cleared")
+            return
         if parsed.path != "/upload":
             self.send_error(404, "unknown endpoint")
             return
@@ -60,6 +108,9 @@ class Server(socketserver.ThreadingTCPServer):
 
 
 if __name__ == "__main__":
-    with Server(("0.0.0.0", PORT), Handler) as httpd:
-        sys.stderr.write("[dev-server] serving %s on 0.0.0.0:%d\n" % (RELEASE, PORT))
+    # Loopback only: the phone browser and the debug app both talk to
+    # 127.0.0.1, so binding every interface would only expose the build to
+    # the local network for no benefit.
+    with Server(("127.0.0.1", PORT), Handler) as httpd:
+        sys.stderr.write("[dev-server] serving %s on 127.0.0.1:%d\n" % (RELEASE, PORT))
         httpd.serve_forever()

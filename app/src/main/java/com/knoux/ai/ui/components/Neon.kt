@@ -17,6 +17,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -32,23 +33,25 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.rounded.BarChart
-import androidx.compose.material.icons.rounded.Build
 import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material.icons.rounded.HealthAndSafety
+import androidx.compose.material.icons.rounded.CleaningServices
+import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Menu
 import androidx.compose.material.icons.rounded.Search
-import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
@@ -56,6 +59,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -102,30 +106,113 @@ fun KnouxBackground(modifier: Modifier = Modifier) {
     Canvas(modifier.fillMaxSize()) {
         drawRect(
             Brush.verticalGradient(
-                0f to KnouxBackdropDeep,
-                0.45f to KnouxBackdrop,
+                0f to Color(0xFF060417),
+                0.42f to KnouxBackdrop,
+                0.78f to KnouxBackdropDeep,
                 1f to Color(0xFF120A33)
             )
         )
-        // left and right purple wave glows
+
+        // Controlled accent lights: one cyan rim high on the right, one
+        // magenta pool low on the left, one violet mass behind the content.
         drawCircle(
             brush = Brush.radialGradient(
-                colors = listOf(KnouxWave.copy(alpha = 0.85f), Color.Transparent),
-                center = Offset(size.width * 0.06f, size.height * 0.86f),
-                radius = size.minDimension * 0.85f
+                colors = listOf(KnouxCyan.copy(alpha = 0.10f), Color.Transparent),
+                center = Offset(size.width * 0.88f, size.height * 0.10f),
+                radius = size.minDimension * 0.52f,
             ),
-            radius = size.minDimension * 0.85f,
-            center = Offset(size.width * 0.06f, size.height * 0.86f)
+            radius = size.minDimension * 0.52f,
+            center = Offset(size.width * 0.88f, size.height * 0.10f),
         )
         drawCircle(
             brush = Brush.radialGradient(
-                colors = listOf(Color(0xFF3A1070).copy(alpha = 0.7f), Color.Transparent),
-                center = Offset(size.width * 0.97f, size.height * 0.72f),
-                radius = size.minDimension * 0.7f
+                colors = listOf(KnouxWave.copy(alpha = 0.62f), Color.Transparent),
+                center = Offset(size.width * 0.04f, size.height * 0.86f),
+                radius = size.minDimension * 0.82f,
             ),
-            radius = size.minDimension * 0.7f,
-            center = Offset(size.width * 0.97f, size.height * 0.72f)
+            radius = size.minDimension * 0.82f,
+            center = Offset(size.width * 0.04f, size.height * 0.86f),
         )
+        drawCircle(
+            brush = Brush.radialGradient(
+                colors = listOf(Color(0xFF3A1070).copy(alpha = 0.48f), Color.Transparent),
+                center = Offset(size.width * 0.98f, size.height * 0.66f),
+                radius = size.minDimension * 0.68f,
+            ),
+            radius = size.minDimension * 0.68f,
+            center = Offset(size.width * 0.98f, size.height * 0.66f),
+        )
+
+        // Fine energy ribbons, not a wash of brightness: two thin arcs that
+        // echo the hero artwork without competing with the content.
+        val ribbon = Path().apply {
+            moveTo(-size.width * 0.08f, size.height * 0.58f)
+            cubicTo(
+                size.width * 0.18f, size.height * 0.46f,
+                size.width * 0.34f, size.height * 0.70f,
+                size.width * 0.58f, size.height * 0.53f,
+            )
+            cubicTo(
+                size.width * 0.76f, size.height * 0.40f,
+                size.width * 0.90f, size.height * 0.48f,
+                size.width * 1.08f, size.height * 0.34f,
+            )
+        }
+        drawPath(
+            ribbon,
+            brush = Brush.linearGradient(
+                listOf(
+                    KnouxMagenta.copy(alpha = 0.15f),
+                    KnouxViolet.copy(alpha = 0.05f),
+                    KnouxCyan.copy(alpha = 0.09f),
+                    Color.Transparent,
+                ),
+                start = Offset(0f, size.height * 0.68f),
+                end = Offset(size.width, size.height * 0.30f),
+            ),
+            style = Stroke(width = 1.4.dp.toPx()),
+        )
+        val lowerRibbon = Path().apply {
+            moveTo(-size.width * 0.05f, size.height * 0.92f)
+            cubicTo(
+                size.width * 0.24f, size.height * 0.80f,
+                size.width * 0.54f, size.height * 0.98f,
+                size.width * 1.05f, size.height * 0.78f,
+            )
+        }
+        drawPath(
+            lowerRibbon,
+            brush = Brush.linearGradient(
+                listOf(
+                    KnouxMagenta.copy(alpha = 0.12f),
+                    KnouxBlue.copy(alpha = 0.04f),
+                    Color.Transparent,
+                ),
+                start = Offset(0f, size.height),
+                end = Offset(size.width, size.height * 0.72f),
+            ),
+            style = Stroke(width = 1.dp.toPx()),
+        )
+
+        // A quiet star field gives the glass depth without adding haze.
+        val stars = listOf(
+            0.06f to 0.10f, 0.14f to 0.17f, 0.23f to 0.08f, 0.31f to 0.21f,
+            0.43f to 0.12f, 0.56f to 0.18f, 0.68f to 0.07f, 0.79f to 0.15f,
+            0.91f to 0.24f, 0.08f to 0.44f, 0.17f to 0.52f, 0.27f to 0.39f,
+            0.39f to 0.47f, 0.52f to 0.36f, 0.63f to 0.55f, 0.73f to 0.42f,
+            0.84f to 0.58f, 0.93f to 0.47f, 0.10f to 0.72f, 0.22f to 0.66f,
+            0.36f to 0.78f, 0.49f to 0.64f, 0.61f to 0.82f, 0.74f to 0.70f,
+            0.87f to 0.80f, 0.94f to 0.63f, 0.15f to 0.91f, 0.41f to 0.90f,
+            0.67f to 0.93f, 0.82f to 0.88f,
+        )
+        stars.forEachIndexed { index, (x, y) ->
+            val alpha = if (index % 4 == 0) 0.30f else 0.16f
+            drawCircle(
+                color = Color.White.copy(alpha = alpha),
+                radius = if (index % 5 == 0) 1.25.dp.toPx() else 0.85.dp.toPx(),
+                center = Offset(size.width * x, size.height * y),
+            )
+        }
     }
 }
 
@@ -167,32 +254,6 @@ fun BrandLockup(modifier: Modifier = Modifier, symbolSize: Dp = 28.dp, wordmarkH
 enum class TopLeading { Back, Menu, None }
 
 @Composable
-fun KnouxTopBar(
-    modifier: Modifier = Modifier,
-    leading: TopLeading = TopLeading.Back,
-    onLeadingClick: () -> Unit = {},
-    right: @Composable RowScope.() -> Unit = {},
-) {
-    Row(
-        modifier
-            .fillMaxWidth()
-            .height(54.dp)
-            .padding(horizontal = 14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        when (leading) {
-            TopLeading.Back -> IconCircle(Icons.Rounded.ArrowBack, "Back", onLeadingClick)
-            TopLeading.Menu -> IconCircle(Icons.Rounded.Menu, "Menu", onLeadingClick)
-            TopLeading.None -> Spacer(Modifier.width(38.dp))
-        }
-        Spacer(Modifier.width(10.dp))
-        BrandLockup()
-        Spacer(Modifier.weight(1f))
-        right()
-    }
-}
-
-@Composable
 fun IconCircle(
     icon: ImageVector,
     contentDescription: String?,
@@ -211,10 +272,19 @@ fun IconCircle(
     }
 }
 
+/**
+ * Action that opens the in-app settings section.
+ *
+ * Provided once at the app root so every screen can reach the product
+ * settings without threading a callback through each composable.
+ */
+val LocalOpenSettings = staticCompositionLocalOf<(() -> Unit)?> { null }
+
 @Composable
-fun SettingsIconButton() {
+fun SettingsIconButton(onClick: (() -> Unit)? = null) {
     val context = LocalContext.current
-    IconCircle(Icons.Rounded.Settings, "App settings", {
+    val openSettings = LocalOpenSettings.current
+    val fallback: () -> Unit = {
         runCatching {
             context.startActivity(
                 Intent(
@@ -223,7 +293,9 @@ fun SettingsIconButton() {
                 )
             )
         }
-    })
+        Unit
+    }
+    IconCircle(Icons.Outlined.Settings, "App settings", onClick ?: openSettings ?: fallback)
 }
 
 @Composable
@@ -237,20 +309,46 @@ fun ProBadge(modifier: Modifier = Modifier) {
                 )
             )
             .border(1.dp, KnouxAmber.copy(alpha = 0.75f), RoundedCornerShape(50))
-            .padding(horizontal = 9.dp, vertical = 4.dp),
+            .padding(horizontal = 8.dp, vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Icon(
-            Icons.Rounded.AutoAwesome, null,
-            tint = KnouxAmber, modifier = Modifier.size(11.dp)
-        )
+        CrownMark(Modifier.size(11.dp), KnouxAmber)
         Text(
             "Pro",
             style = TextStyle(
-                fontWeight = FontWeight.Bold, fontSize = 11.sp, color = KnouxAmber
+                fontWeight = FontWeight.Bold, fontSize = 10.5.sp, color = KnouxAmber
             )
         )
+    }
+}
+
+/** Small crown glyph used by the Pro badge; material has no crown symbol. */
+@Composable
+private fun CrownMark(modifier: Modifier = Modifier, color: Color = KnouxAmber) {
+    Canvas(modifier) {
+        val w = size.width
+        val h = size.height
+        val crown = Path().apply {
+            moveTo(w * 0.06f, h * 0.72f)
+            lineTo(w * 0.02f, h * 0.22f)
+            lineTo(w * 0.30f, h * 0.44f)
+            lineTo(w * 0.50f, h * 0.10f)
+            lineTo(w * 0.70f, h * 0.44f)
+            lineTo(w * 0.98f, h * 0.22f)
+            lineTo(w * 0.94f, h * 0.72f)
+            close()
+        }
+        drawPath(crown, color)
+        drawRoundRect(
+            color = color,
+            topLeft = Offset(w * 0.07f, h * 0.76f),
+            size = Size(w * 0.86f, h * 0.16f),
+            cornerRadius = androidx.compose.ui.geometry.CornerRadius(w * 0.04f),
+        )
+        drawCircle(color, radius = w * 0.055f, center = Offset(w * 0.02f, h * 0.20f))
+        drawCircle(color, radius = w * 0.055f, center = Offset(w * 0.50f, h * 0.08f))
+        drawCircle(color, radius = w * 0.055f, center = Offset(w * 0.98f, h * 0.20f))
     }
 }
 
@@ -902,8 +1000,8 @@ private fun DrawScope.drawHero(kind: HeroKind, phase: Float, pulse: Float) {
 
 enum class MainTab(val label: String, val icon: ImageVector) {
     Home("Home", Icons.Rounded.Home),
-    Clean("Clean", Icons.Rounded.Build),
-    Tools("Tools", Icons.Rounded.HealthAndSafety),
+    Clean("Clean", Icons.Rounded.CleaningServices),
+    Tools("Tools", Icons.Rounded.GridView),
     Reports("Reports", Icons.Rounded.BarChart),
 }
 
@@ -913,18 +1011,49 @@ fun KnouxBottomBar(
     onSelect: (MainTab) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val shape = RoundedCornerShape(27.dp)
     Row(
         modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(26.dp))
+            .clip(shape)
             .background(
                 Brush.verticalGradient(
-                    listOf(KnouxPanel.copy(alpha = 0.96f), KnouxPanelDeep.copy(alpha = 0.96f))
+                    listOf(
+                        Color(0xFF21124D).copy(alpha = 0.97f),
+                        Color(0xFF0D0825).copy(alpha = 0.98f),
+                    )
                 )
             )
-            .border(1.dp, KnouxBorder.copy(alpha = 0.45f), RoundedCornerShape(26.dp))
-            .padding(horizontal = 8.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+            .border(
+                BorderStroke(
+                    1.dp,
+                    Brush.linearGradient(
+                        listOf(
+                            KnouxViolet.copy(alpha = 0.42f),
+                            Color.White.copy(alpha = 0.14f),
+                            KnouxCyan.copy(alpha = 0.22f),
+                        )
+                    ),
+                ),
+                shape,
+            )
+            .drawWithContent {
+                drawContent()
+                drawLine(
+                    brush = Brush.horizontalGradient(
+                        listOf(
+                            Color.Transparent,
+                            KnouxCyan.copy(alpha = 0.32f),
+                            Color.Transparent,
+                        )
+                    ),
+                    start = Offset(size.width * 0.18f, 1.dp.toPx()),
+                    end = Offset(size.width * 0.82f, 1.dp.toPx()),
+                    strokeWidth = 1.dp.toPx(),
+                )
+            }
+            .padding(horizontal = 7.dp, vertical = 7.dp),
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         MainTab.entries.forEach { tab ->
@@ -951,30 +1080,39 @@ private fun RowScope.BottomBarItem(
             .padding(vertical = 4.dp),
         contentAlignment = Alignment.Center,
     ) {
+        val pill = RoundedCornerShape(21.dp)
         Column(
             Modifier
-                .clip(RoundedCornerShape(20.dp))
+                .clip(pill)
                 .then(
                     if (active)
-                        Modifier.background(
-                            Brush.horizontalGradient(listOf(KnouxViolet, KnouxMagenta))
-                        )
+                        Modifier
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(
+                                        KnouxViolet,
+                                        KnouxMagenta,
+                                        Color(0xFF6A5BFF),
+                                    )
+                                )
+                            )
+                            .border(1.dp, Color.White.copy(alpha = 0.18f), pill)
                     else Modifier
                 )
-                .padding(horizontal = 12.dp, vertical = 7.dp),
+                .padding(horizontal = 10.dp, vertical = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(3.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             Icon(
                 tab.icon, tab.label,
                 tint = if (active) Color.White else KnouxSoftText,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(if (active) 20.dp else 19.dp)
             )
             Text(
                 tab.label,
                 style = TextStyle(
                     fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
-                    fontSize = 11.sp,
+                    fontSize = if (active) 10.8.sp else 10.2.sp,
                     color = if (active) Color.White else KnouxSoftText
                 ),
                 maxLines = 1,
@@ -994,27 +1132,52 @@ fun ScreenTitle(
     modifier: Modifier = Modifier,
     accent: String? = null,
     accentColors: List<Color> = listOf(KnouxMagenta, KnouxViolet),
+    fontSize: androidx.compose.ui.unit.TextUnit = 27.sp,
+    lineHeight: androidx.compose.ui.unit.TextUnit = 32.sp,
 ) {
-    Text(
-        text = buildAnnotatedString {
-            if (accent == null) {
-                append(text)
-            } else {
-                append(text)
-                withStyle(SpanStyle(brush = Brush.horizontalGradient(accentColors))) {
-                    append(accent)
-                }
-            }
-        },
-        modifier = modifier,
-        style = TextStyle(
-            fontWeight = FontWeight.Bold,
-            fontStyle = FontStyle.Italic,
-            fontSize = 27.sp,
-            lineHeight = 32.sp,
-            color = KnouxText
-        ),
+    val mainBrush = Brush.verticalGradient(
+        listOf(
+            Color.White,
+            Color(0xFFF2F6FF),
+            Color(0xFFCEDBFF),
+        )
     )
+    // Responsive typography: the title shrinks only when the requested size
+    // would not fit the available width, so narrow phones keep the whole word.
+    BoxWithConstraints(modifier) {
+        val full = text + (accent ?: "")
+        val estimatedWidth = full.length * fontSize.value * 0.52f
+        val available = if (maxWidth == Dp.Unspecified) 0f else maxWidth.value
+        val scale = when {
+            available <= 0f -> 1f
+            estimatedWidth <= available -> 1f
+            else -> (available / estimatedWidth).coerceIn(0.60f, 1f)
+        }
+        Text(
+            text = buildAnnotatedString {
+                if (accent == null) {
+                    withStyle(SpanStyle(brush = mainBrush)) { append(text) }
+                } else {
+                    withStyle(SpanStyle(brush = mainBrush)) { append(text) }
+                    withStyle(SpanStyle(brush = Brush.horizontalGradient(accentColors))) {
+                        append(accent)
+                    }
+                }
+            },
+            style = TextStyle(
+                fontWeight = FontWeight.Bold,
+                fontStyle = FontStyle.Italic,
+                fontSize = fontSize * scale,
+                lineHeight = lineHeight * scale,
+                color = KnouxText,
+                shadow = Shadow(
+                    color = KnouxViolet.copy(alpha = 0.46f),
+                    offset = Offset(0f, 2.5f),
+                    blurRadius = 12f,
+                ),
+            ),
+        )
+    }
 }
 
 @Composable

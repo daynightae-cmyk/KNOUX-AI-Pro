@@ -1,5 +1,6 @@
 package com.knoux.ai.ui.screens
 
+import com.knoux.ai.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,7 +14,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.BatteryChargingFull
+import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Event
+import androidx.compose.material.icons.rounded.Memory
+import androidx.compose.material.icons.rounded.PhoneAndroid
+import androidx.compose.material.icons.rounded.Thermostat
 import androidx.compose.material.icons.rounded.Event
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.Schedule
@@ -33,6 +39,10 @@ import com.knoux.ai.ui.components.GlassPanel
 import com.knoux.ai.ui.components.GradientActionButton
 import com.knoux.ai.ui.components.GhostButton
 import com.knoux.ai.ui.components.HeroKind
+import com.knoux.ai.ui.components.InsightBanner
+import com.knoux.ai.ui.components.ReferenceSectionLabel
+import com.knoux.ai.ui.components.SignalTile
+import com.knoux.ai.ui.components.SignalTileGrid
 import com.knoux.ai.ui.components.MiniStatStrip
 import com.knoux.ai.ui.components.NeonIconTile
 import com.knoux.ai.ui.components.ProgressDonut
@@ -54,6 +64,7 @@ fun BatterySaverScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
         subtitle = "Reduce drain, control background activity, and extend battery life.",
         rightIcon = Icons.Rounded.BatteryChargingFull,
         onBack = onBack,
+        heroImage = R.drawable.knoux_hero_battery,
         bottomActions = {
             Box(Modifier.weight(1f)) { GhostButton("View Details", onOpenDetail) }
             Box(Modifier.weight(1f)) { GradientActionButton("Save Battery", onOpenDetail, Modifier.fillMaxWidth()) }
@@ -102,6 +113,33 @@ fun BatterySaverScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
             GlassPanel(Modifier.fillMaxWidth(), padding = 12.dp) {
                 MiniStatStrip(Fixtures.batteryMetrics)
             }
+        }
+
+        item {
+            Spacer(Modifier.height(12.dp))
+            InsightBanner(
+                title = "Healthy Battery",
+                message = "Your battery is in good condition. Minor optimization can extend life a little further.",
+                icon = Icons.Rounded.CheckCircle,
+                tint = KnouxCyan,
+                badge = "GOOD",
+            )
+        }
+
+        item {
+            Spacer(Modifier.height(12.dp))
+            ReferenceSectionLabel("Device health signals", "preview values")
+            Spacer(Modifier.height(6.dp))
+            SignalTileGrid(
+                tiles = listOf(
+                    SignalTile(Icons.Rounded.BatteryChargingFull, "6h 42m", "Estimated gain", KnouxMagenta),
+                    SignalTile(Icons.Rounded.Bolt, "5", "Drain sources", KnouxMagenta),
+                    SignalTile(Icons.Rounded.Event, "287", "Charging cycles", KnouxCyan),
+                    SignalTile(Icons.Rounded.Thermostat, "37 °C", "Peak temperature", KnouxAmber),
+                    SignalTile(Icons.Rounded.PhoneAndroid, "5h 18m", "Screen-on time", KnouxViolet),
+                    SignalTile(Icons.Rounded.Memory, "18", "Background apps", KnouxViolet),
+                ),
+            )
         }
 
         item {

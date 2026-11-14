@@ -1,5 +1,6 @@
 package com.knoux.ai.ui.screens
 
+import com.knoux.ai.R
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,6 +33,11 @@ import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material.icons.rounded.TrendingUp
+import androidx.compose.material.icons.rounded.Image
+import androidx.compose.material.icons.rounded.CameraAlt
+import androidx.compose.material.icons.rounded.Mic
+import androidx.compose.material.icons.rounded.LocationOn
+import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -55,6 +61,10 @@ import com.knoux.ai.ui.components.GhostButton
 import com.knoux.ai.ui.components.GlassPanel
 import com.knoux.ai.ui.components.GradientActionButton
 import com.knoux.ai.ui.components.HeroKind
+import com.knoux.ai.ui.components.InsightBanner
+import com.knoux.ai.ui.components.ReferenceSectionLabel
+import com.knoux.ai.ui.components.SignalTile
+import com.knoux.ai.ui.components.SignalTileGrid
 import com.knoux.ai.ui.components.MiniStatStrip
 import com.knoux.ai.ui.components.NeonIconTile
 import com.knoux.ai.ui.components.PreviewDisclosure
@@ -160,7 +170,7 @@ fun PreviewActionDialog(title: String, message: String, confirm: String, onDismi
  * 11 — Smart Clean Center
  * ------------------------------------------------------------------ */
 @Composable
-fun SmartCleanCenterScreen(onBack: () -> Unit, onOpenDeepScan: () -> Unit) {
+fun LegacySmartCleanCenterScreen(onBack: () -> Unit, onOpenDeepScan: () -> Unit) {
     val groups = listOf(
         PreviewRow("Temporary Files", "Cached and unnecessary files, review before removal.", "2.4 GB", Key.Folder),
         PreviewRow("Duplicate Media", "Similar photos, repeated videos and copy documents.", "1,248 items", Key.Image),
@@ -239,12 +249,26 @@ fun DuplicateGroupReviewScreen(onBack: () -> Unit) {
         accent = "Group Review",
         subtitle = "Every group keeps one protected original. Review before removing anything.",
         onBack = onBack,
+        heroImage = R.drawable.knoux_hero_duplicate_group,
         actions = {
             Box(Modifier.weight(1f)) { GhostButton("Preview Selection", { dialog = true }, Modifier.fillMaxWidth()) }
             Box(Modifier.weight(1f)) { GradientActionButton("Review & Remove", { dialog = true }, Modifier.fillMaxWidth()) }
         },
     ) {
         item { PreviewDisclosure() }
+
+        item {
+            ReferenceSectionLabel("Group summary", "preview values")
+            Spacer(Modifier.height(6.dp))
+            SignalTileGrid(
+                tiles = listOf(
+                    SignalTile(Icons.Rounded.Folder, "24", "Duplicate groups", KnouxMagenta),
+                    SignalTile(Icons.Rounded.Storage, "3.8 GB", "Reclaimable", KnouxCyan),
+                    SignalTile(Icons.Rounded.Image, "1.2 GB", "Largest group", KnouxViolet),
+                    SignalTile(Icons.Rounded.Shield, "92%", "Media coverage", KnouxAmber),
+                ),
+            )
+        }
         item { NoticePanel(Icons.Rounded.Lock, "Keep-one invariant: the canonical original of each group is always preserved, even when every other copy is selected.", KnouxCyan) }
         item { MiniStatStrip(Fixtures.duplicateStats) }
         item { DetailSectionTitle("Duplicate Groups", "${groups.size} groups · sample values") }
@@ -293,6 +317,7 @@ fun PrivacyRiskInspectorScreen(onBack: () -> Unit) {
         accent = "Inspector",
         subtitle = "Per-app permission evidence with direct Android settings handoff.",
         onBack = onBack,
+        heroImage = R.drawable.knoux_hero_privacy_risk,
         actions = {
             Box(Modifier.weight(1f)) {
                 GhostButton("App Settings", {
@@ -305,6 +330,19 @@ fun PrivacyRiskInspectorScreen(onBack: () -> Unit) {
         },
     ) {
         item { PreviewDisclosure() }
+
+        item {
+            ReferenceSectionLabel("Risk overview", "preview values")
+            Spacer(Modifier.height(6.dp))
+            SignalTileGrid(
+                tiles = listOf(
+                    SignalTile(Icons.Rounded.Shield, "5", "High-risk apps", KnouxMagenta),
+                    SignalTile(Icons.Rounded.CameraAlt, "2", "Camera access", KnouxAmber),
+                    SignalTile(Icons.Rounded.Mic, "1", "Microphone", KnouxAmber),
+                    SignalTile(Icons.Rounded.LocationOn, "3", "Background location", KnouxCyan),
+                ),
+            )
+        }
         item { MiniStatStrip(stats) }
         item { NoticePanel(Icons.Rounded.Shield, "Android does not let a normal Play app block another app's trackers or revoke its permissions silently. These findings are evidence-based permission signals, not proof of malicious behaviour.", KnouxAmber) }
         item { DetailSectionTitle("App Permission Evidence", "Sample inventory · tap a row for details") }
@@ -347,12 +385,26 @@ fun DeepScanSummaryScreen(onBack: () -> Unit, onOpenSmartClean: () -> Unit) {
         accent = "Summary",
         subtitle = "What a completed scan reports, and which next actions are supported.",
         onBack = onBack,
+        heroImage = R.drawable.knoux_hero_scan_summary,
         actions = {
             Box(Modifier.weight(1f)) { GhostButton("Back to Scan", onBack, Modifier.fillMaxWidth()) }
             Box(Modifier.weight(1f)) { GradientActionButton("Open Smart Clean", onOpenSmartClean, Modifier.fillMaxWidth()) }
         },
     ) {
         item { PreviewDisclosure() }
+
+        item {
+            ReferenceSectionLabel("Scan summary", "preview values")
+            Spacer(Modifier.height(6.dp))
+            SignalTileGrid(
+                tiles = listOf(
+                    SignalTile(Icons.Rounded.Storage, "2.4 GB", "Junk found", KnouxMagenta),
+                    SignalTile(Icons.Rounded.Shield, "7", "Privacy alerts", KnouxCyan),
+                    SignalTile(Icons.Rounded.Folder, "1,248", "Duplicates", KnouxViolet),
+                    SignalTile(Icons.Rounded.Bolt, "5", "Battery sources", KnouxAmber),
+                ),
+            )
+        }
         item { MiniStatStrip(Fixtures.deepScanMetrics) }
         item {
             GlassPanel(Modifier.fillMaxWidth().padding(top = 10.dp), padding = 14.dp) {
@@ -390,12 +442,26 @@ fun PerformanceReportDetailScreen(onBack: () -> Unit) {
         accent = "Report Detail",
         subtitle = "History, chart units and export status from stored records only.",
         onBack = onBack,
+        heroImage = R.drawable.knoux_hero_performance,
         actions = {
             Box(Modifier.weight(1f)) { GhostButton("View History", { dialog = true }, Modifier.fillMaxWidth()) }
             Box(Modifier.weight(1f)) { GradientActionButton("Export PDF", { dialog = true }, Modifier.fillMaxWidth()) }
         },
     ) {
         item { PreviewDisclosure() }
+
+        item {
+            ReferenceSectionLabel("Report summary", "preview values")
+            Spacer(Modifier.height(6.dp))
+            SignalTileGrid(
+                tiles = listOf(
+                    SignalTile(Icons.Rounded.TrendingUp, "92%", "Device score", KnouxCyan, trailing = "+6"),
+                    SignalTile(Icons.Rounded.Storage, "12.6 GB", "Space saved", KnouxMagenta),
+                    SignalTile(Icons.Rounded.BarChart, "7", "Reports stored", KnouxViolet),
+                    SignalTile(Icons.Rounded.EmojiEvents, "Storage", "Best run", KnouxAmber),
+                ),
+            )
+        }
         item {
             GlassPanel(Modifier.fillMaxWidth().padding(top = 8.dp), padding = 14.dp) {
                 Row(verticalAlignment = Alignment.CenterVertically) {

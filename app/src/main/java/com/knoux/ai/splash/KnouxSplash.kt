@@ -316,7 +316,7 @@ private fun reducedMotion(context: Context): Boolean = try {
     false
 }
 
-/** One 70 ms synthesized click, loaded once, honoring mute / DND / app preference. */
+/** One 90 ms synthesized click, loaded once, honoring mute / DND / app preference. */
 private class SplashClickPlayer(private val context: Context) {
     private var pool: SoundPool? = null
     private var soundId = 0
@@ -349,7 +349,7 @@ private class SplashClickPlayer(private val context: Context) {
                 filter != NotificationManager.INTERRUPTION_FILTER_UNKNOWN
             ) return
         }
-        if (loaded) pool?.play(soundId, 0.9f, 0.9f, 1, 0, 1f)
+        if (loaded) pool?.play(soundId, 1f, 1f, 1, 0, 1f)
     }
 
     fun release() {

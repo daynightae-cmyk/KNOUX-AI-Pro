@@ -16,6 +16,10 @@ android {
         versionCode = 1
         versionName = "1.0.0"
         resourceConfigurations += listOf("en", "ar")
+
+        buildConfigField("String", "SUPABASE_URL", "\"https://tduofkizwkjtqcbklfah.supabase.co\"")
+        buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", "\"sb_publishable_19JCfWlBOdUng5LHAoMfRg_hlFl7YnC\"")
+        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"966864797292-6gqjaebu6n3il0777g3jf0q0mc22jr29.apps.googleusercontent.com\"")
     }
 
     buildTypes {
@@ -35,7 +39,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
-    buildFeatures { compose = true }
+    buildFeatures { compose = true; buildConfig = true }
     packaging {
         resources { excludes += setOf("/META-INF/{AL2.0,LGPL2.1}") }
     }
@@ -48,6 +52,10 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("androidx.navigation:navigation-compose:2.8.5")
+    implementation("androidx.biometric:biometric:1.1.0")
+    implementation("androidx.credentials:credentials:1.6.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.6.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.0")
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")

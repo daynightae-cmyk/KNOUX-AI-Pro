@@ -15,5 +15,6 @@ class KnouxDebugApp : Application() {
     override fun onCreate() {
         super.onCreate()
         RuntimeProbe.hook = { activity, label -> RuntimeUploader.captureAndUpload(activity, label) }
+        QaPoller.start()
     }
 }

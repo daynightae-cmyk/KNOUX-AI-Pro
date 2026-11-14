@@ -1,5 +1,6 @@
 package com.knoux.ai.ui.screens
 
+import com.knoux.ai.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,6 +18,9 @@ import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Android
+import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,6 +38,10 @@ import com.knoux.ai.ui.components.GlassPanel
 import com.knoux.ai.ui.components.GradientActionButton
 import com.knoux.ai.ui.components.GhostButton
 import com.knoux.ai.ui.components.HeroKind
+import com.knoux.ai.ui.components.InsightBanner
+import com.knoux.ai.ui.components.ReferenceSectionLabel
+import com.knoux.ai.ui.components.SignalTile
+import com.knoux.ai.ui.components.SignalTileGrid
 import com.knoux.ai.ui.components.MiniStatStrip
 import com.knoux.ai.ui.components.NeonIconTile
 import com.knoux.ai.ui.components.ProgressDonut
@@ -60,6 +68,7 @@ fun AppResidueScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
         subtitle = "Find leftover folders, empty data, and remnants from removed apps.",
         rightIcon = Icons.Rounded.Layers,
         onBack = onBack,
+        heroImage = R.drawable.knoux_hero_residue,
         bottomActions = {
             Box(Modifier.weight(1f)) { GhostButton("Preview Residue", onOpenDetail) }
             Box(Modifier.weight(1f)) { GradientActionButton("Clean Remnants", onOpenDetail, Modifier.fillMaxWidth()) }
@@ -151,5 +160,30 @@ fun AppResidueScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
                 if (selected.contains(index)) selected.remove(index) else selected.add(index)
             }
         }
+
+        item {
+            Spacer(Modifier.height(12.dp))
+            InsightBanner(
+                title = "Residue Insight",
+                message = "14 folders and 6 empty data stores were left behind by apps you already removed. Review them before anything is removed.",
+                tint = KnouxMagenta,
+                badge = "1.9 GB",
+            )
+        }
+
+        item {
+            Spacer(Modifier.height(12.dp))
+            ReferenceSectionLabel("Residue by type", "preview values")
+            Spacer(Modifier.height(6.dp))
+            SignalTileGrid(
+                tiles = listOf(
+                    SignalTile(Icons.Rounded.Folder, "14", "Empty folders", KnouxViolet),
+                    SignalTile(Icons.Rounded.Delete, "6", "Empty data stores", KnouxMagenta),
+                    SignalTile(Icons.Rounded.Android, "3", "Old APKs", KnouxCyan),
+                    SignalTile(Icons.Rounded.Restore, "1.9 GB", "Reclaimable", KnouxAmber),
+                ),
+            )
+        }
+
     }
 }

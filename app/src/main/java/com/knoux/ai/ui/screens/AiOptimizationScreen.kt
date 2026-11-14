@@ -1,5 +1,6 @@
 package com.knoux.ai.ui.screens
 
+import com.knoux.ai.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,6 +36,10 @@ import com.knoux.ai.ui.components.GlassPanel
 import com.knoux.ai.ui.components.GradientActionButton
 import com.knoux.ai.ui.components.GhostButton
 import com.knoux.ai.ui.components.HeroKind
+import com.knoux.ai.ui.components.InsightBanner
+import com.knoux.ai.ui.components.ReferenceSectionLabel
+import com.knoux.ai.ui.components.SignalTile
+import com.knoux.ai.ui.components.SignalTileGrid
 import com.knoux.ai.ui.components.MiniStatStrip
 import com.knoux.ai.ui.components.NeonIconTile
 import com.knoux.ai.ui.components.ProgressDonut
@@ -61,6 +66,7 @@ fun AiOptimizationScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
         subtitle = "Boost responsiveness, tune performance, and optimize battery usage intelligently.",
         rightIcon = Icons.Rounded.Memory,
         onBack = onBack,
+        heroImage = R.drawable.knoux_hero_ai,
         bottomActions = {
             Box(Modifier.weight(1f)) { GhostButton("See Recommendations", onOpenDetail) }
             Box(Modifier.weight(1f)) { GradientActionButton("Optimize Now", onOpenDetail, Modifier.fillMaxWidth()) }
@@ -152,5 +158,30 @@ fun AiOptimizationScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
                 if (selected.contains(index)) selected.remove(index) else selected.add(index)
             }
         }
+
+        item {
+            Spacer(Modifier.height(12.dp))
+            InsightBanner(
+                title = "AI Insight",
+                message = "Found 12 optimization opportunities that can free 2.4 GB of memory and extend battery life by up to 24%, keeping the device cooler and faster.",
+                tint = KnouxMagenta,
+                badge = "12 FOUND",
+            )
+        }
+
+        item {
+            Spacer(Modifier.height(12.dp))
+            ReferenceSectionLabel("Expected results", "estimated · not measured")
+            Spacer(Modifier.height(6.dp))
+            SignalTileGrid(
+                tiles = listOf(
+                    SignalTile(Icons.Rounded.Speed, "94 → 98", "Performance score", KnouxCyan, trailing = "+4"),
+                    SignalTile(Icons.Rounded.Memory, "+2.4 GB", "Memory recovered", KnouxMagenta),
+                    SignalTile(Icons.Rounded.BatteryChargingFull, "+18%", "Battery life", KnouxViolet),
+                    SignalTile(Icons.Rounded.Thermostat, "-6 C", "Peak temperature", KnouxAmber),
+                ),
+            )
+        }
+
     }
 }

@@ -1,5 +1,6 @@
 package com.knoux.ai.ui.screens
 
+import com.knoux.ai.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,6 +20,10 @@ import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.WarningAmber
+import androidx.compose.material.icons.rounded.Storage
+import androidx.compose.material.icons.rounded.Shield
+import androidx.compose.material.icons.rounded.Memory
+import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,6 +45,10 @@ import com.knoux.ai.ui.components.GradientActionButton
 import com.knoux.ai.ui.components.GradientProgressBar
 import com.knoux.ai.ui.components.GhostButton
 import com.knoux.ai.ui.components.HeroKind
+import com.knoux.ai.ui.components.InsightBanner
+import com.knoux.ai.ui.components.ReferenceSectionLabel
+import com.knoux.ai.ui.components.SignalTile
+import com.knoux.ai.ui.components.SignalTileGrid
 import com.knoux.ai.ui.components.MiniStatStrip
 import com.knoux.ai.ui.components.ProgressDonut
 import com.knoux.ai.ui.components.SummaryLine
@@ -62,6 +71,7 @@ fun DeepScanScreen(onBack: () -> Unit, onOpenSummary: () -> Unit) {
         subtitle = "Run an end-to-end device scan for junk, duplicates, privacy issues, and system health.",
         rightIcon = Icons.Rounded.Groups,
         onBack = onBack,
+        heroImage = R.drawable.knoux_hero_deepscan,
         bottomActions = {
             Box(Modifier.weight(1f)) {
                 GhostButton(
@@ -174,5 +184,30 @@ fun DeepScanScreen(onBack: () -> Unit, onOpenSummary: () -> Unit) {
                 )
             }
         }
+
+        item {
+            Spacer(Modifier.height(12.dp))
+            InsightBanner(
+                title = "Scan Insight",
+                message = "12 modules are checked in this pass. Junk files, duplicates and privacy signals stay separate so nothing is mixed up.",
+                tint = KnouxCyan,
+                badge = "12 MODULES",
+            )
+        }
+
+        item {
+            Spacer(Modifier.height(12.dp))
+            ReferenceSectionLabel("Scan signals", "preview values")
+            Spacer(Modifier.height(6.dp))
+            SignalTileGrid(
+                tiles = listOf(
+                    SignalTile(Icons.Rounded.Storage, "2.4 GB", "Reclaimable", KnouxMagenta),
+                    SignalTile(Icons.Rounded.Shield, "7", "Privacy alerts", KnouxCyan),
+                    SignalTile(Icons.Rounded.Memory, "5", "Apps to review", KnouxViolet),
+                    SignalTile(Icons.Rounded.Bolt, "5", "Battery sources", KnouxAmber),
+                ),
+            )
+        }
+
     }
 }

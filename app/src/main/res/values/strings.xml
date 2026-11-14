@@ -1,4 +1,7 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">KNOUX AI</string>
+    <!-- Production keys. Filled together with the owner in the pre-production
+         phase; the app stays in guest mode while they are placeholders. -->
+    <string name="google_web_client_id" translatable="false">966864797292-6gqjaebu6n3il0777g3jf0q0mc22jr29.apps.googleusercontent.com</string>
+    <string name="passkey_rp_id" translatable="false">knoux.store</string>
 </resources>

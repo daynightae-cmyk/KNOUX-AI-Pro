@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -24,10 +25,14 @@ import com.knoux.ai.ui.components.HeroKind
 import com.knoux.ai.ui.components.KnouxTopBar
 import com.knoux.ai.ui.components.NeonHero
 import com.knoux.ai.ui.components.PreviewDisclosure
+import com.knoux.ai.ui.components.ProBadge
+import com.knoux.ai.ui.components.ReferenceHeroBand
 import com.knoux.ai.ui.components.ScreenSubtitle
 import com.knoux.ai.ui.components.SettingsIconButton
 import com.knoux.ai.ui.components.ScreenTitle
 import com.knoux.ai.ui.components.TopLeading
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 
 /**
  * Shared layout for the nine inner tool screens: top bar, neon hero, italic
@@ -41,27 +46,47 @@ fun ToolScreenScaffold(
     subtitle: String,
     rightIcon: ImageVector,
     onBack: () -> Unit,
+    @DrawableRes heroImage: Int = 0,
+    onOpenSettings: (() -> Unit)? = null,
     bottomActions: @Composable RowScope.() -> Unit = {},
     body: LazyListScope.() -> Unit,
 ) {
     Column(Modifier.fillMaxSize()) {
-        KnouxTopBar(
-            leading = TopLeading.Back,
-            onLeadingClick = onBack,
-            right = { SettingsIconButton() },
-        )
-        LazyColumn(
-            modifier = Modifier.weight(1f),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 14.dp),
+        if (heroImage != 0) {
+            ReferenceHeroBand(
+                image = heroImage,
+                height = 116.dp,
+                contentDescription = "$title$accent hero artwork",
+            )
+        } else {
+            NeonHero(hero, height = 132.dp)
+        }
+
+        Column(
+            Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            item { NeonHero(hero, height = 168.dp) }
-            item { ScreenTitle(title, accent = accent) }
-            item { ScreenSubtitle(subtitle) }
-            item { PreviewDisclosure() }
-            item { Spacer(Modifier.height(10.dp)) }
+            ScreenTitle(
+                title,
+                accent = accent,
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
+            ScreenSubtitle(
+                subtitle,
+                modifier = Modifier.padding(horizontal = 20.dp),
+            )
+            Spacer(Modifier.height(4.dp))
+            PreviewDisclosure()
+            Spacer(Modifier.height(6.dp))
+        }
+
+        LazyColumn(
+            modifier = Modifier.weight(1f),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 12.dp),
+        ) {
             body()
         }
+
         Row(
             Modifier
                 .fillMaxWidth()
@@ -70,39 +95,6 @@ fun ToolScreenScaffold(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             bottomActions()
-        }
-    }
-}
-
-/** Empty placeholder used by the secondary tab indexes (Clean / Tools). */
-@Composable
-fun ToolIndexScreen(
-    title: String,
-    subtitle: String,
-    entries: List<Pair<String, String>>,
-    onOpen: (String) -> Unit,
-) {
-    Column(
-        Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp)
-    ) {
-        Spacer(Modifier.height(10.dp))
-        ScreenTitle(title, accent = "")
-        ScreenSubtitle(subtitle)
-        Spacer(Modifier.height(16.dp))
-        entries.forEach { (name, route) ->
-            Box(Modifier.padding(bottom = 10.dp)) {
-                com.knoux.ai.ui.components.FeatureRow(
-                    row = com.knoux.ai.ui.data.PreviewRow(
-                        title = name,
-                        subtitle = "Open the $name screen",
-                        badge = "",
-                        icon = com.knoux.ai.ui.data.Key.Chip,
-                    ),
-                    onClick = { onOpen(route) },
-                )
-            }
         }
     }
 }

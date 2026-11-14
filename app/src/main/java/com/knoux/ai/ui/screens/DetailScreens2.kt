@@ -1,5 +1,6 @@
 package com.knoux.ai.ui.screens
 
+import com.knoux.ai.R
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -31,6 +32,9 @@ import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material.icons.rounded.Thermostat
 import androidx.compose.material.icons.rounded.Warning
+import androidx.compose.material.icons.rounded.Image
+import androidx.compose.material.icons.rounded.Android
+import androidx.compose.material.icons.rounded.Apps
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -54,6 +58,10 @@ import com.knoux.ai.ui.components.GhostButton
 import com.knoux.ai.ui.components.GlassPanel
 import com.knoux.ai.ui.components.GradientActionButton
 import com.knoux.ai.ui.components.HeroKind
+import com.knoux.ai.ui.components.InsightBanner
+import com.knoux.ai.ui.components.ReferenceSectionLabel
+import com.knoux.ai.ui.components.SignalTile
+import com.knoux.ai.ui.components.SignalTileGrid
 import com.knoux.ai.ui.components.MiniStatStrip
 import com.knoux.ai.ui.components.NeonIconTile
 import com.knoux.ai.ui.components.PreviewDisclosure
@@ -91,12 +99,26 @@ fun ResidueItemReviewScreen(onBack: () -> Unit) {
         accent = "Review",
         subtitle = "Real URI evidence, confidence, and an explicit exclusion gate before any cleanup.",
         onBack = onBack,
+        heroImage = R.drawable.knoux_hero_residue_item,
         actions = {
             Box(Modifier.weight(1f)) { GhostButton("Exclusions", { dialog = true }, Modifier.fillMaxWidth()) }
             Box(Modifier.weight(1f)) { GradientActionButton("Review Cleanup", { dialog = true }, Modifier.fillMaxWidth()) }
         },
     ) {
         item { PreviewDisclosure() }
+
+        item {
+            ReferenceSectionLabel("Residue summary", "preview values")
+            Spacer(Modifier.height(6.dp))
+            SignalTileGrid(
+                tiles = listOf(
+                    SignalTile(Icons.Rounded.Folder, "14", "Empty folders", KnouxViolet),
+                    SignalTile(Icons.Rounded.Image, "624 MB", "Leftover media", KnouxMagenta),
+                    SignalTile(Icons.Rounded.Android, "3", "Old APKs", KnouxCyan),
+                    SignalTile(Icons.Rounded.Storage, "1.9 GB", "Reclaimable", KnouxAmber),
+                ),
+            )
+        }
         item { MiniStatStrip(Fixtures.residueMetrics) }
         item { NoticePanel(Icons.Rounded.Shield, "Unknown or inaccessible items are excluded by default. Another app's private /Android/data is never offered for deletion on modern Android.", KnouxAmber) }
         item { DetailSectionTitle("Candidate Inventory", "Sample paths · confidence must come from a real scan") }
@@ -139,6 +161,7 @@ fun InstalledAppsReviewScreen(onBack: () -> Unit) {
         accent = "Review",
         subtitle = "Grouped inventory with honest Android handoffs for app info and uninstall.",
         onBack = onBack,
+        heroImage = R.drawable.knoux_hero_apps,
         actions = {
             Box(Modifier.weight(1f)) { GhostButton("Unused Apps", { dialog = true }, Modifier.fillMaxWidth()) }
             Box(Modifier.weight(1f)) { GradientActionButton("App Settings", {
@@ -147,6 +170,19 @@ fun InstalledAppsReviewScreen(onBack: () -> Unit) {
         },
     ) {
         item { PreviewDisclosure() }
+
+        item {
+            ReferenceSectionLabel("App inventory", "preview values")
+            Spacer(Modifier.height(6.dp))
+            SignalTileGrid(
+                tiles = listOf(
+                    SignalTile(Icons.Rounded.Apps, "41", "Apps listed", KnouxMagenta),
+                    SignalTile(Icons.Rounded.Bolt, "27", "Rarely used", KnouxCyan),
+                    SignalTile(Icons.Rounded.Storage, "21.2 GB", "App storage", KnouxViolet),
+                    SignalTile(Icons.Rounded.Folder, "12", "Heavy apps", KnouxAmber),
+                ),
+            )
+        }
         item { MiniStatStrip(Fixtures.appManagerMetrics) }
         item { NoticePanel(Icons.Rounded.Shield, "Uninstall always uses Android's standard confirmation screen. Usage-based grouping needs Usage Access; package visibility limits what a normal app can enumerate.", KnouxCyan) }
         item { DetailSectionTitle("App Groups", "Sample counts · tap App Settings for the real OS list") }
@@ -185,6 +221,7 @@ fun StorageBreakdownScreen(onBack: () -> Unit) {
         accent = "Breakdown",
         subtitle = "Category totals reconciled against device storage, with unclassified space shown.",
         onBack = onBack,
+        heroImage = R.drawable.knoux_hero_storage_breakdown,
         actions = {
             Box(Modifier.weight(1f)) { GhostButton("Large Files", { dialog = true }, Modifier.fillMaxWidth()) }
             Box(Modifier.weight(1f)) { GradientActionButton("System Storage", {
@@ -193,6 +230,19 @@ fun StorageBreakdownScreen(onBack: () -> Unit) {
         },
     ) {
         item { PreviewDisclosure() }
+
+        item {
+            ReferenceSectionLabel("Space overview", "preview values")
+            Spacer(Modifier.height(6.dp))
+            SignalTileGrid(
+                tiles = listOf(
+                    SignalTile(Icons.Rounded.Storage, "128 GB", "Used space", KnouxMagenta),
+                    SignalTile(Icons.Rounded.Folder, "256 GB", "Total space", KnouxCyan),
+                    SignalTile(Icons.Rounded.Apps, "48.6 GB", "Apps & games", KnouxViolet),
+                    SignalTile(Icons.Rounded.Image, "24.7 GB", "Cleanup potential", KnouxAmber),
+                ),
+            )
+        }
         item {
             GlassPanel(Modifier.fillMaxWidth(), padding = 14.dp) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -315,6 +365,27 @@ fun BatteryDiagnosticsScreen(onBack: () -> Unit) {
         },
     ) {
         item { PreviewDisclosure() }
+
+        item {
+            InsightBanner(
+                title = "Live device readings",
+                message = "These numbers come from Android BatteryManager, not from a preview table. Anything the platform hides stays labelled unavailable.",
+                tint = KnouxCyan,
+                badge = "LIVE",
+            )
+        }
+        item {
+            ReferenceSectionLabel("Reading summary", "from BatteryManager")
+            Spacer(Modifier.height(6.dp))
+            SignalTileGrid(
+                tiles = listOf(
+                    SignalTile(Icons.Rounded.BatteryChargingFull, "37 C", "Temperature", KnouxAmber),
+                    SignalTile(Icons.Rounded.Memory, "—", "Charge cycles", KnouxMagenta),
+                    SignalTile(Icons.Rounded.Shield, "—", "Per-app drain", KnouxViolet),
+                    SignalTile(Icons.Rounded.Thermostat, "—", "Health history", KnouxCyan),
+                ),
+            )
+        }
         item {
             GlassPanel(Modifier.fillMaxWidth(), padding = 14.dp) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -367,12 +438,26 @@ fun AiRecommendationsScreen(onBack: () -> Unit) {
         accent = "Recommendations",
         subtitle = "Deterministic, evidence-labelled suggestions with supported OS handoffs.",
         onBack = onBack,
+        heroImage = R.drawable.knoux_hero_ai_recommendations,
         actions = {
             Box(Modifier.weight(1f)) { GhostButton("Evidence", { dialog = true }, Modifier.fillMaxWidth()) }
             Box(Modifier.weight(1f)) { GradientActionButton("Apply Selected", { dialog = true }, Modifier.fillMaxWidth()) }
         },
     ) {
         item { PreviewDisclosure() }
+
+        item {
+            ReferenceSectionLabel("Plan impact", "estimated · not measured")
+            Spacer(Modifier.height(6.dp))
+            SignalTileGrid(
+                tiles = listOf(
+                    SignalTile(Icons.Rounded.AutoAwesome, "12", "Actions planned", KnouxMagenta),
+                    SignalTile(Icons.Rounded.Memory, "+2.4 GB", "Memory recovered", KnouxCyan),
+                    SignalTile(Icons.Rounded.BatteryChargingFull, "+18%", "Battery life", KnouxViolet),
+                    SignalTile(Icons.Rounded.Thermostat, "-6 C", "Peak temperature", KnouxAmber),
+                ),
+            )
+        }
         item { NoticePanel(Icons.Rounded.AutoAwesome, "No on-device model is connected in this UI milestone. These are deterministic rule-based previews, clearly separated from measured facts and estimated outcomes.", KnouxViolet) }
         item { MiniStatStrip(Fixtures.aiMetrics) }
         item { DetailSectionTitle("Recommendation Plan", "Select actions you want to review") }

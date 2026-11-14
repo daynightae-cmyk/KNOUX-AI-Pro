@@ -1,5 +1,6 @@
 package com.knoux.ai.ui.screens
 
+import com.knoux.ai.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -20,6 +21,9 @@ import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.Event
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material.icons.rounded.Visibility
+import androidx.compose.material.icons.rounded.CameraAlt
+import androidx.compose.material.icons.rounded.Mic
+import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,6 +44,10 @@ import com.knoux.ai.ui.components.GlassPanel
 import com.knoux.ai.ui.components.GradientActionButton
 import com.knoux.ai.ui.components.GhostButton
 import com.knoux.ai.ui.components.HeroKind
+import com.knoux.ai.ui.components.InsightBanner
+import com.knoux.ai.ui.components.ReferenceSectionLabel
+import com.knoux.ai.ui.components.SignalTile
+import com.knoux.ai.ui.components.SignalTileGrid
 import com.knoux.ai.ui.components.MiniStatStrip
 import com.knoux.ai.ui.components.NeonIconTile
 import com.knoux.ai.ui.components.ProgressDonut
@@ -66,6 +74,7 @@ fun PrivacySweepScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
         subtitle = "Review trackers, risky permissions, and privacy exposure indicators.",
         rightIcon = Icons.Rounded.Shield,
         onBack = onBack,
+        heroImage = R.drawable.knoux_hero_privacy,
         bottomActions = {
             Box(Modifier.weight(1f)) { GhostButton("Review Risks", onOpenDetail) }
             Box(Modifier.weight(1f)) { GradientActionButton("Improve Privacy", onOpenDetail, Modifier.fillMaxWidth()) }
@@ -157,5 +166,30 @@ fun PrivacySweepScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
                 if (selected.contains(index)) selected.remove(index) else selected.add(index)
             }
         }
+
+        item {
+            Spacer(Modifier.height(12.dp))
+            InsightBanner(
+                title = "Privacy Insight",
+                message = "5 apps combine sensitive permissions in ways worth a second look. Android always keeps the final say.",
+                tint = KnouxMagenta,
+                badge = "5 TO REVIEW",
+            )
+        }
+
+        item {
+            Spacer(Modifier.height(12.dp))
+            ReferenceSectionLabel("Permission signals", "preview values")
+            Spacer(Modifier.height(6.dp))
+            SignalTileGrid(
+                tiles = listOf(
+                    SignalTile(Icons.Rounded.CameraAlt, "2 apps", "Camera access", KnouxMagenta),
+                    SignalTile(Icons.Rounded.Mic, "1 app", "Microphone", KnouxAmber),
+                    SignalTile(Icons.Rounded.LocationOn, "3 apps", "Location", KnouxCyan),
+                    SignalTile(Icons.Rounded.Shield, "7", "Ad SDK flags", KnouxViolet),
+                ),
+            )
+        }
+
     }
 }

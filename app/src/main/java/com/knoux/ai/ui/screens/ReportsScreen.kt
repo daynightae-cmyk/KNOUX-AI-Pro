@@ -1,5 +1,6 @@
 package com.knoux.ai.ui.screens
 
+import com.knoux.ai.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,12 +12,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.Event
 import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material.icons.rounded.EmojiEvents
 import androidx.compose.material.icons.rounded.TrendingUp
+import androidx.compose.material.icons.rounded.Storage
+import androidx.compose.material.icons.rounded.CleaningServices
+import androidx.compose.material.icons.rounded.Timer
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,6 +39,10 @@ import com.knoux.ai.ui.components.GlassPanel
 import com.knoux.ai.ui.components.GradientActionButton
 import com.knoux.ai.ui.components.GhostButton
 import com.knoux.ai.ui.components.HeroKind
+import com.knoux.ai.ui.components.InsightBanner
+import com.knoux.ai.ui.components.ReferenceSectionLabel
+import com.knoux.ai.ui.components.SignalTile
+import com.knoux.ai.ui.components.SignalTileGrid
 import com.knoux.ai.ui.components.MiniStatStrip
 import com.knoux.ai.ui.components.NeonIconTile
 import com.knoux.ai.ui.components.ProgressDonut
@@ -55,6 +64,7 @@ fun ReportsScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
         subtitle = "Track cleanups, storage gains, optimization history, and device health trends.",
         rightIcon = Icons.Rounded.BarChart,
         onBack = onBack,
+        heroImage = R.drawable.knoux_hero_reports,
         bottomActions = {
             Box(Modifier.weight(1f)) { GhostButton("View History", onOpenDetail) }
             Box(Modifier.weight(1f)) { GradientActionButton("Generate Report", onOpenDetail, Modifier.fillMaxWidth()) }
@@ -139,9 +149,72 @@ fun ReportsScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
             }
         }
 
+        item {
+            Spacer(Modifier.height(12.dp))
+            ReferenceSectionLabel("Seven-day trend", "preview values")
+            Spacer(Modifier.height(6.dp))
+            GlassPanel(Modifier.fillMaxWidth(), padding = 14.dp) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(108.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.Bottom,
+                ) {
+                    listOf(0.55f, 0.68f, 0.62f, 0.74f, 0.71f, 0.86f, 0.92f)
+                        .forEachIndexed { index, value ->
+                            Column(
+                                Modifier.weight(1f),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                Box(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .height((80 * value).dp)
+                                        .clip(RoundedCornerShape(7.dp))
+                                        .background(
+                                            Brush.verticalGradient(listOf(KnouxCyan, KnouxViolet))
+                                        ),
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    listOf("M", "T", "W", "T", "F", "S", "S")[index],
+                                    style = TextStyle(fontSize = 8.5.sp, color = KnouxSoftText),
+                                )
+                            }
+                        }
+                }
+            }
+        }
+
         items(Fixtures.reportRows.size) { index ->
             Spacer(Modifier.height(8.dp))
             FeatureRow(row = Fixtures.reportRows[index], onClick = onOpenDetail)
         }
+
+        item {
+            Spacer(Modifier.height(12.dp))
+            InsightBanner(
+                title = "Trend Insight",
+                message = "Storage reclaimed is up 18% week over week and the device score rose 6 points after the last cleanup run.",
+                tint = KnouxMagenta,
+                badge = "+18%",
+            )
+        }
+
+        item {
+            Spacer(Modifier.height(12.dp))
+            ReferenceSectionLabel("This week", "preview values")
+            Spacer(Modifier.height(6.dp))
+            SignalTileGrid(
+                tiles = listOf(
+                    SignalTile(Icons.Rounded.Storage, "12.6 GB", "Space saved", KnouxCyan),
+                    SignalTile(Icons.Rounded.CleaningServices, "7", "Cleanups run", KnouxMagenta),
+                    SignalTile(Icons.Rounded.Timer, "2m 14s", "Average duration", KnouxViolet),
+                    SignalTile(Icons.Rounded.TrendingUp, "+6%", "Device score", KnouxAmber),
+                ),
+            )
+        }
+
     }
 }

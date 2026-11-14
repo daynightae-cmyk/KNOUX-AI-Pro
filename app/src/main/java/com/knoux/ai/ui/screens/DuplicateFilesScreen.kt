@@ -1,5 +1,6 @@
 package com.knoux.ai.ui.screens
 
+import com.knoux.ai.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,6 +19,10 @@ import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material.icons.rounded.Groups
+import androidx.compose.material.icons.rounded.Image
+import androidx.compose.material.icons.rounded.Movie
+import androidx.compose.material.icons.rounded.MusicNote
+import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,6 +37,10 @@ import com.knoux.ai.ui.components.GlassPanel
 import com.knoux.ai.ui.components.GradientActionButton
 import com.knoux.ai.ui.components.GhostButton
 import com.knoux.ai.ui.components.HeroKind
+import com.knoux.ai.ui.components.InsightBanner
+import com.knoux.ai.ui.components.ReferenceSectionLabel
+import com.knoux.ai.ui.components.SignalTile
+import com.knoux.ai.ui.components.SignalTileGrid
 import com.knoux.ai.ui.components.MiniStatStrip
 import com.knoux.ai.ui.components.NeonIconTile
 import com.knoux.ai.ui.components.ProgressDonut
@@ -53,6 +62,7 @@ fun DuplicateFilesScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
         subtitle = "Detect and review duplicate photos, videos, audio, and documents.",
         rightIcon = Icons.Rounded.Groups,
         onBack = onBack,
+        heroImage = R.drawable.knoux_hero_duplicates,
         bottomActions = {
             Box(Modifier.weight(1f)) { GhostButton("Preview Groups", onOpenDetail) }
             Box(Modifier.weight(1f)) { GradientActionButton("Review & Remove", onOpenDetail, Modifier.fillMaxWidth()) }
@@ -140,5 +150,30 @@ fun DuplicateFilesScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
                 onClick = onOpenDetail,
             )
         }
+
+        item {
+            Spacer(Modifier.height(12.dp))
+            InsightBanner(
+                title = "Duplicate Insight",
+                message = "1,248 copies were hashed across photos, video, audio and documents. Every group keeps one protected original.",
+                tint = KnouxCyan,
+                badge = "1,248 FOUND",
+            )
+        }
+
+        item {
+            Spacer(Modifier.height(12.dp))
+            ReferenceSectionLabel("Duplicates by type", "preview values")
+            Spacer(Modifier.height(6.dp))
+            SignalTileGrid(
+                tiles = listOf(
+                    SignalTile(Icons.Rounded.Image, "1,248", "Photos", KnouxCyan),
+                    SignalTile(Icons.Rounded.Movie, "86", "Videos", KnouxMagenta),
+                    SignalTile(Icons.Rounded.MusicNote, "12", "Audio files", KnouxViolet),
+                    SignalTile(Icons.Rounded.Description, "34", "Documents", KnouxAmber),
+                ),
+            )
+        }
+
     }
 }

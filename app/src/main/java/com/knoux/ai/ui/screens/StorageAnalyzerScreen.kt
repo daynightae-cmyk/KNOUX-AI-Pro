@@ -1,5 +1,6 @@
 package com.knoux.ai.ui.screens
 
+import com.knoux.ai.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -21,6 +22,9 @@ import androidx.compose.material.icons.rounded.Event
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material.icons.rounded.TrendingUp
 import androidx.compose.material.icons.rounded.EmojiEvents
+import androidx.compose.material.icons.rounded.Apps
+import androidx.compose.material.icons.rounded.Image
+import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,6 +42,10 @@ import com.knoux.ai.ui.components.GradientActionButton
 import com.knoux.ai.ui.components.GradientProgressBar
 import com.knoux.ai.ui.components.GhostButton
 import com.knoux.ai.ui.components.HeroKind
+import com.knoux.ai.ui.components.InsightBanner
+import com.knoux.ai.ui.components.ReferenceSectionLabel
+import com.knoux.ai.ui.components.SignalTile
+import com.knoux.ai.ui.components.SignalTileGrid
 import com.knoux.ai.ui.components.MiniStatStrip
 import com.knoux.ai.ui.components.NeonIconTile
 import com.knoux.ai.ui.components.ProgressDonut
@@ -62,6 +70,7 @@ fun StorageAnalyzerScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
         subtitle = "Understand storage usage, large files, and space distribution.",
         rightIcon = Icons.Rounded.Storage,
         onBack = onBack,
+        heroImage = R.drawable.knoux_hero_storage,
         bottomActions = {
             Box(Modifier.weight(1f)) { GhostButton("View Breakdown", onOpenDetail) }
             Box(Modifier.weight(1f)) { GradientActionButton("Manage Space", onOpenDetail, Modifier.fillMaxWidth()) }
@@ -180,5 +189,30 @@ fun StorageAnalyzerScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
             }
             Spacer(Modifier.height(10.dp))
         }
+
+        item {
+            Spacer(Modifier.height(12.dp))
+            InsightBanner(
+                title = "Storage Insight",
+                message = "Apps and media hold most of the space. Clearing 2.4 GB of reclaimable cache would lift free space back above 60%.",
+                tint = KnouxCyan,
+                badge = "2.4 GB",
+            )
+        }
+
+        item {
+            Spacer(Modifier.height(12.dp))
+            ReferenceSectionLabel("Category breakdown", "preview values")
+            Spacer(Modifier.height(6.dp))
+            SignalTileGrid(
+                tiles = listOf(
+                    SignalTile(Icons.Rounded.Apps, "48.6 GB", "Apps & games", KnouxMagenta),
+                    SignalTile(Icons.Rounded.Image, "36.8 GB", "Media", KnouxCyan),
+                    SignalTile(Icons.Rounded.Folder, "8.4 GB", "Documents", KnouxViolet),
+                    SignalTile(Icons.Rounded.Storage, "22.2 GB", "System files", KnouxAmber),
+                ),
+            )
+        }
+
     }
 }

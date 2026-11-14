@@ -1,5 +1,6 @@
 package com.knoux.ai.ui.components
 
+import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
@@ -35,24 +37,40 @@ fun DetailScaffold(
     accent: String,
     subtitle: String,
     onBack: () -> Unit,
+    @DrawableRes heroImage: Int = 0,
+    onOpenSettings: (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
     body: LazyListScope.() -> Unit,
 ) {
     Column(Modifier.fillMaxSize()) {
-        KnouxTopBar(
-            leading = TopLeading.Back,
-            onLeadingClick = onBack,
-            right = { SettingsIconButton() },
-        )
+        if (heroImage != 0) {
+            ReferenceHeroBand(
+                image = heroImage,
+                height = 116.dp,
+                contentDescription = "$title$accent hero artwork",
+            )
+        } else {
+            NeonHero(hero, height = 132.dp)
+        }
+        Column(
+            Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            ScreenTitle(
+                title,
+                accent = accent,
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
+            ScreenSubtitle(
+                subtitle,
+                modifier = Modifier.padding(horizontal = 20.dp),
+            )
+            Spacer(Modifier.height(6.dp))
+        }
         LazyColumn(
             modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            item { NeonHero(hero, height = 132.dp) }
-            item { ScreenTitle(title, accent = accent) }
-            item { ScreenSubtitle(subtitle) }
-            item { Spacer(Modifier.height(10.dp)) }
             body()
         }
         Row(

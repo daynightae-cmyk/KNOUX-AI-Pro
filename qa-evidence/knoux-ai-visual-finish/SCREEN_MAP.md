@@ -37,6 +37,20 @@
 - Battery screen reads level/status/temperature/voltage/health/technology live
   from the `ACTION_BATTERY_CHANGED` sticky intent.
 
+## Hubs and back navigation (refinement 6+)
+
+- `clean` and `tools` are no longer generic link lists. Each one is a designed
+  hub (`ServiceHubScreen`): a constellation hero built from the real 3D tool
+  artwork, one featured service card, and one bespoke card per tool with its
+  own artwork, preview value and destination.
+- Tool artwork (`knoux_svc_*.png`) is cut from the matching reference screen
+  and cut with the same luminance-alpha rule as the Home glyphs, so the object
+  floats on the glass instead of sitting inside a cropped tile.
+- Back navigation is explicit: every service and detail screen returns to its
+  own hub (`backToHub`), and each tab keeps one predictable stack
+  (`hub -> service -> detail`). Saved-state tab stacks were removed because
+  they made the top-bar back arrow look dead.
+
 ## Current verification status
 
 - Compilation and APK packaging: **VERIFIED**.
