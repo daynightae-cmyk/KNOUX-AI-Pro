@@ -1,31 +1,26 @@
 package com.knoux.ai
 
-import android.app.Activity
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.scaleOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,8 +29,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -43,58 +36,43 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.knoux.ai.splash.KnouxSplashScreen
-import com.knoux.ai.ui.components.KnouxBackground
-import com.knoux.ai.ui.components.KnouxAppHeader
-import com.knoux.ai.ui.components.KnouxBottomBar
-import com.knoux.ai.ui.components.SettingsIconButton
-import com.knoux.ai.ui.components.TopLeading
-import com.knoux.ai.ui.components.MainTab
-import com.knoux.ai.ui.debug.QaCommandBus
-import com.knoux.ai.ui.debug.RuntimeProbe
-import com.knoux.ai.ui.screens.AiOptimizationScreen
-import com.knoux.ai.ui.screens.AppManagerScreen
-import com.knoux.ai.ui.screens.AppResidueScreen
-import com.knoux.ai.ui.screens.AiRecommendationsScreen
-import com.knoux.ai.ui.screens.BatteryDiagnosticsScreen
-import com.knoux.ai.ui.screens.BatterySaverScreen
-import com.knoux.ai.ui.screens.DeepScanScreen
-import com.knoux.ai.ui.screens.DeepScanSummaryScreen
-import com.knoux.ai.ui.screens.DuplicateFilesScreen
-import com.knoux.ai.ui.screens.DuplicateGroupReviewScreen
-import com.knoux.ai.ui.screens.HomeScreen
-import com.knoux.ai.ui.screens.InstalledAppsReviewScreen
-import com.knoux.ai.ui.screens.PerformanceReportDetailScreen
-import com.knoux.ai.ui.screens.PrivacyRiskInspectorScreen
-import com.knoux.ai.ui.screens.ResidueItemReviewScreen
-import com.knoux.ai.ui.screens.SmartCleanCenterScreen
-import com.knoux.ai.ui.screens.StorageBreakdownScreen
-import com.knoux.ai.ui.screens.PrivacySweepScreen
-import com.knoux.ai.ui.screens.ReportsScreen
-import com.knoux.ai.ui.screens.StorageAnalyzerScreen
-import com.knoux.ai.ui.screens.HubService
-import com.knoux.ai.ui.screens.ServiceHubScreen
-import com.knoux.ai.ui.screens.SettingsScreen
-import com.knoux.ai.ui.screens.WelcomeScreen
-import com.knoux.ai.ui.components.LocalOpenSettings
 import com.knoux.ai.ui.theme.KnouxTheme
-import com.knoux.ai.ui.theme.KnouxCyan
-import com.knoux.ai.ui.theme.KnouxMagenta
-import com.knoux.ai.ui.theme.KnouxViolet
-import com.knoux.ai.R
-import kotlinx.coroutines.delay
+import com.knoux.ai.ui.v2.V2AiRecommendationsScreen
+import com.knoux.ai.ui.v2.V2AiScreen
+import com.knoux.ai.ui.v2.V2AppDetailScreen
+import com.knoux.ai.ui.v2.V2AppManagerScreen
+import com.knoux.ai.ui.v2.V2Background
+import com.knoux.ai.ui.v2.V2BatteryDiagnosticsScreen
+import com.knoux.ai.ui.v2.V2BatteryScreen
+import com.knoux.ai.ui.v2.V2BottomBar
+import com.knoux.ai.ui.v2.V2CleanHubScreen
+import com.knoux.ai.ui.v2.V2DeepScanScreen
+import com.knoux.ai.ui.v2.V2DuplicateGroupScreen
+import com.knoux.ai.ui.v2.V2DuplicatesScreen
+import com.knoux.ai.ui.v2.V2HomeScreen
+import com.knoux.ai.ui.v2.V2PerformanceReportScreen
+import com.knoux.ai.ui.v2.V2PrivacyRiskScreen
+import com.knoux.ai.ui.v2.V2PrivacyScreen
+import com.knoux.ai.ui.v2.V2ProScreen
+import com.knoux.ai.ui.v2.V2ReportsScreen
+import com.knoux.ai.ui.v2.V2ResidueReviewScreen
+import com.knoux.ai.ui.v2.V2ResidueScreen
+import com.knoux.ai.ui.v2.V2ScanSummaryScreen
+import com.knoux.ai.ui.v2.V2SettingsScreenV2
+import com.knoux.ai.ui.v2.V2SmartCleanScreen
+import com.knoux.ai.ui.v2.V2StorageBreakdownScreen
+import com.knoux.ai.ui.v2.V2StorageScreen
+import com.knoux.ai.ui.v2.V2ToolsHubScreen
 
 class MainActivity : androidx.fragment.app.FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // Debug-only route injection so every screen can be inspected directly with adb.
+        val debugRoute = if (BuildConfig.DEBUG) intent?.getStringExtra("route") else null
         setContent {
             KnouxTheme {
-                // The visual references are LTR English screens. Keep layout
-                // direction stable until a real Arabic/RTL localization pass
-                // (with translated strings) is added.
-                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                    KnouxApp(activity = this@MainActivity)
-                }
+                KnouxApp(startRoute = debugRoute)
             }
         }
     }
@@ -104,407 +82,263 @@ private const val ROUTE_HOME = "home"
 private const val ROUTE_CLEAN = "clean"
 private const val ROUTE_TOOLS = "tools"
 private const val ROUTE_REPORTS = "reports"
+private const val ROUTE_PRO = "pro"
 private const val SETTINGS_ROUTE = "settings"
 
+private const val ROUTE_APP_DETAIL = "app-detail"
+
 @Composable
-fun KnouxApp(activity: Activity? = null) {
-    var splashDone by rememberSaveable { mutableStateOf(false) }
-    var welcomeDone by rememberSaveable { mutableStateOf(false) }
+fun KnouxApp(startRoute: String? = null) {
+    var splashDone by rememberSaveable { mutableStateOf(!startRoute.isNullOrBlank()) }
     var accountInfoVisible by remember { mutableStateOf(false) }
     val nav = rememberNavController()
-    var tab by rememberSaveable { mutableStateOf(MainTab.Home) }
     val backStackEntry by nav.currentBackStackEntryAsState()
-    val route = backStackEntry?.destination?.route
+    val route = backStackEntry?.destination?.route ?: ROUTE_HOME
 
-    LaunchedEffect(route, splashDone) {
-        if (!splashDone) {
-            delay(2600)
-            RuntimeProbe.capture(activity, "00_splash")
-        } else {
-            delay(900)
-            RuntimeProbe.capture(activity, route ?: "unknown")
+    val open: (String) -> Unit = { target ->
+        nav.navigate(target) { launchSingleTop = true }
+    }
+    val goBack: () -> Unit = {
+        if (!nav.popBackStack()) {
+            nav.navigate(ROUTE_HOME) { launchSingleTop = true }
+        }
+    }
+    val openTab: (String) -> Unit = { target ->
+        nav.navigate(target) {
+            popUpTo(ROUTE_HOME) { inclusive = false }
+            launchSingleTop = true
         }
     }
 
-    // Keep the bottom navigation in sync with detail routes. The references
-    // show Clean active while the Smart Clean Center is open, Tools active for
-    // storage/privacy/battery details, and Reports active for report details.
-    LaunchedEffect(route) {
-        tab = when (route) {
-            ROUTE_HOME -> MainTab.Home
-            ROUTE_CLEAN, "smartclean", "deepscan", "duplicates", "residue",
-            "duplicate-group", "deep-scan-summary", "residue-item" -> MainTab.Clean
-            ROUTE_TOOLS, "storage", "appmanager", "privacy", "battery", "ai",
-            "storage-breakdown", "installed-apps", "battery-diagnostics",
-            "ai-recommendations", "privacy-risk" -> MainTab.Tools
-            ROUTE_REPORTS, "performance-report" -> MainTab.Reports
-            else -> MainTab.Home
-        }
-    }
-
-    // Debug-only visual QA bridge. The debug application polls the loopback dev
-    // server and posts routes here. Release builds have no poller, so this
-    // collector stays idle and normal user navigation is untouched.
-    LaunchedEffect(splashDone) {
-        if (!splashDone) return@LaunchedEffect
-        QaCommandBus.commands.collect { raw ->
-            val command = raw.trim()
-            if (command.isEmpty()) return@collect
-            // The visual QA bridge drives the app directly, so the welcome
-            // gate must not block automated navigation.
-            welcomeDone = true
-            if (command == "back") {
-                nav.popBackStack()
-                delay(1100)
-                RuntimeProbe.capture(activity, "qa_back")
-            } else {
-                val target = when (command) {
-                    "home" -> ROUTE_HOME
-                    "clean" -> ROUTE_CLEAN
-                    "tools" -> ROUTE_TOOLS
-                    "reports" -> ROUTE_REPORTS
-                    else -> command
-                }
-                nav.navigate(target) { launchSingleTop = true }
-                delay(1100)
-                val safe = target.replace(Regex("[^A-Za-z0-9._-]"), "_")
-                RuntimeProbe.capture(activity, "qa_$safe")
-            }
-        }
-    }
-
-    CompositionLocalProvider(
-        LocalOpenSettings provides { nav.navigate(SETTINGS_ROUTE) },
-    ) {
     Box(Modifier.fillMaxSize()) {
-        KnouxBackground()
+        V2Background()
+
         Crossfade(
-            targetState = when {
-                !splashDone -> 0
-                !welcomeDone -> 1
-                else -> 2
-            },
+            targetState = splashDone,
             animationSpec = tween(420),
             label = "splash-handoff",
-        ) { stage ->
-        if (stage == 0) {
-            KnouxSplashScreen(onFinished = { splashDone = true })
-        } else if (stage == 1) {
-            WelcomeScreen(
-                onContinueAsGuest = { welcomeDone = true },
-                onOpenAccountInfo = { accountInfoVisible = true },
-            )
-        } else {
-        Scaffold(
-            containerColor = Color.Transparent,
-            contentWindowInsets = WindowInsets.statusBars,
-            bottomBar = {
-                Column(
-                    Modifier
-                        .fillMaxWidth()
-                        .windowInsetsPadding(WindowInsets.navigationBars),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    KnouxBottomBar(
-                        selected = tab,
-                        onSelect = { selected ->
-                            tab = selected
-                            nav.switchTab(selected)
-                        },
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+        ) { ready ->
+            if (!ready) {
+                KnouxSplashScreen(onFinished = { splashDone = true })
+            } else {
+                Scaffold(
+                    containerColor = Color.Transparent,
+                    contentWindowInsets = WindowInsets(0, 0, 0, 0),
+                    bottomBar = {
+                        if (route != SETTINGS_ROUTE) {
+                            Column(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .windowInsetsPadding(WindowInsets.navigationBars),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                V2BottomBar(
+                                    selectedRoute = route,
+                                    onSelect = { tab -> openTab(tab) },
+                                )
+                            }
+                        }
+                    },
+                ) { inner ->
+                    AppNavHost(
+                        nav = nav,
+                        startRoute = startRoute,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(inner),
+                        open = open,
+                        goBack = goBack,
+                        onAccount = { accountInfoVisible = true },
                     )
                 }
-            },
-        ) { inner ->
-            Column(Modifier.fillMaxSize()) {
-            // ONE global header owned by the navigation level. No screen draws
-            // its own, which removes the duplicated logo / Pro badge / settings
-            // icon / back arrow defect at its compositional root cause.
-            KnouxAppHeader(
-                leading = if (route == ROUTE_HOME) TopLeading.Menu else TopLeading.Back,
-                onLeadingClick = {
-                    when (route) {
-                        ROUTE_HOME -> nav.switchTab(MainTab.Clean)
-                        ROUTE_CLEAN, ROUTE_TOOLS, ROUTE_REPORTS -> nav.switchTab(MainTab.Home)
-                        else -> nav.backToHub(hubFor(route))
-                    }
-                },
-                accent = accentFor(route),
-                right = { SettingsIconButton() },
-            )
-            NavHost(
-                navController = nav,
-                startDestination = ROUTE_HOME,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(inner),
-                enterTransition = {
-                    fadeIn(tween(300)) + scaleIn(initialScale = 0.985f, animationSpec = tween(300))
-                },
-                exitTransition = { fadeOut(tween(190)) },
-                popEnterTransition = { fadeIn(tween(280)) },
-                popExitTransition = { fadeOut(tween(220)) + scaleOut(targetScale = 1.015f) },
-            ) {
-                composable(ROUTE_HOME) { HomeScreen(onNavigate = { nav.navigate(it) }) }
-                composable(ROUTE_CLEAN) {
-                    ServiceHubScreen(
-                        title = "Smart ",
-                        accent = "Clean",
-                        subtitle = "Junk, duplicates and residue — every step previewed before anything is touched.",
-                        featured = HubService(
-                            title = "Smart Clean Center",
-                            subtitle = "Review each junk category with its real size, then clean only what you confirm.",
-                            route = "smartclean",
-                            art = R.drawable.knoux_home_icon_clean,
-                            accent = KnouxMagenta,
-                            value = "2.86 GB",
-                            valueLabel = "junk found",
-                        ),
-                        services = listOf(
-                            HubService(
-                                title = "Deep Scan",
-                                subtitle = "Full device scan across junk, duplicates, privacy and health.",
-                                route = "deepscan",
-                                art = R.drawable.knoux_svc_deepscan,
-                                accent = KnouxCyan,
-                                value = "12",
-                                valueLabel = "modules",
-                            ),
-                            HubService(
-                                title = "Duplicate Files Finder",
-                                subtitle = "Hash-verified duplicate photos, video, audio and documents.",
-                                route = "duplicates",
-                                art = R.drawable.knoux_svc_duplicates,
-                                accent = KnouxViolet,
-                                value = "1,248",
-                                valueLabel = "duplicates",
-                            ),
-                            HubService(
-                                title = "App Residue Cleanup",
-                                subtitle = "Leftovers and empty folders from apps you already removed.",
-                                route = "residue",
-                                art = R.drawable.knoux_svc_residue,
-                                accent = KnouxMagenta,
-                                value = "1.9 GB",
-                                valueLabel = "reclaimable",
-                            ),
-                        ),
-                        onOpen = { nav.navigate(it) },
-                        onBack = { nav.switchTab(MainTab.Home) },
-                    )
-                }
-                composable(ROUTE_TOOLS) {
-                    ServiceHubScreen(
-                        title = "Device ",
-                        accent = "Tools",
-                        subtitle = "Storage, apps, privacy, battery and performance — each with its own workspace.",
-                        featured = HubService(
-                            title = "Storage Analyzer",
-                            subtitle = "See where every byte goes, what is reclaimable and which folders dominate.",
-                            route = "storage",
-                            art = R.drawable.knoux_svc_storage,
-                            accent = KnouxCyan,
-                            value = "128 GB",
-                            valueLabel = "used of 256 GB",
-                        ),
-                        services = listOf(
-                            HubService(
-                                title = "App Manager",
-                                subtitle = "Installed apps, heavy weights and rarely used apps.",
-                                route = "appmanager",
-                                art = R.drawable.knoux_svc_apps,
-                                accent = KnouxViolet,
-                                value = "41",
-                                valueLabel = "apps listed",
-                            ),
-                            HubService(
-                                title = "Privacy Sweep",
-                                subtitle = "Permission evidence and exposure signals for every app.",
-                                route = "privacy",
-                                art = R.drawable.knoux_svc_privacy,
-                                accent = KnouxMagenta,
-                                value = "7",
-                                valueLabel = "trackers found",
-                            ),
-                            HubService(
-                                title = "Battery Saver",
-                                subtitle = "Reduce drain, control background work and keep the device cool.",
-                                route = "battery",
-                                art = R.drawable.knoux_svc_battery,
-                                accent = KnouxCyan,
-                                value = "6h 42m",
-                                valueLabel = "estimated gain",
-                            ),
-                            HubService(
-                                title = "AI Optimization",
-                                subtitle = "Memory, startup and thermal tuning with measured follow-up.",
-                                route = "ai",
-                                art = R.drawable.knoux_svc_ai,
-                                accent = KnouxViolet,
-                                value = "94",
-                                valueLabel = "performance score",
-                            ),
-                        ),
-                        onOpen = { nav.navigate(it) },
-                        onBack = { nav.switchTab(MainTab.Home) },
-                    )
-                }
-                composable(ROUTE_REPORTS) {
-                    ReportsScreen(
-                        onBack = { nav.switchTab(MainTab.Home) },
-                        onOpenDetail = { nav.navigate("performance-report") },
-                    )
-                }
-                composable("privacy") {
-                    PrivacySweepScreen(
-                        onBack = { nav.backToHub(ROUTE_TOOLS) },
-                        onOpenDetail = { nav.navigate("privacy-risk") },
-                    )
-                }
-                composable("duplicates") {
-                    DuplicateFilesScreen(
-                        onBack = { nav.backToHub(ROUTE_CLEAN) },
-                        onOpenDetail = { nav.navigate("duplicate-group") },
-                    )
-                }
-                composable("deepscan") {
-                    DeepScanScreen(
-                        onBack = { nav.backToHub(ROUTE_CLEAN) },
-                        onOpenSummary = { nav.navigate("deep-scan-summary") },
-                    )
-                }
-                composable("residue") {
-                    AppResidueScreen(
-                        onBack = { nav.backToHub(ROUTE_CLEAN) },
-                        onOpenDetail = { nav.navigate("residue-item") },
-                    )
-                }
-                composable("appmanager") {
-                    AppManagerScreen(
-                        onBack = { nav.backToHub(ROUTE_TOOLS) },
-                        onOpenDetail = { nav.navigate("installed-apps") },
-                    )
-                }
-                composable("storage") {
-                    StorageAnalyzerScreen(
-                        onBack = { nav.backToHub(ROUTE_TOOLS) },
-                        onOpenDetail = { nav.navigate("storage-breakdown") },
-                    )
-                }
-                composable("battery") {
-                    BatterySaverScreen(
-                        onBack = { nav.backToHub(ROUTE_TOOLS) },
-                        onOpenDetail = { nav.navigate("battery-diagnostics") },
-                    )
-                }
-                composable("ai") {
-                    AiOptimizationScreen(
-                        onBack = { nav.backToHub(ROUTE_TOOLS) },
-                        onOpenDetail = { nav.navigate("ai-recommendations") },
-                    )
-                }
-
-                composable("smartclean") {
-                    SmartCleanCenterScreen(
-                        onBack = { nav.backToHub(ROUTE_CLEAN) },
-                        onOpenDeepScan = { nav.navigate("deepscan") },
-                    )
-                }
-                composable(SETTINGS_ROUTE) {
-                    SettingsScreen(
-                        onBack = { nav.backToHub(ROUTE_HOME) },
-                        onShowWelcome = {
-                            welcomeDone = false
-                            nav.popBackStack()
-                        },
-                    )
-                }
-                composable("privacy-risk") { PrivacyRiskInspectorScreen(onBack = { nav.backToHub(ROUTE_TOOLS) }) }
-                composable("duplicate-group") { DuplicateGroupReviewScreen(onBack = { nav.backToHub(ROUTE_CLEAN) }) }
-                composable("deep-scan-summary") {
-                    DeepScanSummaryScreen(
-                        onBack = { nav.backToHub(ROUTE_CLEAN) },
-                        onOpenSmartClean = { nav.navigate("smartclean") },
-                    )
-                }
-                composable("performance-report") { PerformanceReportDetailScreen(onBack = { nav.backToHub(ROUTE_REPORTS) }) }
-                composable("residue-item") { ResidueItemReviewScreen(onBack = { nav.backToHub(ROUTE_CLEAN) }) }
-                composable("installed-apps") { InstalledAppsReviewScreen(onBack = { nav.backToHub(ROUTE_TOOLS) }) }
-                composable("storage-breakdown") { StorageBreakdownScreen(onBack = { nav.backToHub(ROUTE_TOOLS) }) }
-                composable("battery-diagnostics") { BatteryDiagnosticsScreen(onBack = { nav.backToHub(ROUTE_TOOLS) }) }
-                composable("ai-recommendations") { AiRecommendationsScreen(onBack = { nav.backToHub(ROUTE_TOOLS) }) }
-            }
             }
         }
-        }
-    }
-    }
     }
 
     if (accountInfoVisible) {
-        androidx.compose.material3.AlertDialog(
+        AlertDialog(
             onDismissRequest = { accountInfoVisible = false },
-            title = { androidx.compose.material3.Text("KNOUX ID") },
+            title = { Text("KNOUX ID") },
             text = {
-                androidx.compose.material3.Text(
-                    "Account sync is not connected in this build. Guest mode already runs every tool on this phone with no account, no upload and no tracking. When cloud sync ships, sign-in will appear here."
+                Text(
+                    "حسابك غير مرتبط في هذا البناء. وضع الضيف يشغّل كل الأدوات على هذا الهاتف " +
+                        "بدون حساب أو رفع أو تتبّع. عند إتاحة المزامنة السحابية سيظهر تسجيل الدخول هنا."
                 )
             },
             confirmButton = {
-                androidx.compose.material3.TextButton(onClick = { accountInfoVisible = false }) {
-                    androidx.compose.material3.Text("Got it")
+                TextButton(onClick = { accountInfoVisible = false }) {
+                    Text("فهمت")
                 }
             },
         )
     }
 }
 
-/** The hub a given route belongs to, used by the global back affordance. */
-private fun hubFor(route: String?): String = when (route) {
-    ROUTE_CLEAN, "smartclean", "deepscan", "duplicates", "residue",
-    "duplicate-group", "deep-scan-summary", "residue-item" -> ROUTE_CLEAN
-    "privacy", "storage", "appmanager", "battery", "ai",
-    "storage-breakdown", "installed-apps", "battery-diagnostics",
-    "ai-recommendations", "privacy-risk" -> ROUTE_TOOLS
-    "performance-report" -> ROUTE_REPORTS
-    else -> ROUTE_HOME
-}
+@Composable
+private fun AppNavHost(
+    nav: NavHostController,
+    startRoute: String?,
+    modifier: Modifier,
+    open: (String) -> Unit,
+    goBack: () -> Unit,
+    onAccount: () -> Unit,
+) {
+    NavHost(
+        navController = nav,
+        startDestination = startRoute ?: ROUTE_HOME,
+        modifier = modifier,
+        enterTransition = { fadeIn(tween(280)) },
+        exitTransition = { fadeOut(tween(180)) },
+        popEnterTransition = { fadeIn(tween(240)) },
+        popExitTransition = { fadeOut(tween(180)) },
+    ) {
+        composable(ROUTE_HOME) {
+            V2HomeScreen(
+                onNavigate = open,
+                onMenu = { open(SETTINGS_ROUTE) },
+                onPro = { open(ROUTE_PRO) },
+                onProfile = onAccount,
+                onNotifications = { open(ROUTE_REPORTS) },
+            )
+        }
 
-/** Context-aware accent glow for the global header. */
-private fun accentFor(route: String?): androidx.compose.ui.graphics.Color = when (route) {
-    ROUTE_CLEAN, "smartclean", "deepscan", "duplicates", "residue" -> KnouxMagenta
-    "privacy", "privacy-risk" -> KnouxMagenta
-    "storage", "storage-breakdown", "battery", "battery-diagnostics" -> KnouxCyan
-    else -> KnouxViolet
-}
+        composable(ROUTE_CLEAN) {
+            V2CleanHubScreen(
+                onNavigate = open,
+                onMenu = { open(SETTINGS_ROUTE) },
+                onPro = { open(ROUTE_PRO) },
+                onProfile = onAccount,
+                onNotifications = { open(ROUTE_REPORTS) },
+            )
+        }
 
-private fun NavHostController.switchTab(tab: MainTab) {
-    val route = when (tab) {
-        MainTab.Home -> ROUTE_HOME
-        MainTab.Clean -> ROUTE_CLEAN
-        MainTab.Tools -> ROUTE_TOOLS
-        MainTab.Reports -> ROUTE_REPORTS
-    }
-    navigate(route) {
-        // Saved-state stacks made the top-bar back button look dead: the
-        // popped entry was restored instead of removed. Each tab now owns a
-        // single, predictable stack: hub -> service -> detail.
-        popUpTo(ROUTE_HOME) { inclusive = false; saveState = false }
-        launchSingleTop = true
-    }
-}
+        composable(ROUTE_TOOLS) {
+            V2ToolsHubScreen(
+                onNavigate = open,
+                onMenu = { open(SETTINGS_ROUTE) },
+                onPro = { open(ROUTE_PRO) },
+                onProfile = onAccount,
+                onNotifications = { open(ROUTE_REPORTS) },
+            )
+        }
 
-/**
- * Back from a service or detail screen always lands on its own hub.
- *
- * Falls back to the hub route when there is nothing left to pop, so the top
- * bar arrow can never dead-end.
- */
-private fun NavHostController.backToHub(hub: String) {
-    if (!popBackStack()) {
-        navigate(hub) {
-            popUpTo(ROUTE_HOME) { inclusive = false; saveState = false }
-            launchSingleTop = true
+        composable(ROUTE_REPORTS) {
+            V2ReportsScreen(
+                onOpenDetail = { open("performance-report") },
+                onMenu = { open(SETTINGS_ROUTE) },
+                onPro = { open(ROUTE_PRO) },
+                onProfile = onAccount,
+                onNotifications = {},
+            )
+        }
+
+        composable(ROUTE_PRO) {
+            V2ProScreen(onBack = goBack, onNavigate = open)
+        }
+
+        composable("privacy") {
+            V2PrivacyScreen(
+                onBack = goBack,
+                onOpenDetail = { open("privacy-risk") },
+                onPro = { open(ROUTE_PRO) },
+            )
+        }
+        composable("duplicates") {
+            V2DuplicatesScreen(
+                onBack = goBack,
+                onOpenDetail = { open("duplicate-group") },
+                onPro = { open(ROUTE_PRO) },
+            )
+        }
+        composable("deepscan") {
+            V2DeepScanScreen(
+                onBack = goBack,
+                onOpenSummary = { open("deep-scan-summary") },
+                onPro = { open(ROUTE_PRO) },
+            )
+        }
+        composable("residue") {
+            V2ResidueScreen(
+                onBack = goBack,
+                onReview = { open("residue-item") },
+                onPro = { open(ROUTE_PRO) },
+            )
+        }
+        composable("appmanager") {
+            V2AppManagerScreen(
+                onBack = goBack,
+                onOpenDetail = { open(ROUTE_APP_DETAIL) },
+                onPro = { open(ROUTE_PRO) },
+            )
+        }
+        composable(ROUTE_APP_DETAIL) {
+            V2AppDetailScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
+        }
+        composable("installed-apps") {
+            V2AppManagerScreen(
+                onBack = goBack,
+                onOpenDetail = { open(ROUTE_APP_DETAIL) },
+                onPro = { open(ROUTE_PRO) },
+            )
+        }
+        composable("storage") {
+            V2StorageScreen(
+                onBack = goBack,
+                onOpenDetail = { open("storage-breakdown") },
+                onPro = { open(ROUTE_PRO) },
+            )
+        }
+        composable("battery") {
+            V2BatteryScreen(
+                onBack = goBack,
+                onOpenDetail = { open("battery-diagnostics") },
+                onPro = { open(ROUTE_PRO) },
+            )
+        }
+        composable("ai") {
+            V2AiScreen(
+                onBack = goBack,
+                onOpenDetail = { open("ai-recommendations") },
+                onPro = { open(ROUTE_PRO) },
+            )
+        }
+        composable("smartclean") {
+            V2SmartCleanScreen(
+                onBack = goBack,
+                onOpenDeepScan = { open("deepscan") },
+                onPro = { open(ROUTE_PRO) },
+            )
+        }
+        composable(SETTINGS_ROUTE) {
+            V2SettingsScreenV2(onBack = goBack)
+        }
+        composable("privacy-risk") {
+            V2PrivacyRiskScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
+        }
+        composable("duplicate-group") {
+            V2DuplicateGroupScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
+        }
+        composable("deep-scan-summary") {
+            V2ScanSummaryScreen(
+                onBack = goBack,
+                onOpenSmartClean = { open("smartclean") },
+                onPro = { open(ROUTE_PRO) },
+            )
+        }
+        composable("performance-report") {
+            V2PerformanceReportScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
+        }
+        composable("residue-item") {
+            V2ResidueReviewScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
+        }
+        composable("storage-breakdown") {
+            V2StorageBreakdownScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
+        }
+        composable("battery-diagnostics") {
+            V2BatteryDiagnosticsScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
+        }
+        composable("ai-recommendations") {
+            V2AiRecommendationsScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
         }
     }
 }

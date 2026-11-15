@@ -53,6 +53,22 @@ private val Poppins = FontFamily(
     Font(R.font.poppins_bold_italic, FontWeight.Bold, FontStyle.Italic),
 )
 
+/**
+ * Arabic-first UI face. Cairo keeps the same geometric, modern voice as the
+ * Latin brand while covering the Arabic glyph set used by the new V2 screens.
+ */
+val KnouxArabic = FontFamily(
+    Font(R.font.cairo_variable, FontWeight.Light),
+    Font(R.font.cairo_variable, FontWeight.Normal),
+    Font(R.font.cairo_variable, FontWeight.Medium),
+    Font(R.font.cairo_variable, FontWeight.SemiBold),
+    Font(R.font.cairo_variable, FontWeight.Bold),
+    Font(R.font.cairo_variable, FontWeight.Black),
+)
+
+/** Latin lockup / numerals used where the reference keeps a Latin treatment. */
+val KnouxLatin = Poppins
+
 private val KnouxColors = darkColorScheme(
     primary = KnouxCyan,
     onPrimary = KnouxBackdrop,
@@ -71,44 +87,44 @@ private val KnouxColors = darkColorScheme(
 
 private val KnouxType = Typography(
     displayLarge = TextStyle(
-        fontFamily = Poppins, fontWeight = FontWeight.Bold, fontStyle = FontStyle.Italic,
-        fontSize = 40.sp, lineHeight = 46.sp, color = KnouxText
+        fontFamily = KnouxArabic, fontWeight = FontWeight.Black,
+        fontSize = 40.sp, lineHeight = 48.sp, color = KnouxText
     ),
     displayMedium = TextStyle(
-        fontFamily = Poppins, fontWeight = FontWeight.Bold, fontStyle = FontStyle.Italic,
-        fontSize = 32.sp, lineHeight = 38.sp, color = KnouxText
+        fontFamily = KnouxArabic, fontWeight = FontWeight.Black,
+        fontSize = 32.sp, lineHeight = 40.sp, color = KnouxText
     ),
     headlineMedium = TextStyle(
-        fontFamily = Poppins, fontWeight = FontWeight.Bold, fontStyle = FontStyle.Italic,
-        fontSize = 27.sp, lineHeight = 33.sp, color = KnouxText
+        fontFamily = KnouxArabic, fontWeight = FontWeight.Bold,
+        fontSize = 27.sp, lineHeight = 34.sp, color = KnouxText
     ),
     titleLarge = TextStyle(
-        fontFamily = Poppins, fontWeight = FontWeight.Bold, fontSize = 17.sp,
-        lineHeight = 22.sp, color = KnouxText
+        fontFamily = KnouxArabic, fontWeight = FontWeight.Bold, fontSize = 18.sp,
+        lineHeight = 24.sp, color = KnouxText
     ),
     titleMedium = TextStyle(
-        fontFamily = Poppins, fontWeight = FontWeight.SemiBold, fontSize = 15.sp,
-        lineHeight = 20.sp, color = KnouxText
+        fontFamily = KnouxArabic, fontWeight = FontWeight.Bold, fontSize = 15.sp,
+        lineHeight = 21.sp, color = KnouxText
     ),
     bodyLarge = TextStyle(
-        fontFamily = Poppins, fontWeight = FontWeight.Normal, fontSize = 13.sp,
-        lineHeight = 18.sp, color = KnouxSoftText
+        fontFamily = KnouxArabic, fontWeight = FontWeight.Normal, fontSize = 13.sp,
+        lineHeight = 19.sp, color = KnouxSoftText
     ),
     bodyMedium = TextStyle(
-        fontFamily = Poppins, fontWeight = FontWeight.Normal, fontSize = 11.5.sp,
-        lineHeight = 16.sp, color = KnouxSoftText
+        fontFamily = KnouxArabic, fontWeight = FontWeight.Normal, fontSize = 11.5.sp,
+        lineHeight = 17.sp, color = KnouxSoftText
     ),
     labelLarge = TextStyle(
-        fontFamily = Poppins, fontWeight = FontWeight.Bold, fontSize = 14.sp,
-        lineHeight = 18.sp, color = KnouxText
+        fontFamily = KnouxArabic, fontWeight = FontWeight.Bold, fontSize = 14.sp,
+        lineHeight = 19.sp, color = KnouxText
     ),
     labelMedium = TextStyle(
-        fontFamily = Poppins, fontWeight = FontWeight.Medium, fontSize = 11.sp,
-        lineHeight = 14.sp, color = KnouxSoftText
+        fontFamily = KnouxArabic, fontWeight = FontWeight.SemiBold, fontSize = 11.sp,
+        lineHeight = 15.sp, color = KnouxSoftText
     ),
     labelSmall = TextStyle(
-        fontFamily = Poppins, fontWeight = FontWeight.Medium, fontSize = 9.5.sp,
-        lineHeight = 12.sp, color = KnouxMutedText
+        fontFamily = KnouxArabic, fontWeight = FontWeight.Medium, fontSize = 9.5.sp,
+        lineHeight = 13.sp, color = KnouxMutedText
     ),
 )
 
@@ -119,9 +135,9 @@ fun KnouxTheme(
 ) {
     CompositionLocalProvider(
         LocalReferenceCapture provides referenceCapture,
-        // The current UI is English-only and the 20 references are LTR.
-        // Force LTR so an Arabic system locale cannot mirror the whole layout.
-        LocalLayoutDirection provides LayoutDirection.Ltr,
+        // V2 is an Arabic-first product. Compose mirrors every start/end
+        // alignment automatically while numbers and package names stay LTR.
+        LocalLayoutDirection provides LayoutDirection.Rtl,
     ) {
         MaterialTheme(
             colorScheme = KnouxColors,
