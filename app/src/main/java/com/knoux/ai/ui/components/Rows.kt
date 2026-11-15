@@ -45,13 +45,13 @@ import androidx.compose.ui.unit.sp
 import com.knoux.ai.ui.data.Key
 import com.knoux.ai.ui.data.MiniStat
 import com.knoux.ai.ui.data.PreviewRow
-import com.knoux.ai.ui.theme.KnouxCyan
-import com.knoux.ai.ui.theme.KnouxMagenta
-import com.knoux.ai.ui.theme.KnouxPanelAlt
-import com.knoux.ai.ui.theme.KnouxPanelDeep
-import com.knoux.ai.ui.theme.KnouxSoftText
-import com.knoux.ai.ui.theme.KnouxText
-import com.knoux.ai.ui.theme.KnouxViolet
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProNavy
+import com.knoux.ai.ui.theme.ProDeepInk
+import com.knoux.ai.ui.theme.ProTextSecondary
+import com.knoux.ai.ui.theme.ProTextPrimary
+import com.knoux.ai.ui.theme.ProBlue
 
 fun iconFor(key: Key): ImageVector = when (key) {
     Key.Image -> Icons.Rounded.Image
@@ -71,7 +71,7 @@ fun iconFor(key: Key): ImageVector = when (key) {
 fun MiniStatStrip(
     stats: List<MiniStat>,
     modifier: Modifier = Modifier,
-    valueColor: Color = KnouxText,
+    valueColor: Color = ProTextPrimary,
 ) {
     Row(
         modifier.fillMaxWidth(),
@@ -84,7 +84,7 @@ fun MiniStatStrip(
             ) {
                 Icon(
                     iconFor(stat.icon), null,
-                    tint = KnouxCyan,
+                    tint = ProArcticCyan,
                     modifier = Modifier.size(17.dp)
                 )
                 Spacer(Modifier.height(4.dp))
@@ -94,7 +94,7 @@ fun MiniStatStrip(
                 )
                 Text(
                     stat.label,
-                    style = TextStyle(fontSize = 9.sp, color = KnouxSoftText),
+                    style = TextStyle(fontSize = 9.sp, color = ProTextSecondary),
                     maxLines = 2,
                 )
             }
@@ -117,12 +117,12 @@ fun SelectableFindingRow(
             .background(
                 Brush.horizontalGradient(
                     listOf(
-                        KnouxPanelAlt.copy(alpha = 0.85f),
-                        KnouxPanelDeep.copy(alpha = 0.80f)
+                        ProNavy.copy(alpha = 0.85f),
+                        ProDeepInk.copy(alpha = 0.80f)
                     )
                 )
             )
-            .border(1.dp, KnouxViolet.copy(alpha = 0.30f), RoundedCornerShape(16.dp))
+            .border(1.dp, ProBlue.copy(alpha = 0.30f), RoundedCornerShape(16.dp))
             .clickable { onToggle() }
             .padding(horizontal = 12.dp, vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -132,18 +132,18 @@ fun SelectableFindingRow(
         Column(Modifier.weight(1f)) {
             Text(
                 row.title,
-                style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 13.sp, color = KnouxText)
+                style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 13.sp, color = ProTextPrimary)
             )
             Text(
                 row.subtitle,
-                style = TextStyle(fontSize = 10.sp, lineHeight = 14.sp, color = KnouxSoftText),
+                style = TextStyle(fontSize = 10.sp, lineHeight = 14.sp, color = ProTextSecondary),
                 maxLines = 2,
             )
         }
         Spacer(Modifier.width(8.dp))
         Text(
             row.badge,
-            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 12.sp, color = KnouxMagenta)
+            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 12.sp, color = ProArcticCyan)
         )
         Spacer(Modifier.width(8.dp))
         Box(
@@ -152,14 +152,14 @@ fun SelectableFindingRow(
                 .clip(RoundedCornerShape(6.dp))
                 .background(
                     if (checked)
-                        Brush.linearGradient(listOf(KnouxCyan, Color(0xFF48A8FF)))
+                        Brush.linearGradient(listOf(ProArcticCyan, Color(0xFF48A8FF)))
                     else Brush.linearGradient(
                         listOf(Color(0x33000000), Color(0x22000000))
                     )
                 )
                 .border(
                     1.dp,
-                    if (checked) KnouxCyan else KnouxViolet.copy(alpha = 0.6f),
+                    if (checked) ProArcticCyan else ProBlue.copy(alpha = 0.6f),
                     RoundedCornerShape(6.dp)
                 ),
             contentAlignment = Alignment.Center,
@@ -187,12 +187,12 @@ fun FeatureRow(
             .background(
                 Brush.horizontalGradient(
                     listOf(
-                        KnouxPanelAlt.copy(alpha = 0.85f),
-                        KnouxPanelDeep.copy(alpha = 0.80f)
+                        ProNavy.copy(alpha = 0.85f),
+                        ProDeepInk.copy(alpha = 0.80f)
                     )
                 )
             )
-            .border(1.dp, KnouxViolet.copy(alpha = 0.30f), RoundedCornerShape(16.dp))
+            .border(1.dp, ProBlue.copy(alpha = 0.30f), RoundedCornerShape(16.dp))
             .then(if (onClick != null) Modifier.clickable { onClick() } else Modifier)
             .padding(horizontal = 12.dp, vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -202,11 +202,11 @@ fun FeatureRow(
         Column(Modifier.weight(1f)) {
             Text(
                 row.title,
-                style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 13.sp, color = KnouxText)
+                style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 13.sp, color = ProTextPrimary)
             )
             Text(
                 row.subtitle,
-                style = TextStyle(fontSize = 10.sp, lineHeight = 14.sp, color = KnouxSoftText),
+                style = TextStyle(fontSize = 10.sp, lineHeight = 14.sp, color = ProTextSecondary),
                 maxLines = 2,
             )
         }
@@ -216,14 +216,14 @@ fun FeatureRow(
         } else {
             Text(
                 row.badge,
-                style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 11.sp, color = KnouxMagenta)
+                style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 11.sp, color = ProArcticCyan)
             )
         }
         if (onClick != null) {
             Spacer(Modifier.width(4.dp))
             Icon(
                 Icons.Rounded.ChevronRight, null,
-                tint = KnouxSoftText.copy(alpha = 0.7f), modifier = Modifier.size(16.dp)
+                tint = ProTextSecondary.copy(alpha = 0.7f), modifier = Modifier.size(16.dp)
             )
         }
     }
@@ -235,8 +235,8 @@ fun SummaryLine(
     icon: ImageVector,
     label: String,
     value: String,
-    iconColor: Color = KnouxCyan,
-    valueColor: Color = KnouxText,
+    iconColor: Color = ProArcticCyan,
+    valueColor: Color = ProTextPrimary,
     modifier: Modifier = Modifier,
 ) {
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
@@ -244,7 +244,7 @@ fun SummaryLine(
         Spacer(Modifier.width(8.dp))
         Text(
             label,
-            style = TextStyle(fontSize = 11.sp, color = KnouxSoftText),
+            style = TextStyle(fontSize = 11.sp, color = ProTextSecondary),
             modifier = Modifier.weight(1f)
         )
         Text(
@@ -262,10 +262,10 @@ fun SelectAllPill(label: String, allSelected: Boolean, modifier: Modifier = Modi
             .clip(RoundedCornerShape(50))
             .background(
                 if (allSelected)
-                    Brush.horizontalGradient(listOf(KnouxCyan, Color(0xFF48A8FF)))
+                    Brush.horizontalGradient(listOf(ProArcticCyan, Color(0xFF48A8FF)))
                 else Brush.horizontalGradient(listOf(Color(0x1FFFFFFF), Color(0x11FFFFFF)))
             )
-            .border(1.dp, KnouxCyan.copy(alpha = if (allSelected) 0.9f else 0.35f), RoundedCornerShape(50))
+            .border(1.dp, ProArcticCyan.copy(alpha = if (allSelected) 0.9f else 0.35f), RoundedCornerShape(50))
             .clickable { onToggle() }
             .padding(horizontal = 11.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -278,18 +278,18 @@ fun SelectAllPill(label: String, allSelected: Boolean, modifier: Modifier = Modi
                 .background(
                     if (allSelected) Color(0xFF032033) else Color.Transparent
                 )
-                .border(1.dp, if (allSelected) Color(0xFF032033) else KnouxCyan.copy(alpha = 0.6f), RoundedCornerShape(4.dp)),
+                .border(1.dp, if (allSelected) Color(0xFF032033) else ProArcticCyan.copy(alpha = 0.6f), RoundedCornerShape(4.dp)),
             contentAlignment = Alignment.Center,
         ) {
             if (allSelected) {
-                Icon(Icons.Rounded.Check, null, tint = KnouxCyan, modifier = Modifier.size(11.dp))
+                Icon(Icons.Rounded.Check, null, tint = ProArcticCyan, modifier = Modifier.size(11.dp))
             }
         }
         Text(
             label,
             style = TextStyle(
                 fontWeight = FontWeight.Bold, fontSize = 10.sp,
-                color = if (allSelected) Color(0xFF032033) else KnouxText
+                color = if (allSelected) Color(0xFF032033) else ProTextPrimary
             )
         )
     }

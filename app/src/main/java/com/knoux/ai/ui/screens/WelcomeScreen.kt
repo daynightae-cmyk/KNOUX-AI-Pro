@@ -62,12 +62,12 @@ import com.knoux.ai.ui.auth.AuthVisualState
 import com.knoux.ai.ui.auth.FingerprintOrb
 import com.knoux.ai.ui.components.BrandLockup
 import com.knoux.ai.ui.components.rememberMotionEnabled
-import com.knoux.ai.ui.theme.KnouxCyan
-import com.knoux.ai.ui.theme.KnouxMagenta
-import com.knoux.ai.ui.theme.KnouxMutedText
-import com.knoux.ai.ui.theme.KnouxSoftText
-import com.knoux.ai.ui.theme.KnouxText
-import com.knoux.ai.ui.theme.KnouxViolet
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProTextSecondary
+import com.knoux.ai.ui.theme.ProTextSecondary
+import com.knoux.ai.ui.theme.ProTextPrimary
+import com.knoux.ai.ui.theme.ProBlue
 import kotlinx.coroutines.launch
 
 private enum class AuthSection { Main, EmailLogin, EmailSignup, OTP, Recovery }
@@ -146,7 +146,7 @@ fun WelcomeScreen(
                         )
                     )
                 )
-                .border(1.dp, KnouxViolet.copy(alpha = 0.30f), RoundedCornerShape(22.dp))
+                .border(1.dp, ProBlue.copy(alpha = 0.30f), RoundedCornerShape(22.dp))
                 .padding(horizontal = 16.dp, vertical = 11.dp),
         ) {
             BrandLockup(symbolSize = 32.dp, wordmarkHeight = 16.dp)
@@ -207,7 +207,7 @@ fun WelcomeScreen(
                 fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
                 fontSize = 27.sp,
                 lineHeight = 33.sp,
-                color = KnouxText,
+                color = ProTextPrimary,
             ),
             textAlign = TextAlign.Center,
             modifier = Modifier
@@ -220,7 +220,7 @@ fun WelcomeScreen(
         Spacer(Modifier.height(4.dp))
         Text(
             subheading,
-            style = TextStyle(fontSize = 12.sp, lineHeight = 17.sp, color = KnouxSoftText),
+            style = TextStyle(fontSize = 12.sp, lineHeight = 17.sp, color = ProTextSecondary),
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth().graphicsLayer { alpha = reveal },
         )
@@ -229,7 +229,7 @@ fun WelcomeScreen(
             Spacer(Modifier.height(8.dp))
             Text(
                 message!!,
-                style = TextStyle(fontSize = 9.5.sp, lineHeight = 13.sp, color = KnouxCyan),
+                style = TextStyle(fontSize = 9.5.sp, lineHeight = 13.sp, color = ProArcticCyan),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -255,7 +255,7 @@ fun WelcomeScreen(
             AuthMethodButton(
                 label = "Continue with Email",
                 icon = Icons.Rounded.Email,
-                accent = KnouxMagenta,
+                accent = ProArcticCyan,
                 enabled = !inProgress,
                 onClick = { section = AuthSection.EmailLogin },
                 modifier = Modifier.graphicsLayer { alpha = reveal },
@@ -291,11 +291,11 @@ fun WelcomeScreen(
                 .padding(horizontal = 12.dp, vertical = 9.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(Icons.Rounded.Info, contentDescription = null, tint = KnouxMutedText, modifier = Modifier.size(14.dp))
+            Icon(Icons.Rounded.Info, contentDescription = null, tint = ProTextSecondary, modifier = Modifier.size(14.dp))
             Spacer(Modifier.width(8.dp))
             Text(
                 "Guest mode keeps every tool on this device. No account, no upload, no tracking.",
-                style = TextStyle(fontSize = 9.sp, lineHeight = 12.5.sp, color = KnouxMutedText),
+                style = TextStyle(fontSize = 9.sp, lineHeight = 12.5.sp, color = ProTextSecondary),
             )
         }
 
@@ -314,7 +314,7 @@ private fun PasskeyButton(
     AuthMethodButton(
         label = "Use a passkey",
         icon = Icons.Rounded.Key,
-        accent = KnouxMagenta,
+        accent = ProArcticCyan,
         enabled = !inProgress,
         onClick = {
             if (activity == null) { onResult(Triple(false, "Authentication requires an active UI context.", false)); return@AuthMethodButton }
@@ -345,7 +345,7 @@ private fun GoogleButton(
     AuthMethodButton(
         label = "Continue with Google",
         icon = Icons.Rounded.Person,
-        accent = KnouxCyan,
+        accent = ProArcticCyan,
         enabled = configured && !inProgress,
         trailing = if (configured) null else "Setup pending",
         onClick = {
@@ -370,7 +370,7 @@ private fun GuestButton(onContinueAsGuest: () -> Unit) {
     AuthMethodButton(
         label = "Continue as Guest",
         icon = Icons.Rounded.Person,
-        accent = KnouxViolet,
+        accent = ProBlue,
         onClick = onContinueAsGuest,
     )
 }
@@ -394,7 +394,7 @@ private fun EmailSection(
 ) {
     val btn = @Composable { label: String, action: suspend () -> Boolean ->
         AuthMethodButton(
-            label = label, icon = Icons.Rounded.Email, accent = KnouxCyan,
+            label = label, icon = Icons.Rounded.Email, accent = ProArcticCyan,
             enabled = !inProgress && email.isNotBlank(),
             onClick = {
                 if (activity == null) return@AuthMethodButton
@@ -417,10 +417,10 @@ private fun EmailSection(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
             singleLine = true, enabled = !inProgress,
             colors = OutlinedTextFieldDefaults.colors(
-                focusedTextColor = KnouxText, unfocusedTextColor = KnouxSoftText,
-                focusedBorderColor = KnouxCyan, unfocusedBorderColor = KnouxViolet.copy(alpha = 0.3f),
-                focusedLabelColor = KnouxCyan, unfocusedLabelColor = KnouxMutedText,
-                cursorColor = KnouxCyan,
+                focusedTextColor = ProTextPrimary, unfocusedTextColor = ProTextSecondary,
+                focusedBorderColor = ProArcticCyan, unfocusedBorderColor = ProBlue.copy(alpha = 0.3f),
+                focusedLabelColor = ProArcticCyan, unfocusedLabelColor = ProTextSecondary,
+                cursorColor = ProArcticCyan,
             ),
             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
         )
@@ -433,10 +433,10 @@ private fun EmailSection(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
                 singleLine = true, enabled = !inProgress,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = KnouxText, unfocusedTextColor = KnouxSoftText,
-                    focusedBorderColor = KnouxCyan, unfocusedBorderColor = KnouxViolet.copy(alpha = 0.3f),
-                    focusedLabelColor = KnouxCyan, unfocusedLabelColor = KnouxMutedText,
-                    cursorColor = KnouxCyan,
+                    focusedTextColor = ProTextPrimary, unfocusedTextColor = ProTextSecondary,
+                    focusedBorderColor = ProArcticCyan, unfocusedBorderColor = ProBlue.copy(alpha = 0.3f),
+                    focusedLabelColor = ProArcticCyan, unfocusedLabelColor = ProTextSecondary,
+                    cursorColor = ProArcticCyan,
                 ),
                 modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
             )
@@ -449,10 +449,10 @@ private fun EmailSection(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
                 singleLine = true, enabled = !inProgress,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = KnouxText, unfocusedTextColor = KnouxSoftText,
-                    focusedBorderColor = KnouxCyan, unfocusedBorderColor = KnouxViolet.copy(alpha = 0.3f),
-                    focusedLabelColor = KnouxCyan, unfocusedLabelColor = KnouxMutedText,
-                    cursorColor = KnouxCyan,
+                    focusedTextColor = ProTextPrimary, unfocusedTextColor = ProTextSecondary,
+                    focusedBorderColor = ProArcticCyan, unfocusedBorderColor = ProBlue.copy(alpha = 0.3f),
+                    focusedLabelColor = ProArcticCyan, unfocusedLabelColor = ProTextSecondary,
+                    cursorColor = ProArcticCyan,
                 ),
                 modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
             )
@@ -472,7 +472,7 @@ private fun EmailSection(
             }
             AuthSection.OTP -> {
                 AuthMethodButton(
-                    label = "Verify Code", icon = Icons.Rounded.Email, accent = KnouxCyan,
+                    label = "Verify Code", icon = Icons.Rounded.Email, accent = ProArcticCyan,
                     enabled = !inProgress && otpCode.isNotBlank(),
                     onClick = {
                         scope.launch {
@@ -499,7 +499,7 @@ private fun EmailSection(
             }
             AuthSection.Recovery -> {
                 AuthMethodButton(
-                    label = "Send Reset Link", icon = Icons.Rounded.Email, accent = KnouxMagenta,
+                    label = "Send Reset Link", icon = Icons.Rounded.Email, accent = ProArcticCyan,
                     enabled = !inProgress && email.isNotBlank(),
                     onClick = {
                         scope.launch {
@@ -524,7 +524,7 @@ private fun EmailSection(
 private fun TextButton(label: String, onClick: () -> Unit) {
     Text(
         label,
-        style = TextStyle(fontSize = 11.sp, color = KnouxCyan),
+        style = TextStyle(fontSize = 11.sp, color = ProArcticCyan),
         modifier = Modifier
             .clickable(onClick = onClick)
             .padding(vertical = 6.dp),

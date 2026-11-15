@@ -38,12 +38,12 @@ import com.knoux.ai.ui.components.NeonIconTile
 import com.knoux.ai.ui.components.ProgressDonut
 import com.knoux.ai.ui.components.SummaryLine
 import com.knoux.ai.ui.data.Fixtures
-import com.knoux.ai.ui.theme.KnouxAmber
-import com.knoux.ai.ui.theme.KnouxCyan
-import com.knoux.ai.ui.theme.KnouxMagenta
-import com.knoux.ai.ui.theme.KnouxSoftText
-import com.knoux.ai.ui.theme.KnouxText
-import com.knoux.ai.ui.theme.KnouxViolet
+import com.knoux.ai.ui.theme.ProWarning
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProTextSecondary
+import com.knoux.ai.ui.theme.ProTextPrimary
+import com.knoux.ai.ui.theme.ProBlue
 
 @Composable
 fun AppManagerScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
@@ -62,16 +62,16 @@ fun AppManagerScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
         item {
             GlassPanel(Modifier.fillMaxWidth(), padding = 16.dp) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    NeonIconTile(Icons.Rounded.Layers, size = 42.dp, iconSize = 21.dp, tint = KnouxMagenta)
+                    NeonIconTile(Icons.Rounded.Layers, size = 42.dp, iconSize = 21.dp, tint = ProArcticCyan)
                     Spacer(Modifier.width(11.dp))
                     Column(Modifier.weight(1f)) {
                         Text(
                             "143",
-                            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 23.sp, color = KnouxText)
+                            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 23.sp, color = ProTextPrimary)
                         )
                         Text(
                             "installed apps",
-                            style = TextStyle(fontSize = 11.sp, color = KnouxSoftText)
+                            style = TextStyle(fontSize = 11.sp, color = ProTextSecondary)
                         )
                     }
                     Box(
@@ -81,16 +81,16 @@ fun AppManagerScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
                             .background(Color.White.copy(alpha = 0.15f))
                     )
                     Spacer(Modifier.width(14.dp))
-                    NeonIconTile(Icons.Rounded.Storage, size = 42.dp, iconSize = 21.dp, tint = KnouxCyan)
+                    NeonIconTile(Icons.Rounded.Storage, size = 42.dp, iconSize = 21.dp, tint = ProArcticCyan)
                     Spacer(Modifier.width(11.dp))
                     Column {
                         Text(
                             "18.4 GB",
-                            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 23.sp, color = KnouxText)
+                            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 23.sp, color = ProTextPrimary)
                         )
                         Text(
                             "app storage",
-                            style = TextStyle(fontSize = 11.sp, color = KnouxSoftText)
+                            style = TextStyle(fontSize = 11.sp, color = ProTextSecondary)
                         )
                     }
                 }
@@ -112,14 +112,14 @@ fun AppManagerScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
                         progress = 0.87f,
                         centerText = "87%",
                         caption = "App\nHealth",
-                        arcColors = listOf(KnouxCyan, KnouxMagenta),
+                        arcColors = listOf(ProArcticCyan, ProArcticCyan),
                         size = 92.dp,
                     )
                     Spacer(Modifier.width(16.dp))
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                        SummaryLine(Icons.Rounded.WarningAmber, "Apps to review:", "27", KnouxAmber)
-                        SummaryLine(Icons.Rounded.CheckCircle, "Safe suggestions:", "18", KnouxCyan)
-                        SummaryLine(Icons.Rounded.Event, "Last checked:", Fixtures.LAST_RUN, KnouxViolet)
+                        SummaryLine(Icons.Rounded.WarningAmber, "Apps to review:", "27", ProWarning)
+                        SummaryLine(Icons.Rounded.CheckCircle, "Safe suggestions:", "18", ProArcticCyan)
+                        SummaryLine(Icons.Rounded.Event, "Last checked:", Fixtures.LAST_RUN, ProBlue)
                     }
                 }
             }

@@ -48,12 +48,12 @@ import com.knoux.ai.ui.components.NeonIconTile
 import com.knoux.ai.ui.components.ProgressDonut
 import com.knoux.ai.ui.components.SummaryLine
 import com.knoux.ai.ui.data.Fixtures
-import com.knoux.ai.ui.theme.KnouxAmber
-import com.knoux.ai.ui.theme.KnouxCyan
-import com.knoux.ai.ui.theme.KnouxMagenta
-import com.knoux.ai.ui.theme.KnouxSoftText
-import com.knoux.ai.ui.theme.KnouxText
-import com.knoux.ai.ui.theme.KnouxViolet
+import com.knoux.ai.ui.theme.ProWarning
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProTextSecondary
+import com.knoux.ai.ui.theme.ProTextPrimary
+import com.knoux.ai.ui.theme.ProBlue
 
 @Composable
 fun ReportsScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
@@ -73,16 +73,16 @@ fun ReportsScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
         item {
             GlassPanel(Modifier.fillMaxWidth(), padding = 16.dp) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    NeonIconTile(Icons.Rounded.BarChart, size = 42.dp, iconSize = 21.dp, tint = KnouxMagenta)
+                    NeonIconTile(Icons.Rounded.BarChart, size = 42.dp, iconSize = 21.dp, tint = ProArcticCyan)
                     Spacer(Modifier.width(11.dp))
                     Column(Modifier.weight(1f)) {
                         Text(
                             "12.6 GB",
-                            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 23.sp, color = KnouxText)
+                            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 23.sp, color = ProTextPrimary)
                         )
                         Text(
                             "total saved",
-                            style = TextStyle(fontSize = 11.sp, color = KnouxSoftText)
+                            style = TextStyle(fontSize = 11.sp, color = ProTextSecondary)
                         )
                     }
                     Box(
@@ -92,16 +92,16 @@ fun ReportsScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
                             .background(Color.White.copy(alpha = 0.15f))
                     )
                     Spacer(Modifier.width(14.dp))
-                    NeonIconTile(Icons.Rounded.Groups, size = 42.dp, iconSize = 21.dp, tint = KnouxViolet)
+                    NeonIconTile(Icons.Rounded.Groups, size = 42.dp, iconSize = 21.dp, tint = ProBlue)
                     Spacer(Modifier.width(11.dp))
                     Column {
                         Text(
                             "31",
-                            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 23.sp, color = KnouxText)
+                            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 23.sp, color = ProTextPrimary)
                         )
                         Text(
                             "cleanups completed",
-                            style = TextStyle(fontSize = 11.sp, color = KnouxSoftText)
+                            style = TextStyle(fontSize = 11.sp, color = ProTextSecondary)
                         )
                     }
                 }
@@ -123,14 +123,14 @@ fun ReportsScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
                         ProgressDonut(
                             progress = 0.92f,
                             centerText = "92%",
-                            arcColors = listOf(KnouxCyan, KnouxMagenta),
+                            arcColors = listOf(ProArcticCyan, ProArcticCyan),
                             size = 96.dp,
                         )
                         Spacer(Modifier.height(6.dp))
                         Box(
                             Modifier
                                 .clip(androidx.compose.foundation.shape.RoundedCornerShape(50))
-                                .background(Brush.horizontalGradient(listOf(KnouxCyan, Color(0xFF48A8FF))))
+                                .background(Brush.horizontalGradient(listOf(ProArcticCyan, Color(0xFF48A8FF))))
                                 .padding(horizontal = 10.dp, vertical = 3.dp)
                         ) {
                             Text(
@@ -141,9 +141,9 @@ fun ReportsScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
                     }
                     Spacer(Modifier.width(14.dp))
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                        SummaryLine(Icons.Rounded.EmojiEvents, "Best improvement:", "Storage Cleanup", KnouxAmber)
-                        SummaryLine(Icons.Rounded.TrendingUp, "Current device score:", "92%  ▲ +6%", KnouxCyan)
-                        SummaryLine(Icons.Rounded.Event, "Last report:", Fixtures.LAST_RUN, KnouxViolet)
+                        SummaryLine(Icons.Rounded.EmojiEvents, "Best improvement:", "Storage Cleanup", ProWarning)
+                        SummaryLine(Icons.Rounded.TrendingUp, "Current device score:", "92%  ▲ +6%", ProArcticCyan)
+                        SummaryLine(Icons.Rounded.Event, "Last report:", Fixtures.LAST_RUN, ProBlue)
                     }
                 }
             }
@@ -173,13 +173,13 @@ fun ReportsScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
                                         .height((80 * value).dp)
                                         .clip(RoundedCornerShape(7.dp))
                                         .background(
-                                            Brush.verticalGradient(listOf(KnouxCyan, KnouxViolet))
+                                            Brush.verticalGradient(listOf(ProArcticCyan, ProBlue))
                                         ),
                                 )
                                 Spacer(Modifier.height(4.dp))
                                 Text(
                                     listOf("M", "T", "W", "T", "F", "S", "S")[index],
-                                    style = TextStyle(fontSize = 8.5.sp, color = KnouxSoftText),
+                                    style = TextStyle(fontSize = 8.5.sp, color = ProTextSecondary),
                                 )
                             }
                         }
@@ -197,7 +197,7 @@ fun ReportsScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
             InsightBanner(
                 title = "Trend Insight",
                 message = "Storage reclaimed is up 18% week over week and the device score rose 6 points after the last cleanup run.",
-                tint = KnouxMagenta,
+                tint = ProArcticCyan,
                 badge = "+18%",
             )
         }
@@ -208,10 +208,10 @@ fun ReportsScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
             Spacer(Modifier.height(6.dp))
             SignalTileGrid(
                 tiles = listOf(
-                    SignalTile(Icons.Rounded.Storage, "12.6 GB", "Space saved", KnouxCyan),
-                    SignalTile(Icons.Rounded.CleaningServices, "7", "Cleanups run", KnouxMagenta),
-                    SignalTile(Icons.Rounded.Timer, "2m 14s", "Average duration", KnouxViolet),
-                    SignalTile(Icons.Rounded.TrendingUp, "+6%", "Device score", KnouxAmber),
+                    SignalTile(Icons.Rounded.Storage, "12.6 GB", "Space saved", ProArcticCyan),
+                    SignalTile(Icons.Rounded.CleaningServices, "7", "Cleanups run", ProArcticCyan),
+                    SignalTile(Icons.Rounded.Timer, "2m 14s", "Average duration", ProBlue),
+                    SignalTile(Icons.Rounded.TrendingUp, "+6%", "Device score", ProWarning),
                 ),
             )
         }

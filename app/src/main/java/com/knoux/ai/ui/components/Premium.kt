@@ -71,15 +71,15 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.knoux.ai.R
-import com.knoux.ai.ui.theme.KnouxBackdrop
-import com.knoux.ai.ui.theme.KnouxBlue
-import com.knoux.ai.ui.theme.KnouxCyan
-import com.knoux.ai.ui.theme.KnouxMagenta
-import com.knoux.ai.ui.theme.KnouxMutedText
-import com.knoux.ai.ui.theme.KnouxPanelDeep
-import com.knoux.ai.ui.theme.KnouxSoftText
-import com.knoux.ai.ui.theme.KnouxText
-import com.knoux.ai.ui.theme.KnouxViolet
+import com.knoux.ai.ui.theme.ProDeepInk
+import com.knoux.ai.ui.theme.ProBlue
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProTextSecondary
+import com.knoux.ai.ui.theme.ProDeepInk
+import com.knoux.ai.ui.theme.ProTextSecondary
+import com.knoux.ai.ui.theme.ProTextPrimary
+import com.knoux.ai.ui.theme.ProBlue
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -118,7 +118,7 @@ fun PremiumGlassCard(
     modifier: Modifier = Modifier,
     padding: Dp = 14.dp,
     radius: Dp = 20.dp,
-    accent: Color = KnouxViolet,
+    accent: Color = ProBlue,
     borderAlpha: Float = 0.46f,
     content: @Composable BoxScope.() -> Unit,
 ) {
@@ -174,7 +174,7 @@ fun PremiumHeroImage(
     @DrawableRes image: Int,
     modifier: Modifier = Modifier,
     contentDescription: String? = null,
-    glow: Color = KnouxViolet,
+    glow: Color = ProBlue,
     animate: Boolean = true,
 ) {
     val motion = rememberMotionEnabled()
@@ -256,7 +256,7 @@ fun ReferenceHeroBand(
     modifier: Modifier = Modifier,
     height: Dp = 116.dp,
     contentDescription: String? = null,
-    glow: Color = KnouxViolet,
+    glow: Color = ProBlue,
 ) {
     val bitmap = ImageBitmap.imageResource(image)
     Box(
@@ -305,8 +305,8 @@ fun ReferenceHeroBand(
                 .background(
                     Brush.verticalGradient(
                         0.42f to Color.Transparent,
-                        0.80f to KnouxBackdrop.copy(alpha = 0.10f),
-                        1f to KnouxBackdrop.copy(alpha = 0.94f),
+                        0.80f to ProDeepInk.copy(alpha = 0.10f),
+                        1f to ProDeepInk.copy(alpha = 0.94f),
                     )
                 )
         )
@@ -491,10 +491,10 @@ fun GlowPrimaryButton(
                 drawRoundRect(
                     brush = Brush.horizontalGradient(
                         listOf(
-                            KnouxMagenta.copy(alpha = 0.08f),
-                            KnouxViolet.copy(alpha = 0.38f),
-                            KnouxBlue.copy(alpha = 0.34f),
-                            KnouxCyan.copy(alpha = 0.10f),
+                            ProArcticCyan.copy(alpha = 0.08f),
+                            ProBlue.copy(alpha = 0.38f),
+                            ProBlue.copy(alpha = 0.34f),
+                            ProArcticCyan.copy(alpha = 0.10f),
                         )
                     ),
                     topLeft = Offset(-inset, -inset),
@@ -509,7 +509,7 @@ fun GlowPrimaryButton(
                 .clip(shape)
                 .background(
                     Brush.horizontalGradient(
-                        listOf(KnouxMagenta, KnouxViolet, KnouxBlue, KnouxCyan)
+                        listOf(ProArcticCyan, ProBlue, ProBlue, ProArcticCyan)
                     )
                 )
                 .border(1.dp, Color.White.copy(alpha = 0.24f), shape)
@@ -595,7 +595,7 @@ fun PremiumGhostButton(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (icon != null) {
-            Icon(icon, null, tint = KnouxText, modifier = Modifier.size(if (compact) 15.dp else 18.dp))
+            Icon(icon, null, tint = ProTextPrimary, modifier = Modifier.size(if (compact) 15.dp else 18.dp))
             Spacer(Modifier.width(7.dp))
         }
         Text(
@@ -603,7 +603,7 @@ fun PremiumGhostButton(
             style = TextStyle(
                 fontWeight = FontWeight.Bold,
                 fontSize = if (compact) 12.sp else 14.sp,
-                color = KnouxText,
+                color = ProTextPrimary,
             ),
             maxLines = 1,
         )
@@ -618,7 +618,7 @@ fun GlowRing(
     modifier: Modifier = Modifier,
     size: Dp = 88.dp,
     stroke: Dp = 9.dp,
-    colors: List<Color> = listOf(KnouxCyan, KnouxBlue, KnouxViolet, KnouxMagenta),
+    colors: List<Color> = listOf(ProArcticCyan, ProBlue, ProBlue, ProArcticCyan),
     centerTextSize: Int = 19,
     captionSize: Int = 8,
 ) {
@@ -676,7 +676,7 @@ fun GlowRing(
                 style = TextStyle(
                     fontWeight = FontWeight.Bold,
                     fontSize = centerTextSize.sp,
-                    color = KnouxText,
+                    color = ProTextPrimary,
                 ),
                 maxLines = 1,
             )
@@ -686,7 +686,7 @@ fun GlowRing(
                     style = TextStyle(
                         fontSize = captionSize.sp,
                         lineHeight = (captionSize + 2).sp,
-                        color = KnouxSoftText,
+                        color = ProTextSecondary,
                         textAlign = TextAlign.Center,
                     ),
                     textAlign = TextAlign.Center,
@@ -701,7 +701,7 @@ fun GlowRing(
 fun MetricPill(
     value: String,
     caption: String? = null,
-    accent: Color = KnouxViolet,
+    accent: Color = ProBlue,
     modifier: Modifier = Modifier,
     compact: Boolean = false,
 ) {
@@ -737,7 +737,7 @@ fun MetricPill(
                 caption,
                 style = TextStyle(
                     fontSize = if (compact) 7.5.sp else 8.5.sp,
-                    color = KnouxSoftText,
+                    color = ProTextSecondary,
                 ),
                 maxLines = 1,
             )
@@ -750,7 +750,7 @@ fun SelectCheckbox(
     checked: Boolean,
     onToggle: () -> Unit,
     modifier: Modifier = Modifier,
-    accent: Color = KnouxViolet,
+    accent: Color = ProBlue,
     size: Dp = 22.dp,
 ) {
     val shape = RoundedCornerShape(size * 0.32f)
@@ -761,7 +761,7 @@ fun SelectCheckbox(
             .then(
                 if (checked) {
                     Modifier
-                        .background(Brush.linearGradient(listOf(accent, KnouxMagenta)))
+                        .background(Brush.linearGradient(listOf(accent, ProArcticCyan)))
                         .border(1.dp, Color.White.copy(alpha = 0.30f), shape)
                 } else {
                     Modifier
@@ -795,13 +795,13 @@ fun PremiumSectionTitle(
             style = TextStyle(
                 fontWeight = FontWeight.Bold,
                 fontSize = 15.5.sp,
-                color = KnouxText,
+                color = ProTextPrimary,
             ),
         )
         if (caption != null) {
             Text(
                 caption,
-                style = TextStyle(fontSize = 9.5.sp, color = KnouxMutedText),
+                style = TextStyle(fontSize = 9.5.sp, color = ProTextSecondary),
             )
         }
     }
@@ -821,7 +821,7 @@ fun TinyPreviewLabel(modifier: Modifier = Modifier) {
         Icon(
             Icons.Rounded.AutoAwesome,
             contentDescription = null,
-            tint = com.knoux.ai.ui.theme.KnouxAmber,
+            tint = com.knoux.ai.ui.theme.ProWarning,
             modifier = Modifier.size(9.dp),
         )
         Text(
@@ -830,7 +830,7 @@ fun TinyPreviewLabel(modifier: Modifier = Modifier) {
                 fontWeight = FontWeight.Bold,
                 fontSize = 7.5.sp,
                 letterSpacing = 0.7.sp,
-                color = com.knoux.ai.ui.theme.KnouxAmber,
+                color = com.knoux.ai.ui.theme.ProWarning,
             ),
         )
     }
@@ -865,13 +865,13 @@ fun ScanCompleteBadge(
             style = TextStyle(
                 fontWeight = FontWeight.Bold,
                 fontSize = fontSize,
-                color = KnouxText,
+                color = ProTextPrimary,
             ),
         )
     }
 }
 
 /** Kept for callers that want the app's dark surface colour inside a preview. */
-val PremiumBackdrop: Color = KnouxBackdrop
-val PremiumSoftText: Color = KnouxSoftText
-val PremiumPanel: Color = KnouxPanelDeep
+val PremiumBackdrop: Color = ProDeepInk
+val PremiumSoftText: Color = ProTextSecondary
+val PremiumPanel: Color = ProDeepInk

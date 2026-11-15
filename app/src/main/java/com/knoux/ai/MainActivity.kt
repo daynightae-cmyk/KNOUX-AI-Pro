@@ -77,9 +77,9 @@ import com.knoux.ai.ui.screens.SettingsScreen
 import com.knoux.ai.ui.screens.WelcomeScreen
 import com.knoux.ai.ui.components.LocalOpenSettings
 import com.knoux.ai.ui.theme.KnouxTheme
-import com.knoux.ai.ui.theme.KnouxCyan
-import com.knoux.ai.ui.theme.KnouxMagenta
-import com.knoux.ai.ui.theme.KnouxViolet
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProBlue
 import com.knoux.ai.R
 import kotlinx.coroutines.delay
 
@@ -256,7 +256,7 @@ fun KnouxApp(activity: Activity? = null) {
                             subtitle = "Review each junk category with its real size, then clean only what you confirm.",
                             route = "smartclean",
                             art = R.drawable.knoux_home_icon_clean,
-                            accent = KnouxMagenta,
+                            accent = ProArcticCyan,
                             value = "2.86 GB",
                             valueLabel = "junk found",
                         ),
@@ -266,7 +266,7 @@ fun KnouxApp(activity: Activity? = null) {
                                 subtitle = "Full device scan across junk, duplicates, privacy and health.",
                                 route = "deepscan",
                                 art = R.drawable.knoux_svc_deepscan,
-                                accent = KnouxCyan,
+                                accent = ProArcticCyan,
                                 value = "12",
                                 valueLabel = "modules",
                             ),
@@ -275,7 +275,7 @@ fun KnouxApp(activity: Activity? = null) {
                                 subtitle = "Hash-verified duplicate photos, video, audio and documents.",
                                 route = "duplicates",
                                 art = R.drawable.knoux_svc_duplicates,
-                                accent = KnouxViolet,
+                                accent = ProBlue,
                                 value = "1,248",
                                 valueLabel = "duplicates",
                             ),
@@ -284,7 +284,7 @@ fun KnouxApp(activity: Activity? = null) {
                                 subtitle = "Leftovers and empty folders from apps you already removed.",
                                 route = "residue",
                                 art = R.drawable.knoux_svc_residue,
-                                accent = KnouxMagenta,
+                                accent = ProArcticCyan,
                                 value = "1.9 GB",
                                 valueLabel = "reclaimable",
                             ),
@@ -303,7 +303,7 @@ fun KnouxApp(activity: Activity? = null) {
                             subtitle = "See where every byte goes, what is reclaimable and which folders dominate.",
                             route = "storage",
                             art = R.drawable.knoux_svc_storage,
-                            accent = KnouxCyan,
+                            accent = ProArcticCyan,
                             value = "128 GB",
                             valueLabel = "used of 256 GB",
                         ),
@@ -313,7 +313,7 @@ fun KnouxApp(activity: Activity? = null) {
                                 subtitle = "Installed apps, heavy weights and rarely used apps.",
                                 route = "appmanager",
                                 art = R.drawable.knoux_svc_apps,
-                                accent = KnouxViolet,
+                                accent = ProBlue,
                                 value = "41",
                                 valueLabel = "apps listed",
                             ),
@@ -322,7 +322,7 @@ fun KnouxApp(activity: Activity? = null) {
                                 subtitle = "Permission evidence and exposure signals for every app.",
                                 route = "privacy",
                                 art = R.drawable.knoux_svc_privacy,
-                                accent = KnouxMagenta,
+                                accent = ProArcticCyan,
                                 value = "7",
                                 valueLabel = "trackers found",
                             ),
@@ -331,7 +331,7 @@ fun KnouxApp(activity: Activity? = null) {
                                 subtitle = "Reduce drain, control background work and keep the device cool.",
                                 route = "battery",
                                 art = R.drawable.knoux_svc_battery,
-                                accent = KnouxCyan,
+                                accent = ProArcticCyan,
                                 value = "6h 42m",
                                 valueLabel = "estimated gain",
                             ),
@@ -340,7 +340,7 @@ fun KnouxApp(activity: Activity? = null) {
                                 subtitle = "Memory, startup and thermal tuning with measured follow-up.",
                                 route = "ai",
                                 art = R.drawable.knoux_svc_ai,
-                                accent = KnouxViolet,
+                                accent = ProBlue,
                                 value = "94",
                                 valueLabel = "performance score",
                             ),
@@ -364,7 +364,6 @@ fun KnouxApp(activity: Activity? = null) {
                 composable("duplicates") {
                     DuplicateFilesScreen(
                         onBack = { nav.backToHub(ROUTE_CLEAN) },
-                        onOpenDetail = { nav.navigate("duplicate-group") },
                     )
                 }
                 composable("deepscan") {
@@ -472,10 +471,10 @@ private fun hubFor(route: String?): String = when (route) {
 
 /** Context-aware accent glow for the global header. */
 private fun accentFor(route: String?): androidx.compose.ui.graphics.Color = when (route) {
-    ROUTE_CLEAN, "smartclean", "deepscan", "duplicates", "residue" -> KnouxMagenta
-    "privacy", "privacy-risk" -> KnouxMagenta
-    "storage", "storage-breakdown", "battery", "battery-diagnostics" -> KnouxCyan
-    else -> KnouxViolet
+    ROUTE_CLEAN, "smartclean", "deepscan", "duplicates", "residue" -> ProArcticCyan
+    "privacy", "privacy-risk" -> ProArcticCyan
+    "storage", "storage-breakdown", "battery", "battery-diagnostics" -> ProArcticCyan
+    else -> ProBlue
 }
 
 private fun NavHostController.switchTab(tab: MainTab) {

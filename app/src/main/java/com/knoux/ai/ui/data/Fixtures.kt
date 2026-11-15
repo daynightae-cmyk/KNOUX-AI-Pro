@@ -1,9 +1,9 @@
 package com.knoux.ai.ui.data
 
 import androidx.compose.ui.graphics.Color
-import com.knoux.ai.ui.theme.KnouxCyan
-import com.knoux.ai.ui.theme.KnouxMagenta
-import com.knoux.ai.ui.theme.KnouxViolet
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProBlue
 
 /**
  * Phase 1 UI-only fixture layer.
@@ -42,12 +42,12 @@ object Fixtures {
     const val LAST_RUN = "Today, 10:21 AM"
 
     val homeServices = listOf(
-        HomeService("Clean", "Remove junk & temporary files", "2.4 GB", "removable", "Clean", Key.Folder, KnouxCyan),
-        HomeService("Duplicate Files", "Find and remove duplicate items", "1,248", "duplicates", "Review", Key.Image, KnouxMagenta),
-        HomeService("Storage", "Analyze usage & free up space", "128 GB / 256 GB", "50% used", null, Key.Storage, KnouxViolet),
-        HomeService("Privacy", "Detect trackers & protect your data", "7", "trackers found", "Review", Key.Shield, KnouxCyan),
-        HomeService("Battery", "Reduce drain & extend battery life", "6h 42m", "estimated gain · preview", null, Key.Bolt, KnouxMagenta),
-        HomeService("AI Optimization", "Boost performance & keep your device fast", "Score 94", "design preview", "Optimize", Key.Chip, KnouxMagenta),
+        HomeService("Clean", "Remove junk & temporary files", "2.4 GB", "removable", "Clean", Key.Folder, ProArcticCyan),
+        HomeService("Duplicate Files", "Find and remove duplicate items", "1,248", "duplicates", "Review", Key.Image, ProArcticCyan),
+        HomeService("Storage", "Analyze usage & free up space", "128 GB / 256 GB", "50% used", null, Key.Storage, ProBlue),
+        HomeService("Privacy", "Detect trackers & protect your data", "7", "trackers found", "Review", Key.Shield, ProArcticCyan),
+        HomeService("Battery", "Reduce drain & extend battery life", "6h 42m", "estimated gain · preview", null, Key.Bolt, ProArcticCyan),
+        HomeService("AI Optimization", "Boost performance & keep your device fast", "Score 94", "design preview", "Optimize", Key.Chip, ProArcticCyan),
     )
 
     val benefits = listOf("Clean", "Optimize", "Protect", "Manage")

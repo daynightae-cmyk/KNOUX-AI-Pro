@@ -43,10 +43,10 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.knoux.ai.R
-import com.knoux.ai.ui.theme.KnouxBackdrop
-import com.knoux.ai.ui.theme.KnouxCyan
-import com.knoux.ai.ui.theme.KnouxMagenta
-import com.knoux.ai.ui.theme.KnouxViolet
+import com.knoux.ai.ui.theme.ProDeepInk
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProBlue
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -104,14 +104,14 @@ fun KnouxSplashScreen(
     val stageAlpha = 1f - 0.9f * exit
     val stageScale = 1f - 0.035f * exit
 
-    Box(modifier.fillMaxSize().background(KnouxBackdrop)) {
+    Box(modifier.fillMaxSize().background(ProDeepInk)) {
         Canvas(Modifier.fillMaxSize()) {
             val bloom = if (calm) 1f else seg(t, 0f, 260f)
             val center = Offset(size.width / 2f, size.height * 0.44f)
             val radius = size.minDimension * 0.62f
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(KnouxViolet.copy(alpha = 0.34f * bloom), Color.Transparent),
+                    colors = listOf(ProBlue.copy(alpha = 0.34f * bloom), Color.Transparent),
                     center = center,
                     radius = radius,
                 ),
@@ -128,7 +128,7 @@ fun KnouxSplashScreen(
             drawPath(
                 path = topWave,
                 brush = Brush.linearGradient(
-                    colors = listOf(KnouxCyan.copy(alpha = 0.50f), Color.Transparent),
+                    colors = listOf(ProArcticCyan.copy(alpha = 0.50f), Color.Transparent),
                     start = Offset(w * 0.60f, 0f),
                     end = Offset(w, h * 0.28f),
                 ),
@@ -141,7 +141,7 @@ fun KnouxSplashScreen(
             drawPath(
                 path = bottomWave,
                 brush = Brush.linearGradient(
-                    colors = listOf(KnouxMagenta.copy(alpha = 0.45f), KnouxCyan.copy(alpha = 0.45f)),
+                    colors = listOf(ProArcticCyan.copy(alpha = 0.45f), ProArcticCyan.copy(alpha = 0.45f)),
                     start = Offset(0f, h * 0.9f),
                     end = Offset(w, h * 0.75f),
                 ),
@@ -150,7 +150,7 @@ fun KnouxSplashScreen(
             drawPath(
                 path = bottomWave,
                 brush = Brush.linearGradient(
-                    colors = listOf(KnouxMagenta.copy(alpha = 0.14f), KnouxCyan.copy(alpha = 0.12f)),
+                    colors = listOf(ProArcticCyan.copy(alpha = 0.14f), ProArcticCyan.copy(alpha = 0.12f)),
                     start = Offset(0f, h * 0.9f),
                     end = Offset(w, h * 0.75f),
                 ),
@@ -189,9 +189,9 @@ fun KnouxSplashScreen(
                     val m1 = seg(t, 180f, 620f)
                     val m2 = seg(t, 520f, 980f)
                     val m3 = seg(t, 760f, 1120f)
-                    drawWipeBand(bmp, dst, 0.00f, 0.48f, m1, KnouxMagenta, true)
-                    drawWipeBand(bmp, dst, 0.28f, 0.78f, m2, KnouxViolet, true)
-                    drawWipeBand(bmp, dst, 0.58f, 1.00f, m3, KnouxCyan, false)
+                    drawWipeBand(bmp, dst, 0.00f, 0.48f, m1, ProArcticCyan, true)
+                    drawWipeBand(bmp, dst, 0.28f, 0.78f, m2, ProBlue, true)
+                    drawWipeBand(bmp, dst, 0.58f, 1.00f, m3, ProArcticCyan, false)
                 }
             }
 
@@ -241,7 +241,7 @@ fun KnouxSplashScreen(
                 val cy = 4.dp.toPx()
                 val top = cy - h / 2f
                 val sweep = 180f * p
-                val brush = Brush.horizontalGradient(listOf(KnouxMagenta, KnouxViolet, KnouxCyan))
+                val brush = Brush.horizontalGradient(listOf(ProArcticCyan, ProBlue, ProArcticCyan))
                 drawArc(
                     brush = brush, alpha = 0.34f,
                     startAngle = 180f, sweepAngle = -sweep, useCenter = false,
@@ -268,7 +268,7 @@ fun KnouxSplashScreen(
                     )
                     drawCircle(
                         brush = Brush.radialGradient(
-                            listOf(Color.White, KnouxCyan.copy(alpha = 0.65f), Color.Transparent)
+                            listOf(Color.White, ProArcticCyan.copy(alpha = 0.65f), Color.Transparent)
                         ),
                         radius = 17.dp.toPx(), center = tip,
                     )

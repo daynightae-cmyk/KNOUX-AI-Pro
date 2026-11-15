@@ -30,6 +30,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,20 +49,25 @@ import com.knoux.ai.ui.components.PremiumGlassCard
 import com.knoux.ai.ui.components.RasterGlowIcon
 import com.knoux.ai.ui.components.ScreenTitle
 import com.knoux.ai.ui.components.rememberMotionEnabled
-import com.knoux.ai.ui.theme.KnouxCyan
-import com.knoux.ai.ui.theme.KnouxMagenta
-import com.knoux.ai.ui.theme.KnouxMutedText
-import com.knoux.ai.ui.theme.KnouxPanelDeep
-import com.knoux.ai.ui.theme.KnouxSoftText
-import com.knoux.ai.ui.theme.KnouxText
-import com.knoux.ai.ui.theme.KnouxViolet
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProBlue
+import com.knoux.ai.ui.theme.ProDeepInk
+import com.knoux.ai.ui.theme.ProDivider
+import com.knoux.ai.ui.theme.ProElevated
+import com.knoux.ai.ui.theme.ProNavy
+import com.knoux.ai.ui.theme.ProTextPrimary
+import com.knoux.ai.ui.theme.ProTextSecondary
+import com.knoux.ai.ui.theme.ProSafe
+import com.knoux.ai.ui.theme.ProWarning
 
 /**
- * Home — "Smart Device Hub".
+ * Home — "Smart Device Hub" — FIGMA FRAME 2:2 LAYOUT ANCESTOR
  *
- * The composition follows the approved reference: a holographic globe hero,
- * a centred title block, a two-column service grid where every card carries
- * its own 3D artwork, a quick-action strip and an honest preview banner.
+ * Geometry from Figma 390×844 (360dp baseline):
+ * - Top toolbar: 56dp — compact logo, avatar, actions (handled by Scaffold)
+ * - Status panel: ~80dp — concise metrics (Storage, Battery, Last scan)
+ * - 2-column service grid: balanced tile rhythm, 16dp horizontal, 12dp vertical
+ * - Bottom nav: handled by Scaffold (4 tabs: Home/Clean/Tools/Reports)
  */
 @Composable
 fun HomeScreen(onNavigate: (String) -> Unit) {
@@ -69,82 +76,137 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
     val services = listOf(
         HomeServiceCardModel(
             title = "Smart Clean",
-            subtitle = "Remove junk, duplicates and app residue.",
+            subtitle = "Junk, duplicates, residue — previewed",
             route = "smartclean",
             art = R.drawable.knoux_home_icon_clean,
-            accent = KnouxMagenta,
+            accent = ProArcticCyan,
         ),
         HomeServiceCardModel(
-            title = "AI Optimization",
-            subtitle = "Boost performance, tune system and save battery.",
-            route = "ai",
-            art = R.drawable.knoux_home_icon_ai,
-            accent = KnouxCyan,
+            title = "Duplicate Files",
+            subtitle = "Hash-verified media & documents",
+            route = "duplicates",
+            art = R.drawable.knoux_home_icon_duplicate,
+            accent = ProArcticCyan,
         ),
         HomeServiceCardModel(
-            title = "Privacy Sweep",
-            subtitle = "Review trackers, risky permissions and exposure.",
-            route = "privacy",
-            art = R.drawable.knoux_home_icon_privacy,
-            accent = KnouxMagenta,
+            title = "App Residue",
+            subtitle = "Leftovers & empty folders",
+            route = "residue",
+            art = R.drawable.knoux_svc_residue,
+            accent = ProArcticCyan,
         ),
         HomeServiceCardModel(
             title = "Storage Analyzer",
-            subtitle = "See what's using space and what's reclaimable.",
+            subtitle = "Category breakdown & large files",
             route = "storage",
             art = R.drawable.knoux_home_icon_storage,
-            accent = KnouxCyan,
+            accent = ProArcticCyan,
+        ),
+        HomeServiceCardModel(
+            title = "Privacy Sweep",
+            subtitle = "Trackers, permissions, exposure",
+            route = "privacy",
+            art = R.drawable.knoux_home_icon_privacy,
+            accent = ProArcticCyan,
         ),
         HomeServiceCardModel(
             title = "App Manager",
-            subtitle = "Manage installed apps, usage and heavy weights.",
+            subtitle = "Installed apps, usage, heavy weights",
             route = "appmanager",
             art = R.drawable.knoux_svc_apps,
-            accent = KnouxMagenta,
+            accent = ProArcticCyan,
         ),
         HomeServiceCardModel(
-            title = "Reports & Insights",
-            subtitle = "Track cleanups, optimizations and device health trends.",
-            route = "reports",
-            art = R.drawable.knoux_hero_reports,
-            accent = KnouxCyan,
+            title = "Battery Saver",
+            subtitle = "Charge, temp, background control",
+            route = "battery",
+            art = R.drawable.knoux_home_icon_battery,
+            accent = ProArcticCyan,
+        ),
+        HomeServiceCardModel(
+            title = "AI Optimization",
+            subtitle = "Evidence-backed tuning",
+            route = "ai",
+            art = R.drawable.knoux_home_icon_ai,
+            accent = ProArcticCyan,
         ),
     )
 
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 18.dp),
+        contentPadding = PaddingValues(
+            start = 16.dp,
+            top = 12.dp,
+            end = 16.dp,
+            bottom = 90.dp,
+        ),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        item {
-            HomeHeroGlobe(motion = motion)
-        }
+        item { Spacer(Modifier.height(8.dp)) }
 
+        // STATUS PANEL: 3 concise metrics
         item {
-            Column(
+            Row(
                 Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                ScreenTitle(
-                    "Smart ",
-                    accent = "Device Hub",
-                    accentColors = listOf(KnouxMagenta, KnouxCyan),
-                    fontSize = 28.sp,
-                    lineHeight = 33.sp,
+                StatusMetricCard(
+                    label = "Storage",
+                    value = "128 GB / 256 GB",
+                    trend = "12% free",
+                    icon = Icons.Rounded.Info,
+                    accent = ProArcticCyan,
+                    modifier = Modifier.weight(1f),
+                    onClick = { onNavigate("storage") },
                 )
-                Spacer(Modifier.height(2.dp))
-                Text(
-                    "Device intelligence, optimization and cleanup — with a clear preview before any changes.",
-                    style = TextStyle(fontSize = 11.sp, lineHeight = 15.sp, color = KnouxSoftText),
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 14.dp),
+                StatusMetricCard(
+                    label = "Battery",
+                    value = "78%",
+                    trend = "6h 42m left",
+                    icon = Icons.Rounded.Bolt,
+                    accent = ProWarning,
+                    modifier = Modifier.weight(1f),
+                    onClick = { onNavigate("battery") },
+                )
+                StatusMetricCard(
+                    label = "Last Scan",
+                    value = "2h ago",
+                    trend = "Clean",
+                    icon = Icons.Rounded.Radar,
+                    accent = ProSafe,
+                    modifier = Modifier.weight(1f),
+                    onClick = { onNavigate("reports") },
                 )
             }
         }
 
+        // SECTION TITLE
+        item {
+            Column(
+                Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.Start,
+            ) {
+                Text(
+                    "Services",
+                    style = TextStyle(
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        lineHeight = 24.sp,
+                        color = ProTextPrimary,
+                    ),
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Tap any service to open its workspace",
+                    style = TextStyle(fontSize = 10.sp, lineHeight = 14.sp, color = ProTextSecondary),
+                )
+            }
+        }
+
+        // 2-COLUMN SERVICE GRID
         item {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                services.chunked(2).forEachIndexed { rowIndex, pair ->
+                services.chunked(2).forEach { pair ->
                     Row(
                         Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -156,34 +218,50 @@ fun HomeScreen(onNavigate: (String) -> Unit) {
                                 modifier = Modifier.weight(1f),
                             )
                         }
-                        if (pair.size == 1) Spacer(Modifier.weight(1f))
+                        if (pair.size == 1) {
+                            Spacer(Modifier.weight(1f))
+                        }
                     }
                 }
             }
         }
 
+        // QUICK ACTIONS STRIP
         item {
             Column {
-                Text(
-                    "Quick Actions",
-                    style = TextStyle(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        color = KnouxText,
-                    ),
-                    modifier = Modifier.padding(bottom = 8.dp),
-                )
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "Quick Actions",
+                        style = TextStyle(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            color = ProTextPrimary,
+                        ),
+                    )
+                    Text(
+                        "Tap to start",
+                        style = TextStyle(fontSize = 10.sp, color = ProTextSecondary),
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
                 QuickActionStrip(onNavigate = onNavigate)
             }
         }
 
+        // PREVIEW BANNER
         item {
             PreviewBanner()
         }
+
+        item { Spacer(Modifier.height(20.dp)) }
     }
 }
 
-private data class HomeServiceCardModel(
+data class HomeServiceCardModel(
     val title: String,
     val subtitle: String,
     val route: String,
@@ -191,89 +269,118 @@ private data class HomeServiceCardModel(
     val accent: Color,
 )
 
-/**
- * The holographic globe hero.
- *
- * The artwork keeps its original aspect ratio and fades into the app canvas
- * through Screen blending, so no rectangular crop is ever visible.
- */
+/** Compact status metric card — Figma top tracker style */
 @Composable
-private fun HomeHeroGlobe(motion: Boolean) {
-    Box(
-        Modifier
+fun StatusMetricCard(
+    label: String,
+    value: String,
+    trend: String,
+    icon: ImageVector,
+    accent: Color,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    PremiumGlassCard(
+        modifier = modifier
             .fillMaxWidth()
-            .height(208.dp),
-        contentAlignment = Alignment.Center,
+            .clickable(onClick = onClick)
+            .padding(vertical = 4.dp),
+        padding = 12.dp,
+        radius = 16.dp,
+        accent = accent,
+        borderAlpha = 0.30f,
     ) {
-        androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(KnouxMagenta.copy(alpha = 0.20f), Color.Transparent),
-                    center = androidx.compose.ui.geometry.Offset(size.width * 0.5f, size.height * 0.50f),
-                    radius = size.width * 0.48f,
+        Column(
+            Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.Start,
+        ) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(
+                    label,
+                    style = TextStyle(
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 11.sp,
+                        lineHeight = 14.sp,
+                        color = ProTextSecondary,
+                    ),
+                )
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = accent,
+                    modifier = Modifier.size(18.dp),
+                )
+            }
+            Spacer(Modifier.height(4.dp))
+            Text(
+                value,
+                style = TextStyle(
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp,
+                    lineHeight = 20.sp,
+                    color = ProTextPrimary,
                 ),
-                center = androidx.compose.ui.geometry.Offset(size.width * 0.5f, size.height * 0.50f),
-                radius = size.width * 0.48f,
+                maxLines = 1,
+            )
+            Spacer(Modifier.height(2.dp))
+            Text(
+                trend,
+                style = TextStyle(fontSize = 9.5.sp, lineHeight = 12.sp, color = ProTextSecondary),
             )
         }
-        RasterGlowIcon(
-            image = R.drawable.knoux_home_hero,
-            size = 208.dp,
-            glow = KnouxMagenta,
-        )
     }
 }
 
-/**
- * One service tile: title, description, its own 3D artwork and a compact
- * chevron affordance — the composition used by the approved reference.
- */
+/** Service tile — Figma 2-column card grammar */
 @Composable
-private fun HomeServiceTile(
+fun HomeServiceTile(
     service: HomeServiceCardModel,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     PremiumGlassCard(
-        modifier = modifier.clickable(onClick = onClick),
+        modifier = modifier
+            .clickable(onClick = onClick)
+            .padding(vertical = 2.dp),
         padding = 12.dp,
-        radius = 18.dp,
+        radius = 16.dp,
         accent = service.accent,
-        borderAlpha = 0.40f,
+        borderAlpha = 0.30f,
     ) {
         Column {
             Text(
                 service.title,
                 style = TextStyle(
                     fontWeight = FontWeight.Bold,
-                    fontSize = 13.5.sp,
+                    fontSize = 13.sp,
                     lineHeight = 17.sp,
-                    color = KnouxText,
+                    color = ProTextPrimary,
                 ),
                 maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
             )
             Spacer(Modifier.height(3.dp))
             Text(
                 service.subtitle,
-                style = TextStyle(fontSize = 9.sp, lineHeight = 12.sp, color = KnouxSoftText),
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis,
+                style = TextStyle(fontSize = 9.5.sp, lineHeight = 12.sp, color = ProTextSecondary),
+                maxLines = 2,
             )
-            Spacer(Modifier.height(6.dp))
+            Spacer(Modifier.height(8.dp))
             Row(
                 Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                RasterGlowIcon(
+                com.knoux.ai.ui.components.RasterGlowIcon(
                     image = service.art,
-                    size = 64.dp,
+                    size = 56.dp,
                     glow = service.accent,
                     modifier = Modifier.weight(1f),
                 )
                 Box(
                     Modifier
-                        .size(26.dp)
+                        .size(24.dp)
                         .clip(CircleShape)
                         .background(
                             Brush.horizontalGradient(
@@ -283,14 +390,14 @@ private fun HomeServiceTile(
                                 )
                             )
                         )
-                        .border(1.dp, service.accent.copy(alpha = 0.45f), CircleShape),
+                        .border(1.dp, service.accent.copy(alpha = 0.40f), CircleShape),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
                         Icons.Rounded.ChevronRight,
                         contentDescription = null,
-                        tint = KnouxText,
-                        modifier = Modifier.size(14.dp),
+                        tint = ProTextPrimary,
+                        modifier = Modifier.size(13.dp),
                     )
                 }
             }
@@ -298,9 +405,9 @@ private fun HomeServiceTile(
     }
 }
 
-/** Three quick actions in one strip, matching the approved reference. */
+/** Three quick actions in one strip */
 @Composable
-private fun QuickActionStrip(onNavigate: (String) -> Unit) {
+fun QuickActionStrip(onNavigate: (String) -> Unit) {
     val actions = listOf(
         Triple("Deep Scan", Icons.Rounded.Radar, "deepscan"),
         Triple("Save Battery", Icons.Rounded.Bolt, "battery"),
@@ -309,9 +416,9 @@ private fun QuickActionStrip(onNavigate: (String) -> Unit) {
     PremiumGlassCard(
         modifier = Modifier.fillMaxWidth(),
         padding = 10.dp,
-        radius = 18.dp,
-        accent = KnouxViolet,
-        borderAlpha = 0.34f,
+        radius = 16.dp,
+        accent = ProBlue,
+        borderAlpha = 0.28f,
     ) {
         Row(
             Modifier.fillMaxWidth(),
@@ -323,14 +430,14 @@ private fun QuickActionStrip(onNavigate: (String) -> Unit) {
                     Box(
                         Modifier
                             .width(1.dp)
-                            .height(32.dp)
-                            .background(Color.White.copy(alpha = 0.12f)),
+                            .height(28.dp)
+                            .background(Color.White.copy(alpha = 0.10f)),
                     )
                 }
                 Column(
                     Modifier
                         .weight(1f)
-                        .clip(RoundedCornerShape(14.dp))
+                        .clip(RoundedCornerShape(12.dp))
                         .clickable { onNavigate(route) }
                         .padding(vertical = 6.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -338,20 +445,19 @@ private fun QuickActionStrip(onNavigate: (String) -> Unit) {
                     Icon(
                         icon,
                         contentDescription = null,
-                        tint = KnouxCyan,
-                        modifier = Modifier.size(21.dp),
+                        tint = ProArcticCyan,
+                        modifier = Modifier.size(19.dp),
                     )
-                    Spacer(Modifier.height(5.dp))
+                    Spacer(Modifier.height(4.dp))
                     Text(
                         label,
                         style = TextStyle(
                             fontWeight = FontWeight.SemiBold,
-                            fontSize = 10.sp,
-                            color = KnouxText,
+                            fontSize = 9.5.sp,
+                            color = ProTextPrimary,
                         ),
                         textAlign = TextAlign.Center,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
                     )
                 }
             }
@@ -361,26 +467,26 @@ private fun QuickActionStrip(onNavigate: (String) -> Unit) {
 
 /** Honest banner: every number in the build is a design preview. */
 @Composable
-private fun PreviewBanner() {
+fun PreviewBanner() {
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(Color.White.copy(alpha = 0.04f))
-            .border(1.dp, Color.White.copy(alpha = 0.09f), RoundedCornerShape(14.dp))
-            .padding(horizontal = 12.dp, vertical = 10.dp),
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color.White.copy(alpha = 0.03f))
+            .border(1.dp, Color.White.copy(alpha = 0.07f), RoundedCornerShape(12.dp))
+            .padding(horizontal = 12.dp, vertical = 9.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
             Icons.Rounded.Info,
             contentDescription = null,
-            tint = KnouxMutedText,
-            modifier = Modifier.size(15.dp),
+            tint = ProTextSecondary,
+            modifier = Modifier.size(14.dp),
         )
-        Spacer(Modifier.width(9.dp))
+        Spacer(Modifier.width(8.dp))
         Text(
             "Preview / Demo Sample Only — these are example values and do not represent live results from your device.",
-            style = TextStyle(fontSize = 9.sp, lineHeight = 12.5.sp, color = KnouxSoftText),
+            style = TextStyle(fontSize = 8.5.sp, lineHeight = 11.5.sp, color = ProTextSecondary),
         )
     }
 }

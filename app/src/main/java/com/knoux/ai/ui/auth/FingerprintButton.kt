@@ -34,9 +34,9 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.knoux.ai.ui.theme.KnouxCyan
-import com.knoux.ai.ui.theme.KnouxMagenta
-import com.knoux.ai.ui.theme.KnouxViolet
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProBlue
 
 /**
  * Circular biometric unlock control.
@@ -113,8 +113,8 @@ fun FingerprintButton(
         Canvas(Modifier.fillMaxSize()) {
             val radius = this.size.minDimension / 2f
             val center = Offset(this.size.width / 2f, this.size.height / 2f)
-            val accent = if (success) KnouxCyan else KnouxMagenta
-            val secondary = if (success) Color(0xFF7CFFD8) else KnouxCyan
+            val accent = if (success) ProArcticCyan else ProArcticCyan
+            val secondary = if (success) Color(0xFF7CFFD8) else ProArcticCyan
 
             // ambient bloom
             drawCircle(
@@ -207,7 +207,7 @@ fun FingerprintButton(
 
             if (flash) {
                 drawCircle(
-                    color = KnouxCyan.copy(alpha = 0.55f),
+                    color = ProArcticCyan.copy(alpha = 0.55f),
                     radius = radius * 0.92f,
                     center = center,
                     style = Stroke(width = 3.dp.toPx()),

@@ -27,11 +27,11 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.knoux.ai.ui.theme.KnouxCyan
-import com.knoux.ai.ui.theme.KnouxMagenta
-import com.knoux.ai.ui.theme.KnouxMutedText
-import com.knoux.ai.ui.theme.KnouxSoftText
-import com.knoux.ai.ui.theme.KnouxText
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProTextSecondary
+import com.knoux.ai.ui.theme.ProTextSecondary
+import com.knoux.ai.ui.theme.ProTextPrimary
 
 /**
  * Small metric tile used by the inner screens to reach the density of the
@@ -41,7 +41,7 @@ data class SignalTile(
     val icon: ImageVector,
     val value: String,
     val label: String,
-    val tint: Color = KnouxCyan,
+    val tint: Color = ProArcticCyan,
     val trailing: String? = null,
 )
 
@@ -69,7 +69,7 @@ fun SignalTileCard(tile: SignalTile, modifier: Modifier = Modifier) {
                         style = TextStyle(
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
-                            color = KnouxText,
+                            color = ProTextPrimary,
                         ),
                         maxLines = 1,
                     )
@@ -88,7 +88,7 @@ fun SignalTileCard(tile: SignalTile, modifier: Modifier = Modifier) {
                 }
                 Text(
                     tile.label,
-                    style = TextStyle(fontSize = 8.sp, color = KnouxSoftText),
+                    style = TextStyle(fontSize = 8.sp, color = ProTextSecondary),
                     maxLines = 1,
                 )
             }
@@ -132,7 +132,7 @@ fun InsightBanner(
     message: String,
     modifier: Modifier = Modifier,
     icon: ImageVector = Icons.Rounded.AutoAwesome,
-    tint: Color = KnouxMagenta,
+    tint: Color = ProArcticCyan,
     badge: String? = null,
 ) {
     PremiumGlassCard(
@@ -156,7 +156,7 @@ fun InsightBanner(
                         style = TextStyle(
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp,
-                            color = KnouxText,
+                            color = ProTextPrimary,
                         ),
                         maxLines = 1,
                     )
@@ -187,7 +187,7 @@ fun InsightBanner(
                     style = TextStyle(
                         fontSize = 9.sp,
                         lineHeight = 12.sp,
-                        color = KnouxSoftText,
+                        color = ProTextSecondary,
                     ),
                 )
             }
@@ -208,7 +208,7 @@ fun ReferenceSectionLabel(text: String, trailing: String? = null, modifier: Modi
                 fontWeight = FontWeight.Bold,
                 fontSize = 9.sp,
                 letterSpacing = 1.sp,
-                color = KnouxMutedText,
+                color = ProTextSecondary,
             ),
             maxLines = 1,
         )
@@ -216,7 +216,7 @@ fun ReferenceSectionLabel(text: String, trailing: String? = null, modifier: Modi
         if (trailing != null) {
             Text(
                 trailing,
-                style = TextStyle(fontSize = 8.sp, color = KnouxMutedText),
+                style = TextStyle(fontSize = 8.sp, color = ProTextSecondary),
                 maxLines = 1,
             )
         }
