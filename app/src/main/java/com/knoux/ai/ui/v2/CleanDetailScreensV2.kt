@@ -42,6 +42,7 @@ import androidx.compose.material.icons.rounded.NotificationsActive
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.Radar
 import androidx.compose.material.icons.rounded.RocketLaunch
+import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material.icons.rounded.Verified
@@ -74,11 +75,6 @@ import androidx.compose.ui.unit.sp
 fun V2DeepScanScreen(onBack: () -> Unit, onOpenSummary: () -> Unit, onPro: () -> Unit) {
     var running by remember { mutableStateOf(true) }
     Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)) {
-        V2DeerHeader(
-            Modifier
-                .align(Alignment.TopStart).absoluteOffset(x = 24.dp, y = 2.dp)
-                .size(width = 143.dp, height = 182.dp)
-        )
         Column(Modifier.fillMaxSize()) {
             V2TopBar(V2TopMode.INTERIOR, onBack = onBack, onPro = onPro)
             LazyColumn(
@@ -406,7 +402,6 @@ fun V2DuplicatesScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -
     val filters = listOf("الكل (48)", "الصور (28)", "الفيديو (12)", "أخرى (8)")
 
     Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)) {
-        V2DeerHeader(Modifier.align(Alignment.TopStart).absoluteOffset(x = 24.dp, y = 2.dp).size(width = 108.dp, height = 132.dp))
         Column(Modifier.fillMaxSize()) {
             V2TopBar(V2TopMode.INTERIOR, onBack = onBack, onPro = onPro)
             LazyColumn(
@@ -463,6 +458,7 @@ fun V2DuplicatesScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -
                         onOpenDetail = onOpenDetail,
                     )
                 }
+                item { PreviewNote("عدد المجموعات وأحجام الملفات هنا بيانات معاينة وليست قراءة مباشرة.") }
             }
             V2GradientButton(
                 "مراجعة وحذف المكرر (2.8 GB)",
@@ -688,7 +684,6 @@ fun V2ResidueScreen(onBack: () -> Unit, onReview: () -> Unit, onPro: () -> Unit)
     var selected by remember { mutableStateOf(setOf(0, 1)) }
 
     Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)) {
-        V2DeerHeader(Modifier.align(Alignment.TopStart).absoluteOffset(x = 24.dp, y = 2.dp).size(width = 108.dp, height = 135.dp))
         Column(Modifier.fillMaxSize()) {
             V2TopBar(V2TopMode.INTERIOR, onBack = onBack, onPro = onPro)
             LazyColumn(
@@ -948,7 +943,14 @@ private fun ResidueSafetyCard() {
 @Composable
 fun V2PrivacyScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> Unit) {
     Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)) {
-        V2DeerHeader(Modifier.align(Alignment.TopStart).absoluteOffset(x = 24.dp, y = 2.dp).size(width = 105.dp, height = 130.dp))
+        // The reference puts the stag on the opposite shoulder for privacy.
+        V2DeerHeader(
+            Modifier
+                .align(Alignment.TopEnd)
+                .absoluteOffset(x = (-6).dp, y = 56.dp)
+                .size(width = 158.dp, height = 248.dp),
+            mirrored = true,
+        )
         Column(Modifier.fillMaxSize()) {
             V2TopBar(V2TopMode.INTERIOR, onBack = onBack, onPro = onPro)
             LazyColumn(
@@ -957,24 +959,18 @@ fun V2PrivacyScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> U
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 item { PrivacyTitle() }
-                item { PrivacyScoreCard() }
-                item { PermissionRiskCards() }
-                item { V2SectionLabel("أبرز النتائج", trailing = "آخر 7 أيام") }
-                item { PrivacyResultRow(Icons.Rounded.CameraAlt, "الكاميرا", "وصول دائم للكاميرا", "مرتفع", V2Pink, onOpenDetail) }
-                item { PrivacyResultRow(Icons.Rounded.LocationOn, "الموقع", "في الخلفية", "متوسط", V2Amber, onOpenDetail) }
-                item { PrivacyResultRow(Icons.Rounded.Mic, "الميكروفون", "مسجل في 5 تطبيقات", "متوسط", V2Amber, onOpenDetail) }
+                item { PrivacyHeroCard() }
+                item { V2SectionLabel("مجالات الخصوصية", trailing = "آخر 7 أيام") }
+                item { PrivacyDomainGrid(onOpenDetail) }
+                item { PrivacyChangesCard() }
+                item { PrivacyPreviewNote() }
             }
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 5.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Box(Modifier.weight(.86f)) {
-                    V2GhostButton("إدارة الأذونات", onClick = onOpenDetail, icon = Icons.Rounded.Shield)
-                }
-                Box(Modifier.weight(1.14f)) {
-                    V2GradientButton("مراجعة إعدادات النظام", onClick = onOpenDetail, icon = Icons.Rounded.Verified)
-                }
-            }
+            V2BrightGoldButton(
+                "مراجعة الأذونات",
+                onClick = onOpenDetail,
+                icon = Icons.Rounded.Shield,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp),
+            )
         }
     }
 }
@@ -982,135 +978,226 @@ fun V2PrivacyScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> U
 @Composable
 private fun PrivacyTitle() {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            Modifier
+                .width(4.dp)
+                .height(46.dp)
+                .clip(RoundedCornerShape(50))
+                .background(Brush.verticalGradient(listOf(V2Violet, V2Pink)))
+        )
+        Spacer(Modifier.width(9.dp))
         Column(Modifier.weight(1f)) {
             androidx.compose.material3.Text(
-                "فحص الخصوصية",
+                "الخصوصية الذكية",
                 style = androidx.compose.ui.text.TextStyle(
                     fontFamily = V2Font, fontWeight = FontWeight.Black, fontSize = 27.sp, color = Color.White
                 )
             )
-            KText("تحليل الأذونات والمخاطر لحماية خصوصيتك", size = 10.sp, color = V2Soft)
-        }
-        Box(
-            Modifier
-                .size(54.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(Brush.linearGradient(listOf(V2Violet.copy(alpha = .45f), V2Pink.copy(alpha = .22f))))
-                .border(1.dp, V2Violet.copy(alpha = .60f), RoundedCornerShape(16.dp)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(Icons.Rounded.Shield, null, tint = Color.White, modifier = Modifier.size(30.dp))
+            KText("تحكم كامل في أذوناتك وخصوصيتك بذكاء متقدم.", size = 10.sp, color = V2Soft)
         }
     }
 }
 
 @Composable
-private fun PrivacyScoreCard() {
+private fun PrivacyHeroCard() {
     V2GlassCard(
         Modifier.fillMaxWidth(),
         padding = 12.dp,
-        radius = 22.dp,
-        glow = V2Cyan,
-        borderAlpha = .52f,
+        radius = 24.dp,
+        glow = V2Violet,
+        borderAlpha = .55f,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            V2NeonRing(
-                progress = .86f,
-                size = 108.dp,
-                stroke = 8.dp,
-                colors = listOf(V2Pink, V2Violet, V2Blue, V2Cyan),
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    KText("86%", size = 26.sp, weight = FontWeight.Black)
-                    KText("درجة الخصوصية", size = 8.sp, color = V2Soft)
-                    Icon(Icons.Rounded.Verified, null, tint = V2Amber, modifier = Modifier.size(11.dp))
+        Column {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                V2NeonRing(
+                    progress = .76f,
+                    size = 112.dp,
+                    stroke = 8.dp,
+                    colors = listOf(V2Amber, V2Pink, V2Violet, V2Cyan),
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(Icons.Rounded.Shield, null, tint = V2Amber, modifier = Modifier.size(20.dp))
+                        KText("76%", size = 23.sp, weight = FontWeight.Black)
+                        KText("مستوى الحماية", size = 7.sp, color = V2Soft)
+                    }
+                }
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Box(
+                        Modifier
+                            .clip(RoundedCornerShape(50))
+                            .background(V2Red.copy(alpha = .18f))
+                            .border(1.dp, V2Red.copy(alpha = .55f), RoundedCornerShape(50))
+                            .padding(horizontal = 9.dp, vertical = 4.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Rounded.Shield, null, tint = V2Red, modifier = Modifier.size(13.dp))
+                            Spacer(Modifier.width(4.dp))
+                            KText("خطر مرتفع", size = 8.sp, weight = FontWeight.Bold, color = V2Red)
+                        }
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    KText(
+                        "تم اكتشاف مخاطر خصوصية تحتاج مراجعة فورية.",
+                        size = 8.6.sp,
+                        lineHeight = 12.5.sp,
+                        color = V2Soft,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        PrivacyCount("5", "أذونات حساسة", Icons.Rounded.Shield, V2Amber)
+                        Spacer(Modifier.width(12.dp))
+                        Box(Modifier.width(1.dp).height(26.dp).background(Color.White.copy(alpha = .10f)))
+                        Spacer(Modifier.width(12.dp))
+                        PrivacyCount("12", "تطبيقات متتبِّعة", Icons.Rounded.Radar, V2Violet)
+                    }
                 }
             }
-            Spacer(Modifier.width(14.dp))
-            Column(Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Rounded.Verified, null, tint = V2Green, modifier = Modifier.size(16.dp))
-                    Spacer(Modifier.width(4.dp))
-                    KText("جيدة", size = 16.sp, weight = FontWeight.Black, color = V2Green)
+            Spacer(Modifier.height(10.dp))
+            V2ProgressBar(.76f, height = 5.dp, colors = listOf(V2Amber, V2Pink, V2Violet, V2Cyan))
+            Spacer(Modifier.height(4.dp))
+            KText("إصلاح الأذونات الثلاثة الأعلى خطورة يرفع الدرجة إلى 92%.", size = 7.4.sp, color = V2Muted)
+        }
+    }
+}
+
+@Composable
+private fun PrivacyCount(value: String, label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, accent: Color) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Icon(icon, null, tint = accent, modifier = Modifier.size(17.dp))
+        Spacer(Modifier.width(5.dp))
+        Column {
+            KText(value, size = 14.sp, weight = FontWeight.Black, color = accent)
+            KText(label, size = 7.2.sp, color = V2Soft, maxLines = 1)
+        }
+    }
+}
+
+private data class PrivacyDomain(
+    val title: String,
+    val count: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val accent: Color,
+)
+
+private val privacyDomains = listOf(
+    PrivacyDomain("الكاميرا", "3 تطبيقات", Icons.Rounded.CameraAlt, V2Pink),
+    PrivacyDomain("الموقع", "4 تطبيقات", Icons.Rounded.LocationOn, V2Cyan),
+    PrivacyDomain("النشاط في الخلفية", "6 تطبيقات", Icons.Rounded.Layers, V2Violet),
+    PrivacyDomain("أدوات التتبع", "2 تطبيقات", Icons.Rounded.Radar, V2Blue),
+    PrivacyDomain("الإشعارات", "7 تطبيقات", Icons.Rounded.NotificationsActive, V2Amber),
+    PrivacyDomain("الأذونات الحساسة", "5 أذونات", Icons.Rounded.Shield, V2Green),
+)
+
+@Composable
+private fun PrivacyDomainGrid(onOpenDetail: () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+        privacyDomains.chunked(3).forEach { row ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                row.forEach { domain ->
+                    PrivacyDomainCard(domain, Modifier.weight(1f), onOpenDetail)
                 }
-                Spacer(Modifier.height(3.dp))
-                KText("تم فحص 43 تطبيقًا", size = 10.sp, color = V2Soft)
-                Spacer(Modifier.height(6.dp))
-                V2ProgressBar(.86f, height = 5.dp)
-                Spacer(Modifier.height(5.dp))
-                KText("تحسين بسيط في الأذونات يرفع درجتك.", size = 8.sp, color = V2Muted)
             }
         }
     }
 }
 
 @Composable
-private fun PermissionRiskCards() {
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-        RiskCard("منخفض", "29", V2Green, Icons.Rounded.Verified, Modifier.weight(1f))
-        RiskCard("متوسط", "11", V2Amber, Icons.Rounded.Shield, Modifier.weight(1f))
-        RiskCard("مرتفع", "3", V2Pink, Icons.Rounded.Shield, Modifier.weight(1f))
-    }
-}
-
-@Composable
-private fun RiskCard(
-    label: String,
-    value: String,
-    accent: Color,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    modifier: Modifier = Modifier,
-) {
-    V2GlassCard(modifier, padding = 8.dp, radius = 15.dp, glow = accent, borderAlpha = .38f) {
-        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(icon, null, tint = accent, modifier = Modifier.size(19.dp))
-            KText(label, size = 8.5.sp, color = V2Soft)
-            KText(value, size = 18.sp, weight = FontWeight.Black)
-        }
-    }
-}
-
-@Composable
-private fun PrivacyResultRow(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
-    subtitle: String,
-    badge: String,
-    accent: Color,
-    onClick: () -> Unit,
-) {
+private fun PrivacyDomainCard(domain: PrivacyDomain, modifier: Modifier, onClick: () -> Unit) {
     V2GlassCard(
-        Modifier.fillMaxWidth().clickable(onClick = onClick),
-        padding = 10.dp,
+        modifier.height(93.dp).clickable(onClick = onClick),
+        padding = 8.dp,
         radius = 16.dp,
-        glow = accent,
-        borderAlpha = .24f,
+        glow = domain.accent,
+        borderAlpha = .35f,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                Modifier.size(36.dp).clip(RoundedCornerShape(11.dp))
-                    .background(accent.copy(alpha = .13f))
-                    .border(1.dp, accent.copy(alpha = .34f), RoundedCornerShape(11.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(icon, null, tint = accent, modifier = Modifier.size(18.dp))
-            }
-            Spacer(Modifier.width(9.dp))
-            Column(Modifier.weight(1f)) {
-                KText(title, size = 11.sp, weight = FontWeight.Bold)
-                KText(subtitle, size = 8.sp, color = V2Soft)
-            }
-            Box(
-                Modifier
-                    .clip(RoundedCornerShape(50))
-                    .background(accent.copy(alpha = .11f))
-                    .border(1.dp, accent.copy(alpha = .30f), RoundedCornerShape(50))
-                    .padding(horizontal = 7.dp, vertical = 3.dp)
-            ) {
-                KText(badge, size = 7.5.sp, weight = FontWeight.Bold, color = accent)
-            }
-            Spacer(Modifier.width(4.dp))
-            Icon(Icons.Rounded.ChevronLeft, null, tint = V2Soft, modifier = Modifier.size(16.dp))
+        Column(
+            Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            V2IconTile(domain.icon, domain.accent, size = 31.dp, iconSize = 16.dp)
+            Spacer(Modifier.height(4.dp))
+            KText(domain.title, size = 8.4.sp, weight = FontWeight.Bold, maxLines = 1, align = TextAlign.Center)
+            KText(domain.count, size = 7.sp, color = V2Soft, maxLines = 1)
         }
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomEnd) {
+            Icon(Icons.Rounded.ChevronLeft, null, tint = V2Soft.copy(alpha = .8f), modifier = Modifier.size(13.dp))
+        }
+    }
+}
+
+private data class PrivacyChange(val app: String, val action: String, val whenText: String, val mark: AppMark, val accent: Color)
+
+private val privacyChanges = listOf(
+    PrivacyChange("صور Google", "تم منح إذن الكاميرا", "منذ 6 ساعات", AppMark.Photos, V2Blue),
+    PrivacyChange("خرائط Google", "تم منح إذن الموقع", "منذ 18 ساعة", AppMark.Generic, V2Green),
+    PrivacyChange("واتساب", "تم تعديل إذن الميكروفون", "منذ يوم واحد", AppMark.WhatsApp, V2Green),
+)
+
+@Composable
+private fun PrivacyChangesCard() {
+    V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 20.dp, glow = V2Violet, borderAlpha = .42f) {
+        Column {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Rounded.Schedule, null, tint = V2Amber, modifier = Modifier.size(17.dp))
+                Spacer(Modifier.width(6.dp))
+                KText("آخر تغييرات الأذونات", size = 12.sp, weight = FontWeight.Black)
+                Spacer(Modifier.weight(1f))
+                KText("آخر 24 ساعة", size = 7.6.sp, color = V2Muted)
+            }
+            Spacer(Modifier.height(9.dp))
+            privacyChanges.forEachIndexed { index, change ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.width(12.dp), contentAlignment = Alignment.Center) {
+                        Box(
+                            Modifier
+                                .size(7.dp)
+                                .clip(CircleShape)
+                                .background(change.accent)
+                                .border(1.dp, Color.White.copy(alpha = .35f), CircleShape)
+                        )
+                    }
+                    Spacer(Modifier.width(4.dp))
+                    if (change.mark == AppMark.Generic) {
+                        V2IconTile(Icons.Rounded.LocationOn, change.accent, size = 34.dp, iconSize = 17.dp)
+                    } else {
+                        AppLogo(change.mark, size = 34.dp)
+                    }
+                    Spacer(Modifier.width(9.dp))
+                    Column(Modifier.weight(1f)) {
+                        KText(change.app, size = 9.2.sp, weight = FontWeight.Bold)
+                        KText(change.action, size = 7.3.sp, color = V2Muted)
+                    }
+                    SummaryPill(change.whenText, change.accent)
+                }
+                if (index < privacyChanges.lastIndex) {
+                    Spacer(Modifier.height(6.dp))
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(Color.White.copy(alpha = .07f))
+                    )
+                    Spacer(Modifier.height(6.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PrivacyPreviewNote() {
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Rounded.Check, null, tint = V2Amber, modifier = Modifier.size(11.dp))
+        Spacer(Modifier.width(5.dp))
+        KText(
+            "درجة الخصوصية والأذونات هنا بيانات معاينة وليست قراءة مباشرة من الجهاز.",
+            size = 7.2.sp,
+            color = V2Muted,
+        )
     }
 }

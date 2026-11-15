@@ -92,7 +92,7 @@ private val cleanServices = listOf(
     ),
     HubV2(
         "التنظيف الذكي", "مراجعة الملفات المؤقتة والكاش", "smartclean",
-        R.drawable.knoux_home_icon_clean, V2Cyan, "2.86 GB", "مقترح",
+        R.drawable.knoux_home_icon_clean, V2Cyan, "2.92 GB", "مقترح",
     ),
 )
 
@@ -130,11 +130,6 @@ fun V2CleanHubScreen(
     Box(
         Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)
     ) {
-        V2DeerHeader(
-            Modifier
-                .align(Alignment.TopStart).absoluteOffset(x = 24.dp, y = 2.dp)
-                .size(width = 138.dp, height = 160.dp)
-        )
         Column(Modifier.fillMaxSize()) {
             V2TopBar(
                 V2TopMode.HOME,
@@ -169,11 +164,6 @@ fun V2ToolsHubScreen(
     Box(
         Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)
     ) {
-        V2DeerHeader(
-            Modifier
-                .align(Alignment.TopStart).absoluteOffset(x = 24.dp, y = 2.dp)
-                .size(width = 128.dp, height = 152.dp)
-        )
         Column(Modifier.fillMaxSize()) {
             V2TopBar(
                 V2TopMode.HOME,
@@ -355,7 +345,7 @@ private fun BestNextAction(onClick: () -> Unit) {
             Spacer(Modifier.width(9.dp))
             Column(Modifier.weight(1f)) {
                 KText("الخطوة التالية المقترحة", size = 11.sp, weight = FontWeight.Bold)
-                KText("ابدأ بمراجعة 2.86 GB من الملفات المؤقتة قبل أي حذف.", size = 8.3.sp, color = V2Soft)
+                KText("ابدأ بمراجعة 2.92 GB من الملفات المؤقتة قبل أي حذف.", size = 8.3.sp, color = V2Soft)
             }
             Icon(Icons.Rounded.ChevronLeft, null, tint = V2Soft, modifier = Modifier.size(17.dp))
         }
@@ -457,7 +447,6 @@ fun V2ReportsScreen(
     Box(
         Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)
     ) {
-        V2DeerHeader(Modifier.align(Alignment.TopStart).absoluteOffset(x = 24.dp, y = 2.dp).size(width = 120.dp, height = 145.dp))
         Column(Modifier.fillMaxSize()) {
             V2TopBar(
                 V2TopMode.HOME,
@@ -585,7 +574,7 @@ private fun WeekTrendCard() {
             PerformanceChart()
             Spacer(Modifier.height(4.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                listOf("السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة").forEach {
+                listOf("الجمعة", "الخميس", "الأربعاء", "الثلاثاء", "الاثنين", "الأحد", "السبت").forEach {
                     KText(it, size = 7.sp, color = V2Muted)
                 }
             }
@@ -683,13 +672,21 @@ private val cleanCategories = listOf(
     CleanCategory("سلة المحذوفات", "ملفات في سلة المهملات", "70 MB", R.drawable.knoux_clean_icon_recycle, V2Cyan),
 )
 
+private val cleanSizesGb = listOf(1.73, .684, .356, .078, .070)
+private val cleanTotalGb = cleanSizesGb.sum()
+
+private fun gbText(value: Double): String =
+    String.format(java.util.Locale.US, "%.2f GB", value)
+
 @Composable
 fun V2SmartCleanScreen(onBack: () -> Unit, onOpenDeepScan: () -> Unit, onPro: () -> Unit) {
     var selected by remember { mutableStateOf(setOf(0, 1)) }
-    val selectedSize = if (selected.isEmpty()) "0" else "2.84 GB"
+    val selectedGb = cleanSizesGb.filterIndexed { index, _ -> selected.contains(index) }.sum()
+    val selectedSize = gbText(selectedGb)
+    val totalSize = gbText(cleanTotalGb)
+    val selectedProgress = if (cleanTotalGb > 0) (selectedGb / cleanTotalGb).toFloat() else 0f
 
     Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)) {
-        V2DeerHeader(Modifier.align(Alignment.TopStart).absoluteOffset(x = 24.dp, y = 2.dp).size(width = 120.dp, height = 140.dp))
         Column(Modifier.fillMaxSize()) {
             V2TopBar(V2TopMode.INTERIOR, onBack = onBack, onPro = onPro)
             LazyColumn(
@@ -701,6 +698,8 @@ fun V2SmartCleanScreen(onBack: () -> Unit, onOpenDeepScan: () -> Unit, onPro: ()
                 item {
                     SmartCleanSummary(
                         selectedSize = selectedSize,
+                        totalSize = totalSize,
+                        selectedProgress = selectedProgress,
                         onOpenDeepScan = onOpenDeepScan,
                     )
                 }
@@ -719,6 +718,7 @@ fun V2SmartCleanScreen(onBack: () -> Unit, onOpenDeepScan: () -> Unit, onPro: ()
                     )
                 }
                 item { CleanSafetyCard() }
+                item { PreviewNote("أحجام العناصر هنا بيانات معاينة حتى تُربط بقراءة التخزين الفعلية.") }
             }
             Row(
                 Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
@@ -751,7 +751,12 @@ private fun SmartCleanHeader() {
 }
 
 @Composable
-private fun SmartCleanSummary(selectedSize: String, onOpenDeepScan: () -> Unit) {
+private fun SmartCleanSummary(
+    selectedSize: String,
+    totalSize: String,
+    selectedProgress: Float,
+    onOpenDeepScan: () -> Unit,
+) {
     V2GlassCard(
         Modifier.fillMaxWidth(),
         padding = 12.dp,
@@ -761,7 +766,7 @@ private fun SmartCleanSummary(selectedSize: String, onOpenDeepScan: () -> Unit) 
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             V2NeonRing(
-                progress = .88f,
+                progress = selectedProgress,
                 size = 103.dp,
                 stroke = 7.dp,
                 colors = listOf(V2Cyan, V2Blue, V2Violet, V2Pink),
@@ -780,9 +785,9 @@ private fun SmartCleanSummary(selectedSize: String, onOpenDeepScan: () -> Unit) 
                 }
                 Spacer(Modifier.height(4.dp))
                 KText("جاهز للتنظيف", size = 21.sp, weight = FontWeight.Black)
-                KText("قابلة للتنظيف من إجمالي 2.86 GB", size = 8.sp, color = V2Soft)
+                KText("قابلة للتنظيف من إجمالي $totalSize", size = 8.sp, color = V2Soft)
                 Spacer(Modifier.height(5.dp))
-                V2ProgressBar(.88f, height = 5.dp)
+                V2ProgressBar(selectedProgress, height = 5.dp)
                 Spacer(Modifier.height(5.dp))
                 KText("آخر فحص: اليوم 12:51", size = 7.3.sp, color = V2Muted)
             }

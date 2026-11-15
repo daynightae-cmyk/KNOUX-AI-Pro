@@ -77,14 +77,14 @@ import com.knoux.ai.ui.data.Fixtures
 import com.knoux.ai.ui.data.Key
 import com.knoux.ai.ui.data.MiniStat
 import com.knoux.ai.ui.data.PreviewRow
-import com.knoux.ai.ui.theme.KnouxAmber
-import com.knoux.ai.ui.theme.KnouxCyan
-import com.knoux.ai.ui.theme.KnouxMagenta
-import com.knoux.ai.ui.theme.KnouxPanelAlt
-import com.knoux.ai.ui.theme.KnouxPanelDeep
-import com.knoux.ai.ui.theme.KnouxSoftText
-import com.knoux.ai.ui.theme.KnouxText
-import com.knoux.ai.ui.theme.KnouxViolet
+import com.knoux.ai.ui.theme.ProWarning
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProNavy
+import com.knoux.ai.ui.theme.ProDeepInk
+import com.knoux.ai.ui.theme.ProTextSecondary
+import com.knoux.ai.ui.theme.ProTextPrimary
+import com.knoux.ai.ui.theme.ProBlue
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -97,20 +97,20 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 @Composable
 fun DetailSectionTitle(text: String, caption: String? = null) {
     Column(Modifier.fillMaxWidth().padding(top = 4.dp)) {
-        Text(text, style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 16.sp, color = KnouxText))
+        Text(text, style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 16.sp, color = ProTextPrimary))
         if (caption != null) {
-            Text(caption, style = TextStyle(fontSize = 10.5.sp, color = KnouxSoftText))
+            Text(caption, style = TextStyle(fontSize = 10.5.sp, color = ProTextSecondary))
         }
     }
 }
 
 @Composable
-fun NoticePanel(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String, tint: Color = KnouxCyan) {
+fun NoticePanel(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String, tint: Color = ProArcticCyan) {
     GlassPanel(Modifier.fillMaxWidth().padding(top = 8.dp), padding = 12.dp) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             NeonIconTile(icon, size = 32.dp, iconSize = 16.dp, tint = tint)
             Spacer(Modifier.width(10.dp))
-            Text(text, style = TextStyle(fontSize = 10.5.sp, lineHeight = 15.sp, color = KnouxSoftText))
+            Text(text, style = TextStyle(fontSize = 10.5.sp, lineHeight = 15.sp, color = ProTextSecondary))
         }
     }
 }
@@ -126,8 +126,8 @@ fun DetailRowCard(
         Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
-            .background(Brush.horizontalGradient(listOf(KnouxPanelAlt.copy(alpha = 0.92f), KnouxPanelDeep.copy(alpha = 0.88f))))
-            .border(1.dp, KnouxViolet.copy(alpha = 0.26f), RoundedCornerShape(16.dp))
+            .background(Brush.horizontalGradient(listOf(ProNavy.copy(alpha = 0.92f), ProDeepInk.copy(alpha = 0.88f))))
+            .border(1.dp, ProBlue.copy(alpha = 0.26f), RoundedCornerShape(16.dp))
             .let { if (onClick != null) it.clickable { onClick() } else it }
             .padding(horizontal = 12.dp, vertical = 11.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -135,17 +135,17 @@ fun DetailRowCard(
         NeonIconTile(iconFor(row.icon), size = 34.dp, iconSize = 17.dp)
         Spacer(Modifier.width(10.dp))
         Column(Modifier.weight(1f)) {
-            Text(row.title, style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 13.sp, color = KnouxText))
-            Text(row.subtitle, style = TextStyle(fontSize = 10.sp, lineHeight = 14.sp, color = KnouxSoftText), maxLines = 2)
+            Text(row.title, style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 13.sp, color = ProTextPrimary))
+            Text(row.subtitle, style = TextStyle(fontSize = 10.sp, lineHeight = 14.sp, color = ProTextSecondary), maxLines = 2)
         }
         if (trailing != null) {
-            Text(trailing, style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 11.5.sp, color = KnouxCyan))
+            Text(trailing, style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 11.5.sp, color = ProArcticCyan))
         }
         if (checked != null) {
             Icon(
                 if (checked) Icons.Rounded.Check else Icons.Rounded.ChevronRight,
                 null,
-                tint = if (checked) KnouxCyan else KnouxSoftText,
+                tint = if (checked) ProArcticCyan else ProTextSecondary,
                 modifier = Modifier.size(17.dp),
             )
         }
@@ -156,13 +156,13 @@ fun DetailRowCard(
 fun PreviewActionDialog(title: String, message: String, confirm: String, onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(title, color = KnouxText, fontWeight = FontWeight.Bold) },
-        text = { Text(message, color = KnouxSoftText, fontSize = 13.sp, lineHeight = 19.sp) },
-        confirmButton = { TextButton(onClick = onDismiss) { Text(confirm, color = KnouxCyan) } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Close", color = KnouxSoftText) } },
-        containerColor = KnouxPanelAlt,
-        titleContentColor = KnouxText,
-        textContentColor = KnouxSoftText,
+        title = { Text(title, color = ProTextPrimary, fontWeight = FontWeight.Bold) },
+        text = { Text(message, color = ProTextSecondary, fontSize = 13.sp, lineHeight = 19.sp) },
+        confirmButton = { TextButton(onClick = onDismiss) { Text(confirm, color = ProArcticCyan) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Close", color = ProTextSecondary) } },
+        containerColor = ProNavy,
+        titleContentColor = ProTextPrimary,
+        textContentColor = ProTextSecondary,
     )
 }
 
@@ -201,8 +201,8 @@ fun LegacySmartCleanCenterScreen(onBack: () -> Unit, onOpenDeepScan: () -> Unit)
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
                         SummaryLine(Icons.Rounded.Folder, "Selected categories:", "${selected.size} of ${groups.size}")
-                        SummaryLine(Icons.Rounded.Shield, "Safety:", "Preview only", KnouxCyan)
-                        SummaryLine(Icons.Rounded.Event, "Last scan:", "Not measured yet", KnouxViolet)
+                        SummaryLine(Icons.Rounded.Shield, "Safety:", "Preview only", ProArcticCyan)
+                        SummaryLine(Icons.Rounded.Event, "Last scan:", "Not measured yet", ProBlue)
                     }
                 }
             }
@@ -262,14 +262,14 @@ fun DuplicateGroupReviewScreen(onBack: () -> Unit) {
             Spacer(Modifier.height(6.dp))
             SignalTileGrid(
                 tiles = listOf(
-                    SignalTile(Icons.Rounded.Folder, "24", "Duplicate groups", KnouxMagenta),
-                    SignalTile(Icons.Rounded.Storage, "3.8 GB", "Reclaimable", KnouxCyan),
-                    SignalTile(Icons.Rounded.Image, "1.2 GB", "Largest group", KnouxViolet),
-                    SignalTile(Icons.Rounded.Shield, "92%", "Media coverage", KnouxAmber),
+                    SignalTile(Icons.Rounded.Folder, "24", "Duplicate groups", ProArcticCyan),
+                    SignalTile(Icons.Rounded.Storage, "3.8 GB", "Reclaimable", ProArcticCyan),
+                    SignalTile(Icons.Rounded.Image, "1.2 GB", "Largest group", ProBlue),
+                    SignalTile(Icons.Rounded.Shield, "92%", "Media coverage", ProWarning),
                 ),
             )
         }
-        item { NoticePanel(Icons.Rounded.Lock, "Keep-one invariant: the canonical original of each group is always preserved, even when every other copy is selected.", KnouxCyan) }
+        item { NoticePanel(Icons.Rounded.Lock, "Keep-one invariant: the canonical original of each group is always preserved, even when every other copy is selected.", ProArcticCyan) }
         item { MiniStatStrip(Fixtures.duplicateStats) }
         item { DetailSectionTitle("Duplicate Groups", "${groups.size} groups · sample values") }
         items(groups.size) { index ->
@@ -280,7 +280,7 @@ fun DuplicateGroupReviewScreen(onBack: () -> Unit) {
             }
         }
         item { Spacer(Modifier.height(8.dp)) }
-        item { NoticePanel(Icons.Rounded.Info, "Exact duplicates require hash + size verification. Similar photos are marked as similar, never as guaranteed duplicates. Thumbnails appear only from media the app is allowed to read.", KnouxViolet) }
+        item { NoticePanel(Icons.Rounded.Info, "Exact duplicates require hash + size verification. Similar photos are marked as similar, never as guaranteed duplicates. Thumbnails appear only from media the app is allowed to read.", ProBlue) }
     }
     if (dialog) {
         PreviewActionDialog(
@@ -336,34 +336,34 @@ fun PrivacyRiskInspectorScreen(onBack: () -> Unit) {
             Spacer(Modifier.height(6.dp))
             SignalTileGrid(
                 tiles = listOf(
-                    SignalTile(Icons.Rounded.Shield, "5", "High-risk apps", KnouxMagenta),
-                    SignalTile(Icons.Rounded.CameraAlt, "2", "Camera access", KnouxAmber),
-                    SignalTile(Icons.Rounded.Mic, "1", "Microphone", KnouxAmber),
-                    SignalTile(Icons.Rounded.LocationOn, "3", "Background location", KnouxCyan),
+                    SignalTile(Icons.Rounded.Shield, "5", "High-risk apps", ProArcticCyan),
+                    SignalTile(Icons.Rounded.CameraAlt, "2", "Camera access", ProWarning),
+                    SignalTile(Icons.Rounded.Mic, "1", "Microphone", ProWarning),
+                    SignalTile(Icons.Rounded.LocationOn, "3", "Background location", ProArcticCyan),
                 ),
             )
         }
         item { MiniStatStrip(stats) }
-        item { NoticePanel(Icons.Rounded.Shield, "Android does not let a normal Play app block another app's trackers or revoke its permissions silently. These findings are evidence-based permission signals, not proof of malicious behaviour.", KnouxAmber) }
+        item { NoticePanel(Icons.Rounded.Shield, "Android does not let a normal Play app block another app's trackers or revoke its permissions silently. These findings are evidence-based permission signals, not proof of malicious behaviour.", ProWarning) }
         item { DetailSectionTitle("App Permission Evidence", "Sample inventory · tap a row for details") }
         items(rows.size) { index ->
             val (app, perms, risk) = rows[index]
             Box(Modifier.padding(top = 8.dp)) {
                 GlassPanel(Modifier.fillMaxWidth(), padding = 12.dp) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        NeonIconTile(Icons.Rounded.Shield, size = 34.dp, iconSize = 17.dp, tint = if (index < 2) KnouxMagenta else KnouxCyan)
+                        NeonIconTile(Icons.Rounded.Shield, size = 34.dp, iconSize = 17.dp, tint = if (index < 2) ProArcticCyan else ProArcticCyan)
                         Spacer(Modifier.width(10.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(app, style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 13.sp, color = KnouxText))
-                            Text(perms, style = TextStyle(fontSize = 10.sp, color = KnouxSoftText))
-                            Text(risk, style = TextStyle(fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (index < 2) KnouxMagenta else KnouxCyan))
+                            Text(app, style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 13.sp, color = ProTextPrimary))
+                            Text(perms, style = TextStyle(fontSize = 10.sp, color = ProTextSecondary))
+                            Text(risk, style = TextStyle(fontSize = 10.sp, fontWeight = FontWeight.Bold, color = if (index < 2) ProArcticCyan else ProArcticCyan))
                         }
-                        Icon(Icons.Rounded.ChevronRight, null, tint = KnouxSoftText, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Rounded.ChevronRight, null, tint = ProTextSecondary, modifier = Modifier.size(16.dp))
                     }
                 }
             }
         }
-        item { NoticePanel(Icons.Rounded.Info, "Risk labels explain permission combinations only. A granted permission is not evidence of tracking; SDK detection requires actual on-device analysis.", KnouxViolet) }
+        item { NoticePanel(Icons.Rounded.Info, "Risk labels explain permission combinations only. A granted permission is not evidence of tracking; SDK detection requires actual on-device analysis.", ProBlue) }
     }
 }
 
@@ -398,10 +398,10 @@ fun DeepScanSummaryScreen(onBack: () -> Unit, onOpenSmartClean: () -> Unit) {
             Spacer(Modifier.height(6.dp))
             SignalTileGrid(
                 tiles = listOf(
-                    SignalTile(Icons.Rounded.Storage, "2.4 GB", "Junk found", KnouxMagenta),
-                    SignalTile(Icons.Rounded.Shield, "7", "Privacy alerts", KnouxCyan),
-                    SignalTile(Icons.Rounded.Folder, "1,248", "Duplicates", KnouxViolet),
-                    SignalTile(Icons.Rounded.Bolt, "5", "Battery sources", KnouxAmber),
+                    SignalTile(Icons.Rounded.Storage, "2.4 GB", "Junk found", ProArcticCyan),
+                    SignalTile(Icons.Rounded.Shield, "7", "Privacy alerts", ProArcticCyan),
+                    SignalTile(Icons.Rounded.Folder, "1,248", "Duplicates", ProBlue),
+                    SignalTile(Icons.Rounded.Bolt, "5", "Battery sources", ProWarning),
                 ),
             )
         }
@@ -412,9 +412,9 @@ fun DeepScanSummaryScreen(onBack: () -> Unit, onOpenSmartClean: () -> Unit) {
                     ProgressDonut(progress = 1f, centerText = "Done", caption = "design preview", size = 88.dp)
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                        SummaryLine(Icons.Rounded.Event, "Finished:", "Preview · no engine run", KnouxCyan)
-                        SummaryLine(Icons.Rounded.Storage, "Modules:", "5 scanned (preview)", KnouxViolet)
-                        SummaryLine(Icons.Rounded.Shield, "Result:", "Review required", KnouxMagenta)
+                        SummaryLine(Icons.Rounded.Event, "Finished:", "Preview · no engine run", ProArcticCyan)
+                        SummaryLine(Icons.Rounded.Storage, "Modules:", "5 scanned (preview)", ProBlue)
+                        SummaryLine(Icons.Rounded.Shield, "Result:", "Review required", ProArcticCyan)
                     }
                 }
             }
@@ -425,7 +425,7 @@ fun DeepScanSummaryScreen(onBack: () -> Unit, onOpenSmartClean: () -> Unit) {
                 DetailRowCard(modules[index], trailing = modules[index].badge)
             }
         }
-        item { NoticePanel(Icons.Rounded.Info, "The real scan engine is not connected in this UI milestone. Progress, counts and completion shown anywhere in the app are labelled preview until a worker measures them.", KnouxCyan) }
+        item { NoticePanel(Icons.Rounded.Info, "The real scan engine is not connected in this UI milestone. Progress, counts and completion shown anywhere in the app are labelled preview until a worker measures them.", ProArcticCyan) }
     }
 }
 
@@ -455,10 +455,10 @@ fun PerformanceReportDetailScreen(onBack: () -> Unit) {
             Spacer(Modifier.height(6.dp))
             SignalTileGrid(
                 tiles = listOf(
-                    SignalTile(Icons.Rounded.TrendingUp, "92%", "Device score", KnouxCyan, trailing = "+6"),
-                    SignalTile(Icons.Rounded.Storage, "12.6 GB", "Space saved", KnouxMagenta),
-                    SignalTile(Icons.Rounded.BarChart, "7", "Reports stored", KnouxViolet),
-                    SignalTile(Icons.Rounded.EmojiEvents, "Storage", "Best run", KnouxAmber),
+                    SignalTile(Icons.Rounded.TrendingUp, "92%", "Device score", ProArcticCyan, trailing = "+6"),
+                    SignalTile(Icons.Rounded.Storage, "12.6 GB", "Space saved", ProArcticCyan),
+                    SignalTile(Icons.Rounded.BarChart, "7", "Reports stored", ProBlue),
+                    SignalTile(Icons.Rounded.EmojiEvents, "Storage", "Best run", ProWarning),
                 ),
             )
         }
@@ -468,9 +468,9 @@ fun PerformanceReportDetailScreen(onBack: () -> Unit) {
                     ProgressDonut(progress = 0.92f, centerText = "92%", caption = "device score", size = 94.dp)
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        SummaryLine(Icons.Rounded.EmojiEvents, "Best improvement:", "Storage Cleanup", KnouxAmber)
-                        SummaryLine(Icons.Rounded.TrendingUp, "Weekly change:", "▲ +6% (sample)", KnouxCyan)
-                        SummaryLine(Icons.Rounded.Event, "Last report:", Fixtures.LAST_RUN, KnouxViolet)
+                        SummaryLine(Icons.Rounded.EmojiEvents, "Best improvement:", "Storage Cleanup", ProWarning)
+                        SummaryLine(Icons.Rounded.TrendingUp, "Weekly change:", "▲ +6% (sample)", ProArcticCyan)
+                        SummaryLine(Icons.Rounded.Event, "Last report:", Fixtures.LAST_RUN, ProBlue)
                     }
                 }
             }
@@ -490,12 +490,12 @@ fun PerformanceReportDetailScreen(onBack: () -> Unit) {
                                     .fillMaxWidth()
                                     .height((72 * value).dp)
                                     .clip(RoundedCornerShape(6.dp))
-                                    .background(Brush.verticalGradient(listOf(KnouxCyan, KnouxViolet))),
+                                    .background(Brush.verticalGradient(listOf(ProArcticCyan, ProBlue))),
                             )
                             Spacer(Modifier.height(4.dp))
                             Text(
                                 listOf("M", "T", "W", "T", "F", "S", "S")[index],
-                                style = TextStyle(fontSize = 8.5.sp, color = KnouxSoftText),
+                                style = TextStyle(fontSize = 8.5.sp, color = ProTextSecondary),
                             )
                         }
                     }
@@ -508,7 +508,7 @@ fun PerformanceReportDetailScreen(onBack: () -> Unit) {
                 DetailRowCard(Fixtures.reportRows[index], trailing = Fixtures.reportRows[index].badge)
             }
         }
-        item { NoticePanel(Icons.Rounded.Info, "The chart is an illustrative preview, not stored telemetry. Export stays unavailable until report records exist; the button explains that instead of pretending to generate a PDF.", KnouxAmber) }
+        item { NoticePanel(Icons.Rounded.Info, "The chart is an illustrative preview, not stored telemetry. Export stays unavailable until report records exist; the button explains that instead of pretending to generate a PDF.", ProWarning) }
     }
     if (dialog) {
         PreviewActionDialog(

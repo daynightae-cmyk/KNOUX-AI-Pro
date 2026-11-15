@@ -56,13 +56,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.knoux.ai.ui.theme.KnouxAmber
-import com.knoux.ai.ui.theme.KnouxCyan
-import com.knoux.ai.ui.theme.KnouxMagenta
-import com.knoux.ai.ui.theme.KnouxMutedText
-import com.knoux.ai.ui.theme.KnouxSoftText
-import com.knoux.ai.ui.theme.KnouxText
-import com.knoux.ai.ui.theme.KnouxViolet
+import com.knoux.ai.ui.theme.ProWarning
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProTextSecondary
+import com.knoux.ai.ui.theme.ProTextSecondary
+import com.knoux.ai.ui.theme.ProTextPrimary
+import com.knoux.ai.ui.theme.ProBlue
 
 /** The visual states the identity gateway can present. */
 enum class AuthVisualState {
@@ -142,14 +142,14 @@ fun FingerprintOrb(
     )
     val coreColor = when (state) {
         AuthVisualState.Success -> Color(0xFF3DFFB0)
-        AuthVisualState.Unavailable -> KnouxAmber
-        AuthVisualState.Scanning -> KnouxCyan
-        AuthVisualState.Idle -> KnouxMagenta
+        AuthVisualState.Unavailable -> ProWarning
+        AuthVisualState.Scanning -> ProArcticCyan
+        AuthVisualState.Idle -> ProArcticCyan
     }
     val ringColor = when (state) {
-        AuthVisualState.Success -> KnouxCyan
-        AuthVisualState.Unavailable -> KnouxAmber
-        else -> KnouxCyan
+        AuthVisualState.Success -> ProArcticCyan
+        AuthVisualState.Unavailable -> ProWarning
+        else -> ProArcticCyan
     }
 
     Box(
@@ -188,8 +188,8 @@ fun FingerprintOrb(
                 brush = Brush.sweepGradient(
                     listOf(
                         Color.Transparent,
-                        KnouxCyan.copy(alpha = 0.85f),
-                        KnouxMagenta.copy(alpha = 0.75f),
+                        ProArcticCyan.copy(alpha = 0.85f),
+                        ProArcticCyan.copy(alpha = 0.75f),
                         Color.Transparent,
                     ),
                     center = center,
@@ -205,8 +205,8 @@ fun FingerprintOrb(
                 brush = Brush.sweepGradient(
                     listOf(
                         Color.Transparent,
-                        KnouxMagenta.copy(alpha = 0.70f),
-                        KnouxCyan.copy(alpha = 0.70f),
+                        ProArcticCyan.copy(alpha = 0.70f),
+                        ProArcticCyan.copy(alpha = 0.70f),
                         Color.Transparent,
                     ),
                     center = center,
@@ -229,7 +229,7 @@ fun FingerprintOrb(
                     center.y + (dotRadius * kotlin.math.sin(angle)).toFloat(),
                 )
                 drawCircle(
-                    color = KnouxCyan.copy(alpha = 0.30f),
+                    color = ProArcticCyan.copy(alpha = 0.30f),
                     radius = 1.1.dp.toPx(),
                     center = dot,
                 )
@@ -239,8 +239,8 @@ fun FingerprintOrb(
             drawCircle(
                 brush = Brush.radialGradient(
                     colors = listOf(
-                        KnouxViolet.copy(alpha = 0.30f),
-                        KnouxMagenta.copy(alpha = 0.12f),
+                        ProBlue.copy(alpha = 0.30f),
+                        ProArcticCyan.copy(alpha = 0.12f),
                         Color.Transparent,
                     ),
                     center = Offset(center.x - radius * 0.18f, center.y - radius * 0.22f),
@@ -267,9 +267,9 @@ fun FingerprintOrb(
                 drawArc(
                     brush = Brush.linearGradient(
                         listOf(
-                            KnouxCyan.copy(alpha = alpha),
-                            KnouxMagenta.copy(alpha = alpha * 0.92f),
-                            KnouxViolet.copy(alpha = alpha * 0.80f),
+                            ProArcticCyan.copy(alpha = alpha),
+                            ProArcticCyan.copy(alpha = alpha * 0.92f),
+                            ProBlue.copy(alpha = alpha * 0.80f),
                         ),
                         start = Offset(center.x - ridgeRadius, center.y - ridgeRadius),
                         end = Offset(center.x + ridgeRadius, center.y + ridgeRadius),
@@ -286,7 +286,7 @@ fun FingerprintOrb(
             // the core whorl
             drawArc(
                 brush = Brush.sweepGradient(
-                    listOf(KnouxCyan, KnouxMagenta, KnouxViolet, KnouxCyan)
+                    listOf(ProArcticCyan, ProArcticCyan, ProBlue, ProArcticCyan)
                 ),
                 startAngle = 40f,
                 sweepAngle = 300f,
@@ -302,7 +302,7 @@ fun FingerprintOrb(
                 brush = Brush.horizontalGradient(
                     listOf(
                         Color.Transparent,
-                        KnouxCyan.copy(alpha = if (state == AuthVisualState.Scanning) 0.85f else 0.38f),
+                        ProArcticCyan.copy(alpha = if (state == AuthVisualState.Scanning) 0.85f else 0.38f),
                         Color.Transparent,
                     )
                 ),
@@ -333,8 +333,8 @@ fun FingerprintOrb(
                         listOf(
                             when (state) {
                                 AuthVisualState.Success -> Color(0xFF3DFFB0).copy(alpha = 0.30f)
-                                AuthVisualState.Unavailable -> KnouxAmber.copy(alpha = 0.30f)
-                                else -> KnouxMagenta.copy(alpha = 0.26f)
+                                AuthVisualState.Unavailable -> ProWarning.copy(alpha = 0.30f)
+                                else -> ProArcticCyan.copy(alpha = 0.26f)
                             },
                             Color.Black.copy(alpha = 0.18f),
                         )
@@ -344,8 +344,8 @@ fun FingerprintOrb(
                     1.5.dp,
                     when (state) {
                         AuthVisualState.Success -> Color(0xFF3DFFB0)
-                        AuthVisualState.Unavailable -> KnouxAmber
-                        else -> KnouxMagenta.copy(alpha = 0.85f)
+                        AuthVisualState.Unavailable -> ProWarning
+                        else -> ProArcticCyan.copy(alpha = 0.85f)
                     },
                     CircleShape,
                 ),
@@ -360,8 +360,8 @@ fun FingerprintOrb(
                 contentDescription = null,
                 tint = when (state) {
                     AuthVisualState.Success -> Color(0xFF3DFFB0)
-                    AuthVisualState.Unavailable -> KnouxAmber
-                    else -> KnouxText
+                    AuthVisualState.Unavailable -> ProWarning
+                    else -> ProTextPrimary
                 },
                 modifier = Modifier.size(20.dp),
             )
@@ -437,7 +437,7 @@ fun AuthMethodButton(
             Icon(
                 icon,
                 contentDescription = null,
-                tint = if (enabled) accent else KnouxMutedText,
+                tint = if (enabled) accent else ProTextSecondary,
                 modifier = Modifier.size(21.dp),
             )
         }
@@ -456,13 +456,13 @@ fun AuthMethodButton(
                     fontWeight = FontWeight.Bold,
                     fontSize = 15.sp,
                     lineHeight = 19.sp,
-                    color = if (enabled) KnouxText else KnouxMutedText,
+                    color = if (enabled) ProTextPrimary else ProTextSecondary,
                 ),
             )
             if (trailing != null) {
                 Text(
                     trailing,
-                    style = TextStyle(fontSize = 9.sp, color = KnouxMutedText),
+                    style = TextStyle(fontSize = 9.sp, color = ProTextSecondary),
                 )
             }
         }

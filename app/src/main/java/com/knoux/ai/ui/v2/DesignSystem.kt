@@ -1,6 +1,12 @@
 package com.knoux.ai.ui.v2
 
 import androidx.annotation.DrawableRes
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -41,6 +47,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,6 +63,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -835,6 +843,39 @@ fun V2GoldButton(
     }
 }
 
+/** Bright champagne CTA used by the privacy / Pro reference screens. */
+@Composable
+fun V2BrightGoldButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    icon: ImageVector? = null,
+) {
+    val shape = RoundedCornerShape(50)
+    Row(
+        modifier
+            .fillMaxWidth()
+            .height(48.dp)
+            .clip(shape)
+            .background(
+                Brush.horizontalGradient(
+                    listOf(Color(0xFFFFE9B0), Color(0xFFD79A34), Color(0xFFFFD37B), Color(0xFFB8741A))
+                )
+            )
+            .border(1.dp, Color(0xFFFFE9B0).copy(alpha = .85f), shape)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
+    ) {
+        if (icon != null) {
+            Icon(icon, null, tint = Color(0xFF2A1705), modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(7.dp))
+        }
+        KText(text, size = 15.sp, weight = FontWeight.Black, color = Color(0xFF2A1705))
+    }
+}
+
 @Composable
 fun V2GhostButton(
     text: String,
@@ -1099,13 +1140,45 @@ fun V2StatCell(value: String, label: String, accent: Color, modifier: Modifier =
     }
 }
 
+/**
+ * The KNOUX stag is the product mascot. The reference artwork is kept as a
+ * raster asset so the antler filaments and holographic fur survive at phone
+ * density; a very slow float/breath loop gives it life without distracting.
+ */
 @Composable
-fun V2DeerHeader(modifier: Modifier = Modifier) {
-    StagCrest(
-        modifier = modifier.size(width = 170.dp, height = 210.dp),
-        tint = V2Cyan,
-        accent = V2Violet,
-        glowAlpha = .16f,
+fun V2DeerHeader(
+    modifier: Modifier = Modifier,
+    mirrored: Boolean = false,
+    animated: Boolean = true,
+) {
+    val transition = rememberInfiniteTransition(label = "knouxDeer")
+    val float by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = if (animated) -7f else 0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(4200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "deerFloat",
+    )
+    val breath by transition.animateFloat(
+        initialValue = .985f,
+        targetValue = if (animated) 1.012f else 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(5200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "deerBreath",
+    )
+    Image(
+        painter = painterResource(R.drawable.knoux_deer_mascot),
+        contentDescription = null,
+        modifier = modifier.graphicsLayer {
+            translationY = float.dp.toPx()
+            scaleX = if (mirrored) -breath else breath
+            scaleY = breath
+        },
+        contentScale = ContentScale.Fit,
     )
 }
 

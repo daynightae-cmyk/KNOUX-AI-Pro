@@ -73,15 +73,15 @@ import com.knoux.ai.ui.components.SelectCheckbox
 import com.knoux.ai.ui.components.SettingsIconButton
 import com.knoux.ai.ui.components.TinyPreviewLabel
 import com.knoux.ai.ui.components.TopLeading
-import com.knoux.ai.ui.theme.KnouxAmber
-import com.knoux.ai.ui.theme.KnouxBlue
-import com.knoux.ai.ui.theme.KnouxCyan
-import com.knoux.ai.ui.theme.KnouxMagenta
-import com.knoux.ai.ui.theme.KnouxMutedText
-import com.knoux.ai.ui.theme.KnouxPanelDeep
-import com.knoux.ai.ui.theme.KnouxSoftText
-import com.knoux.ai.ui.theme.KnouxText
-import com.knoux.ai.ui.theme.KnouxViolet
+import com.knoux.ai.ui.theme.ProWarning
+import com.knoux.ai.ui.theme.ProBlue
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProTextSecondary
+import com.knoux.ai.ui.theme.ProDeepInk
+import com.knoux.ai.ui.theme.ProTextSecondary
+import com.knoux.ai.ui.theme.ProTextPrimary
+import com.knoux.ai.ui.theme.ProBlue
 import java.util.Locale
 
 /* ------------------------------------------------------------------ *
@@ -112,7 +112,7 @@ private val cleanItems = listOf(
         1300.0,
         "2,913 items",
         R.drawable.knoux_clean_icon_cache,
-        KnouxCyan,
+        ProArcticCyan,
     ),
     CleanItem(
         "Temporary Files",
@@ -121,7 +121,7 @@ private val cleanItems = listOf(
         982.0,
         "1,207 items",
         R.drawable.knoux_clean_icon_temp,
-        KnouxViolet,
+        ProBlue,
     ),
     CleanItem(
         "APK Leftovers",
@@ -130,7 +130,7 @@ private val cleanItems = listOf(
         426.0,
         "88 items",
         R.drawable.knoux_clean_icon_apk,
-        KnouxCyan,
+        ProArcticCyan,
     ),
     CleanItem(
         "Empty Folders",
@@ -139,7 +139,7 @@ private val cleanItems = listOf(
         148.0,
         "312 items",
         R.drawable.knoux_clean_icon_empty,
-        KnouxViolet,
+        ProBlue,
     ),
     CleanItem(
         "Recycle Items",
@@ -148,7 +148,7 @@ private val cleanItems = listOf(
         70.0,
         "822 items",
         R.drawable.knoux_clean_icon_recycle,
-        KnouxCyan,
+        ProArcticCyan,
     ),
 )
 
@@ -333,7 +333,7 @@ private fun SmartCleanHeader(selectedTab: Int, onSelect: (Int) -> Unit) {
                 .offset(x = 16.dp, y = (-6).dp)
                 .size(width = 138.dp, height = 104.dp),
             contentDescription = "Holographic cleanup orb",
-            glow = KnouxMagenta,
+            glow = ProArcticCyan,
         )
         Column(Modifier.fillMaxSize()) {
             Row(
@@ -349,7 +349,7 @@ private fun SmartCleanHeader(selectedTab: Int, onSelect: (Int) -> Unit) {
                     ScreenTitle(
                         "Smart Clean ",
                         accent = "Center",
-                        accentColors = listOf(KnouxMagenta, KnouxCyan),
+                        accentColors = listOf(ProArcticCyan, ProArcticCyan),
                         fontSize = 26.sp,
                         lineHeight = 30.sp,
                     )
@@ -359,7 +359,7 @@ private fun SmartCleanHeader(selectedTab: Int, onSelect: (Int) -> Unit) {
                         style = TextStyle(
                             fontSize = 10.6.sp,
                             lineHeight = 14.sp,
-                            color = KnouxSoftText,
+                            color = ProTextSecondary,
                         ),
                         maxLines = 2,
                     )
@@ -374,9 +374,9 @@ private fun SmartCleanHeader(selectedTab: Int, onSelect: (Int) -> Unit) {
 @Composable
 private fun SmartCleanTabRow(selectedTab: Int, onSelect: (Int) -> Unit) {
     val tabs = listOf(
-        Triple("Deep Scan", Icons.Rounded.Search, KnouxCyan),
-        Triple("Safe Clean", Icons.Rounded.Shield, KnouxViolet),
-        Triple("AI Analysis", Icons.Rounded.AutoAwesome, KnouxMagenta),
+        Triple("Deep Scan", Icons.Rounded.Search, ProArcticCyan),
+        Triple("Safe Clean", Icons.Rounded.Shield, ProBlue),
+        Triple("AI Analysis", Icons.Rounded.AutoAwesome, ProArcticCyan),
     )
     Row(
         Modifier
@@ -413,7 +413,7 @@ private fun SmartCleanTabRow(selectedTab: Int, onSelect: (Int) -> Unit) {
                         style = TextStyle(
                             fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Medium,
                             fontSize = 10.4.sp,
-                            color = if (selectedTab == index) KnouxText else KnouxMutedText,
+                            color = if (selectedTab == index) ProTextPrimary else ProTextSecondary,
                         ),
                         maxLines = 1,
                     )
@@ -426,7 +426,7 @@ private fun SmartCleanTabRow(selectedTab: Int, onSelect: (Int) -> Unit) {
                         .clip(RoundedCornerShape(50))
                         .background(
                             if (selectedTab == index) {
-                                Brush.horizontalGradient(listOf(accent, KnouxCyan))
+                                Brush.horizontalGradient(listOf(accent, ProArcticCyan))
                             } else {
                                 Brush.horizontalGradient(listOf(Color.Transparent, Color.Transparent))
                             }
@@ -443,7 +443,7 @@ private fun ScanSummaryCard(totalLabel: String, onOpenDeepScan: () -> Unit) {
         modifier = Modifier.fillMaxWidth(),
         padding = 9.dp,
         radius = 18.dp,
-        accent = KnouxCyan,
+        accent = ProArcticCyan,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             GlowRing(
@@ -452,7 +452,7 @@ private fun ScanSummaryCard(totalLabel: String, onOpenDeepScan: () -> Unit) {
                 caption = "Junk\nFound",
                 size = 58.dp,
                 stroke = 6.dp,
-                colors = listOf(KnouxCyan, KnouxBlue, KnouxViolet, KnouxMagenta),
+                colors = listOf(ProArcticCyan, ProBlue, ProBlue, ProArcticCyan),
                 centerTextSize = 15,
                 captionSize = 6,
             )
@@ -471,7 +471,7 @@ private fun ScanSummaryCard(totalLabel: String, onOpenDeepScan: () -> Unit) {
                         style = TextStyle(
                             fontWeight = FontWeight.Bold,
                             fontSize = 7.5.sp,
-                            color = KnouxCyan,
+                            color = ProArcticCyan,
                         ),
                         modifier = Modifier
                             .clip(RoundedCornerShape(50))
@@ -482,7 +482,7 @@ private fun ScanSummaryCard(totalLabel: String, onOpenDeepScan: () -> Unit) {
                 Spacer(Modifier.height(2.dp))
                 Text(
                     "Analyzed 128,430 files in 14.2s",
-                    style = TextStyle(fontSize = 8.6.sp, color = KnouxSoftText),
+                    style = TextStyle(fontSize = 8.6.sp, color = ProTextSecondary),
                     maxLines = 1,
                 )
                 Spacer(Modifier.height(5.dp))
@@ -516,14 +516,14 @@ private fun ScanStat(
     highlight: String? = null,
 ) {
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Icon(icon, null, tint = KnouxCyan.copy(alpha = 0.9f), modifier = Modifier.size(10.dp))
+        Icon(icon, null, tint = ProArcticCyan.copy(alpha = 0.9f), modifier = Modifier.size(10.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 value,
                 style = TextStyle(
                     fontWeight = FontWeight.Bold,
                     fontSize = 9.8.sp,
-                    color = KnouxText,
+                    color = ProTextPrimary,
                 ),
                 maxLines = 1,
             )
@@ -541,7 +541,7 @@ private fun ScanStat(
         }
         Text(
             label,
-            style = TextStyle(fontSize = 7.sp, color = KnouxMutedText),
+            style = TextStyle(fontSize = 7.sp, color = ProTextSecondary),
             maxLines = 1,
         )
     }
@@ -572,26 +572,26 @@ private fun SelectHeader(
             style = TextStyle(
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.5.sp,
-                color = KnouxText,
+                color = ProTextPrimary,
             ),
             maxLines = 1,
         )
         Spacer(Modifier.weight(1f))
         Text(
             "$selectedCount of ${cleanItems.size} selected",
-            style = TextStyle(fontSize = 8.8.sp, color = KnouxSoftText),
+            style = TextStyle(fontSize = 8.8.sp, color = ProTextSecondary),
             modifier = Modifier
                 .clip(RoundedCornerShape(50))
                 .clickable(onClick = onToggleAll)
                 .padding(horizontal = 4.dp, vertical = 2.dp),
         )
-        Text(" · ", style = TextStyle(fontSize = 8.sp, color = KnouxMutedText))
+        Text(" · ", style = TextStyle(fontSize = 8.sp, color = ProTextSecondary))
         Text(
             selectedLabel,
             style = TextStyle(
                 fontWeight = FontWeight.Bold,
                 fontSize = 9.8.sp,
-                color = KnouxMagenta,
+                color = ProArcticCyan,
             ),
         )
     }
@@ -611,9 +611,9 @@ private fun CleanItemRow(
             .background(
                 Brush.horizontalGradient(
                     if (checked) {
-                        listOf(item.accent.copy(alpha = 0.14f), KnouxPanelDeep.copy(alpha = 0.96f))
+                        listOf(item.accent.copy(alpha = 0.14f), ProDeepInk.copy(alpha = 0.96f))
                     } else {
-                        listOf(Color.White.copy(alpha = 0.045f), KnouxPanelDeep.copy(alpha = 0.96f))
+                        listOf(Color.White.copy(alpha = 0.045f), ProDeepInk.copy(alpha = 0.96f))
                     }
                 )
             )
@@ -639,14 +639,14 @@ private fun CleanItemRow(
                 style = TextStyle(
                     fontWeight = FontWeight.Bold,
                     fontSize = 11.6.sp,
-                    color = KnouxText,
+                    color = ProTextPrimary,
                 ),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             Text(
                 item.subtitle,
-                style = TextStyle(fontSize = 8.2.sp, color = KnouxSoftText),
+                style = TextStyle(fontSize = 8.2.sp, color = ProTextSecondary),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -657,13 +657,13 @@ private fun CleanItemRow(
                 style = TextStyle(
                     fontWeight = FontWeight.Bold,
                     fontSize = 10.sp,
-                    color = KnouxText,
+                    color = ProTextPrimary,
                 ),
                 maxLines = 1,
             )
             Text(
                 item.itemCount,
-                style = TextStyle(fontSize = 7.sp, color = KnouxMutedText),
+                style = TextStyle(fontSize = 7.sp, color = ProTextSecondary),
                 maxLines = 1,
             )
         }
@@ -683,14 +683,14 @@ private fun AiRecommendationCard(selectedLabel: String, hasSelection: Boolean) {
         modifier = Modifier.fillMaxWidth(),
         padding = 9.dp,
         radius = 18.dp,
-        accent = KnouxMagenta,
+        accent = ProArcticCyan,
     ) {
         Row(verticalAlignment = Alignment.Top) {
             RasterGlowIcon(
                 image = R.drawable.knoux_clean_icon_ai,
                 size = 36.dp,
                 contentDescription = "AI recommendation",
-                glow = KnouxMagenta,
+                glow = ProArcticCyan,
             )
             Spacer(Modifier.width(7.dp))
             Column(Modifier.weight(1f)) {
@@ -703,7 +703,7 @@ private fun AiRecommendationCard(selectedLabel: String, hasSelection: Boolean) {
                         style = TextStyle(
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.8.sp,
-                            color = KnouxText,
+                            color = ProTextPrimary,
                         ),
                         maxLines = 1,
                     )
@@ -711,15 +711,15 @@ private fun AiRecommendationCard(selectedLabel: String, hasSelection: Boolean) {
                     Row(
                         Modifier
                             .clip(RoundedCornerShape(50))
-                            .background(KnouxCyan.copy(alpha = 0.10f))
-                            .border(1.dp, KnouxCyan.copy(alpha = 0.45f), RoundedCornerShape(50))
+                            .background(ProArcticCyan.copy(alpha = 0.10f))
+                            .border(1.dp, ProArcticCyan.copy(alpha = 0.45f), RoundedCornerShape(50))
                             .padding(horizontal = 6.dp, vertical = 2.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
                             Icons.Rounded.AutoAwesome,
                             null,
-                            tint = KnouxCyan,
+                            tint = ProArcticCyan,
                             modifier = Modifier.size(8.dp),
                         )
                         Spacer(Modifier.width(3.dp))
@@ -728,7 +728,7 @@ private fun AiRecommendationCard(selectedLabel: String, hasSelection: Boolean) {
                             style = TextStyle(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 7.sp,
-                                color = KnouxCyan,
+                                color = ProArcticCyan,
                             ),
                         )
                     }
@@ -738,11 +738,11 @@ private fun AiRecommendationCard(selectedLabel: String, hasSelection: Boolean) {
                     Text(
                         buildAnnotatedString {
                             append("Reviewing ")
-                            withStyle(SpanStyle(color = KnouxMagenta, fontWeight = FontWeight.Bold)) {
+                            withStyle(SpanStyle(color = ProArcticCyan, fontWeight = FontWeight.Bold)) {
                                 append(selectedLabel)
                             }
                             append(" is safe. Nothing is deleted until you confirm the exact files. Estimated performance gain: up to ")
-                            withStyle(SpanStyle(color = KnouxCyan, fontWeight = FontWeight.Bold)) {
+                            withStyle(SpanStyle(color = ProArcticCyan, fontWeight = FontWeight.Bold)) {
                                 append("28%")
                             }
                             append(".")
@@ -750,7 +750,7 @@ private fun AiRecommendationCard(selectedLabel: String, hasSelection: Boolean) {
                         style = TextStyle(
                             fontSize = 8.8.sp,
                             lineHeight = 12.2.sp,
-                            color = KnouxSoftText,
+                            color = ProTextSecondary,
                         ),
                     )
                 } else {
@@ -759,7 +759,7 @@ private fun AiRecommendationCard(selectedLabel: String, hasSelection: Boolean) {
                         style = TextStyle(
                             fontSize = 8.4.sp,
                             lineHeight = 12.sp,
-                            color = KnouxSoftText,
+                            color = ProTextSecondary,
                         ),
                     )
                 }
@@ -774,20 +774,20 @@ private fun StorageGainCard(totalLabel: String) {
         modifier = Modifier.fillMaxWidth(),
         padding = 9.dp,
         radius = 18.dp,
-        accent = KnouxCyan,
+        accent = ProArcticCyan,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             RasterGlowIcon(
                 image = R.drawable.knoux_clean_icon_gain,
                 size = 32.dp,
                 contentDescription = "Estimated storage gain",
-                glow = KnouxCyan,
+                glow = ProArcticCyan,
             )
             Spacer(Modifier.width(7.dp))
             Column(Modifier.width(88.dp)) {
                 Text(
                     "Estimated Storage Gain",
-                    style = TextStyle(fontSize = 7.8.sp, lineHeight = 9.4.sp, color = KnouxSoftText),
+                    style = TextStyle(fontSize = 7.8.sp, lineHeight = 9.4.sp, color = ProTextSecondary),
                     maxLines = 2,
                 )
                 Text(
@@ -795,7 +795,7 @@ private fun StorageGainCard(totalLabel: String) {
                     style = TextStyle(
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp,
-                        brush = Brush.horizontalGradient(listOf(KnouxMagenta, KnouxCyan)),
+                        brush = Brush.horizontalGradient(listOf(ProArcticCyan, ProArcticCyan)),
                     ),
                     maxLines = 1,
                 )
@@ -819,11 +819,11 @@ private fun StorageGainCard(totalLabel: String) {
 @Composable
 private fun GainBenefit(icon: ImageVector, label: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, null, tint = KnouxCyan, modifier = Modifier.size(10.dp))
+        Icon(icon, null, tint = ProArcticCyan, modifier = Modifier.size(10.dp))
         Spacer(Modifier.width(4.dp))
         Text(
             label,
-            style = TextStyle(fontWeight = FontWeight.Medium, fontSize = 8.3.sp, color = KnouxSoftText),
+            style = TextStyle(fontWeight = FontWeight.Medium, fontSize = 8.3.sp, color = ProTextSecondary),
             maxLines = 1,
         )
     }
@@ -835,7 +835,7 @@ private fun SafeCleanInfoCard() {
         modifier = Modifier.fillMaxWidth(),
         padding = 13.dp,
         radius = 20.dp,
-        accent = KnouxCyan,
+        accent = ProArcticCyan,
     ) {
         Column {
             Text(
@@ -843,13 +843,13 @@ private fun SafeCleanInfoCard() {
                 style = TextStyle(
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp,
-                    color = KnouxText,
+                    color = ProTextPrimary,
                 ),
             )
             Spacer(Modifier.height(4.dp))
             Text(
                 "A real cleanup will keep one valid copy, show every path, and ask for Android storage consent before deleting anything.",
-                style = TextStyle(fontSize = 9.5.sp, lineHeight = 13.5.sp, color = KnouxSoftText),
+                style = TextStyle(fontSize = 9.5.sp, lineHeight = 13.5.sp, color = ProTextSecondary),
             )
             Spacer(Modifier.height(9.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -891,7 +891,7 @@ private fun AiAnalysisCard(totalLabel: String, selectedLabel: String) {
         modifier = Modifier.fillMaxWidth(),
         padding = 13.dp,
         radius = 20.dp,
-        accent = KnouxMagenta,
+        accent = ProArcticCyan,
     ) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -900,7 +900,7 @@ private fun AiAnalysisCard(totalLabel: String, selectedLabel: String) {
                     style = TextStyle(
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp,
-                        color = KnouxText,
+                        color = ProTextPrimary,
                     ),
                 )
                 Spacer(Modifier.weight(1f))
@@ -909,14 +909,14 @@ private fun AiAnalysisCard(totalLabel: String, selectedLabel: String) {
             Spacer(Modifier.height(5.dp))
             Text(
                 "Deterministic preview signals from the current design fixtures. No inference model is bundled in this build.",
-                style = TextStyle(fontSize = 9.sp, lineHeight = 13.sp, color = KnouxSoftText),
+                style = TextStyle(fontSize = 9.sp, lineHeight = 13.sp, color = ProTextSecondary),
             )
             Spacer(Modifier.height(9.dp))
-            AnalysisLine(Icons.Rounded.Storage, "Storage pressure", totalLabel, KnouxCyan)
+            AnalysisLine(Icons.Rounded.Storage, "Storage pressure", totalLabel, ProArcticCyan)
             Spacer(Modifier.height(6.dp))
-            AnalysisLine(Icons.Rounded.Folder, "Selected for review", selectedLabel, KnouxMagenta)
+            AnalysisLine(Icons.Rounded.Folder, "Selected for review", selectedLabel, ProArcticCyan)
             Spacer(Modifier.height(6.dp))
-            AnalysisLine(Icons.Rounded.BatteryChargingFull, "Estimated performance upside", "up to 28%", KnouxViolet)
+            AnalysisLine(Icons.Rounded.BatteryChargingFull, "Estimated performance upside", "up to 28%", ProBlue)
         }
     }
 }
@@ -936,7 +936,7 @@ private fun AnalysisLine(icon: ImageVector, label: String, value: String, accent
         Spacer(Modifier.width(7.dp))
         Text(
             label,
-            style = TextStyle(fontSize = 9.5.sp, color = KnouxSoftText),
+            style = TextStyle(fontSize = 9.5.sp, color = ProTextSecondary),
             modifier = Modifier.weight(1f),
         )
         Text(
@@ -964,7 +964,7 @@ private fun CleanPreviewDialog(
         title = {
             Text(
                 "Cleanup preview",
-                color = KnouxText,
+                color = ProTextPrimary,
                 fontWeight = FontWeight.Bold,
             )
         },
@@ -972,14 +972,14 @@ private fun CleanPreviewDialog(
             Column {
                 Text(
                     previewText,
-                    color = KnouxSoftText,
+                    color = ProTextSecondary,
                     fontSize = 12.sp,
                     lineHeight = 18.sp,
                 )
                 Spacer(Modifier.height(10.dp))
                 Text(
                     "Selected total: $selectedLabel\n\nThis is a visual preview. No files are removed.",
-                    color = KnouxCyan,
+                    color = ProArcticCyan,
                     fontSize = 11.sp,
                     lineHeight = 16.sp,
                 )
@@ -987,7 +987,7 @@ private fun CleanPreviewDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Close", color = KnouxCyan)
+                Text("Close", color = ProArcticCyan)
             }
         },
     )
@@ -1005,7 +1005,7 @@ private fun CleanConfirmationDialog(
         title = {
             Text(
                 "Confirmation required",
-                color = KnouxText,
+                color = ProTextPrimary,
                 fontWeight = FontWeight.Bold,
             )
         },
@@ -1017,19 +1017,19 @@ private fun CleanConfirmationDialog(
                     "You selected $selectedCount categories ($selectedLabel).\n\n" +
                         "This build is a visual preview: it will not delete files. A real cleanup will list the exact files, preserve one valid copy per duplicate group, and require Android storage consent plus an explicit confirmation."
                 },
-                color = KnouxSoftText,
+                color = ProTextSecondary,
                 fontSize = 12.sp,
                 lineHeight = 18.sp,
             )
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text("Understood", color = KnouxCyan)
+                Text("Understood", color = ProArcticCyan)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Close", color = KnouxSoftText)
+                Text("Close", color = ProTextSecondary)
             }
         },
     )

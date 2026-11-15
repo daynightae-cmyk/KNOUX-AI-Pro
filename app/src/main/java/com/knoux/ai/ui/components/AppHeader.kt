@@ -40,11 +40,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.knoux.ai.ui.theme.KnouxAmber
-import com.knoux.ai.ui.theme.KnouxCyan
-import com.knoux.ai.ui.theme.KnouxMagenta
-import com.knoux.ai.ui.theme.KnouxText
-import com.knoux.ai.ui.theme.KnouxViolet
+import com.knoux.ai.ui.theme.ProWarning
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProTextPrimary
+import com.knoux.ai.ui.theme.ProBlue
 
 /**
  * The single application header.
@@ -59,7 +59,7 @@ fun KnouxAppHeader(
     modifier: Modifier = Modifier,
     leading: TopLeading = TopLeading.Menu,
     onLeadingClick: () -> Unit = {},
-    accent: Color = KnouxViolet,
+    accent: Color = ProBlue,
     showPro: Boolean = true,
     right: @Composable RowScope.() -> Unit = {},
 ) {
@@ -71,7 +71,7 @@ fun KnouxAppHeader(
         label = "header-leading-press",
     )
     val edgeColor by animateColorAsState(
-        targetValue = if (pressed) KnouxCyan else accent,
+        targetValue = if (pressed) ProArcticCyan else accent,
         animationSpec = tween(260),
         label = "header-edge",
     )
@@ -97,7 +97,7 @@ fun KnouxAppHeader(
                     listOf(
                         edgeColor.copy(alpha = 0.55f),
                         Color.White.copy(alpha = 0.10f),
-                        KnouxCyan.copy(alpha = 0.22f),
+                        ProArcticCyan.copy(alpha = 0.22f),
                     )
                 ),
                 RoundedCornerShape(26.dp),
@@ -174,7 +174,7 @@ private fun HeaderIconButton(
             Icon(
                 icon,
                 contentDescription = contentDescription,
-                tint = KnouxText,
+                tint = ProTextPrimary,
                 modifier = Modifier.size(19.dp),
             )
         }
@@ -189,10 +189,10 @@ private fun HeaderProBadge(modifier: Modifier = Modifier) {
             .clip(RoundedCornerShape(50))
             .background(
                 Brush.horizontalGradient(
-                    listOf(KnouxAmber.copy(alpha = 0.20f), Color(0x14FFC24B))
+                    listOf(ProWarning.copy(alpha = 0.20f), Color(0x14FFC24B))
                 )
             )
-            .border(1.dp, KnouxAmber.copy(alpha = 0.72f), RoundedCornerShape(50))
+            .border(1.dp, ProWarning.copy(alpha = 0.72f), RoundedCornerShape(50))
             .padding(horizontal = 9.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -203,7 +203,7 @@ private fun HeaderProBadge(modifier: Modifier = Modifier) {
                 fontWeight = FontWeight.Bold,
                 fontSize = 9.sp,
                 letterSpacing = 0.8.sp,
-                color = KnouxAmber,
+                color = ProWarning,
             ),
         )
     }
@@ -218,7 +218,7 @@ fun KnouxTopBar(
     modifier: Modifier = Modifier,
     leading: TopLeading = TopLeading.Back,
     onLeadingClick: () -> Unit = {},
-    accent: Color = KnouxViolet,
+    accent: Color = ProBlue,
     right: @Composable RowScope.() -> Unit = {},
 ) {
     KnouxAppHeader(

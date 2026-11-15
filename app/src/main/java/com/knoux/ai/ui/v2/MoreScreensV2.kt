@@ -110,11 +110,6 @@ private fun InteriorScaffold(
             .fillMaxSize()
             .windowInsetsPadding(WindowInsets.statusBars)
     ) {
-        V2DeerHeader(
-            Modifier
-                .align(Alignment.TopStart).absoluteOffset(x = 24.dp, y = 2.dp)
-                .size(width = 112.dp, height = 138.dp)
-        )
         Column(Modifier.fillMaxSize()) {
             V2TopBar(V2TopMode.INTERIOR, onBack = onBack, onPro = onPro)
             LazyColumn(
@@ -194,7 +189,7 @@ private fun HairLine() {
 }
 
 @Composable
-private fun PreviewNote(text: String) {
+internal fun PreviewNote(text: String) {
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -434,7 +429,7 @@ private fun AppManagerSummary() {
 }
 
 @Composable
-private fun SummaryPill(text: String, accent: Color) {
+internal fun SummaryPill(text: String, accent: Color) {
     Box(
         Modifier
             .clip(RoundedCornerShape(50))
@@ -1129,7 +1124,6 @@ fun V2SettingsScreenV2(onBack: () -> Unit) {
     var highQuality by remember { mutableStateOf(true) }
 
     Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)) {
-        V2DeerHeader(Modifier.align(Alignment.TopStart).absoluteOffset(x = 24.dp, y = 2.dp).size(width = 105.dp, height = 130.dp))
         Column(Modifier.fillMaxSize()) {
             V2TopBar(V2TopMode.INTERIOR, onBack = onBack, onPro = {})
             LazyColumn(
@@ -1364,6 +1358,7 @@ fun V2ResidueReviewScreen(onBack: () -> Unit, onPro: () -> Unit) {
                 )
             }
         }
+        item { PreviewNote("أحجام البقايا ومساراتها بيانات معاينة حتى تُربط بقراءة التخزين الفعلية.") }
     }
 }
 
@@ -1778,7 +1773,7 @@ fun V2PerformanceReportScreen(onBack: () -> Unit, onPro: () -> Unit) {
                     BarTrendChart()
                     Spacer(Modifier.height(6.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        listOf("السبت", "الأحد", "الاثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة").forEach {
+                        listOf("الجمعة", "الخميس", "الأربعاء", "الثلاثاء", "الاثنين", "الأحد", "السبت").forEach {
                             KText(it, size = 6.8.sp, color = V2Muted)
                         }
                     }
@@ -1797,14 +1792,16 @@ fun V2PerformanceReportScreen(onBack: () -> Unit, onPro: () -> Unit) {
 private fun BarTrendChart() {
     // RTL time axis: the newest day sits on the left, the oldest on the right.
     val values = listOf(.42f, .55f, .51f, .66f, .60f, .76f, .90f).reversed()
+    val accents = listOf(V2Cyan, V2Blue, V2Violet, V2Pink, V2Violet, V2Blue, V2Cyan)
     Canvas(Modifier.fillMaxWidth().height(88.dp)) {
         val gap = size.width * .022f
         val barWidth = (size.width - gap * 6) / 7f
         values.forEachIndexed { index, value ->
             val h = size.height * .85f * value
+            val accent = accents[index % accents.size]
             drawRoundRect(
                 brush = Brush.verticalGradient(
-                    listOf(if (index == 0) V2Cyan else V2Violet.copy(alpha = .68f), Color.Transparent)
+                    listOf(accent.copy(alpha = if (index == 0) 1f else .82f), accent.copy(alpha = .18f))
                 ),
                 topLeft = Offset(index * (barWidth + gap) + barWidth * .14f, size.height - h),
                 size = androidx.compose.ui.geometry.Size(barWidth * .72f, h),

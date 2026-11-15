@@ -48,12 +48,12 @@ import com.knoux.ai.ui.components.NeonIconTile
 import com.knoux.ai.ui.components.ProgressDonut
 import com.knoux.ai.ui.components.SummaryLine
 import com.knoux.ai.ui.data.Fixtures
-import com.knoux.ai.ui.theme.KnouxAmber
-import com.knoux.ai.ui.theme.KnouxCyan
-import com.knoux.ai.ui.theme.KnouxMagenta
-import com.knoux.ai.ui.theme.KnouxSoftText
-import com.knoux.ai.ui.theme.KnouxText
-import com.knoux.ai.ui.theme.KnouxViolet
+import com.knoux.ai.ui.theme.ProWarning
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProTextSecondary
+import com.knoux.ai.ui.theme.ProTextPrimary
+import com.knoux.ai.ui.theme.ProBlue
 
 @Composable
 fun BatterySaverScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
@@ -73,16 +73,16 @@ fun BatterySaverScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
         item {
             GlassPanel(Modifier.fillMaxWidth(), padding = 16.dp) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    NeonIconTile(Icons.Rounded.Schedule, size = 42.dp, iconSize = 21.dp, tint = KnouxMagenta)
+                    NeonIconTile(Icons.Rounded.Schedule, size = 42.dp, iconSize = 21.dp, tint = ProArcticCyan)
                     Spacer(Modifier.width(11.dp))
                     Column(Modifier.weight(1f)) {
                         Text(
                             "6h 42m",
-                            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 23.sp, color = KnouxText)
+                            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 23.sp, color = ProTextPrimary)
                         )
                         Text(
                             "estimated gain",
-                            style = TextStyle(fontSize = 11.sp, color = KnouxSoftText)
+                            style = TextStyle(fontSize = 11.sp, color = ProTextSecondary)
                         )
                     }
                     Box(
@@ -92,16 +92,16 @@ fun BatterySaverScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
                             .background(Color.White.copy(alpha = 0.15f))
                     )
                     Spacer(Modifier.width(14.dp))
-                    NeonIconTile(Icons.Rounded.Favorite, size = 42.dp, iconSize = 21.dp, tint = KnouxCyan)
+                    NeonIconTile(Icons.Rounded.Favorite, size = 42.dp, iconSize = 21.dp, tint = ProArcticCyan)
                     Spacer(Modifier.width(11.dp))
                     Column {
                         Text(
                             "91%",
-                            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 23.sp, color = KnouxCyan)
+                            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 23.sp, color = ProArcticCyan)
                         )
                         Text(
                             "Battery health",
-                            style = TextStyle(fontSize = 11.sp, color = KnouxSoftText)
+                            style = TextStyle(fontSize = 11.sp, color = ProTextSecondary)
                         )
                     }
                 }
@@ -121,7 +121,7 @@ fun BatterySaverScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
                 title = "Healthy Battery",
                 message = "Your battery is in good condition. Minor optimization can extend life a little further.",
                 icon = Icons.Rounded.CheckCircle,
-                tint = KnouxCyan,
+                tint = ProArcticCyan,
                 badge = "GOOD",
             )
         }
@@ -132,12 +132,12 @@ fun BatterySaverScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
             Spacer(Modifier.height(6.dp))
             SignalTileGrid(
                 tiles = listOf(
-                    SignalTile(Icons.Rounded.BatteryChargingFull, "6h 42m", "Estimated gain", KnouxMagenta),
-                    SignalTile(Icons.Rounded.Bolt, "5", "Drain sources", KnouxMagenta),
-                    SignalTile(Icons.Rounded.Event, "287", "Charging cycles", KnouxCyan),
-                    SignalTile(Icons.Rounded.Thermostat, "37 °C", "Peak temperature", KnouxAmber),
-                    SignalTile(Icons.Rounded.PhoneAndroid, "5h 18m", "Screen-on time", KnouxViolet),
-                    SignalTile(Icons.Rounded.Memory, "18", "Background apps", KnouxViolet),
+                    SignalTile(Icons.Rounded.BatteryChargingFull, "6h 42m", "Estimated gain", ProArcticCyan),
+                    SignalTile(Icons.Rounded.Bolt, "5", "Drain sources", ProArcticCyan),
+                    SignalTile(Icons.Rounded.Event, "287", "Charging cycles", ProArcticCyan),
+                    SignalTile(Icons.Rounded.Thermostat, "37 °C", "Peak temperature", ProWarning),
+                    SignalTile(Icons.Rounded.PhoneAndroid, "5h 18m", "Screen-on time", ProBlue),
+                    SignalTile(Icons.Rounded.Memory, "18", "Background apps", ProBlue),
                 ),
             )
         }
@@ -150,14 +150,14 @@ fun BatterySaverScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
                         progress = 0.91f,
                         centerText = "91%",
                         caption = "Battery\nHealth",
-                        arcColors = listOf(KnouxCyan, KnouxMagenta),
+                        arcColors = listOf(ProArcticCyan, ProArcticCyan),
                         size = 92.dp,
                     )
                     Spacer(Modifier.width(16.dp))
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                        SummaryLine(Icons.Rounded.WarningAmber, "Critical drain apps:", "3", KnouxAmber)
-                        SummaryLine(Icons.Rounded.CheckCircle, "Safe actions:", "5 available", KnouxCyan)
-                        SummaryLine(Icons.Rounded.Event, "Last analysis:", Fixtures.LAST_RUN, KnouxViolet)
+                        SummaryLine(Icons.Rounded.WarningAmber, "Critical drain apps:", "3", ProWarning)
+                        SummaryLine(Icons.Rounded.CheckCircle, "Safe actions:", "5 available", ProArcticCyan)
+                        SummaryLine(Icons.Rounded.Event, "Last analysis:", Fixtures.LAST_RUN, ProBlue)
                     }
                 }
             }
@@ -167,7 +167,7 @@ fun BatterySaverScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
             Spacer(Modifier.height(16.dp))
             Text(
                 "Optimization & Actions",
-                style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 16.sp, color = KnouxText),
+                style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 16.sp, color = ProTextPrimary),
                 modifier = Modifier.fillMaxWidth()
             )
         }

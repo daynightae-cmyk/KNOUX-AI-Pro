@@ -52,14 +52,14 @@ import com.knoux.ai.ui.components.ProgressDonut
 import com.knoux.ai.ui.components.SummaryLine
 import com.knoux.ai.ui.components.iconFor
 import com.knoux.ai.ui.data.Fixtures
-import com.knoux.ai.ui.theme.KnouxAmber
-import com.knoux.ai.ui.theme.KnouxCyan
-import com.knoux.ai.ui.theme.KnouxMagenta
-import com.knoux.ai.ui.theme.KnouxPanelAlt
-import com.knoux.ai.ui.theme.KnouxPanelDeep
-import com.knoux.ai.ui.theme.KnouxSoftText
-import com.knoux.ai.ui.theme.KnouxText
-import com.knoux.ai.ui.theme.KnouxViolet
+import com.knoux.ai.ui.theme.ProWarning
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProNavy
+import com.knoux.ai.ui.theme.ProDeepInk
+import com.knoux.ai.ui.theme.ProTextSecondary
+import com.knoux.ai.ui.theme.ProTextPrimary
+import com.knoux.ai.ui.theme.ProBlue
 
 @Composable
 fun StorageAnalyzerScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
@@ -79,17 +79,17 @@ fun StorageAnalyzerScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
         item {
             GlassPanel(Modifier.fillMaxWidth(), padding = 16.dp) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    NeonIconTile(Icons.Rounded.Storage, size = 44.dp, iconSize = 22.dp, tint = KnouxMagenta)
+                    NeonIconTile(Icons.Rounded.Storage, size = 44.dp, iconSize = 22.dp, tint = ProArcticCyan)
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
                         Row(verticalAlignment = Alignment.Bottom) {
                             Text(
                                 "128 GB",
-                                style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 21.sp, color = KnouxText)
+                                style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 21.sp, color = ProTextPrimary)
                             )
                             Text(
                                 " / 256 GB used",
-                                style = TextStyle(fontSize = 12.sp, color = KnouxSoftText)
+                                style = TextStyle(fontSize = 12.sp, color = ProTextSecondary)
                             )
                         }
                         Spacer(Modifier.height(8.dp))
@@ -98,7 +98,7 @@ fun StorageAnalyzerScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
                     Spacer(Modifier.width(12.dp))
                     Text(
                         "50%",
-                        style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 13.sp, color = KnouxSoftText)
+                        style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 13.sp, color = ProTextSecondary)
                     )
                 }
             }
@@ -119,14 +119,14 @@ fun StorageAnalyzerScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
                         progress = 0.5f,
                         centerText = "50%",
                         caption = "Used\n(128 GB)",
-                        arcColors = listOf(KnouxCyan, KnouxMagenta, KnouxAmber),
+                        arcColors = listOf(ProArcticCyan, ProArcticCyan, ProWarning),
                         size = 96.dp,
                     )
                     Spacer(Modifier.width(14.dp))
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                        SummaryLine(Icons.Rounded.EmojiEvents, "Largest category:", "Apps & Games", KnouxAmber)
-                        SummaryLine(Icons.Rounded.TrendingUp, "Unused space trend:", "+12.6 GB", KnouxCyan)
-                        SummaryLine(Icons.Rounded.Event, "Last updated:", Fixtures.LAST_RUN, KnouxViolet)
+                        SummaryLine(Icons.Rounded.EmojiEvents, "Largest category:", "Apps & Games", ProWarning)
+                        SummaryLine(Icons.Rounded.TrendingUp, "Unused space trend:", "+12.6 GB", ProArcticCyan)
+                        SummaryLine(Icons.Rounded.Event, "Last updated:", Fixtures.LAST_RUN, ProBlue)
                     }
                 }
             }
@@ -136,7 +136,7 @@ fun StorageAnalyzerScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
             Spacer(Modifier.height(16.dp))
             Text(
                 "Storage Categories",
-                style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 16.sp, color = KnouxText),
+                style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 16.sp, color = ProTextPrimary),
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -153,34 +153,34 @@ fun StorageAnalyzerScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
                             .clip(RoundedCornerShape(20.dp))
                             .background(
                                 Brush.verticalGradient(
-                                    listOf(KnouxPanelAlt.copy(alpha = 0.92f), KnouxPanelDeep.copy(alpha = 0.92f))
+                                    listOf(ProNavy.copy(alpha = 0.92f), ProDeepInk.copy(alpha = 0.92f))
                                 )
                             )
-                            .border(1.dp, KnouxViolet.copy(alpha = 0.28f), RoundedCornerShape(20.dp))
+                            .border(1.dp, ProBlue.copy(alpha = 0.28f), RoundedCornerShape(20.dp))
                             .clickable { onOpenDetail() }
                             .padding(12.dp),
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            NeonIconTile(iconFor(row.icon), size = 34.dp, iconSize = 17.dp, tint = KnouxCyan)
+                            NeonIconTile(iconFor(row.icon), size = 34.dp, iconSize = 17.dp, tint = ProArcticCyan)
                             Spacer(Modifier.weight(1f))
                             Icon(
                                 Icons.Rounded.ChevronRight, null,
-                                tint = KnouxSoftText.copy(alpha = 0.7f), modifier = Modifier.size(16.dp)
+                                tint = ProTextSecondary.copy(alpha = 0.7f), modifier = Modifier.size(16.dp)
                             )
                         }
                         Spacer(Modifier.height(8.dp))
                         Text(
                             row.title,
-                            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 13.sp, color = KnouxText)
+                            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 13.sp, color = ProTextPrimary)
                         )
                         Text(
                             row.badge,
-                            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 14.sp, color = KnouxMagenta)
+                            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 14.sp, color = ProArcticCyan)
                         )
                         Spacer(Modifier.height(3.dp))
                         Text(
                             row.subtitle,
-                            style = TextStyle(fontSize = 9.5.sp, lineHeight = 13.sp, color = KnouxSoftText),
+                            style = TextStyle(fontSize = 9.5.sp, lineHeight = 13.sp, color = ProTextSecondary),
                             maxLines = 3,
                         )
                     }
@@ -195,7 +195,7 @@ fun StorageAnalyzerScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
             InsightBanner(
                 title = "Storage Insight",
                 message = "Apps and media hold most of the space. Clearing 2.4 GB of reclaimable cache would lift free space back above 60%.",
-                tint = KnouxCyan,
+                tint = ProArcticCyan,
                 badge = "2.4 GB",
             )
         }
@@ -206,10 +206,10 @@ fun StorageAnalyzerScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
             Spacer(Modifier.height(6.dp))
             SignalTileGrid(
                 tiles = listOf(
-                    SignalTile(Icons.Rounded.Apps, "48.6 GB", "Apps & games", KnouxMagenta),
-                    SignalTile(Icons.Rounded.Image, "36.8 GB", "Media", KnouxCyan),
-                    SignalTile(Icons.Rounded.Folder, "8.4 GB", "Documents", KnouxViolet),
-                    SignalTile(Icons.Rounded.Storage, "22.2 GB", "System files", KnouxAmber),
+                    SignalTile(Icons.Rounded.Apps, "48.6 GB", "Apps & games", ProArcticCyan),
+                    SignalTile(Icons.Rounded.Image, "36.8 GB", "Media", ProArcticCyan),
+                    SignalTile(Icons.Rounded.Folder, "8.4 GB", "Documents", ProBlue),
+                    SignalTile(Icons.Rounded.Storage, "22.2 GB", "System files", ProWarning),
                 ),
             )
         }

@@ -9,6 +9,7 @@ import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -78,22 +79,22 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.knoux.ai.R
-import com.knoux.ai.ui.theme.KnouxAmber
-import com.knoux.ai.ui.theme.KnouxBackdrop
-import com.knoux.ai.ui.theme.KnouxBackdropDeep
-import com.knoux.ai.ui.theme.KnouxBlue
-import com.knoux.ai.ui.theme.KnouxBorder
-import com.knoux.ai.ui.theme.KnouxCyan
-import com.knoux.ai.ui.theme.KnouxMagenta
-import com.knoux.ai.ui.theme.KnouxMutedText
-import com.knoux.ai.ui.theme.KnouxPanel
-import com.knoux.ai.ui.theme.KnouxPanelAlt
-import com.knoux.ai.ui.theme.KnouxPanelDeep
-import com.knoux.ai.ui.theme.KnouxPink
-import com.knoux.ai.ui.theme.KnouxSoftText
-import com.knoux.ai.ui.theme.KnouxText
-import com.knoux.ai.ui.theme.KnouxViolet
-import com.knoux.ai.ui.theme.KnouxWave
+import com.knoux.ai.ui.theme.ProWarning
+import com.knoux.ai.ui.theme.ProDeepInk
+import com.knoux.ai.ui.theme.ProDeepInk
+import com.knoux.ai.ui.theme.ProBlue
+import com.knoux.ai.ui.theme.ProDivider
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProTextSecondary
+import com.knoux.ai.ui.theme.ProNavy
+import com.knoux.ai.ui.theme.ProNavy
+import com.knoux.ai.ui.theme.ProDeepInk
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProTextSecondary
+import com.knoux.ai.ui.theme.ProTextPrimary
+import com.knoux.ai.ui.theme.ProBlue
+import com.knoux.ai.ui.theme.ProBlue
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -107,8 +108,8 @@ fun KnouxBackground(modifier: Modifier = Modifier) {
         drawRect(
             Brush.verticalGradient(
                 0f to Color(0xFF060417),
-                0.42f to KnouxBackdrop,
-                0.78f to KnouxBackdropDeep,
+                0.42f to ProDeepInk,
+                0.78f to ProDeepInk,
                 1f to Color(0xFF120A33)
             )
         )
@@ -117,7 +118,7 @@ fun KnouxBackground(modifier: Modifier = Modifier) {
         // magenta pool low on the left, one violet mass behind the content.
         drawCircle(
             brush = Brush.radialGradient(
-                colors = listOf(KnouxCyan.copy(alpha = 0.10f), Color.Transparent),
+                colors = listOf(ProArcticCyan.copy(alpha = 0.10f), Color.Transparent),
                 center = Offset(size.width * 0.88f, size.height * 0.10f),
                 radius = size.minDimension * 0.52f,
             ),
@@ -126,7 +127,7 @@ fun KnouxBackground(modifier: Modifier = Modifier) {
         )
         drawCircle(
             brush = Brush.radialGradient(
-                colors = listOf(KnouxWave.copy(alpha = 0.62f), Color.Transparent),
+                colors = listOf(ProBlue.copy(alpha = 0.62f), Color.Transparent),
                 center = Offset(size.width * 0.04f, size.height * 0.86f),
                 radius = size.minDimension * 0.82f,
             ),
@@ -162,9 +163,9 @@ fun KnouxBackground(modifier: Modifier = Modifier) {
             ribbon,
             brush = Brush.linearGradient(
                 listOf(
-                    KnouxMagenta.copy(alpha = 0.15f),
-                    KnouxViolet.copy(alpha = 0.05f),
-                    KnouxCyan.copy(alpha = 0.09f),
+                    ProArcticCyan.copy(alpha = 0.15f),
+                    ProBlue.copy(alpha = 0.05f),
+                    ProArcticCyan.copy(alpha = 0.09f),
                     Color.Transparent,
                 ),
                 start = Offset(0f, size.height * 0.68f),
@@ -184,8 +185,8 @@ fun KnouxBackground(modifier: Modifier = Modifier) {
             lowerRibbon,
             brush = Brush.linearGradient(
                 listOf(
-                    KnouxMagenta.copy(alpha = 0.12f),
-                    KnouxBlue.copy(alpha = 0.04f),
+                    ProArcticCyan.copy(alpha = 0.12f),
+                    ProBlue.copy(alpha = 0.04f),
                     Color.Transparent,
                 ),
                 start = Offset(0f, size.height),
@@ -258,7 +259,7 @@ fun IconCircle(
     icon: ImageVector,
     contentDescription: String?,
     onClick: () -> Unit,
-    tint: Color = KnouxText,
+    tint: Color = ProTextPrimary,
     size: Dp = 34.dp,
 ) {
     Box(
@@ -308,16 +309,16 @@ fun ProBadge(modifier: Modifier = Modifier) {
                     listOf(Color(0x33FFC24B), Color(0x1AFFC24B), Color(0x33FFC24B))
                 )
             )
-            .border(1.dp, KnouxAmber.copy(alpha = 0.75f), RoundedCornerShape(50))
+            .border(1.dp, ProWarning.copy(alpha = 0.75f), RoundedCornerShape(50))
             .padding(horizontal = 8.dp, vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        CrownMark(Modifier.size(11.dp), KnouxAmber)
+        CrownMark(Modifier.size(11.dp), ProWarning)
         Text(
             "Pro",
             style = TextStyle(
-                fontWeight = FontWeight.Bold, fontSize = 10.5.sp, color = KnouxAmber
+                fontWeight = FontWeight.Bold, fontSize = 10.5.sp, color = ProWarning
             )
         )
     }
@@ -325,7 +326,7 @@ fun ProBadge(modifier: Modifier = Modifier) {
 
 /** Small crown glyph used by the Pro badge; material has no crown symbol. */
 @Composable
-private fun CrownMark(modifier: Modifier = Modifier, color: Color = KnouxAmber) {
+private fun CrownMark(modifier: Modifier = Modifier, color: Color = ProWarning) {
     Canvas(modifier) {
         val w = size.width
         val h = size.height
@@ -361,7 +362,7 @@ fun GlassPanel(
     modifier: Modifier = Modifier,
     padding: Dp = 14.dp,
     radius: Dp = 20.dp,
-    borderColor: Color = KnouxBorder.copy(alpha = 0.55f),
+    borderColor: Color = ProDivider.copy(alpha = 0.55f),
     content: @Composable () -> Unit,
 ) {
     Box(
@@ -369,7 +370,7 @@ fun GlassPanel(
             .clip(RoundedCornerShape(radius))
             .background(
                 Brush.verticalGradient(
-                    listOf(KnouxPanel.copy(alpha = 0.95f), KnouxPanelDeep.copy(alpha = 0.92f))
+                    listOf(ProNavy.copy(alpha = 0.95f), ProDeepInk.copy(alpha = 0.92f))
                 )
             )
             .border(BorderStroke(1.dp, borderColor), RoundedCornerShape(radius))
@@ -392,7 +393,7 @@ fun GradientActionButton(
             .clip(RoundedCornerShape(50))
             .background(
                 Brush.horizontalGradient(
-                    listOf(KnouxViolet, Color(0xFF6A5BFF), KnouxCyan)
+                    listOf(ProBlue, Color(0xFF6A5BFF), ProArcticCyan)
                 )
             )
             .clickable(onClick = onClick)
@@ -430,14 +431,14 @@ fun GhostButton(
     Row(
         modifier
             .clip(RoundedCornerShape(50))
-            .border(1.dp, KnouxViolet.copy(alpha = 0.75f), RoundedCornerShape(50))
+            .border(1.dp, ProBlue.copy(alpha = 0.75f), RoundedCornerShape(50))
             .clickable(onClick = onClick)
             .padding(horizontal = if (compact) 14.dp else 20.dp, vertical = if (compact) 8.dp else 13.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (icon != null) {
-            Icon(icon, null, tint = KnouxText, modifier = Modifier.size(if (compact) 13.dp else 17.dp))
+            Icon(icon, null, tint = ProTextPrimary, modifier = Modifier.size(if (compact) 13.dp else 17.dp))
             Spacer(Modifier.width(7.dp))
         }
         Text(
@@ -445,7 +446,7 @@ fun GhostButton(
             style = TextStyle(
                 fontWeight = FontWeight.Bold,
                 fontSize = if (compact) 11.sp else 14.sp,
-                color = KnouxText
+                color = ProTextPrimary
             )
         )
     }
@@ -458,7 +459,7 @@ fun MiniPill(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
         modifier
             .clip(RoundedCornerShape(50))
             .background(
-                Brush.horizontalGradient(listOf(KnouxCyan, Color(0xFF48A8FF)))
+                Brush.horizontalGradient(listOf(ProArcticCyan, Color(0xFF48A8FF)))
             )
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 5.dp),
@@ -480,7 +481,7 @@ fun ProgressDonut(
     progress: Float,
     centerText: String,
     caption: String? = null,
-    arcColors: List<Color> = listOf(KnouxCyan, KnouxMagenta),
+    arcColors: List<Color> = listOf(ProArcticCyan, ProArcticCyan),
     size: Dp = 78.dp,
     stroke: Dp = 9.dp,
     modifier: Modifier = Modifier,
@@ -514,13 +515,13 @@ fun ProgressDonut(
             Text(
                 centerText,
                 style = TextStyle(
-                    fontWeight = FontWeight.Bold, fontSize = 19.sp, color = KnouxText
+                    fontWeight = FontWeight.Bold, fontSize = 19.sp, color = ProTextPrimary
                 )
             )
             if (caption != null) {
                 Text(
                     caption,
-                    style = TextStyle(fontSize = 8.5.sp, color = KnouxSoftText),
+                    style = TextStyle(fontSize = 8.5.sp, color = ProTextSecondary),
                     textAlign = TextAlign.Center
                 )
             }
@@ -546,7 +547,7 @@ fun GradientProgressBar(
                 .fillMaxWidth(progress.coerceIn(0f, 1f))
                 .fillMaxSize()
                 .clip(RoundedCornerShape(50))
-                .background(Brush.horizontalGradient(listOf(KnouxMagenta, KnouxViolet, KnouxCyan)))
+                .background(Brush.horizontalGradient(listOf(ProArcticCyan, ProBlue, ProArcticCyan)))
         )
     }
 }
@@ -560,7 +561,7 @@ fun SectionHeader(title: String, trailing: @Composable (() -> Unit)? = null) {
         Text(
             title,
             style = TextStyle(
-                fontWeight = FontWeight.Bold, fontSize = 16.sp, color = KnouxText
+                fontWeight = FontWeight.Bold, fontSize = 16.sp, color = ProTextPrimary
             )
         )
         Spacer(Modifier.weight(1f))
@@ -577,7 +578,7 @@ fun NeonIconTile(
     icon: ImageVector,
     modifier: Modifier = Modifier,
     size: Dp = 38.dp,
-    tint: Color = KnouxCyan,
+    tint: Color = ProArcticCyan,
     iconSize: Dp = 20.dp,
     radius: Dp = 12.dp,
 ) {
@@ -587,10 +588,10 @@ fun NeonIconTile(
             .clip(RoundedCornerShape(radius))
             .background(
                 Brush.linearGradient(
-                    listOf(KnouxViolet.copy(alpha = 0.38f), KnouxPanelAlt.copy(alpha = 0.9f))
+                    listOf(ProBlue.copy(alpha = 0.38f), ProNavy.copy(alpha = 0.9f))
                 )
             )
-            .border(1.dp, KnouxViolet.copy(alpha = 0.35f), RoundedCornerShape(radius)),
+            .border(1.dp, ProBlue.copy(alpha = 0.35f), RoundedCornerShape(radius)),
         contentAlignment = Alignment.Center,
     ) {
         Icon(icon, null, tint = tint, modifier = Modifier.size(iconSize))
@@ -607,7 +608,7 @@ enum class HeroKind { Orb, Shield, Images, Radar, Bars, Layers, Grid, Disks, Bat
 fun NeonHero(
     kind: HeroKind,
     modifier: Modifier = Modifier,
-    height: Dp = 168.dp,
+    height: Dp = 80.dp,
     animate: Boolean = true,
 ) {
     val transition = rememberInfiniteTransition(label = "hero")
@@ -650,7 +651,7 @@ private fun DrawScope.drawHeroBackdrop(kind: HeroKind, pulse: Float) {
     val r = size.minDimension * 0.34f * pulse
     drawCircle(
         brush = Brush.radialGradient(
-            colors = listOf(KnouxViolet.copy(alpha = 0.42f), Color.Transparent),
+            colors = listOf(ProBlue.copy(alpha = 0.42f), Color.Transparent),
             center = c, radius = r * 1.9f
         ),
         radius = r * 1.9f, center = c
@@ -665,9 +666,9 @@ private fun DrawScope.drawHero(kind: HeroKind, phase: Float, pulse: Float) {
             drawCircle(
                 brush = Brush.radialGradient(
                     0.00f to Color(0xFF9FF6FF),
-                    0.28f to KnouxCyan.copy(alpha = 0.85f),
-                    0.58f to KnouxViolet.copy(alpha = 0.80f),
-                    0.86f to KnouxMagenta.copy(alpha = 0.55f),
+                    0.28f to ProArcticCyan.copy(alpha = 0.85f),
+                    0.58f to ProBlue.copy(alpha = 0.80f),
+                    0.86f to ProArcticCyan.copy(alpha = 0.55f),
                     1.00f to Color(0x22060B2E)
                 ),
                 radius = r, center = c
@@ -676,7 +677,7 @@ private fun DrawScope.drawHero(kind: HeroKind, phase: Float, pulse: Float) {
             val outerR = r * 1.22f
             for (i in 0 until 14) {
                 drawArc(
-                    color = KnouxCyan.copy(alpha = 0.75f),
+                    color = ProArcticCyan.copy(alpha = 0.75f),
                     startAngle = i * (360f / 14f) + phase * 0.5f,
                     sweepAngle = 9f,
                     useCenter = false,
@@ -688,7 +689,7 @@ private fun DrawScope.drawHero(kind: HeroKind, phase: Float, pulse: Float) {
             val innerR = r * 1.40f
             for (i in 0 until 20) {
                 drawArc(
-                    color = KnouxMagenta.copy(alpha = 0.55f),
+                    color = ProArcticCyan.copy(alpha = 0.55f),
                     startAngle = i * (360f / 20f) - phase * 0.35f,
                     sweepAngle = 5f,
                     useCenter = false,
@@ -718,7 +719,7 @@ private fun DrawScope.drawHero(kind: HeroKind, phase: Float, pulse: Float) {
             drawPath(
                 path = path,
                 brush = Brush.verticalGradient(
-                    listOf(KnouxCyan.copy(alpha = 0.85f), KnouxViolet.copy(alpha = 0.9f), KnouxMagenta.copy(alpha = 0.85f))
+                    listOf(ProArcticCyan.copy(alpha = 0.85f), ProBlue.copy(alpha = 0.9f), ProArcticCyan.copy(alpha = 0.85f))
                 )
             )
             drawPath(
@@ -742,13 +743,13 @@ private fun DrawScope.drawHero(kind: HeroKind, phase: Float, pulse: Float) {
                 size = Size(bw * 0.60f, bw * 0.60f),
                 style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
             )
-            drawCircle(KnouxBackdrop, radius = 4.dp.toPx(), center = Offset(c.x, c.y + bh * 0.25f))
+            drawCircle(ProDeepInk, radius = 4.dp.toPx(), center = Offset(c.x, c.y + bh * 0.25f))
         }
 
         HeroKind.Images -> {
             // back frame
             drawRoundRect(
-                brush = Brush.linearGradient(listOf(KnouxMagenta.copy(alpha = 0.75f), KnouxViolet.copy(alpha = 0.75f))),
+                brush = Brush.linearGradient(listOf(ProArcticCyan.copy(alpha = 0.75f), ProBlue.copy(alpha = 0.75f))),
                 topLeft = Offset(c.x - r * 0.95f, c.y - r * 0.95f),
                 size = Size(r * 1.25f, r * 1.45f),
                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(14.dp.toPx())
@@ -757,13 +758,13 @@ private fun DrawScope.drawHero(kind: HeroKind, phase: Float, pulse: Float) {
             val fx = c.x - r * 0.45f
             val fy = c.y - r * 0.35f
             drawRoundRect(
-                brush = Brush.linearGradient(listOf(KnouxCyan.copy(alpha = 0.85f), KnouxBlue.copy(alpha = 0.85f))),
+                brush = Brush.linearGradient(listOf(ProArcticCyan.copy(alpha = 0.85f), ProBlue.copy(alpha = 0.85f))),
                 topLeft = Offset(fx, fy),
                 size = Size(r * 1.30f, r * 1.50f),
                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(16.dp.toPx())
             )
             drawRoundRect(
-                color = KnouxBackdrop.copy(alpha = 0.55f),
+                color = ProDeepInk.copy(alpha = 0.55f),
                 topLeft = Offset(fx + 8.dp.toPx(), fy + 8.dp.toPx()),
                 size = Size(r * 1.30f - 16.dp.toPx(), r * 1.50f - 16.dp.toPx()),
                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(10.dp.toPx())
@@ -775,9 +776,9 @@ private fun DrawScope.drawHero(kind: HeroKind, phase: Float, pulse: Float) {
                 lineTo(fx + r * 1.05f, fy + r * 1.05f)
                 close()
             }
-            drawPath(m, KnouxCyan.copy(alpha = 0.9f))
+            drawPath(m, ProArcticCyan.copy(alpha = 0.9f))
             drawCircle(
-                KnouxPink.copy(alpha = 0.95f), radius = 6.dp.toPx(),
+                ProArcticCyan.copy(alpha = 0.95f), radius = 6.dp.toPx(),
                 center = Offset(fx + r * 0.85f, fy + r * 0.35f)
             )
         }
@@ -785,8 +786,8 @@ private fun DrawScope.drawHero(kind: HeroKind, phase: Float, pulse: Float) {
         HeroKind.Radar -> {
             drawCircle(
                 brush = Brush.radialGradient(
-                    0f to KnouxCyan.copy(alpha = 0.55f),
-                    0.6f to KnouxViolet.copy(alpha = 0.55f),
+                    0f to ProArcticCyan.copy(alpha = 0.55f),
+                    0.6f to ProBlue.copy(alpha = 0.55f),
                     1f to Color(0x22060B2E)
                 ),
                 radius = r, center = c
@@ -812,7 +813,7 @@ private fun DrawScope.drawHero(kind: HeroKind, phase: Float, pulse: Float) {
             // sweep
             val rad = Math.toRadians(phase.toDouble())
             drawLine(
-                color = KnouxCyan.copy(alpha = 0.85f),
+                color = ProArcticCyan.copy(alpha = 0.85f),
                 start = c,
                 end = Offset(c.x + (r * cos(rad)).toFloat(), c.y + (r * sin(rad)).toFloat()),
                 strokeWidth = 2.5.dp.toPx(),
@@ -824,7 +825,7 @@ private fun DrawScope.drawHero(kind: HeroKind, phase: Float, pulse: Float) {
                 Offset(c.x + r * 0.15f, c.y + r * 0.62f),
                 Offset(c.x - r * 0.62f, c.y - r * 0.42f),
             ).forEach {
-                drawCircle(KnouxCyan, radius = 3.5.dp.toPx(), center = it)
+                drawCircle(ProArcticCyan, radius = 3.5.dp.toPx(), center = it)
             }
             drawCircle(Color.White.copy(alpha = 0.85f), radius = 3.dp.toPx(), center = c)
         }
@@ -837,7 +838,7 @@ private fun DrawScope.drawHero(kind: HeroKind, phase: Float, pulse: Float) {
                 val h = r * (0.55f + 0.38f * i)
                 val x = c.x - (barW * 3f + gap * 2f) / 2f + i * (barW + gap)
                 drawRoundRect(
-                    brush = Brush.verticalGradient(listOf(KnouxMagenta, KnouxViolet)),
+                    brush = Brush.verticalGradient(listOf(ProArcticCyan, ProBlue)),
                     topLeft = Offset(x, base - h),
                     size = Size(barW, h),
                     cornerRadius = androidx.compose.ui.geometry.CornerRadius(barW / 2)
@@ -851,11 +852,11 @@ private fun DrawScope.drawHero(kind: HeroKind, phase: Float, pulse: Float) {
                 lineTo(c.x + r * 0.85f, c.y - r * 0.55f)
             }
             drawPath(
-                p, KnouxCyan,
+                p, ProArcticCyan,
                 style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
             )
             drawLine(
-                KnouxCyan, Offset(c.x + r * 0.60f, c.y - r * 0.55f), Offset(c.x + r * 0.86f, c.y - r * 0.55f),
+                ProArcticCyan, Offset(c.x + r * 0.60f, c.y - r * 0.55f), Offset(c.x + r * 0.86f, c.y - r * 0.55f),
                 strokeWidth = 4.dp.toPx(), cap = StrokeCap.Round
             )
         }
@@ -874,7 +875,7 @@ private fun DrawScope.drawHero(kind: HeroKind, phase: Float, pulse: Float) {
                 }
                 drawPath(
                     path,
-                    brush = Brush.linearGradient(listOf(KnouxCyan.copy(alpha = 0.9f), KnouxViolet.copy(alpha = 0.9f)))
+                    brush = Brush.linearGradient(listOf(ProArcticCyan.copy(alpha = 0.9f), ProBlue.copy(alpha = 0.9f)))
                 )
                 drawPath(path, Color.White.copy(alpha = 0.45f), style = Stroke(width = 1.5.dp.toPx()))
             }
@@ -889,7 +890,7 @@ private fun DrawScope.drawHero(kind: HeroKind, phase: Float, pulse: Float) {
                     val y = c.y - s - gap / 2 + row * (s + gap)
                     drawRoundRect(
                         brush = Brush.linearGradient(
-                            listOf(KnouxCyan.copy(alpha = 0.85f), KnouxMagenta.copy(alpha = 0.85f))
+                            listOf(ProArcticCyan.copy(alpha = 0.85f), ProArcticCyan.copy(alpha = 0.85f))
                         ),
                         topLeft = Offset(x, y),
                         size = Size(s, s),
@@ -906,7 +907,7 @@ private fun DrawScope.drawHero(kind: HeroKind, phase: Float, pulse: Float) {
                 val y = c.y - r * 0.62f + i * h * 0.92f
                 drawRoundRect(
                     brush = Brush.verticalGradient(
-                        listOf(KnouxCyan.copy(alpha = 0.9f), KnouxViolet.copy(alpha = 0.9f))
+                        listOf(ProArcticCyan.copy(alpha = 0.9f), ProBlue.copy(alpha = 0.9f))
                     ),
                     topLeft = Offset(c.x - w / 2, y),
                     size = Size(w, h),
@@ -925,13 +926,13 @@ private fun DrawScope.drawHero(kind: HeroKind, phase: Float, pulse: Float) {
             val bw = r * 1.05f
             val bh = r * 1.55f
             drawRoundRect(
-                brush = Brush.verticalGradient(listOf(KnouxViolet.copy(alpha = 0.9f), KnouxCyan.copy(alpha = 0.9f))),
+                brush = Brush.verticalGradient(listOf(ProBlue.copy(alpha = 0.9f), ProArcticCyan.copy(alpha = 0.9f))),
                 topLeft = Offset(c.x - bw / 2, c.y - bh / 2),
                 size = Size(bw, bh),
                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(16.dp.toPx())
             )
             drawRoundRect(
-                color = KnouxCyan.copy(alpha = 0.9f),
+                color = ProArcticCyan.copy(alpha = 0.9f),
                 topLeft = Offset(c.x - bw * 0.16f, c.y - bh / 2 - 10.dp.toPx()),
                 size = Size(bw * 0.32f, 10.dp.toPx()),
                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(4.dp.toPx())
@@ -954,38 +955,38 @@ private fun DrawScope.drawHero(kind: HeroKind, phase: Float, pulse: Float) {
             for (i in 0..3) {
                 val off = -s / 2 + s * (i + 0.5f) / 4f
                 drawRoundRect(
-                    color = KnouxViolet.copy(alpha = 0.9f),
+                    color = ProBlue.copy(alpha = 0.9f),
                     topLeft = Offset(c.x + off - 3.dp.toPx(), c.y - s / 2 - 12.dp.toPx()),
                     size = Size(6.dp.toPx(), 14.dp.toPx()),
                     cornerRadius = androidx.compose.ui.geometry.CornerRadius(3.dp.toPx())
                 )
                 drawRoundRect(
-                    color = KnouxViolet.copy(alpha = 0.9f),
+                    color = ProBlue.copy(alpha = 0.9f),
                     topLeft = Offset(c.x + off - 3.dp.toPx(), c.y + s / 2 - 2.dp.toPx()),
                     size = Size(6.dp.toPx(), 14.dp.toPx()),
                     cornerRadius = androidx.compose.ui.geometry.CornerRadius(3.dp.toPx())
                 )
                 drawRoundRect(
-                    color = KnouxMagenta.copy(alpha = 0.9f),
+                    color = ProArcticCyan.copy(alpha = 0.9f),
                     topLeft = Offset(c.x - s / 2 - 12.dp.toPx(), c.y + off - 3.dp.toPx()),
                     size = Size(14.dp.toPx(), 6.dp.toPx()),
                     cornerRadius = androidx.compose.ui.geometry.CornerRadius(3.dp.toPx())
                 )
                 drawRoundRect(
-                    color = KnouxCyan.copy(alpha = 0.9f),
+                    color = ProArcticCyan.copy(alpha = 0.9f),
                     topLeft = Offset(c.x + s / 2 - 2.dp.toPx(), c.y + off - 3.dp.toPx()),
                     size = Size(14.dp.toPx(), 6.dp.toPx()),
                     cornerRadius = androidx.compose.ui.geometry.CornerRadius(3.dp.toPx())
                 )
             }
             drawRoundRect(
-                brush = Brush.linearGradient(listOf(KnouxMagenta.copy(alpha = 0.92f), KnouxViolet.copy(alpha = 0.92f))),
+                brush = Brush.linearGradient(listOf(ProArcticCyan.copy(alpha = 0.92f), ProBlue.copy(alpha = 0.92f))),
                 topLeft = Offset(c.x - s / 2, c.y - s / 2),
                 size = Size(s, s),
                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(18.dp.toPx())
             )
             drawRoundRect(
-                color = KnouxBackdrop.copy(alpha = 0.35f),
+                color = ProDeepInk.copy(alpha = 0.35f),
                 topLeft = Offset(c.x - s * 0.34f, c.y - s * 0.34f),
                 size = Size(s * 0.68f, s * 0.68f),
                 cornerRadius = androidx.compose.ui.geometry.CornerRadius(14.dp.toPx())
@@ -1029,9 +1030,9 @@ fun KnouxBottomBar(
                     1.dp,
                     Brush.linearGradient(
                         listOf(
-                            KnouxViolet.copy(alpha = 0.42f),
+                            ProBlue.copy(alpha = 0.42f),
                             Color.White.copy(alpha = 0.14f),
-                            KnouxCyan.copy(alpha = 0.22f),
+                            ProArcticCyan.copy(alpha = 0.22f),
                         )
                     ),
                 ),
@@ -1043,7 +1044,7 @@ fun KnouxBottomBar(
                     brush = Brush.horizontalGradient(
                         listOf(
                             Color.Transparent,
-                            KnouxCyan.copy(alpha = 0.32f),
+                            ProArcticCyan.copy(alpha = 0.32f),
                             Color.Transparent,
                         )
                     ),
@@ -1090,8 +1091,8 @@ private fun RowScope.BottomBarItem(
                             .background(
                                 Brush.horizontalGradient(
                                     listOf(
-                                        KnouxViolet,
-                                        KnouxMagenta,
+                                        ProBlue,
+                                        ProArcticCyan,
                                         Color(0xFF6A5BFF),
                                     )
                                 )
@@ -1105,7 +1106,7 @@ private fun RowScope.BottomBarItem(
         ) {
             Icon(
                 tab.icon, tab.label,
-                tint = if (active) Color.White else KnouxSoftText,
+                tint = if (active) Color.White else ProTextSecondary,
                 modifier = Modifier.size(if (active) 20.dp else 19.dp)
             )
             Text(
@@ -1113,7 +1114,7 @@ private fun RowScope.BottomBarItem(
                 style = TextStyle(
                     fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
                     fontSize = if (active) 10.8.sp else 10.2.sp,
-                    color = if (active) Color.White else KnouxSoftText
+                    color = if (active) Color.White else ProTextSecondary
                 ),
                 maxLines = 1,
                 softWrap = false,
@@ -1131,7 +1132,7 @@ fun ScreenTitle(
     text: String,
     modifier: Modifier = Modifier,
     accent: String? = null,
-    accentColors: List<Color> = listOf(KnouxMagenta, KnouxViolet),
+    accentColors: List<Color> = listOf(ProArcticCyan, ProBlue),
     fontSize: androidx.compose.ui.unit.TextUnit = 27.sp,
     lineHeight: androidx.compose.ui.unit.TextUnit = 32.sp,
 ) {
@@ -1169,9 +1170,9 @@ fun ScreenTitle(
                 fontStyle = FontStyle.Italic,
                 fontSize = fontSize * scale,
                 lineHeight = lineHeight * scale,
-                color = KnouxText,
+                color = ProTextPrimary,
                 shadow = Shadow(
-                    color = KnouxViolet.copy(alpha = 0.46f),
+                    color = ProBlue.copy(alpha = 0.46f),
                     offset = Offset(0f, 2.5f),
                     blurRadius = 12f,
                 ),
@@ -1189,7 +1190,7 @@ fun ScreenSubtitle(text: String, modifier: Modifier = Modifier) {
             fontWeight = FontWeight.Normal,
             fontSize = 12.5.sp,
             lineHeight = 17.sp,
-            color = KnouxSoftText
+            color = ProTextSecondary
         ),
         textAlign = TextAlign.Center,
     )
@@ -1205,19 +1206,19 @@ fun PreviewDisclosure(modifier: Modifier = Modifier) {
         modifier
             .clip(RoundedCornerShape(50))
             .background(Color(0x22FFC24B))
-            .border(1.dp, KnouxAmber.copy(alpha = 0.6f), RoundedCornerShape(50))
+            .border(1.dp, ProWarning.copy(alpha = 0.6f), RoundedCornerShape(50))
             .padding(horizontal = 9.dp, vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(5.dp),
     ) {
         Box(
-            Modifier.size(5.dp).clip(CircleShape).background(KnouxAmber)
+            Modifier.size(5.dp).clip(CircleShape).background(ProWarning)
         )
         Text(
             "DESIGN PREVIEW",
             style = TextStyle(
                 fontWeight = FontWeight.Bold, fontSize = 8.sp, letterSpacing = 0.6.sp,
-                color = KnouxAmber
+                color = ProWarning
             )
         )
     }

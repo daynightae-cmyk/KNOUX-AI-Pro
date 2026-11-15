@@ -55,11 +55,11 @@ fun ToolScreenScaffold(
         if (heroImage != 0) {
             ReferenceHeroBand(
                 image = heroImage,
-                height = 116.dp,
+                height = 80.dp,
                 contentDescription = "$title$accent hero artwork",
             )
         } else {
-            NeonHero(hero, height = 132.dp)
+            NeonHero(hero, height = 80.dp)
         }
 
         Column(
@@ -76,8 +76,6 @@ fun ToolScreenScaffold(
                 modifier = Modifier.padding(horizontal = 20.dp),
             )
             Spacer(Modifier.height(4.dp))
-            PreviewDisclosure()
-            Spacer(Modifier.height(6.dp))
         }
 
         LazyColumn(

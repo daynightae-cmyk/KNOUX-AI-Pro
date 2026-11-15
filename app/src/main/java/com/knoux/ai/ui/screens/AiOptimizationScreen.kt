@@ -47,12 +47,12 @@ import com.knoux.ai.ui.components.SelectAllPill
 import com.knoux.ai.ui.components.SelectableFindingRow
 import com.knoux.ai.ui.components.SummaryLine
 import com.knoux.ai.ui.data.Fixtures
-import com.knoux.ai.ui.theme.KnouxAmber
-import com.knoux.ai.ui.theme.KnouxCyan
-import com.knoux.ai.ui.theme.KnouxMagenta
-import com.knoux.ai.ui.theme.KnouxSoftText
-import com.knoux.ai.ui.theme.KnouxText
-import com.knoux.ai.ui.theme.KnouxViolet
+import com.knoux.ai.ui.theme.ProWarning
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProTextSecondary
+import com.knoux.ai.ui.theme.ProTextPrimary
+import com.knoux.ai.ui.theme.ProBlue
 
 @Composable
 fun AiOptimizationScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
@@ -75,16 +75,16 @@ fun AiOptimizationScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
         item {
             GlassPanel(Modifier.fillMaxWidth(), padding = 16.dp) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    NeonIconTile(Icons.Rounded.Speed, size = 42.dp, iconSize = 21.dp, tint = KnouxMagenta)
+                    NeonIconTile(Icons.Rounded.Speed, size = 42.dp, iconSize = 21.dp, tint = ProArcticCyan)
                     Spacer(Modifier.width(11.dp))
                     Column(Modifier.weight(1f)) {
                         Text(
                             "Performance\nScore",
-                            style = TextStyle(fontSize = 10.sp, color = KnouxSoftText)
+                            style = TextStyle(fontSize = 10.sp, color = ProTextSecondary)
                         )
                         Text(
                             "94",
-                            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 25.sp, color = KnouxText)
+                            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 25.sp, color = ProTextPrimary)
                         )
                     }
                     Box(
@@ -94,16 +94,16 @@ fun AiOptimizationScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
                             .background(Color.White.copy(alpha = 0.15f))
                     )
                     Spacer(Modifier.width(14.dp))
-                    NeonIconTile(Icons.Rounded.BatteryChargingFull, size = 42.dp, iconSize = 21.dp, tint = KnouxCyan)
+                    NeonIconTile(Icons.Rounded.BatteryChargingFull, size = 42.dp, iconSize = 21.dp, tint = ProArcticCyan)
                     Spacer(Modifier.width(11.dp))
                     Column {
                         Text(
                             "Battery gain",
-                            style = TextStyle(fontSize = 10.sp, color = KnouxSoftText)
+                            style = TextStyle(fontSize = 10.sp, color = ProTextSecondary)
                         )
                         Text(
                             "+18%",
-                            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 25.sp, color = KnouxCyan)
+                            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 25.sp, color = ProArcticCyan)
                         )
                     }
                 }
@@ -125,14 +125,14 @@ fun AiOptimizationScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
                         progress = 0.94f,
                         centerText = "94%",
                         caption = "Optimized",
-                        arcColors = listOf(KnouxCyan, KnouxMagenta),
+                        arcColors = listOf(ProArcticCyan, ProArcticCyan),
                         size = 92.dp,
                     )
                     Spacer(Modifier.width(16.dp))
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                        SummaryLine(Icons.Rounded.CheckCircle, "Recommended actions:", "5", KnouxCyan)
-                        SummaryLine(Icons.Rounded.CheckCircle, "Applied safely:", "5", KnouxViolet)
-                        SummaryLine(Icons.Rounded.Event, "Last tune-up:", Fixtures.LAST_RUN, KnouxViolet)
+                        SummaryLine(Icons.Rounded.CheckCircle, "Recommended actions:", "5", ProArcticCyan)
+                        SummaryLine(Icons.Rounded.CheckCircle, "Applied safely:", "5", ProBlue)
+                        SummaryLine(Icons.Rounded.Event, "Last tune-up:", Fixtures.LAST_RUN, ProBlue)
                     }
                 }
             }
@@ -143,7 +143,7 @@ fun AiOptimizationScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 Text(
                     "Optimization Tools (5)",
-                    style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 16.sp, color = KnouxText)
+                    style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 16.sp, color = ProTextPrimary)
                 )
                 Spacer(Modifier.weight(1f))
                 SelectAllPill("Enable All", allSelected) {
@@ -164,7 +164,7 @@ fun AiOptimizationScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
             InsightBanner(
                 title = "AI Insight",
                 message = "Found 12 optimization opportunities that can free 2.4 GB of memory and extend battery life by up to 24%, keeping the device cooler and faster.",
-                tint = KnouxMagenta,
+                tint = ProArcticCyan,
                 badge = "12 FOUND",
             )
         }
@@ -175,10 +175,10 @@ fun AiOptimizationScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
             Spacer(Modifier.height(6.dp))
             SignalTileGrid(
                 tiles = listOf(
-                    SignalTile(Icons.Rounded.Speed, "94 → 98", "Performance score", KnouxCyan, trailing = "+4"),
-                    SignalTile(Icons.Rounded.Memory, "+2.4 GB", "Memory recovered", KnouxMagenta),
-                    SignalTile(Icons.Rounded.BatteryChargingFull, "+18%", "Battery life", KnouxViolet),
-                    SignalTile(Icons.Rounded.Thermostat, "-6 C", "Peak temperature", KnouxAmber),
+                    SignalTile(Icons.Rounded.Speed, "94 → 98", "Performance score", ProArcticCyan, trailing = "+4"),
+                    SignalTile(Icons.Rounded.Memory, "+2.4 GB", "Memory recovered", ProArcticCyan),
+                    SignalTile(Icons.Rounded.BatteryChargingFull, "+18%", "Battery life", ProBlue),
+                    SignalTile(Icons.Rounded.Thermostat, "-6 C", "Peak temperature", ProWarning),
                 ),
             )
         }

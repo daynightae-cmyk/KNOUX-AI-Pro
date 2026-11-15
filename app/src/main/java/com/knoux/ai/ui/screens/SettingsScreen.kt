@@ -59,13 +59,13 @@ import com.knoux.ai.ui.components.PremiumGlassCard
 import com.knoux.ai.ui.components.ReferenceSectionLabel
 import com.knoux.ai.ui.components.SettingsIconButton
 import com.knoux.ai.ui.components.TopLeading
-import com.knoux.ai.ui.theme.KnouxAmber
-import com.knoux.ai.ui.theme.KnouxCyan
-import com.knoux.ai.ui.theme.KnouxMagenta
-import com.knoux.ai.ui.theme.KnouxMutedText
-import com.knoux.ai.ui.theme.KnouxSoftText
-import com.knoux.ai.ui.theme.KnouxText
-import com.knoux.ai.ui.theme.KnouxViolet
+import com.knoux.ai.ui.theme.ProWarning
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProTextSecondary
+import com.knoux.ai.ui.theme.ProTextSecondary
+import com.knoux.ai.ui.theme.ProTextPrimary
+import com.knoux.ai.ui.theme.ProBlue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -112,12 +112,12 @@ fun SettingsScreen(
                         style = TextStyle(
                             fontWeight = FontWeight.Bold,
                             fontSize = 25.sp,
-                            color = KnouxText,
+                            color = ProTextPrimary,
                         ),
                     )
                     Text(
                         "Tune the app, check what it measures, and open the system controls Android owns.",
-                        style = TextStyle(fontSize = 10.5.sp, lineHeight = 14.sp, color = KnouxSoftText),
+                        style = TextStyle(fontSize = 10.5.sp, lineHeight = 14.sp, color = ProTextSecondary),
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     )
                     Spacer(Modifier.height(8.dp))
@@ -130,7 +130,7 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth(),
                     padding = 10.dp,
                     radius = 18.dp,
-                    accent = KnouxViolet,
+                    accent = ProBlue,
                 ) {
                     Column {
                         SettingsToggleRow(
@@ -138,7 +138,7 @@ fun SettingsScreen(
                             title = "Splash sound",
                             caption = "One short click when the logo lockup finishes.",
                             checked = splashSound,
-                            tint = KnouxViolet,
+                            tint = ProBlue,
                             onChange = {
                                 splashSound = it
                                 prefs.edit().putBoolean("sound_enabled", it).apply()
@@ -150,7 +150,7 @@ fun SettingsScreen(
                             title = "Haptic feedback",
                             caption = "Short vibration on primary actions.",
                             checked = haptics,
-                            tint = KnouxCyan,
+                            tint = ProArcticCyan,
                             onChange = {
                                 haptics = it
                                 prefs.edit().putBoolean("haptics_enabled", it).apply()
@@ -162,7 +162,7 @@ fun SettingsScreen(
                             title = "Motion & animation",
                             caption = "Orbit, float and transition animations.",
                             checked = motion,
-                            tint = KnouxMagenta,
+                            tint = ProArcticCyan,
                             onChange = {
                                 motion = it
                                 prefs.edit().putBoolean("motion_enabled", it).apply()
@@ -174,7 +174,7 @@ fun SettingsScreen(
                             title = "Preview labels",
                             caption = "Keep the PREVIEW badge on every estimated value.",
                             checked = previewLabels,
-                            tint = KnouxAmber,
+                            tint = ProWarning,
                             onChange = {
                                 previewLabels = it
                                 prefs.edit().putBoolean("preview_labels", it).apply()
@@ -190,27 +190,27 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth(),
                     padding = 12.dp,
                     radius = 18.dp,
-                    accent = KnouxCyan,
+                    accent = ProArcticCyan,
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
                         SettingsInfoRow(
                             icon = Icons.Rounded.CleaningServices,
                             title = "App cache",
                             value = formatBytes(cacheBytes),
-                            tint = KnouxCyan,
+                            tint = ProArcticCyan,
                         )
                         SettingsInfoRow(
                             icon = Icons.Rounded.Storage,
                             title = "App files",
                             value = formatBytes(dataBytes),
-                            tint = KnouxViolet,
+                            tint = ProBlue,
                         )
                         SettingsDivider()
                         SettingsActionRow(
                             icon = Icons.Rounded.CleaningServices,
                             title = "Clear app cache",
                             caption = "Removes only this app's temporary cache — nothing else.",
-                            tint = KnouxMagenta,
+                            tint = ProArcticCyan,
                             onClick = {
                                 runCatching { context.cacheDir.listFiles()?.forEach { it.deleteRecursively() } }
                             },
@@ -219,7 +219,7 @@ fun SettingsScreen(
                             icon = Icons.Rounded.PhoneAndroid,
                             title = "System storage settings",
                             caption = "Opens Android's own storage manager.",
-                            tint = KnouxCyan,
+                            tint = ProArcticCyan,
                             onClick = {
                                 runCatching {
                                     context.startActivity(
@@ -239,21 +239,21 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth(),
                     padding = 12.dp,
                     radius = 18.dp,
-                    accent = KnouxMagenta,
+                    accent = ProArcticCyan,
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
                         SettingsInfoRow(
                             icon = Icons.Rounded.CloudOff,
                             title = "Data stays on device",
                             value = "No account, no upload",
-                            tint = KnouxMagenta,
+                            tint = ProArcticCyan,
                         )
                         SettingsDivider()
                         SettingsActionRow(
                             icon = Icons.Rounded.Security,
                             title = "App permissions",
                             caption = "Camera, storage and notification access granted to KNOUX AI.",
-                            tint = KnouxCyan,
+                            tint = ProArcticCyan,
                             onClick = {
                                 runCatching {
                                     context.startActivity(
@@ -267,7 +267,7 @@ fun SettingsScreen(
                             icon = Icons.Rounded.Bolt,
                             title = "Battery saver",
                             caption = "Hands off to Android's battery settings.",
-                            tint = KnouxViolet,
+                            tint = ProBlue,
                             onClick = {
                                 runCatching {
                                     context.startActivity(
@@ -287,34 +287,34 @@ fun SettingsScreen(
                     modifier = Modifier.fillMaxWidth(),
                     padding = 12.dp,
                     radius = 18.dp,
-                    accent = KnouxViolet,
+                    accent = ProBlue,
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
                         SettingsInfoRow(
                             icon = Icons.Rounded.Info,
                             title = "Version",
                             value = "${packageInfo.versionName ?: "1.0"} · ${packageInfo.versionCode}",
-                            tint = KnouxViolet,
+                            tint = ProBlue,
                         )
                         SettingsInfoRow(
                             icon = Icons.Rounded.AutoAwesome,
                             title = "Design system",
                             value = "20 reference screens",
-                            tint = KnouxCyan,
+                            tint = ProArcticCyan,
                         )
                         SettingsDivider()
                         SettingsActionRow(
                             icon = Icons.Rounded.AutoAwesome,
                             title = "Show the welcome screen again",
                             caption = "Replays the post-splash entry screen.",
-                            tint = KnouxMagenta,
+                            tint = ProArcticCyan,
                             onClick = onShowWelcome,
                         )
                         SettingsActionRow(
                             icon = Icons.Rounded.Info,
                             title = "App info",
                             caption = "Version, storage and uninstall in Android settings.",
-                            tint = KnouxCyan,
+                            tint = ProArcticCyan,
                             onClick = {
                                 runCatching {
                                     context.startActivity(
@@ -333,7 +333,7 @@ fun SettingsScreen(
             item {
                 Text(
                     "KNOUX AI · all cleanup, optimization and report values are design previews until the measurement engines are connected.",
-                    style = TextStyle(fontSize = 8.5.sp, lineHeight = 12.sp, color = KnouxMutedText),
+                    style = TextStyle(fontSize = 8.5.sp, lineHeight = 12.sp, color = ProTextSecondary),
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -365,11 +365,11 @@ private fun SettingsToggleRow(
         Column(Modifier.weight(1f)) {
             Text(
                 title,
-                style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 12.sp, color = KnouxText),
+                style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 12.sp, color = ProTextPrimary),
             )
             Text(
                 caption,
-                style = TextStyle(fontSize = 9.sp, lineHeight = 12.sp, color = KnouxSoftText),
+                style = TextStyle(fontSize = 9.sp, lineHeight = 12.sp, color = ProTextSecondary),
             )
         }
         Switch(
@@ -378,7 +378,7 @@ private fun SettingsToggleRow(
             colors = SwitchDefaults.colors(
                 checkedThumbColor = Color.White,
                 checkedTrackColor = tint.copy(alpha = 0.75f),
-                uncheckedThumbColor = KnouxMutedText,
+                uncheckedThumbColor = ProTextSecondary,
                 uncheckedTrackColor = Color.White.copy(alpha = 0.10f),
                 uncheckedBorderColor = Color.White.copy(alpha = 0.18f),
             ),
@@ -398,7 +398,7 @@ private fun SettingsInfoRow(
         Spacer(Modifier.width(10.dp))
         Text(
             title,
-            style = TextStyle(fontWeight = FontWeight.Medium, fontSize = 11.5.sp, color = KnouxText),
+            style = TextStyle(fontWeight = FontWeight.Medium, fontSize = 11.5.sp, color = ProTextPrimary),
             modifier = Modifier.weight(1f),
         )
         Text(
@@ -429,17 +429,17 @@ private fun SettingsActionRow(
         Column(Modifier.weight(1f)) {
             Text(
                 title,
-                style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 11.5.sp, color = KnouxText),
+                style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 11.5.sp, color = ProTextPrimary),
             )
             Text(
                 caption,
-                style = TextStyle(fontSize = 9.sp, lineHeight = 12.sp, color = KnouxSoftText),
+                style = TextStyle(fontSize = 9.sp, lineHeight = 12.sp, color = ProTextSecondary),
             )
         }
         Icon(
             Icons.Rounded.ChevronRight,
             contentDescription = null,
-            tint = KnouxMutedText,
+            tint = ProTextSecondary,
             modifier = Modifier.size(15.dp),
         )
     }

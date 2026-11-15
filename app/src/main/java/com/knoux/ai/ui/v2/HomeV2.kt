@@ -30,7 +30,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.Bolt
-import androidx.compose.material.icons.rounded.ChevronLeft
+import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Eco
 import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.Memory
@@ -104,8 +104,9 @@ fun V2HomeScreen(
         V2DeerHeader(
             Modifier
                 .align(Alignment.TopStart)
-                .absoluteOffset(x = 46.dp, y = 8.dp)
-                .graphicsLayer { alpha = .92f }
+                .absoluteOffset(x = 2.dp, y = 33.dp)
+                .size(width = 170.dp, height = 267.dp)
+                .graphicsLayer { alpha = .96f }
         )
 
         Column(Modifier.fillMaxSize()) {
@@ -174,13 +175,13 @@ fun V2HomeScreen(
                 item { Spacer(Modifier.height(9.dp)) }
                 item { V2GlassCard(Modifier.fillMaxWidth(), padding = 9.dp, radius = 16.dp, glow = V2Cyan, borderAlpha = .22f) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        HomeStat(Icons.Rounded.Storage, "26.4 GB", "يمكن استعادتها", V2Violet, Modifier.weight(1f))
-                        StatDivider()
-                        HomeStat(Icons.Rounded.Shield, "0", "تهديد حرجة", V2Cyan, Modifier.weight(.75f))
+                        HomeStat(Icons.Rounded.Eco, "-24%", "استهلاك الطاقة", V2Green, Modifier.weight(.9f))
                         StatDivider()
                         HomeStat(Icons.Rounded.RocketLaunch, "+32%", "تحسن الأداء", V2Pink, Modifier.weight(.85f))
                         StatDivider()
-                        HomeStat(Icons.Rounded.Eco, "-24%", "استهلاك الطاقة", V2Green, Modifier.weight(.9f))
+                        HomeStat(Icons.Rounded.Shield, "0", "تهديدات حرجة", V2Cyan, Modifier.weight(.75f))
+                        StatDivider()
+                        HomeStat(Icons.Rounded.Storage, "26.4 GB", "يمكن استعادتها", V2Violet, Modifier.weight(1f))
                     }
                 } }
                 item {
@@ -349,11 +350,21 @@ private fun HomeScanOrb(modifier: Modifier = Modifier) {
                 radius = size.width * .52f,
             )
             drawArc(
-                brush = Brush.sweepGradient(listOf(V2Pink, V2Violet, V2Blue, V2Cyan, V2Pink), center),
+                brush = Brush.sweepGradient(
+                    listOf(V2Amber, V2Violet, V2Cyan, V2Pink, V2Amber),
+                    center,
+                ),
                 startAngle = -70f,
                 sweepAngle = 305f,
                 useCenter = false,
                 style = Stroke(4.dp.toPx(), cap = StrokeCap.Round),
+            )
+            drawArc(
+                color = V2Amber.copy(alpha = .28f),
+                startAngle = 8f,
+                sweepAngle = 336f,
+                useCenter = false,
+                style = Stroke(9.dp.toPx(), cap = StrokeCap.Round),
             )
             drawArc(
                 color = Color.White.copy(alpha = .20f),
@@ -374,7 +385,7 @@ private fun HomeScanOrb(modifier: Modifier = Modifier) {
                         listOf(Color(0xFF25115C), Color(0xFF0F082B)),
                     )
                 )
-                .border(1.dp, V2Cyan.copy(alpha = .40f), CircleShape),
+                .border(1.dp, V2Amber.copy(alpha = .46f), CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -471,9 +482,9 @@ private fun HomeServiceTile(service: HomeServiceMini, onClick: () -> Unit, modif
         verticalArrangement = Arrangement.Center,
     ) {
         if (service.glyph != null) {
-            V2NeonGlyph(service.glyph, service.accent, size = 46.dp)
+            V2NeonGlyph(service.glyph, service.accent, size = 50.dp)
         } else {
-            V2RasterTile(image = service.art, size = 48.dp, accent = service.accent)
+            V2RasterTile(image = service.art, size = 52.dp, accent = service.accent)
         }
         Spacer(Modifier.height(2.dp))
         KText(
@@ -534,25 +545,6 @@ private fun ProBanner(onClick: () -> Unit) {
             .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        CrownGold(size = 46.dp)
-        Spacer(Modifier.width(9.dp))
-        Column(Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                androidx.compose.material3.Text(
-                    buildAnnotatedString {
-                        withStyle(SpanStyle(color = Color.White)) { append("KNOUX AI ") }
-                        withStyle(SpanStyle(color = V2GoldText)) { append("Pro") }
-                    },
-                    style = TextStyle(
-                        fontFamily = V2Font,
-                        fontWeight = FontWeight.Black,
-                        fontSize = 19.sp,
-                    ),
-                )
-            }
-            KText("خصائص متقدمة .. أدوات أعمق .. بدون قيود", size = 9.2.sp, color = V2Soft)
-        }
-        Spacer(Modifier.width(6.dp))
         Box(
             Modifier
                 .size(38.dp)
@@ -561,7 +553,27 @@ private fun ProBanner(onClick: () -> Unit) {
                 .border(1.dp, V2Amber.copy(alpha = .62f), CircleShape),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Icons.Rounded.ChevronLeft, null, tint = Color.White, modifier = Modifier.size(22.dp))
+            Icon(Icons.Rounded.ChevronRight, null, tint = Color.White, modifier = Modifier.size(22.dp))
+        }
+        Spacer(Modifier.width(9.dp))
+        Column(Modifier.weight(1f)) {
+            androidx.compose.material3.Text(
+                buildAnnotatedString {
+                    withStyle(SpanStyle(color = Color.White)) { append("KNOUX AI ") }
+                    withStyle(SpanStyle(color = V2GoldText)) { append("Pro") }
+                },
+                style = TextStyle(
+                    fontFamily = V2Font,
+                    fontWeight = FontWeight.Black,
+                    fontSize = 19.sp,
+                ),
+            )
+            KText("خصائص متقدمة .. أدوات أعمق .. بدون قيود", size = 9.2.sp, color = V2Soft)
+        }
+        Spacer(Modifier.width(6.dp))
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            CrownGold(size = 38.dp)
+            KText("PRO", size = 6.4.sp, weight = FontWeight.Black, color = V2Amber, letterSpacing = .8.sp)
         }
     }
 }

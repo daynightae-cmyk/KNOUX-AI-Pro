@@ -55,12 +55,12 @@ import com.knoux.ai.ui.components.SelectAllPill
 import com.knoux.ai.ui.components.SelectableFindingRow
 import com.knoux.ai.ui.components.SummaryLine
 import com.knoux.ai.ui.data.Fixtures
-import com.knoux.ai.ui.theme.KnouxAmber
-import com.knoux.ai.ui.theme.KnouxCyan
-import com.knoux.ai.ui.theme.KnouxMagenta
-import com.knoux.ai.ui.theme.KnouxSoftText
-import com.knoux.ai.ui.theme.KnouxText
-import com.knoux.ai.ui.theme.KnouxViolet
+import com.knoux.ai.ui.theme.ProWarning
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProTextSecondary
+import com.knoux.ai.ui.theme.ProTextPrimary
+import com.knoux.ai.ui.theme.ProBlue
 
 @Composable
 fun PrivacySweepScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
@@ -83,34 +83,34 @@ fun PrivacySweepScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
         item {
             GlassPanel(Modifier.fillMaxWidth(), padding = 16.dp) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    NeonIconTile(Icons.Rounded.Visibility, size = 44.dp, iconSize = 22.dp, tint = KnouxCyan)
+                    NeonIconTile(Icons.Rounded.Visibility, size = 44.dp, iconSize = 22.dp, tint = ProArcticCyan)
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
                         Text(
                             "7",
-                            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 26.sp, color = KnouxText)
+                            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 26.sp, color = ProTextPrimary)
                         )
                         Text(
                             "trackers found",
-                            style = TextStyle(fontSize = 11.sp, color = KnouxSoftText)
+                            style = TextStyle(fontSize = 11.sp, color = ProTextSecondary)
                         )
                     }
                     Column(
                         Modifier
                             .clip(RoundedCornerShape(50))
                             .background(Brush.horizontalGradient(listOf(Color(0x3303DAFF), Color(0x1A03DAFF))))
-                            .border(1.dp, KnouxCyan.copy(alpha = 0.8f), RoundedCornerShape(50))
+                            .border(1.dp, ProArcticCyan.copy(alpha = 0.8f), RoundedCornerShape(50))
                             .padding(horizontal = 16.dp, vertical = 9.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        Icon(Icons.Rounded.Shield, null, tint = KnouxCyan, modifier = Modifier.size(17.dp))
+                        Icon(Icons.Rounded.Shield, null, tint = ProArcticCyan, modifier = Modifier.size(17.dp))
                         Text(
                             "86 /100",
-                            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 15.sp, color = KnouxText)
+                            style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 15.sp, color = ProTextPrimary)
                         )
                         Text(
                             "Privacy Score",
-                            style = TextStyle(fontSize = 9.sp, color = KnouxSoftText)
+                            style = TextStyle(fontSize = 9.sp, color = ProTextSecondary)
                         )
                     }
                 }
@@ -132,14 +132,14 @@ fun PrivacySweepScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
                         progress = 0.86f,
                         centerText = "86%",
                         caption = "Privacy\nScore",
-                        arcColors = listOf(KnouxCyan, KnouxMagenta),
+                        arcColors = listOf(ProArcticCyan, ProArcticCyan),
                         size = 92.dp,
                     )
                     Spacer(Modifier.width(16.dp))
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                        SummaryLine(Icons.Rounded.CheckCircle, "Protected apps:", "24", KnouxCyan)
-                        SummaryLine(Icons.Rounded.ErrorOutline, "Needs review:", "5", KnouxAmber)
-                        SummaryLine(Icons.Rounded.Event, "Last sweep:", Fixtures.LAST_RUN, KnouxViolet)
+                        SummaryLine(Icons.Rounded.CheckCircle, "Protected apps:", "24", ProArcticCyan)
+                        SummaryLine(Icons.Rounded.ErrorOutline, "Needs review:", "5", ProWarning)
+                        SummaryLine(Icons.Rounded.Event, "Last sweep:", Fixtures.LAST_RUN, ProBlue)
                     }
                 }
             }
@@ -150,7 +150,7 @@ fun PrivacySweepScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 Text(
                     "Privacy Items (5)",
-                    style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 16.sp, color = KnouxText)
+                    style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 16.sp, color = ProTextPrimary)
                 )
                 Spacer(Modifier.weight(1f))
                 SelectAllPill("Select All (7 Trackers)", allSelected) {
@@ -172,7 +172,7 @@ fun PrivacySweepScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
             InsightBanner(
                 title = "Privacy Insight",
                 message = "5 apps combine sensitive permissions in ways worth a second look. Android always keeps the final say.",
-                tint = KnouxMagenta,
+                tint = ProArcticCyan,
                 badge = "5 TO REVIEW",
             )
         }
@@ -183,10 +183,10 @@ fun PrivacySweepScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
             Spacer(Modifier.height(6.dp))
             SignalTileGrid(
                 tiles = listOf(
-                    SignalTile(Icons.Rounded.CameraAlt, "2 apps", "Camera access", KnouxMagenta),
-                    SignalTile(Icons.Rounded.Mic, "1 app", "Microphone", KnouxAmber),
-                    SignalTile(Icons.Rounded.LocationOn, "3 apps", "Location", KnouxCyan),
-                    SignalTile(Icons.Rounded.Shield, "7", "Ad SDK flags", KnouxViolet),
+                    SignalTile(Icons.Rounded.CameraAlt, "2 apps", "Camera access", ProArcticCyan),
+                    SignalTile(Icons.Rounded.Mic, "1 app", "Microphone", ProWarning),
+                    SignalTile(Icons.Rounded.LocationOn, "3 apps", "Location", ProArcticCyan),
+                    SignalTile(Icons.Rounded.Shield, "7", "Ad SDK flags", ProBlue),
                 ),
             )
         }

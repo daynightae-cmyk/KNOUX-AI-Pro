@@ -72,14 +72,14 @@ import com.knoux.ai.ui.data.Fixtures
 import com.knoux.ai.ui.data.Key
 import com.knoux.ai.ui.data.MiniStat
 import com.knoux.ai.ui.data.PreviewRow
-import com.knoux.ai.ui.theme.KnouxAmber
-import com.knoux.ai.ui.theme.KnouxCyan
-import com.knoux.ai.ui.theme.KnouxMagenta
-import com.knoux.ai.ui.theme.KnouxPanelAlt
-import com.knoux.ai.ui.theme.KnouxPanelDeep
-import com.knoux.ai.ui.theme.KnouxSoftText
-import com.knoux.ai.ui.theme.KnouxText
-import com.knoux.ai.ui.theme.KnouxViolet
+import com.knoux.ai.ui.theme.ProWarning
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProNavy
+import com.knoux.ai.ui.theme.ProDeepInk
+import com.knoux.ai.ui.theme.ProTextSecondary
+import com.knoux.ai.ui.theme.ProTextPrimary
+import com.knoux.ai.ui.theme.ProBlue
 
 /* 16 — Residue Item Review */
 @Composable
@@ -112,15 +112,15 @@ fun ResidueItemReviewScreen(onBack: () -> Unit) {
             Spacer(Modifier.height(6.dp))
             SignalTileGrid(
                 tiles = listOf(
-                    SignalTile(Icons.Rounded.Folder, "14", "Empty folders", KnouxViolet),
-                    SignalTile(Icons.Rounded.Image, "624 MB", "Leftover media", KnouxMagenta),
-                    SignalTile(Icons.Rounded.Android, "3", "Old APKs", KnouxCyan),
-                    SignalTile(Icons.Rounded.Storage, "1.9 GB", "Reclaimable", KnouxAmber),
+                    SignalTile(Icons.Rounded.Folder, "14", "Empty folders", ProBlue),
+                    SignalTile(Icons.Rounded.Image, "624 MB", "Leftover media", ProArcticCyan),
+                    SignalTile(Icons.Rounded.Android, "3", "Old APKs", ProArcticCyan),
+                    SignalTile(Icons.Rounded.Storage, "1.9 GB", "Reclaimable", ProWarning),
                 ),
             )
         }
         item { MiniStatStrip(Fixtures.residueMetrics) }
-        item { NoticePanel(Icons.Rounded.Shield, "Unknown or inaccessible items are excluded by default. Another app's private /Android/data is never offered for deletion on modern Android.", KnouxAmber) }
+        item { NoticePanel(Icons.Rounded.Shield, "Unknown or inaccessible items are excluded by default. Another app's private /Android/data is never offered for deletion on modern Android.", ProWarning) }
         item { DetailSectionTitle("Candidate Inventory", "Sample paths · confidence must come from a real scan") }
         items(items.size) { index ->
             Box(Modifier.padding(top = 8.dp)) {
@@ -130,7 +130,7 @@ fun ResidueItemReviewScreen(onBack: () -> Unit) {
             }
         }
         item { Spacer(Modifier.height(8.dp)) }
-        item { NoticePanel(Icons.Rounded.Info, "Deletion stays off in this visual milestone. A real flow previews exact URIs and sizes, asks for confirmation, deletes only media the app can write, and records the measured result.", KnouxCyan) }
+        item { NoticePanel(Icons.Rounded.Info, "Deletion stays off in this visual milestone. A real flow previews exact URIs and sizes, asks for confirmation, deletes only media the app can write, and records the measured result.", ProArcticCyan) }
     }
     if (dialog) {
         PreviewActionDialog(
@@ -176,15 +176,15 @@ fun InstalledAppsReviewScreen(onBack: () -> Unit) {
             Spacer(Modifier.height(6.dp))
             SignalTileGrid(
                 tiles = listOf(
-                    SignalTile(Icons.Rounded.Apps, "41", "Apps listed", KnouxMagenta),
-                    SignalTile(Icons.Rounded.Bolt, "27", "Rarely used", KnouxCyan),
-                    SignalTile(Icons.Rounded.Storage, "21.2 GB", "App storage", KnouxViolet),
-                    SignalTile(Icons.Rounded.Folder, "12", "Heavy apps", KnouxAmber),
+                    SignalTile(Icons.Rounded.Apps, "41", "Apps listed", ProArcticCyan),
+                    SignalTile(Icons.Rounded.Bolt, "27", "Rarely used", ProArcticCyan),
+                    SignalTile(Icons.Rounded.Storage, "21.2 GB", "App storage", ProBlue),
+                    SignalTile(Icons.Rounded.Folder, "12", "Heavy apps", ProWarning),
                 ),
             )
         }
         item { MiniStatStrip(Fixtures.appManagerMetrics) }
-        item { NoticePanel(Icons.Rounded.Shield, "Uninstall always uses Android's standard confirmation screen. Usage-based grouping needs Usage Access; package visibility limits what a normal app can enumerate.", KnouxCyan) }
+        item { NoticePanel(Icons.Rounded.Shield, "Uninstall always uses Android's standard confirmation screen. Usage-based grouping needs Usage Access; package visibility limits what a normal app can enumerate.", ProArcticCyan) }
         item { DetailSectionTitle("App Groups", "Sample counts · tap App Settings for the real OS list") }
         items(apps.size) { index ->
             Box(Modifier.padding(top = 8.dp)) {
@@ -192,7 +192,7 @@ fun InstalledAppsReviewScreen(onBack: () -> Unit) {
             }
         }
         item { Spacer(Modifier.height(8.dp)) }
-        item { NoticePanel(Icons.Rounded.Info, "Per-app uninstall and details are launched through documented Android intents after confirming the package is visible to this app.", KnouxViolet) }
+        item { NoticePanel(Icons.Rounded.Info, "Per-app uninstall and details are launched through documented Android intents after confirming the package is visible to this app.", ProBlue) }
     }
     if (dialog) {
         PreviewActionDialog(
@@ -236,10 +236,10 @@ fun StorageBreakdownScreen(onBack: () -> Unit) {
             Spacer(Modifier.height(6.dp))
             SignalTileGrid(
                 tiles = listOf(
-                    SignalTile(Icons.Rounded.Storage, "128 GB", "Used space", KnouxMagenta),
-                    SignalTile(Icons.Rounded.Folder, "256 GB", "Total space", KnouxCyan),
-                    SignalTile(Icons.Rounded.Apps, "48.6 GB", "Apps & games", KnouxViolet),
-                    SignalTile(Icons.Rounded.Image, "24.7 GB", "Cleanup potential", KnouxAmber),
+                    SignalTile(Icons.Rounded.Storage, "128 GB", "Used space", ProArcticCyan),
+                    SignalTile(Icons.Rounded.Folder, "256 GB", "Total space", ProArcticCyan),
+                    SignalTile(Icons.Rounded.Apps, "48.6 GB", "Apps & games", ProBlue),
+                    SignalTile(Icons.Rounded.Image, "24.7 GB", "Cleanup potential", ProWarning),
                 ),
             )
         }
@@ -247,12 +247,12 @@ fun StorageBreakdownScreen(onBack: () -> Unit) {
             GlassPanel(Modifier.fillMaxWidth(), padding = 14.dp) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     ProgressDonut(progress = 0.5f, centerText = "50%", caption = "used · sample", size = 92.dp,
-                        arcColors = listOf(KnouxCyan, KnouxMagenta, KnouxAmber))
+                        arcColors = listOf(ProArcticCyan, ProArcticCyan, ProWarning))
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                        SummaryLine(Icons.Rounded.Storage, "Total:", "256 GB (sample)", KnouxText)
-                        SummaryLine(Icons.Rounded.Folder, "Used:", "128 GB (sample)", KnouxCyan)
-                        SummaryLine(Icons.Rounded.Info, "Unclassified:", "Shown, never guessed", KnouxAmber)
+                        SummaryLine(Icons.Rounded.Storage, "Total:", "256 GB (sample)", ProTextPrimary)
+                        SummaryLine(Icons.Rounded.Folder, "Used:", "128 GB (sample)", ProArcticCyan)
+                        SummaryLine(Icons.Rounded.Info, "Unclassified:", "Shown, never guessed", ProWarning)
                     }
                 }
             }
@@ -267,25 +267,25 @@ fun StorageBreakdownScreen(onBack: () -> Unit) {
                         NeonIconTile(com.knoux.ai.ui.components.iconFor(row.icon), size = 32.dp, iconSize = 16.dp)
                         Spacer(Modifier.width(10.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(row.title, style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 12.5.sp, color = KnouxText))
+                            Text(row.title, style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 12.5.sp, color = ProTextPrimary))
                             Spacer(Modifier.height(5.dp))
                             Box(
                                 Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(50))
-                                    .background(KnouxPanelAlt),
+                                    .background(ProNavy),
                             ) {
                                 Box(
                                     Modifier.fillMaxWidth(fraction).height(4.dp).clip(RoundedCornerShape(50))
-                                        .background(Brush.horizontalGradient(listOf(KnouxCyan, KnouxViolet))),
+                                        .background(Brush.horizontalGradient(listOf(ProArcticCyan, ProBlue))),
                                 )
                             }
                         }
                         Spacer(Modifier.width(10.dp))
-                        Text(row.badge, style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 11.5.sp, color = KnouxCyan))
+                        Text(row.badge, style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 11.5.sp, color = ProArcticCyan))
                     }
                 }
             }
         }
-        item { NoticePanel(Icons.Rounded.Info, "Totals differ from the system view when some partitions or app-private data are not readable. The difference is labelled unclassified instead of being forced into a category.", KnouxViolet) }
+        item { NoticePanel(Icons.Rounded.Info, "Totals differ from the system view when some partitions or app-private data are not readable. The difference is labelled unclassified instead of being forced into a category.", ProBlue) }
     }
     if (dialog) {
         PreviewActionDialog(
@@ -370,7 +370,7 @@ fun BatteryDiagnosticsScreen(onBack: () -> Unit) {
             InsightBanner(
                 title = "Live device readings",
                 message = "These numbers come from Android BatteryManager, not from a preview table. Anything the platform hides stays labelled unavailable.",
-                tint = KnouxCyan,
+                tint = ProArcticCyan,
                 badge = "LIVE",
             )
         }
@@ -379,10 +379,10 @@ fun BatteryDiagnosticsScreen(onBack: () -> Unit) {
             Spacer(Modifier.height(6.dp))
             SignalTileGrid(
                 tiles = listOf(
-                    SignalTile(Icons.Rounded.BatteryChargingFull, "37 C", "Temperature", KnouxAmber),
-                    SignalTile(Icons.Rounded.Memory, "—", "Charge cycles", KnouxMagenta),
-                    SignalTile(Icons.Rounded.Shield, "—", "Per-app drain", KnouxViolet),
-                    SignalTile(Icons.Rounded.Thermostat, "—", "Health history", KnouxCyan),
+                    SignalTile(Icons.Rounded.BatteryChargingFull, "37 C", "Temperature", ProWarning),
+                    SignalTile(Icons.Rounded.Memory, "—", "Charge cycles", ProArcticCyan),
+                    SignalTile(Icons.Rounded.Shield, "—", "Per-app drain", ProBlue),
+                    SignalTile(Icons.Rounded.Thermostat, "—", "Health history", ProArcticCyan),
                 ),
             )
         }
@@ -394,13 +394,13 @@ fun BatteryDiagnosticsScreen(onBack: () -> Unit) {
                         centerText = battery.percent?.let { "$it%" } ?: "—",
                         caption = if (battery.charging) "charging" else battery.statusLabel.lowercase(),
                         size = 94.dp,
-                        arcColors = listOf(KnouxCyan, KnouxMagenta),
+                        arcColors = listOf(ProArcticCyan, ProArcticCyan),
                     )
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                        SummaryLine(Icons.Rounded.BatteryChargingFull, "Status:", battery.statusLabel, KnouxCyan)
-                        SummaryLine(Icons.Rounded.Thermostat, "Temperature:", battery.temperatureC?.let { "%.1f °C".format(it) } ?: "Unavailable", KnouxAmber)
-                        SummaryLine(Icons.Rounded.Bolt, "Voltage:", battery.voltageMv?.let { "$it mV" } ?: "Unavailable", KnouxViolet)
+                        SummaryLine(Icons.Rounded.BatteryChargingFull, "Status:", battery.statusLabel, ProArcticCyan)
+                        SummaryLine(Icons.Rounded.Thermostat, "Temperature:", battery.temperatureC?.let { "%.1f °C".format(it) } ?: "Unavailable", ProWarning)
+                        SummaryLine(Icons.Rounded.Bolt, "Voltage:", battery.voltageMv?.let { "$it mV" } ?: "Unavailable", ProBlue)
                     }
                 }
             }
@@ -409,14 +409,14 @@ fun BatteryDiagnosticsScreen(onBack: () -> Unit) {
         item {
             GlassPanel(Modifier.fillMaxWidth().padding(top = 8.dp), padding = 14.dp) {
                 Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                    SummaryLine(Icons.Rounded.Shield, "Health:", battery.healthLabel, KnouxCyan)
-                    SummaryLine(Icons.Rounded.Memory, "Technology:", battery.technology, KnouxViolet)
-                    SummaryLine(Icons.Rounded.Event, "Charge cycles:", "Unavailable on this Android build", KnouxAmber)
-                    SummaryLine(Icons.Rounded.Memory, "Per-app drain:", "Requires usage access · not measured", KnouxSoftText)
+                    SummaryLine(Icons.Rounded.Shield, "Health:", battery.healthLabel, ProArcticCyan)
+                    SummaryLine(Icons.Rounded.Memory, "Technology:", battery.technology, ProBlue)
+                    SummaryLine(Icons.Rounded.Event, "Charge cycles:", "Unavailable on this Android build", ProWarning)
+                    SummaryLine(Icons.Rounded.Memory, "Per-app drain:", "Requires usage access · not measured", ProTextSecondary)
                 }
             }
         }
-        item { NoticePanel(Icons.Rounded.Warning, "Android does not expose charging-cycle count or per-app battery drain to every app. No battery gain, temperature reduction or CPU saving is claimed here.", KnouxAmber) }
+        item { NoticePanel(Icons.Rounded.Warning, "Android does not expose charging-cycle count or per-app battery drain to every app. No battery gain, temperature reduction or CPU saving is claimed here.", ProWarning) }
     }
 }
 
@@ -451,14 +451,14 @@ fun AiRecommendationsScreen(onBack: () -> Unit) {
             Spacer(Modifier.height(6.dp))
             SignalTileGrid(
                 tiles = listOf(
-                    SignalTile(Icons.Rounded.AutoAwesome, "12", "Actions planned", KnouxMagenta),
-                    SignalTile(Icons.Rounded.Memory, "+2.4 GB", "Memory recovered", KnouxCyan),
-                    SignalTile(Icons.Rounded.BatteryChargingFull, "+18%", "Battery life", KnouxViolet),
-                    SignalTile(Icons.Rounded.Thermostat, "-6 C", "Peak temperature", KnouxAmber),
+                    SignalTile(Icons.Rounded.AutoAwesome, "12", "Actions planned", ProArcticCyan),
+                    SignalTile(Icons.Rounded.Memory, "+2.4 GB", "Memory recovered", ProArcticCyan),
+                    SignalTile(Icons.Rounded.BatteryChargingFull, "+18%", "Battery life", ProBlue),
+                    SignalTile(Icons.Rounded.Thermostat, "-6 C", "Peak temperature", ProWarning),
                 ),
             )
         }
-        item { NoticePanel(Icons.Rounded.AutoAwesome, "No on-device model is connected in this UI milestone. These are deterministic rule-based previews, clearly separated from measured facts and estimated outcomes.", KnouxViolet) }
+        item { NoticePanel(Icons.Rounded.AutoAwesome, "No on-device model is connected in this UI milestone. These are deterministic rule-based previews, clearly separated from measured facts and estimated outcomes.", ProBlue) }
         item { MiniStatStrip(Fixtures.aiMetrics) }
         item { DetailSectionTitle("Recommendation Plan", "Select actions you want to review") }
         items(recs.size) { index ->
@@ -467,25 +467,25 @@ fun AiRecommendationsScreen(onBack: () -> Unit) {
             Box(Modifier.padding(top = 8.dp)) {
                 GlassPanel(Modifier.fillMaxWidth(), padding = 12.dp) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        NeonIconTile(if (checked) Icons.Rounded.CleaningServices else Icons.Rounded.Shield, size = 34.dp, iconSize = 17.dp, tint = if (checked) KnouxCyan else KnouxSoftText)
+                        NeonIconTile(if (checked) Icons.Rounded.CleaningServices else Icons.Rounded.Shield, size = 34.dp, iconSize = 17.dp, tint = if (checked) ProArcticCyan else ProTextSecondary)
                         Spacer(Modifier.width(10.dp))
                         Column(Modifier.weight(1f)) {
-                            Text(title, style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 13.sp, color = KnouxText))
-                            Text(evidence, style = TextStyle(fontSize = 10.sp, color = KnouxSoftText))
-                            Text(impact, style = TextStyle(fontSize = 10.sp, fontWeight = FontWeight.Bold, color = KnouxAmber))
+                            Text(title, style = TextStyle(fontWeight = FontWeight.Bold, fontSize = 13.sp, color = ProTextPrimary))
+                            Text(evidence, style = TextStyle(fontSize = 10.sp, color = ProTextSecondary))
+                            Text(impact, style = TextStyle(fontSize = 10.sp, fontWeight = FontWeight.Bold, color = ProWarning))
                         }
                         Box(
                             Modifier.size(20.dp).clip(RoundedCornerShape(6.dp))
-                                .background(if (checked) KnouxCyan else KnouxPanelDeep)
+                                .background(if (checked) ProArcticCyan else ProDeepInk)
                                 .padding(3.dp),
                         ) {
-                            if (checked) Icon(Icons.Rounded.ChevronRight, null, tint = KnouxPanelDeep, modifier = Modifier.size(14.dp))
+                            if (checked) Icon(Icons.Rounded.ChevronRight, null, tint = ProDeepInk, modifier = Modifier.size(14.dp))
                         }
                     }
                 }
             }
         }
-        item { NoticePanel(Icons.Rounded.Info, "Applying an action never reports success from a click alone. Supported effects come from Android settings or measured operations; everything else stays advisory.", KnouxCyan) }
+        item { NoticePanel(Icons.Rounded.Info, "Applying an action never reports success from a click alone. Supported effects come from Android settings or measured operations; everything else stays advisory.", ProArcticCyan) }
     }
     if (dialog) {
         PreviewActionDialog(

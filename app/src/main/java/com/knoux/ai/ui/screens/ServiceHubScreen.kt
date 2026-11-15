@@ -59,13 +59,13 @@ import com.knoux.ai.ui.components.ScreenSubtitle
 import com.knoux.ai.ui.components.ScreenTitle
 import com.knoux.ai.ui.components.SettingsIconButton
 import com.knoux.ai.ui.components.TopLeading
-import com.knoux.ai.ui.theme.KnouxCyan
-import com.knoux.ai.ui.theme.KnouxMagenta
-import com.knoux.ai.ui.theme.KnouxMutedText
-import com.knoux.ai.ui.theme.KnouxPanelDeep
-import com.knoux.ai.ui.theme.KnouxSoftText
-import com.knoux.ai.ui.theme.KnouxText
-import com.knoux.ai.ui.theme.KnouxViolet
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProTextSecondary
+import com.knoux.ai.ui.theme.ProDeepInk
+import com.knoux.ai.ui.theme.ProTextSecondary
+import com.knoux.ai.ui.theme.ProTextPrimary
+import com.knoux.ai.ui.theme.ProBlue
 
 /**
  * One service inside a hub.
@@ -186,7 +186,7 @@ private fun HubConstellation(arts: List<Int>) {
         androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(KnouxMagenta.copy(alpha = 0.22f), Color.Transparent),
+                    colors = listOf(ProArcticCyan.copy(alpha = 0.22f), Color.Transparent),
                     center = Offset(size.width * 0.5f, size.height * 0.56f),
                     radius = size.width * 0.52f,
                 ),
@@ -197,8 +197,8 @@ private fun HubConstellation(arts: List<Int>) {
                 brush = Brush.horizontalGradient(
                     listOf(
                         Color.Transparent,
-                        KnouxCyan.copy(alpha = 0.45f),
-                        KnouxMagenta.copy(alpha = 0.45f),
+                        ProArcticCyan.copy(alpha = 0.45f),
+                        ProArcticCyan.copy(alpha = 0.45f),
                         Color.Transparent,
                     )
                 ),
@@ -276,7 +276,7 @@ private fun FeaturedHubCard(featured: HubService, onClick: () -> Unit) {
                         fontWeight = FontWeight.Bold,
                         fontSize = 17.sp,
                         lineHeight = 20.sp,
-                        color = KnouxText,
+                        color = ProTextPrimary,
                     ),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
@@ -284,7 +284,7 @@ private fun FeaturedHubCard(featured: HubService, onClick: () -> Unit) {
                 Spacer(Modifier.height(3.dp))
                 Text(
                     featured.subtitle,
-                    style = TextStyle(fontSize = 9.5.sp, lineHeight = 12.5.sp, color = KnouxSoftText),
+                    style = TextStyle(fontSize = 9.5.sp, lineHeight = 12.5.sp, color = ProTextSecondary),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -309,7 +309,7 @@ private fun FeaturedHubCard(featured: HubService, onClick: () -> Unit) {
                     Spacer(Modifier.width(5.dp))
                     Text(
                         featured.valueLabel,
-                        style = TextStyle(fontSize = 8.5.sp, color = KnouxMutedText),
+                        style = TextStyle(fontSize = 8.5.sp, color = ProTextSecondary),
                         maxLines = 1,
                     )
                 }
@@ -324,7 +324,7 @@ private fun FeaturedHubCard(featured: HubService, onClick: () -> Unit) {
                 Icon(
                     Icons.Rounded.ChevronRight,
                     contentDescription = null,
-                    tint = KnouxText.copy(alpha = 0.85f),
+                    tint = ProTextPrimary.copy(alpha = 0.85f),
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .size(18.dp),
@@ -358,7 +358,7 @@ private fun HubServiceCard(service: HubService, onClick: () -> Unit) {
                     style = TextStyle(
                         fontWeight = FontWeight.Bold,
                         fontSize = 13.5.sp,
-                        color = KnouxText,
+                        color = ProTextPrimary,
                     ),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -366,7 +366,7 @@ private fun HubServiceCard(service: HubService, onClick: () -> Unit) {
                 Spacer(Modifier.height(1.dp))
                 Text(
                     service.subtitle,
-                    style = TextStyle(fontSize = 9.5.sp, lineHeight = 12.sp, color = KnouxSoftText),
+                    style = TextStyle(fontSize = 9.5.sp, lineHeight = 12.sp, color = ProTextSecondary),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -379,7 +379,7 @@ private fun HubServiceCard(service: HubService, onClick: () -> Unit) {
                                 Brush.horizontalGradient(
                                     listOf(
                                         service.accent.copy(alpha = 0.28f),
-                                        KnouxPanelDeep.copy(alpha = 0.7f),
+                                        ProDeepInk.copy(alpha = 0.7f),
                                     )
                                 )
                             )
@@ -391,14 +391,14 @@ private fun HubServiceCard(service: HubService, onClick: () -> Unit) {
                             style = TextStyle(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 9.sp,
-                                color = KnouxText,
+                                color = ProTextPrimary,
                             ),
                         )
                     }
                     Spacer(Modifier.width(5.dp))
                     Text(
                         service.valueLabel,
-                        style = TextStyle(fontSize = 8.sp, color = KnouxMutedText),
+                        style = TextStyle(fontSize = 8.sp, color = ProTextSecondary),
                         maxLines = 1,
                     )
                 }
@@ -406,7 +406,7 @@ private fun HubServiceCard(service: HubService, onClick: () -> Unit) {
             Icon(
                 Icons.Rounded.ChevronRight,
                 contentDescription = null,
-                tint = KnouxMutedText,
+                tint = ProTextSecondary,
                 modifier = Modifier.size(15.dp),
             )
         }
