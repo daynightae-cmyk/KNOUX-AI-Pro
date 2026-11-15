@@ -13,11 +13,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -26,6 +24,7 @@ import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.Folder
+import androidx.compose.material.icons.rounded.Groups
 import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Layers
@@ -37,10 +36,13 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -49,6 +51,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
@@ -56,12 +59,26 @@ import com.knoux.ai.ui.components.GlassPanel
 import com.knoux.ai.ui.components.GradientActionButton
 import com.knoux.ai.ui.components.GhostButton
 import com.knoux.ai.ui.components.ProgressDonut
+import com.knoux.ai.ui.components.HeroKind
+import com.knoux.ai.ui.components.InsightBanner
+import com.knoux.ai.ui.components.ReferenceSectionLabel
+import com.knoux.ai.ui.components.SignalTile
+import com.knoux.ai.ui.components.SignalTileGrid
+import com.knoux.ai.ui.components.MiniStatStrip
+import com.knoux.ai.ui.components.ProgressDonut
+import com.knoux.ai.ui.components.SummaryLine
+import com.knoux.ai.ui.data.Fixtures
+import com.knoux.ai.ui.theme.ProWarning
 import com.knoux.ai.ui.theme.ProArcticCyan
+import com.knoux.ai.ui.theme.ProTextSecondary
+import com.knoux.ai.ui.theme.ProTextPrimary
 import com.knoux.ai.ui.theme.ProBlue
 import com.knoux.ai.ui.theme.ProSafe
-import com.knoux.ai.ui.theme.ProTextPrimary
-import com.knoux.ai.ui.theme.ProTextSecondary
-import com.knoux.ai.ui.theme.ProWarning
+import com.knoux.ai.ui.theme.ProDivider
+import com.knoux.ai.ui.theme.ProNavy
+import com.knoux.ai.ui.theme.ProElevated
+import com.knoux.ai.ui.theme.ProDeepInk
+import kotlinx.coroutines.delay
 
 private enum class DupScreen { SCAN, REVIEW, CONFIRM, RESULTS }
 
@@ -135,36 +152,34 @@ fun DuplicateFilesScreen(onBack: () -> Unit) {
     var selectedFileIds by remember { mutableStateOf<Set<String>>(emptySet()) }
     var scanComplete by remember { mutableStateOf(false) }
 
+    // Scan animation driven by LaunchedEffect watching scanning state
+    LaunchedEffect(scanning) {
+        if (scanning) {
+            scanProgress = 0f
+            filesScanned = 0
+            groupsFound = 0
+            for (i in 1..100) {
+                if (!scanning) break
+                delay(30)
+                scanProgress = i / 100f
+                filesScanned = i * 12
+                groupsFound = i / 4
+            }
+            if (scanning) {
+                scanComplete = true
+                scanning = false
+                scanProgress = 1f
+            }
+        }
+    }
+
     if (screen == DupScreen.SCAN) {
         ScanPhase(
             scanProgress = scanProgress,
             filesScanned = filesScanned,
             groupsFound = groupsFound,
             scanning = scanning,
-            onToggleScan = {
-                if (!scanning) {
-                    scanning = true
-                    scanProgress = 0f
-                    filesScanned = 0
-                    groupsFound = 0
-                    androidx.compose.runtime.LaunchedEffect(Unit) {
-                        for (i in 1..100) {
-                            if (!scanning) break
-                            delay(30)
-                            scanProgress = i / 100f
-                            filesScanned = i * 12
-                            groupsFound = i / 4
-                        }
-                        if (scanning) {
-                            scanComplete = true
-                            scanning = false
-                            scanProgress = 1f
-                        }
-                    }
-                } else {
-                    scanning = false
-                }
-            },
+            onToggleScan = { scanning = !scanning },
             onScanComplete = { screen = DupScreen.REVIEW },
         )
     } else if (screen == DupScreen.REVIEW) {
@@ -214,7 +229,7 @@ private fun ScanPhase(
     Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(Modifier.height(24.dp))
         Icon(
-            image = Icons.Default.Refresh,
+            imageVector = Icons.Rounded.Refresh,
             contentDescription = null,
             tint = ProArcticCyan,
             modifier = Modifier.size(64.dp),
@@ -281,9 +296,9 @@ private fun ReviewPhase(
     onConfirm: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        Box(
+        Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-            contentAlignment = Alignment.CenterHorizontally,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             GhostButton(
                 text = "العودة للمسح",
@@ -297,7 +312,7 @@ private fun ReviewPhase(
             )
             Spacer(Modifier.weight(1f))
             Icon(
-                image = Icons.Default.Info,
+                imageVector = Icons.Rounded.Info,
                 contentDescription = null,
                 tint = ProArcticCyan,
                 modifier = Modifier.size(20.dp),
@@ -315,18 +330,21 @@ private fun ReviewPhase(
                     value = groups.size.toString(),
                     icon = Icons.Rounded.Groups,
                     accent = ProArcticCyan,
+                    modifier = Modifier.weight(1f),
                 )
                 MiniDupCard(
                     label = "قابل للاستعادة",
                     value = formatBytes(groups.sumOf { it.totalSizeBytes }),
                     icon = Icons.Rounded.Storage,
                     accent = ProBlue,
+                    modifier = Modifier.weight(1f),
                 )
                 MiniDupCard(
                     label = "النسخ المكررة",
                     value = groups.sumOf { it.files.size - 1 }.toString(),
                     icon = Icons.Rounded.Layers,
                     accent = ProWarning,
+                    modifier = Modifier.weight(1f),
                 )
             }
         }
@@ -339,7 +357,7 @@ private fun ReviewPhase(
         Spacer(Modifier.height(8.dp))
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(horizontal = 16.dp, bottom = 100.dp),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 100.dp),
         ) {
             items(groups.size) { index ->
                 val group = groups[index]
@@ -364,7 +382,7 @@ private fun ConfirmPhase(
     Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(Modifier.height(40.dp))
         Icon(
-            image = Icons.Rounded.Delete,
+            imageVector = Icons.Rounded.Delete,
             contentDescription = null,
             tint = ProWarning,
             modifier = Modifier.size(48.dp),
@@ -398,7 +416,7 @@ private fun ConfirmPhase(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Icon(
-                            image = Icons.Rounded.Description,
+                            imageVector = Icons.Rounded.Description,
                             contentDescription = null,
                             tint = ProTextSecondary,
                             modifier = Modifier.size(16.dp),
@@ -452,7 +470,7 @@ private fun ResultsPhase(
     Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
         Spacer(Modifier.height(40.dp))
         Icon(
-            image = Icons.Rounded.Check,
+            imageVector = Icons.Rounded.Check,
             contentDescription = null,
             tint = ProSafe,
             modifier = Modifier.size(64.dp),
@@ -514,7 +532,7 @@ private fun ResultsPhase(
         Spacer(Modifier.height(24.dp))
         GradientActionButton(
             text = "إنهاء",
-            onClick = { },
+            onClick = onFinish,
             modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp),
         )
     }
@@ -526,13 +544,14 @@ private fun MiniDupCard(
     value: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     accent: Color,
+    modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = Modifier.weight(1f),
+        modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Icon(
-            image = icon,
+            imageVector = icon,
             contentDescription = null,
             tint = accent,
             modifier = Modifier.size(24.dp),
@@ -580,7 +599,7 @@ private fun DupGroupRow(
                 )
                 Spacer(Modifier.width(8.dp))
                 Icon(
-                    image = Icons.Rounded.Image,
+                    imageVector = Icons.Rounded.Image,
                     contentDescription = null,
                     tint = ProArcticCyan,
                     modifier = Modifier.size(20.dp),
@@ -616,25 +635,25 @@ private fun DupGroupRow(
                                 .clip(RoundedCornerShape(8.dp)),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Icon(
-                                image = when (file.type) {
-                                    "image" -> Icons.Rounded.Image
-                                    "video" -> Icons.Rounded.Movie
-                                    "audio" -> Icons.Rounded.MusicNote
-                                    else -> Icons.Rounded.Description
-                                },
+Icon(
+                            imageVector = when (file.type) {
+                                "image" -> Icons.Rounded.Image
+                                "video" -> Icons.Rounded.Movie
+                                "audio" -> Icons.Rounded.MusicNote
+                                else -> Icons.Rounded.Description
+                            },
                                 contentDescription = null,
                                 tint = if (isProtected) ProTextSecondary else ProArcticCyan,
                                 modifier = Modifier.size(20.dp),
                             )
                             if (isProtected) {
                                 Icon(
-                                    image = Icons.Rounded.Check,
+                                    imageVector = Icons.Rounded.Check,
                                     contentDescription = null,
                                     tint = ProSafe,
                                     modifier = Modifier
                                         .align(Alignment.TopEnd)
-                                        .offset(x = 4.dp, y = -4.dp)
+                                        .padding(4.dp)
                                         .size(12.dp),
                                 )
                             }
@@ -642,7 +661,9 @@ private fun DupGroupRow(
                         Spacer(Modifier.height(4.dp))
                         Text(
                             text = file.name,
-                            style = TextStyle(fontSize = 10.sp, maxLines = 2, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, color = ProTextPrimary),
+                            style = TextStyle(fontSize = 10.sp, color = ProTextPrimary),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
                         )
                         Spacer(Modifier.height(2.dp))
                         Text(
@@ -650,7 +671,7 @@ private fun DupGroupRow(
                             style = TextStyle(fontSize = 9.sp, color = ProTextSecondary),
                         )
                         if (!isProtected) {
-                            androidx.compose.material3.Checkbox(
+                            Checkbox(
                                 checked = isSelected,
                                 onCheckedChange = { onToggleFile(file.id) },
                                 colors = androidx.compose.material3.CheckboxDefaults.colors(
@@ -682,7 +703,7 @@ private fun ResultChip(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Icon(
-            image = icon,
+            imageVector = icon,
             contentDescription = null,
             tint = accent,
             modifier = Modifier.size(20.dp),
