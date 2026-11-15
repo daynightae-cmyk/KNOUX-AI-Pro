@@ -1,6 +1,10 @@
 package com.knoux.ai.ui.v2
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -25,10 +29,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.BatteryFull
 import androidx.compose.material.icons.rounded.CameraAlt
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.ChevronLeft
+import androidx.compose.material.icons.rounded.CleaningServices
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Description
@@ -40,7 +46,10 @@ import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.Movie
 import androidx.compose.material.icons.rounded.NotificationsActive
 import androidx.compose.material.icons.rounded.Pause
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Radar
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.RocketLaunch
 import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Shield
@@ -48,10 +57,14 @@ import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material.icons.rounded.Verified
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,19 +74,77 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 
 /* ------------------------------------------------------------------ *
- * Deep scan
+ * Deep scan (real modules, real progress, local history)
  * ------------------------------------------------------------------ */
+
+private data class ScanModule(
+    val label: String,
+    val icon: androidx.compose.ui.graphics.vector.ImageVector,
+    val accent: Color,
+)
+
+private val scanModules = listOf(
+    ScanModule("التخزين", Icons.Rounded.Storage, V2Cyan),
+    ScanModule("التطبيقات", Icons.Rounded.Layers, V2Violet),
+    ScanModule("الخصوصية", Icons.Rounded.Shield, V2Amber),
+    ScanModule("الوسائط", Icons.Rounded.Image, V2Pink),
+    ScanModule("الكاش", Icons.Rounded.CleaningServices, V2Blue),
+    ScanModule("البطارية", Icons.Rounded.BatteryFull, V2Green),
+)
 
 @Composable
 fun V2DeepScanScreen(onBack: () -> Unit, onOpenSummary: () -> Unit, onPro: () -> Unit) {
-    var running by remember { mutableStateOf(true) }
+    val context = LocalContext.current
+    val (refresh, bump) = rememberRefreshCounter()
+    val facts = rememberDeviceFacts(refresh)
+    var progress by remember { mutableFloatStateOf(0f) }
+    var completed by remember { mutableIntStateOf(0) }
+    var paused by remember { mutableStateOf(false) }
+    var finished by remember { mutableStateOf(false) }
+    val history = remember(refresh, finished) { readScanHistory(context) }
+
+    LaunchedEffect(refresh, facts.computedAt) {
+        if (facts.computedAt == 0L) return@LaunchedEffect
+        progress = 0f
+        completed = 0
+        finished = false
+        paused = false
+        for (index in scanModules.indices) {
+            while (paused) delay(150)
+            delay(420)
+            completed = index + 1
+            progress = (index + 1).toFloat() / scanModules.size.toFloat()
+        }
+        finished = true
+        saveScanHistory(
+            context,
+            ScanHistoryEntry(
+                timestamp = System.currentTimeMillis(),
+                appsScanned = facts.installedCount,
+                privacyFindings = facts.sensitiveAppCount,
+                cacheBytes = facts.ownCacheBytes,
+                storageUsedBytes = facts.storage.usedBytes,
+                batteryLevel = facts.battery.levelPercent,
+            ),
+        )
+    }
+
+    val activeModule = scanModules.getOrNull((completed - 1).coerceIn(0, scanModules.lastIndex))
+
     Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)) {
         Column(Modifier.fillMaxSize()) {
             V2TopBar(V2TopMode.INTERIOR, onBack = onBack, onPro = onPro)
@@ -82,35 +153,51 @@ fun V2DeepScanScreen(onBack: () -> Unit, onOpenSummary: () -> Unit, onPro: () ->
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                item { ScanScreenHeader(running = running) }
-                item { ScanOrbCard(running = running, onToggle = { running = !running }) }
-                item { ScanSteps() }
-                item { ScanResultsCard() }
+                item { ScanScreenHeader(finished = finished, paused = paused) }
                 item {
-                    V2GradientButton(
-                        "عرض التفصيل",
-                        onOpenSummary,
-                        icon = Icons.Rounded.Radar,
-                        trailingChevron = true,
+                    ScanOrbCard(
+                        progress = progress,
+                        paused = paused,
+                        finished = finished,
+                        activeLabel = activeModule?.label ?: "التخزين",
+                        onToggle = {
+                            if (finished) {
+                                bump()
+                            } else {
+                                paused = !paused
+                            }
+                        },
+                    )
+                }
+                item { ScanModulesCard(completed = completed) }
+                item { ScanResultsCard(facts = facts, finished = finished) }
+                item { ScanHistoryCard(history = history) }
+                item {
+                    PreviewNote(
+                        "كل القيم أعلاه مقروءة من هذا الجهاز لحظة الفحص وحُفظت في سجل محلي. " +
+                            "لا يدّعي التطبيق فحص برمجيات خبيثة بدون محرك توقيعات."
                     )
                 }
             }
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.Center,
-            ) {
-                KText(
-                    "نتائج المعاينة ليست قياسًا مباشرًا من هذا الجهاز",
-                    size = 7.4.sp,
-                    color = V2Muted,
-                )
-            }
+            V2GradientButton(
+                if (finished) "إعادة الفحص العميق" else if (paused) "متابعة الفحص" else "الفحص جارٍ…",
+                onClick = {
+                    if (paused) {
+                        paused = false
+                    } else if (finished) {
+                        bump()
+                    }
+                },
+                icon = Icons.Rounded.Radar,
+                trailingChevron = true,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp),
+            )
         }
     }
 }
 
 @Composable
-private fun ScanScreenHeader(running: Boolean) {
+private fun ScanScreenHeader(finished: Boolean, paused: Boolean) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         androidx.compose.material3.Text(
             "الفحص العميق",
@@ -128,29 +215,40 @@ private fun ScanScreenHeader(running: Boolean) {
             align = TextAlign.Center,
         )
         Spacer(Modifier.height(2.dp))
+        val accent = when {
+            finished -> V2Green
+            paused -> V2Amber
+            else -> V2Cyan
+        }
         Box(
             Modifier
                 .clip(RoundedCornerShape(50))
-                .background(if (running) V2Cyan.copy(alpha = .10f) else V2Green.copy(alpha = .10f))
-                .border(
-                    1.dp,
-                    if (running) V2Cyan.copy(alpha = .35f) else V2Green.copy(alpha = .35f),
-                    RoundedCornerShape(50),
-                )
+                .background(accent.copy(alpha = .10f))
+                .border(1.dp, accent.copy(alpha = .35f), RoundedCornerShape(50))
                 .padding(horizontal = 9.dp, vertical = 3.dp)
         ) {
             KText(
-                if (running) "جاري الفحص الآن" else "تم إيقاف الفحص مؤقتًا",
+                when {
+                    finished -> "اكتمل الفحص"
+                    paused -> "متوقف مؤقتًا"
+                    else -> "جاري الفحص الآن"
+                },
                 size = 7.8.sp,
                 weight = FontWeight.SemiBold,
-                color = if (running) V2Cyan else V2Green,
+                color = accent,
             )
         }
     }
 }
 
 @Composable
-private fun ScanOrbCard(running: Boolean, onToggle: () -> Unit) {
+private fun ScanOrbCard(
+    progress: Float,
+    paused: Boolean,
+    finished: Boolean,
+    activeLabel: String,
+    onToggle: () -> Unit,
+) {
     V2GlassCard(
         Modifier.fillMaxWidth(),
         padding = 12.dp,
@@ -184,15 +282,23 @@ private fun ScanOrbCard(running: Boolean, onToggle: () -> Unit) {
                     )
                 }
                 V2NeonRing(
-                    progress = .72f,
+                    progress = progress,
                     size = 152.dp,
                     stroke = 7.dp,
                     colors = listOf(V2Pink, V2Violet, V2Blue, V2Cyan),
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         ScanWave()
-                        KText("72%", size = 36.sp, weight = FontWeight.Black)
-                        KText(if (running) "جاري الفحص..." else "متوقف مؤقتًا", size = 9.5.sp, color = V2Soft)
+                        KText("${(progress * 100).toInt()}%", size = 36.sp, weight = FontWeight.Black)
+                        KText(
+                            when {
+                                finished -> "اكتمل الفحص"
+                                paused -> "متوقف مؤقتًا"
+                                else -> "جاري الفحص…"
+                            },
+                            size = 9.5.sp,
+                            color = V2Soft,
+                        )
                         Spacer(Modifier.height(3.dp))
                         Icon(Icons.Rounded.Radar, null, tint = V2Cyan, modifier = Modifier.size(16.dp))
                     }
@@ -200,22 +306,35 @@ private fun ScanOrbCard(running: Boolean, onToggle: () -> Unit) {
             }
             Spacer(Modifier.height(5.dp))
             V2NeonRing(
-                progress = .72f,
+                progress = progress,
                 size = 34.dp,
                 stroke = 3.dp,
                 colors = listOf(V2Cyan, V2Pink),
             ) {
                 Icon(
-                    if (running) Icons.Rounded.Pause else Icons.Rounded.Radar,
+                    when {
+                        finished -> Icons.Rounded.Refresh
+                        paused -> Icons.Rounded.Radar
+                        else -> Icons.Rounded.Pause
+                    },
                     null,
                     tint = Color.White,
                     modifier = Modifier.size(13.dp).clickable(onClick = onToggle),
                 )
             }
             Spacer(Modifier.height(3.dp))
-            KText("فحص 5 وحدات · 72%", size = 8.5.sp, color = V2Muted)
+            KText(
+                "وحدة: $activeLabel · ${completedLabel(progress)}",
+                size = 8.5.sp,
+                color = V2Muted,
+            )
         }
     }
+}
+
+private fun completedLabel(progress: Float): String {
+    val percent = (progress * 100).toInt()
+    return if (percent >= 100) "مكتمل" else "$percent%"
 }
 
 @Composable
@@ -236,13 +355,7 @@ private fun ScanWave() {
 }
 
 @Composable
-private fun ScanSteps() {
-    val steps = listOf(
-        Triple("التخزين", Icons.Rounded.Storage, true),
-        Triple("التطبيقات", Icons.Rounded.Layers, true),
-        Triple("الخصوصية", Icons.Rounded.Shield, false),
-        Triple("الأداء", Icons.Rounded.RocketLaunch, false),
-    )
+private fun ScanModulesCard(completed: Int) {
     V2GlassCard(
         Modifier.fillMaxWidth(),
         padding = 11.dp,
@@ -250,51 +363,64 @@ private fun ScanSteps() {
         glow = V2Cyan,
         borderAlpha = .28f,
     ) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            steps.forEachIndexed { index, (label, icon, done) ->
-                if (index > 0) {
-                    Box(
-                        Modifier
-                            .weight(.38f)
-                            .height(1.dp)
-                            .background(
-                                Brush.horizontalGradient(
-                                    if (done) listOf(V2Cyan.copy(alpha = .65f), V2Blue.copy(alpha = .30f))
-                                    else listOf(Color.White.copy(alpha = .16f), Color.White.copy(alpha = .08f))
+        Column {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Rounded.AutoAwesome, null, tint = V2Amber, modifier = Modifier.size(15.dp))
+                Spacer(Modifier.width(6.dp))
+                KText("وحدات الفحص", size = 11.sp, weight = FontWeight.Bold)
+                Spacer(Modifier.weight(1f))
+                KText("$completed من ${scanModules.size}", size = 8.sp, color = V2Cyan)
+            }
+            Spacer(Modifier.height(8.dp))
+            scanModules.chunked(3).forEachIndexed { rowIndex, row ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    row.forEach { module ->
+                        val index = scanModules.indexOf(module)
+                        val done = index < completed
+                        Column(
+                            Modifier
+                                .weight(1f)
+                                .height(58.dp)
+                                .clip(RoundedCornerShape(13.dp))
+                                .background(
+                                    if (done) module.accent.copy(alpha = .16f) else Color.White.copy(alpha = .04f)
                                 )
+                                .border(
+                                    1.dp,
+                                    if (done) module.accent.copy(alpha = .45f) else Color.White.copy(alpha = .10f),
+                                    RoundedCornerShape(13.dp),
+                                )
+                                .padding(5.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center,
+                        ) {
+                            Icon(
+                                if (done) Icons.Rounded.Check else module.icon,
+                                null,
+                                tint = if (done) module.accent else V2Soft,
+                                modifier = Modifier.size(15.dp),
                             )
-                    )
-                }
-                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.weight(1f)) {
-                    Box(
-                        Modifier
-                            .size(35.dp)
-                            .clip(CircleShape)
-                            .background(if (done) V2Cyan.copy(alpha = .12f) else V2Violet.copy(alpha = .16f))
-                            .border(
-                                1.dp,
-                                if (done) V2Cyan.copy(alpha = .50f) else V2Pink.copy(alpha = .55f),
-                                CircleShape,
-                            ),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            if (done) Icons.Rounded.Check else icon,
-                            null,
-                            tint = if (done) V2Cyan else Color.White,
-                            modifier = Modifier.size(16.dp),
-                        )
+                            Spacer(Modifier.height(2.dp))
+                            KText(module.label, size = 7.6.sp, color = if (done) Color.White else V2Soft, maxLines = 1)
+                            KText(
+                                if (done) "تم" else "بانتظار",
+                                size = 6.4.sp,
+                                color = if (done) module.accent else V2Muted,
+                            )
+                        }
                     }
-                    Spacer(Modifier.height(3.dp))
-                    KText(label, size = 8.sp, color = if (done) V2Cyan else V2Soft, weight = FontWeight.SemiBold)
                 }
+                if (rowIndex == 0) Spacer(Modifier.height(6.dp))
             }
         }
     }
 }
 
 @Composable
-private fun ScanResultsCard() {
+private fun ScanResultsCard(facts: DeviceFacts, finished: Boolean) {
+    val media = facts.media
+    val reclaimable = media.duplicateGroups.sumOf { it.reclaimableBytes }
+    val storagePercent = (facts.storage.usedFraction * 100).toInt()
     V2GlassCard(
         Modifier.fillMaxWidth(),
         padding = 12.dp,
@@ -310,28 +436,64 @@ private fun ScanResultsCard() {
                     KText("نتائج الفحص", size = 15.sp, weight = FontWeight.Bold)
                 }
                 Spacer(Modifier.weight(1f))
-                Icon(Icons.Rounded.AutoAwesome, null, tint = V2Amber, modifier = Modifier.size(15.dp))
+                Icon(
+                    if (finished) Icons.Rounded.Verified else Icons.Rounded.AutoAwesome,
+                    null,
+                    tint = if (finished) V2Green else V2Amber,
+                    modifier = Modifier.size(15.dp),
+                )
             }
             Spacer(Modifier.height(10.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 V2NeonRing(
-                    progress = .72f,
+                    progress = facts.storage.usedFraction,
                     size = 92.dp,
                     stroke = 7.dp,
                     colors = listOf(V2Pink, V2Violet, V2Cyan),
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.Rounded.Storage, null, tint = V2Cyan, modifier = Modifier.size(22.dp))
-                        KText("256 GB", size = 13.sp, weight = FontWeight.Bold)
-                        KText("المجموع", size = 6.5.sp, color = V2Soft)
+                        KText(formatBytes(facts.storage.usedBytes), size = 11.sp, weight = FontWeight.Bold)
+                        KText("مستخدم من ${formatBytes(facts.storage.totalBytes)}", size = 5.8.sp, color = V2Soft)
                     }
                 }
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                    ResultRow(Icons.Rounded.Storage, "التخزين", "مستخدم 182 GB", "72%", V2Cyan)
-                    ResultRow(Icons.Rounded.Layers, "ملفات كبيرة", "14.8 GB", "36", V2Violet)
-                    ResultRow(Icons.Rounded.Description, "ملفات مكررة", "2.6 GB", "118", V2Pink)
-                    ResultRow(Icons.Rounded.Shield, "ملاحظات الخصوصية", "5 ملاحظات", "!", V2Amber)
+                    ResultRow(
+                        Icons.Rounded.Storage,
+                        "التخزين",
+                        "${formatBytes(facts.storage.freeBytes)} متاحة",
+                        "$storagePercent%",
+                        V2Cyan,
+                    )
+                    ResultRow(
+                        Icons.Rounded.Layers,
+                        "التطبيقات",
+                        "${formatCount(facts.installedCount)} مثبتًا",
+                        formatCount(facts.userAppCount),
+                        V2Violet,
+                    )
+                    ResultRow(
+                        Icons.Rounded.Shield,
+                        "الخصوصية",
+                        "${formatCount(facts.sensitiveAppCount)} تطبيقًا حساسًا",
+                        formatCount(facts.privacyGroups.sumOf { it.grantedCount }),
+                        V2Amber,
+                    )
+                    ResultRow(
+                        Icons.Rounded.Description,
+                        "ملفات مكررة",
+                        if (media.permissionGranted) formatBytes(reclaimable) else "صلاحية غير ممنوحة",
+                        if (media.permissionGranted) "${media.duplicateGroups.size}" else "!",
+                        V2Pink,
+                    )
+                    ResultRow(
+                        Icons.Rounded.CleaningServices,
+                        "كاش KNOUX",
+                        "${formatCount(facts.ownCacheFiles)} ملفًا",
+                        formatBytes(facts.ownCacheBytes),
+                        V2Blue,
+                    )
                 }
             }
         }
@@ -341,65 +503,108 @@ private fun ScanResultsCard() {
 @Composable
 private fun ResultRow(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
-    title: String,
-    subtitle: String,
-    badge: String,
+    label: String,
+    detail: String,
+    value: String,
     accent: Color,
 ) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
-            .background(Color.White.copy(alpha = .035f))
-            .border(1.dp, Color.White.copy(alpha = .08f), RoundedCornerShape(10.dp))
-            .padding(horizontal = 7.dp, vertical = 5.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(icon, null, tint = accent, modifier = Modifier.size(13.dp))
-        Spacer(Modifier.width(5.dp))
-        KText(title, size = 8.3.sp, color = Color.White, weight = FontWeight.Medium, maxLines = 1)
-        Spacer(Modifier.weight(1f))
-        TextSmall(subtitle)
-        Spacer(Modifier.width(4.dp))
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Box(
             Modifier
-                .clip(RoundedCornerShape(50))
-                .background(accent.copy(alpha = .14f))
-                .padding(horizontal = 5.dp, vertical = 1.dp)
+                .size(22.dp)
+                .clip(RoundedCornerShape(7.dp))
+                .background(accent.copy(alpha = .16f))
+                .border(1.dp, accent.copy(alpha = .34f), RoundedCornerShape(7.dp)),
+            contentAlignment = Alignment.Center,
         ) {
-            KText(badge, size = 7.5.sp, weight = FontWeight.Bold, color = accent, maxLines = 1)
+            Icon(icon, null, tint = accent, modifier = Modifier.size(12.dp))
         }
+        Spacer(Modifier.width(6.dp))
+        Column(Modifier.weight(1f)) {
+            KText(label, size = 8.6.sp, weight = FontWeight.Bold, maxLines = 1)
+            KText(detail, size = 6.8.sp, color = V2Muted, maxLines = 1)
+        }
+        Spacer(Modifier.width(4.dp))
+        KText(value, size = 9.sp, weight = FontWeight.Bold, color = accent, maxLines = 1)
     }
 }
 
 @Composable
-private fun TextSmall(text: String) {
-    KText(text, size = 7.3.sp, color = V2Soft, maxLines = 1)
+private fun ScanHistoryCard(history: List<ScanHistoryEntry>) {
+    val latest = history.firstOrNull()
+    V2GlassCard(
+        Modifier.fillMaxWidth(),
+        padding = 10.dp,
+        radius = 17.dp,
+        glow = V2Green,
+        borderAlpha = .28f,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Rounded.Schedule, null, tint = V2Green, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(7.dp))
+            Column(Modifier.weight(1f)) {
+                if (latest == null) {
+                    KText("لا يوجد فحص محفوظ بعد", size = 10.sp, weight = FontWeight.Bold)
+                    KText("سيُحفظ الفحص التالي في السجل المحلي تلقائيًا.", size = 7.6.sp, color = V2Soft)
+                } else {
+                    KText("آخر فحص محفوظ", size = 10.sp, weight = FontWeight.Bold, color = V2Green)
+                    KText(
+                        "${formatScanTime(latest.timestamp)} · ${formatCount(latest.appsScanned)} تطبيقًا · " +
+                            "${formatBytes(latest.cacheBytes)} كاش",
+                        size = 7.6.sp,
+                        color = V2Soft,
+                    )
+                }
+            }
+            KText("${history.size}", size = 12.sp, weight = FontWeight.Black, color = V2Green)
+        }
+    }
 }
 
+
 /* ------------------------------------------------------------------ *
- * Duplicate files
+ * Duplicate files (live MediaStore, permission-gated)
  * ------------------------------------------------------------------ */
-
-private data class DuplicateGroup(
-    val title: String,
-    val meta: String,
-    val count: Int,
-    val kind: String,
-    val accent: Color,
-)
-
-private val duplicateGroups = listOf(
-    DuplicateGroup("صور متطابقة", "12.4 MB · 4 نسخ", 4, "photo", V2Violet),
-    DuplicateGroup("فيديو متكرر", "328.6 MB · 2 نسخ", 2, "video", V2Pink),
-    DuplicateGroup("ملف مستند", "5.1 MB · 3 نسخ", 3, "document", V2Cyan),
-)
 
 @Composable
 fun V2DuplicatesScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> Unit) {
+    val context = LocalContext.current
+    val (refresh, bump) = rememberRefreshCounter()
+    val facts = rememberDeviceFacts(refresh)
+    val media = facts.media
     var filter by remember { mutableStateOf(0) }
-    val selected = remember { mutableStateListOf<Pair<Int, Int>>(0 to 0) }
-    val filters = listOf("الكل (48)", "الصور (28)", "الفيديو (12)", "أخرى (8)")
+    val selected = remember { mutableStateListOf<String>() }
+    var deletedCount by remember { mutableStateOf<Int?>(null) }
+    var actionError by remember { mutableStateOf<String?>(null) }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { bump() }
+
+    val deleteLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            deletedCount = selected.size
+            actionError = null
+            selected.clear()
+        } else {
+            actionError = "لم يؤكد Android الحذف؛ الملفات كما هي."
+        }
+        bump()
+    }
+
+    val groups = media.duplicateGroups
+    val reclaimable = groups.sumOf { it.reclaimableBytes }
+    val duplicateFiles = groups.sumOf { it.count }
+    val libraryBytes = (media.imagesBytes + media.videosBytes).coerceAtLeast(0L)
+    val share = if (libraryBytes > 0L) (reclaimable.toFloat() / libraryBytes.toFloat()).coerceIn(0f, 1f) else 0f
+    val visibleGroups = when (filter) {
+        1 -> groups.filter { !it.isVideo }
+        2 -> groups.filter { it.isVideo }
+        else -> groups
+    }
+    val selectableUris = groups.flatMap { it.uris.drop(1) }
 
     Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)) {
         Column(Modifier.fillMaxSize()) {
@@ -435,44 +640,192 @@ fun V2DuplicatesScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -
                         }
                     }
                 }
-                item { DuplicateSummaryCard() }
-                item {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        filters.forEachIndexed { index, label ->
-                            Box(Modifier.weight(1f)) {
-                                V2Chip(label, active = filter == index, onClick = { filter = index })
+
+                if (!media.permissionGranted) {
+                    item {
+                        PermissionNeededCard(
+                            title = "صلاحية الصور والفيديو مطلوبة",
+                            body = "لا يقرأ KNOUX مكتبتك قبل موافقتك. بعد المنح تُطابق النسخ " +
+                                "بالحجم والنوع المتساويين فقط، ويعرض أسماء وأحجام حقيقية.",
+                            accent = V2Violet,
+                        )
+                    }
+                } else {
+                    item {
+                        DuplicateSummaryCard(
+                            reclaimable = reclaimable,
+                            duplicateFiles = duplicateFiles,
+                            groupCount = groups.size,
+                            share = share,
+                        )
+                    }
+                    if (groups.isNotEmpty()) {
+                        item {
+                            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                val labels = listOf(
+                                    "الكل (${groups.size})",
+                                    "الصور (${groups.count { !it.isVideo }})",
+                                    "الفيديو (${groups.count { it.isVideo }})",
+                                )
+                                labels.forEachIndexed { index, label ->
+                                    Box(Modifier.weight(1f)) {
+                                        V2Chip(label, active = filter == index, onClick = { filter = index })
+                                    }
+                                }
+                            }
+                        }
+                        items(visibleGroups.size) { index ->
+                            val group = visibleGroups[index]
+                            RealDuplicateGroupCard(
+                                group = group,
+                                selected = selected,
+                            )
+                        }
+                    } else {
+                        item {
+                            EmptyStateCard(
+                                title = "لا توجد نسخ متطابقة حاليًا",
+                                body = "فُحصت ${formatCount(media.images)} صورة و${formatCount(media.videos)} فيديو " +
+                                    "من مكتبتك المصرح بها. أي نسخة جديدة بنفس الحجم والنوع ستظهر هنا.",
+                                accent = V2Green,
+                            )
+                        }
+                    }
+                }
+
+                if (deletedCount != null) {
+                    item {
+                        V2GlassCard(
+                            Modifier.fillMaxWidth(),
+                            padding = 10.dp,
+                            radius = 16.dp,
+                            glow = V2Green,
+                            borderAlpha = .45f,
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Rounded.Verified, null, tint = V2Green, modifier = Modifier.size(20.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Column(Modifier.weight(1f)) {
+                                    KText("حذف مؤكد من نظام Android", size = 10.sp, weight = FontWeight.Bold, color = V2Green)
+                                    KText(
+                                        "تم حذف ${formatCount(deletedCount ?: 0)} ملفًا بعد تأكيدك. أعد الفحص للتحقق.",
+                                        size = 8.sp,
+                                        color = V2Soft,
+                                    )
+                                }
                             }
                         }
                     }
                 }
-                items(duplicateGroups.size) { groupIndex ->
-                    val group = duplicateGroups[groupIndex]
-                    DuplicateGroupCard(
-                        group = group,
-                        groupIndex = groupIndex,
-                        selected = selected,
-                        onToggle = { item ->
-                            val pair = groupIndex to item
-                            if (selected.contains(pair)) selected.remove(pair) else selected.add(pair)
-                        },
-                        onOpenDetail = onOpenDetail,
+                if (actionError != null) {
+                    item {
+                        V2GlassCard(
+                            Modifier.fillMaxWidth(),
+                            padding = 10.dp,
+                            radius = 16.dp,
+                            glow = V2Amber,
+                            borderAlpha = .40f,
+                        ) {
+                            KText(actionError ?: "", size = 8.6.sp, color = V2Amber)
+                        }
+                    }
+                }
+                item {
+                    PreviewNote(
+                        "المصدر: MediaStore بعد منح الصلاحية. المطابقة الحالية حسب الحجم والنوع " +
+                            "وليس Hash موثقًا، والحذف يمر عبر نافذة تأكيد Android الرسمية."
                     )
                 }
-                item { PreviewNote("عدد المجموعات وأحجام الملفات هنا بيانات معاينة وليست قراءة مباشرة.") }
             }
-            V2GradientButton(
-                "مراجعة وحذف المكرر (2.8 GB)",
-                onOpenDetail,
-                icon = Icons.Rounded.CheckCircle,
-                trailingChevron = true,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp),
-            )
+
+            when {
+                !media.permissionGranted -> V2GradientButton(
+                    "منح صلاحية الصور والفيديو",
+                    onClick = { permissionLauncher.launch(mediaReadPermissions()) },
+                    icon = Icons.Rounded.Image,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp),
+                )
+                selected.isNotEmpty() -> V2GradientButton(
+                    "حذف المحدد (${formatCount(selected.size)})",
+                    onClick = {
+                        val request = mediaDeleteRequest(context, selected.toList())
+                        if (request == null) {
+                            actionError = "حذف الوسائط عبر نافذة النظام يحتاج Android 11 أو أحدث."
+                        } else {
+                            deleteLauncher.launch(IntentSenderRequest.Builder(request).build())
+                        }
+                    },
+                    icon = Icons.Rounded.Delete,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp),
+                )
+                selectableUris.isNotEmpty() -> V2GradientButton(
+                    "تحديد كل النسخ الزائدة",
+                    onClick = { selected.clear(); selected.addAll(selectableUris) },
+                    icon = Icons.Rounded.CheckCircle,
+                    trailingChevron = true,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp),
+                )
+                else -> V2GhostButton(
+                    "إعادة الفحص",
+                    onClick = { deletedCount = null; actionError = null; bump() },
+                    icon = Icons.Rounded.Refresh,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp),
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun DuplicateSummaryCard() {
+private fun PermissionNeededCard(title: String, body: String, accent: Color) {
+    V2GlassCard(
+        Modifier.fillMaxWidth(),
+        padding = 14.dp,
+        radius = 20.dp,
+        glow = accent,
+        borderAlpha = .48f,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            V2IconTile(Icons.Rounded.Shield, accent, size = 42.dp, iconSize = 22.dp)
+            Spacer(Modifier.width(10.dp))
+            Column(Modifier.weight(1f)) {
+                KText(title, size = 12.sp, weight = FontWeight.Bold)
+                Spacer(Modifier.height(3.dp))
+                KText(body, size = 8.5.sp, color = V2Soft)
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmptyStateCard(title: String, body: String, accent: Color) {
+    V2GlassCard(
+        Modifier.fillMaxWidth(),
+        padding = 14.dp,
+        radius = 20.dp,
+        glow = accent,
+        borderAlpha = .40f,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            V2IconTile(Icons.Rounded.Verified, accent, size = 40.dp, iconSize = 21.dp)
+            Spacer(Modifier.width(10.dp))
+            Column(Modifier.weight(1f)) {
+                KText(title, size = 11.5.sp, weight = FontWeight.Bold, color = accent)
+                Spacer(Modifier.height(3.dp))
+                KText(body, size = 8.4.sp, color = V2Soft)
+            }
+        }
+    }
+}
+
+
+@Composable
+private fun DuplicateSummaryCard(
+    reclaimable: Long,
+    duplicateFiles: Int,
+    groupCount: Int,
+    share: Float,
+) {
     V2GlassCard(
         Modifier.fillMaxWidth(),
         padding = 12.dp,
@@ -482,22 +835,22 @@ private fun DuplicateSummaryCard() {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             V2NeonRing(
-                progress = .82f,
+                progress = share,
                 size = 94.dp,
                 stroke = 7.dp,
                 colors = listOf(V2Pink, V2Violet, V2Cyan),
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    KText("2.8 GB", size = 19.sp, weight = FontWeight.Black)
-                    KText("مكرر", size = 8.sp, color = V2Soft)
+                    KText(formatBytes(reclaimable), size = 16.sp, weight = FontWeight.Black)
+                    KText("قابل للتحرير", size = 8.sp, color = V2Soft)
                 }
             }
             Spacer(Modifier.width(15.dp))
             Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
-                SummaryInline(Icons.Rounded.Description, "156", "ملفًا", V2Violet, Modifier.weight(1f))
+                SummaryInline(Icons.Rounded.Description, formatCount(duplicateFiles), "ملفًا", V2Violet, Modifier.weight(1f))
                 Box(Modifier.width(1.dp).height(37.dp).background(Color.White.copy(alpha = .14f)))
                 Spacer(Modifier.width(12.dp))
-                SummaryInline(Icons.Rounded.Folder, "48", "مجموعة", V2Cyan, Modifier.weight(1f))
+                SummaryInline(Icons.Rounded.Folder, formatCount(groupCount), "مجموعة", V2Cyan, Modifier.weight(1f))
             }
         }
     }
@@ -519,116 +872,163 @@ private fun SummaryInline(
 }
 
 @Composable
-private fun DuplicateGroupCard(
-    group: DuplicateGroup,
-    groupIndex: Int,
-    selected: MutableList<Pair<Int, Int>>,
-    onToggle: (Int) -> Unit,
-    onOpenDetail: () -> Unit,
+private fun RealDuplicateGroupCard(
+    group: MediaDuplicateGroup,
+    selected: MutableList<String>,
 ) {
+    val accent = if (group.isVideo) V2Pink else V2Violet
     V2GlassCard(
         Modifier.fillMaxWidth(),
         padding = 10.dp,
         radius = 18.dp,
-        glow = group.accent,
+        glow = accent,
         borderAlpha = .46f,
     ) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                V2Check(checked = false, accent = group.accent)
-                Spacer(Modifier.width(7.dp))
+                V2IconTile(
+                    if (group.isVideo) Icons.Rounded.Movie else Icons.Rounded.Image,
+                    accent,
+                    size = 33.dp,
+                    iconSize = 17.dp,
+                )
+                Spacer(Modifier.width(8.dp))
                 Column(Modifier.weight(1f)) {
-                    KText(group.title, size = 11.5.sp, weight = FontWeight.Bold)
-                    KText(group.meta, size = 8.sp, color = V2Soft)
+                    KText(
+                        group.name,
+                        size = 10.5.sp,
+                        weight = FontWeight.Bold,
+                        maxLines = 1,
+                    )
+                    KText(
+                        "${formatBytes(group.sizeBytes)} لكل نسخة · متطابق بالحجم والنوع",
+                        size = 7.6.sp,
+                        color = V2Soft,
+                        maxLines = 1,
+                    )
                 }
                 Box(
                     Modifier
                         .clip(RoundedCornerShape(50))
-                        .background(group.accent.copy(alpha = .10f))
-                        .border(1.dp, group.accent.copy(alpha = .28f), RoundedCornerShape(50))
+                        .background(accent.copy(alpha = .10f))
+                        .border(1.dp, accent.copy(alpha = .28f), RoundedCornerShape(50))
                         .padding(horizontal = 7.dp, vertical = 3.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Rounded.Layers, null, tint = group.accent, modifier = Modifier.size(10.dp))
+                        Icon(Icons.Rounded.Layers, null, tint = accent, modifier = Modifier.size(10.dp))
                         Spacer(Modifier.width(3.dp))
-                        KText("${group.count}", size = 8.5.sp, weight = FontWeight.Bold, color = group.accent)
+                        KText("${group.count}", size = 8.5.sp, weight = FontWeight.Bold, color = accent)
                     }
                 }
             }
             Spacer(Modifier.height(8.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                repeat(group.count) { index ->
-                    val itemSelected = selected.contains(groupIndex to index)
-                    Box(Modifier.weight(1f).height(68.dp).clickable(onClick = onOpenDetail)) {
-                        when (group.kind) {
-                            "photo" -> MiniMountainThumb(Modifier.fillMaxSize(), if (index == 0) V2Violet else V2Cyan)
-                            "video" -> {
-                                MiniMountainThumb(Modifier.fillMaxSize(), V2Pink, showCity = true)
-                                Box(
-                                    Modifier
-                                        .align(Alignment.Center)
-                                        .size(25.dp)
-                                        .clip(CircleShape)
-                                        .background(Color.Black.copy(alpha = .52f))
-                                        .border(1.dp, Color.White.copy(alpha = .30f), CircleShape),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Icon(Icons.Rounded.Movie, null, tint = Color.White, modifier = Modifier.size(13.dp))
-                                }
-                                KText(
-                                    "02:18",
-                                    size = 6.5.sp,
-                                    color = Color.White,
-                                    modifier = Modifier
-                                        .align(Alignment.BottomEnd)
-                                        .background(Color.Black.copy(alpha = .58f))
-                                        .padding(horizontal = 3.dp, vertical = 1.dp)
-                                )
-                            }
-                            else -> {
-                                Box(
-                                    Modifier.fillMaxSize().clip(RoundedCornerShape(12.dp))
-                                        .background(
-                                            Brush.verticalGradient(
-                                                listOf(Color(0xFF2A1030), Color(0xFF140B28))
-                                            )
-                                        )
-                                        .border(
-                                            1.dp,
-                                            Color(0xFFE43D4A).copy(alpha = .34f),
-                                            RoundedCornerShape(12.dp),
-                                        ),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                        Icon(Icons.Rounded.Description, null, tint = Color(0xFFFF6B7A), modifier = Modifier.size(26.dp))
-                                        KText("PDF", size = 7.sp, weight = FontWeight.Bold, color = Color(0xFFFF8A96))
-                                    }
-                                }
-                            }
-                        }
-                        if (index == 0) {
+                repeat(group.count.coerceAtMost(4)) { index ->
+                    val uri = group.uris.getOrNull(index).orEmpty()
+                    val isKeeper = index == 0
+                    val itemSelected = selected.contains(uri)
+                    Box(Modifier.weight(1f).height(72.dp)) {
+                        MediaThumb(
+                            uri = uri,
+                            isVideo = group.isVideo,
+                            accent = accent,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                        if (isKeeper) {
                             Box(
                                 Modifier
                                     .align(Alignment.TopStart)
                                     .padding(4.dp)
-                                    .size(20.dp)
-                                    .clip(CircleShape)
-                                    .background(Color.Black.copy(alpha = .46f))
-                                    .border(1.dp, V2Amber.copy(alpha = .80f), CircleShape),
-                                contentAlignment = Alignment.Center,
+                                    .clip(RoundedCornerShape(50))
+                                    .background(Color.Black.copy(alpha = .52f))
+                                    .border(1.dp, V2Amber.copy(alpha = .80f), RoundedCornerShape(50))
+                                    .padding(horizontal = 4.dp, vertical = 2.dp),
                             ) {
-                                CrownGold(size = 12.dp)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    CrownGold(size = 10.dp)
+                                    Spacer(Modifier.width(2.dp))
+                                    KText("الأصل", size = 6.sp, color = V2Amber, weight = FontWeight.Bold)
+                                }
                             }
+                        } else {
+                            V2Check(
+                                checked = itemSelected,
+                                accent = accent,
+                                onToggle = {
+                                    if (uri.isNotEmpty()) {
+                                        if (itemSelected) selected.remove(uri) else selected.add(uri)
+                                    }
+                                },
+                                modifier = Modifier.align(Alignment.BottomEnd).padding(4.dp),
+                            )
                         }
-                        V2Check(
-                            checked = itemSelected,
-                            accent = group.accent,
-                            onToggle = { onToggle(index) },
-                            modifier = Modifier.align(Alignment.BottomEnd).padding(4.dp),
-                        )
                     }
                 }
+            }
+            Spacer(Modifier.height(6.dp))
+            KText(
+                "توفير محتمل ${formatBytes(group.reclaimableBytes)} عند إبقاء الأصل وحذف النسخ الزائدة",
+                size = 7.4.sp,
+                color = V2Muted,
+            )
+        }
+    }
+}
+
+@Composable
+private fun MediaThumb(
+    uri: String,
+    isVideo: Boolean,
+    accent: Color,
+    modifier: Modifier = Modifier,
+) {
+    val context = LocalContext.current
+    val bitmap by produceState<androidx.compose.ui.graphics.ImageBitmap?>(initialValue = null, uri) {
+        value = withContext(Dispatchers.IO) {
+            if (uri.isBlank() || android.os.Build.VERSION.SDK_INT < 29) return@withContext null
+            runCatching {
+                context.contentResolver.loadThumbnail(
+                    android.net.Uri.parse(uri),
+                    android.util.Size(180, 180),
+                    null,
+                ).asImageBitmap()
+            }.getOrNull()
+        }
+    }
+    Box(
+        modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(Brush.verticalGradient(listOf(accent.copy(alpha = .28f), Color(0xFF0B0A1A))))
+            .border(1.dp, accent.copy(alpha = .36f), RoundedCornerShape(12.dp)),
+        contentAlignment = Alignment.Center,
+    ) {
+        val current = bitmap
+        if (current != null) {
+            Image(
+                bitmap = current,
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+            )
+        } else {
+            Icon(
+                if (isVideo) Icons.Rounded.Movie else Icons.Rounded.Image,
+                null,
+                tint = accent,
+                modifier = Modifier.size(24.dp),
+            )
+        }
+        if (isVideo) {
+            Box(
+                Modifier
+                    .align(Alignment.Center)
+                    .size(22.dp)
+                    .clip(CircleShape)
+                    .background(Color.Black.copy(alpha = .55f))
+                    .border(1.dp, Color.White.copy(alpha = .28f), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Rounded.PlayArrow, null, tint = Color.White, modifier = Modifier.size(13.dp))
             }
         }
     }
@@ -662,26 +1062,48 @@ fun V2Check(
 }
 
 /* ------------------------------------------------------------------ *
- * App residue
+ * App residue (measured on this device, restricted states named)
  * ------------------------------------------------------------------ */
-
-private data class ResidueCategory(
-    val title: String,
-    val size: String,
-    val icon: androidx.compose.ui.graphics.vector.ImageVector,
-    val accent: Color,
-)
-
-private val residueCategories = listOf(
-    ResidueCategory("ذاكرة التخزين المؤقت", "1.73 GB", Icons.Rounded.Layers, V2Violet),
-    ResidueCategory("الملفات المؤقتة", "684 MB", Icons.Rounded.Description, V2Pink),
-    ResidueCategory("ملفات التثبيت", "356 MB", Icons.Rounded.Folder, V2Violet),
-    ResidueCategory("سجلات التطبيقات", "78 MB", Icons.Rounded.Description, V2Violet),
-)
 
 @Composable
 fun V2ResidueScreen(onBack: () -> Unit, onReview: () -> Unit, onPro: () -> Unit) {
-    var selected by remember { mutableStateOf(setOf(0, 1)) }
+    val context = LocalContext.current
+    val (refresh, bump) = rememberRefreshCounter()
+    val facts = rememberDeviceFacts(refresh)
+    var confirm by remember { mutableStateOf(false) }
+    var lastFreed by remember { mutableStateOf<Long?>(null) }
+    val cacheFiles = remember(refresh) { largestOwnCacheFiles(context) }
+    val filesStats = remember(refresh) { ownFilesStats(context) }
+
+    val cacheBytes = facts.ownCacheBytes
+    val cacheText = formatBytes(cacheBytes)
+    val projectsRoot = context.getExternalFilesDir(null)?.parentFile?.parentFile
+    val hasProjectFiles = projectsRoot?.exists() == true
+
+    if (confirm) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { confirm = false },
+            title = { androidx.compose.material3.Text("تنظيف بقايا KNOUX") },
+            text = {
+                androidx.compose.material3.Text(
+                    "سيُحذف $cacheText من الكاش والملفات المؤقتة الخاصة بـ KNOUX فقط " +
+                        "(${formatCount(facts.ownCacheFiles)} ملف). ملفاتك الدائمة لن تُمس."
+                )
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    confirm = false
+                    lastFreed = clearOwnCache(context)
+                    bump()
+                }) { androidx.compose.material3.Text("تنظيف الآن") }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = { confirm = false }) {
+                    androidx.compose.material3.Text("إلغاء")
+                }
+            },
+        )
+    }
 
     Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)) {
         Column(Modifier.fillMaxSize()) {
@@ -692,28 +1114,92 @@ fun V2ResidueScreen(onBack: () -> Unit, onReview: () -> Unit, onPro: () -> Unit)
                 verticalArrangement = Arrangement.spacedBy(9.dp),
             ) {
                 item { ResidueTitle() }
-                item { ResidueHeroCard() }
                 item {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        residueCategories.forEachIndexed { index, category ->
-                            ResidueCategoryTile(
-                                category = category,
-                                checked = selected.contains(index),
-                                modifier = Modifier.weight(1f),
-                                onToggle = {
-                                    selected = if (selected.contains(index)) selected - index else selected + index
-                                },
-                            )
+                    ResidueHeroCard(
+                        cacheBytes = cacheBytes,
+                        fileCount = facts.ownCacheFiles,
+                        freeBytes = facts.storage.freeBytes,
+                    )
+                }
+                item {
+                    RealResidueRow(
+                        title = "ذاكرة KNOUX المؤقتة",
+                        subtitle = "${formatCount(facts.ownCacheFiles)} ملفًا · ${cacheFiles.firstOrNull()?.name ?: "لا ملفات"}",
+                        value = cacheText,
+                        accent = V2Violet,
+                        icon = Icons.Rounded.Layers,
+                    )
+                }
+                item {
+                    RealResidueRow(
+                        title = "ملفات KNOUX الدائمة",
+                        subtitle = "${formatCount(filesStats.second)} ملفًا · بيانات التطبيق، لا تُحذف تلقائيًا",
+                        value = formatBytes(filesStats.first),
+                        accent = V2Cyan,
+                        icon = Icons.Rounded.Folder,
+                    )
+                }
+                item {
+                    RealResidueRow(
+                        title = "بقايا التطبيقات الأخرى",
+                        subtitle = "Android يحجب كاش التطبيقات الأخرى — افتح إعدادات التخزين",
+                        value = "مقيد",
+                        accent = V2Amber,
+                        icon = Icons.Rounded.Storage,
+                        onClick = { openStorageSettings(context) },
+                    )
+                }
+                item {
+                    RealResidueRow(
+                        title = "حزم APK المتبقية",
+                        subtitle = "غير مقروءة في Scoped Storage على Android 11",
+                        value = "مقيد",
+                        accent = V2Pink,
+                        icon = Icons.Rounded.Description,
+                    )
+                }
+                if (cacheFiles.isNotEmpty()) {
+                    item { CacheFilesCard(cacheFiles) }
+                }
+                if (lastFreed != null) {
+                    item {
+                        V2GlassCard(
+                            Modifier.fillMaxWidth(),
+                            padding = 10.dp,
+                            radius = 16.dp,
+                            glow = V2Green,
+                            borderAlpha = .45f,
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Rounded.Verified, null, tint = V2Green, modifier = Modifier.size(20.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Column(Modifier.weight(1f)) {
+                                    KText("تم التنظيف فعليًا", size = 10.sp, weight = FontWeight.Bold, color = V2Green)
+                                    KText("حُرر ${formatBytes(lastFreed ?: 0L)} من كاش KNOUX.", size = 8.sp, color = V2Soft)
+                                }
+                            }
                         }
                     }
                 }
-                item { SelectedFoldersCard() }
-                item { ResidueSafetyCard() }
+                item { ResidueSafetyCard(cacheBytes) }
+                item {
+                    PreviewNote(
+                        "القيم المقروءة تخص كاش وملفات KNOUX على هذا الهاتف. كاش التطبيقات الأخرى " +
+                            "يظل مقيدًا بنظام Android ويُدار من إعدادات النظام."
+                    )
+                }
             }
             V2GradientButton(
-                "مراجعة وتنظيف",
-                onReview,
-                icon = Icons.Rounded.Delete,
+                if (cacheBytes > 0L) "تنظيف $cacheText" else "إعادة الفحص",
+                onClick = {
+                    if (cacheBytes > 0L) {
+                        confirm = true
+                    } else {
+                        lastFreed = null
+                        bump()
+                    }
+                },
+                icon = if (cacheBytes > 0L) Icons.Rounded.Delete else Icons.Rounded.Radar,
                 trailingChevron = true,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp),
             )
@@ -748,7 +1234,10 @@ private fun ResidueTitle() {
 }
 
 @Composable
-private fun ResidueHeroCard() {
+private fun ResidueHeroCard(cacheBytes: Long, fileCount: Int, freeBytes: Long) {
+    val progress = if (cacheBytes + freeBytes > 0L) {
+        (cacheBytes.toFloat() / (cacheBytes + freeBytes).toFloat()).coerceIn(0f, 1f)
+    } else 0f
     V2GlassCard(
         Modifier.fillMaxWidth(),
         padding = 12.dp,
@@ -758,19 +1247,22 @@ private fun ResidueHeroCard() {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             V2NeonRing(
-                progress = .85f,
+                progress = progress,
                 size = 113.dp,
                 stroke = 8.dp,
                 colors = listOf(V2Cyan, V2Blue, V2Violet, V2Pink),
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    KText("2.84 GB", size = 20.sp, weight = FontWeight.Black)
-                    KText("قابلة للتنظيف", size = 8.sp, color = V2Soft)
+                    KText(formatBytes(cacheBytes), size = 17.sp, weight = FontWeight.Black)
+                    KText("كاش KNOUX", size = 8.sp, color = V2Soft)
                     Icon(Icons.Rounded.Verified, null, tint = V2Green, modifier = Modifier.size(11.dp))
                 }
             }
             Spacer(Modifier.weight(1f))
-            NeonTrashCan(Modifier.size(78.dp))
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                NeonTrashCan(Modifier.size(72.dp))
+                KText("${formatCount(fileCount)} ملفًا", size = 8.2.sp, color = V2Soft)
+            }
             Spacer(Modifier.width(6.dp))
         }
     }
@@ -833,42 +1325,42 @@ private fun NeonTrashCan(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun ResidueCategoryTile(
-    category: ResidueCategory,
-    checked: Boolean,
-    modifier: Modifier = Modifier,
-    onToggle: () -> Unit,
+private fun RealResidueRow(
+    title: String,
+    subtitle: String,
+    value: String,
+    accent: Color,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    onClick: (() -> Unit)? = null,
 ) {
-    val shape = RoundedCornerShape(15.dp)
-    Column(
-        modifier
-            .height(105.dp)
-            .clip(shape)
-            .background(
-                Brush.verticalGradient(
-                    if (checked) listOf(category.accent.copy(alpha = .30f), V2Panel2)
-                    else listOf(V2GlassTop.copy(alpha = .70f), V2Panel2)
-                )
-            )
-            .border(1.dp, if (checked) category.accent.copy(alpha = .70f) else Color.White.copy(alpha = .13f), shape)
-            .clickable(onClick = onToggle)
-            .padding(6.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
+    V2GlassCard(
+        Modifier.fillMaxWidth(),
+        padding = 10.dp,
+        radius = 17.dp,
+        glow = accent,
+        borderAlpha = .26f,
     ) {
-        V2IconTile(category.icon, category.accent, size = 31.dp, iconSize = 16.dp)
-        Spacer(Modifier.height(4.dp))
-        KText(category.title, size = 7.4.sp, color = Color.White, align = TextAlign.Center, maxLines = 2, lineHeight = 9.sp)
-        Spacer(Modifier.height(2.dp))
-        KText(category.size, size = 9.sp, weight = FontWeight.Bold, color = V2Cyan)
-        Box(Modifier.align(Alignment.End)) {
-            V2Check(checked = checked, accent = category.accent)
+        Row(
+            Modifier.then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            V2IconTile(icon, accent, size = 36.dp, iconSize = 18.dp)
+            Spacer(Modifier.width(9.dp))
+            Column(Modifier.weight(1f)) {
+                KText(title, size = 10.5.sp, weight = FontWeight.Bold)
+                KText(subtitle, size = 7.6.sp, color = V2Soft, maxLines = 2)
+            }
+            Spacer(Modifier.width(6.dp))
+            KText(value, size = 9.5.sp, weight = FontWeight.Bold, color = accent)
+            if (onClick != null) {
+                Icon(Icons.Rounded.ChevronLeft, null, tint = V2Soft, modifier = Modifier.size(15.dp))
+            }
         }
     }
 }
 
 @Composable
-private fun SelectedFoldersCard() {
+private fun CacheFilesCard(files: List<OwnFileFact>) {
     V2GlassCard(
         Modifier.fillMaxWidth(),
         padding = 10.dp,
@@ -878,31 +1370,22 @@ private fun SelectedFoldersCard() {
     ) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.Folder, null, tint = V2Cyan, modifier = Modifier.size(18.dp))
+                Icon(Icons.Rounded.Description, null, tint = V2Cyan, modifier = Modifier.size(17.dp))
                 Spacer(Modifier.width(6.dp))
-                KText("المجلدات المحددة", size = 11.sp, weight = FontWeight.Bold)
+                KText("أكبر ملفات كاش KNOUX", size = 10.5.sp, weight = FontWeight.Bold)
                 Spacer(Modifier.weight(1f))
-                KText("3 مجلدات", size = 8.sp, color = V2Violet)
-                Icon(Icons.Rounded.ChevronLeft, null, tint = V2Soft, modifier = Modifier.size(15.dp))
+                KText("${files.size} ملف", size = 8.sp, color = V2Cyan)
             }
-            Spacer(Modifier.height(7.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                listOf("Android/cache", "Download/temp", "Apps/logs").forEach {
-                    Box(
-                        Modifier
-                            .clip(RoundedCornerShape(50))
-                            .background(Color.White.copy(alpha = .045f))
-                            .border(1.dp, V2Cyan.copy(alpha = .24f), RoundedCornerShape(50))
-                            .padding(horizontal = 8.dp, vertical = 5.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Rounded.Folder, null, tint = V2Cyan, modifier = Modifier.size(11.dp))
-                            Spacer(Modifier.width(4.dp))
-                            KText(it, size = 7.5.sp, color = V2Soft, maxLines = 1)
-                            Spacer(Modifier.width(4.dp))
-                            Icon(Icons.Rounded.Close, null, tint = V2Muted, modifier = Modifier.size(10.dp))
-                        }
+            Spacer(Modifier.height(6.dp))
+            files.forEach { file ->
+                Row(Modifier.fillMaxWidth().padding(vertical = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Rounded.Folder, null, tint = V2Muted, modifier = Modifier.size(13.dp))
+                    Spacer(Modifier.width(6.dp))
+                    Column(Modifier.weight(1f)) {
+                        KText(file.name, size = 8.2.sp, color = Color.White, maxLines = 1)
+                        KText(file.folder, size = 6.8.sp, color = V2Muted, maxLines = 1)
                     }
+                    KText(formatBytes(file.bytes), size = 8.sp, weight = FontWeight.Bold, color = V2Cyan)
                 }
             }
         }
@@ -910,7 +1393,7 @@ private fun SelectedFoldersCard() {
 }
 
 @Composable
-private fun ResidueSafetyCard() {
+private fun ResidueSafetyCard(cacheBytes: Long) {
     V2GlassCard(
         Modifier.fillMaxWidth(),
         padding = 10.dp,
@@ -922,15 +1405,15 @@ private fun ResidueSafetyCard() {
             Icon(Icons.Rounded.Verified, null, tint = V2Green, modifier = Modifier.size(20.dp))
             Spacer(Modifier.width(7.dp))
             Column(Modifier.weight(1f)) {
-                KText("آمن", size = 10.5.sp, weight = FontWeight.Bold, color = V2Green)
-                KText("لا يمس بياناتك المهمة", size = 8.sp, color = V2Soft)
+                KText("قياس فعلي", size = 10.5.sp, weight = FontWeight.Bold, color = V2Green)
+                KText("كاش KNOUX فقط — بياناتك الدائمة لا تُمس", size = 8.sp, color = V2Soft)
             }
             Spacer(Modifier.width(10.dp))
             Box(Modifier.width(1.dp).height(31.dp).background(Color.White.copy(alpha = .13f)))
             Spacer(Modifier.width(10.dp))
             Column(horizontalAlignment = Alignment.End) {
-                KText("2.84 GB", size = 12.sp, weight = FontWeight.Bold, color = V2Cyan)
-                KText("إجمالي قابل للإزالة", size = 7.sp, color = V2Soft)
+                KText(formatBytes(cacheBytes), size = 12.sp, weight = FontWeight.Bold, color = V2Cyan)
+                KText("قابل للإزالة", size = 7.sp, color = V2Soft)
             }
         }
     }
@@ -942,6 +1425,20 @@ private fun ResidueSafetyCard() {
 
 @Composable
 fun V2PrivacyScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> Unit) {
+    val context = LocalContext.current
+    val (refresh, bump) = rememberRefreshCounter()
+    val facts = rememberDeviceFacts(refresh)
+    val groups = facts.privacyGroups
+    val declared = groups.sumOf { it.appCount }
+    val granted = groups.sumOf { it.grantedCount }
+    val score = if (declared > 0) (100 - (granted * 100 / declared)).coerceIn(0, 100) else 100
+    val sensitiveApps = remember(facts) {
+        facts.installedApps
+            .filter { it.sensitivePermissions.isNotEmpty() }
+            .sortedByDescending { it.sensitivePermissions.size }
+            .take(6)
+    }
+
     Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)) {
         // The reference puts the stag on the opposite shoulder for privacy.
         V2DeerHeader(
@@ -959,15 +1456,22 @@ fun V2PrivacyScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> U
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 item { PrivacyTitle() }
-                item { PrivacyHeroCard() }
-                item { V2SectionLabel("مجالات الخصوصية", trailing = "آخر 7 أيام") }
-                item { PrivacyDomainGrid(onOpenDetail) }
-                item { PrivacyChangesCard() }
+                item {
+                    PrivacyHeroCard(
+                        score = score,
+                        sensitiveApps = facts.sensitiveAppCount,
+                        granted = granted,
+                        declared = declared,
+                    )
+                }
+                item { V2SectionLabel("مجالات الخصوصية", trailing = "قراءة مباشرة") }
+                item { PrivacyDomainGrid(groups) { openAllAppSettings(context) } }
+                item { SensitiveAppsCard(sensitiveApps) { packageName -> openAppInfo(context, packageName) } }
                 item { PrivacyPreviewNote() }
             }
             V2BrightGoldButton(
-                "مراجعة الأذونات",
-                onClick = onOpenDetail,
+                "مراجعة الأذونات في الإعدادات",
+                onClick = { openAllAppSettings(context) },
                 icon = Icons.Rounded.Shield,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp),
             )
@@ -999,7 +1503,12 @@ private fun PrivacyTitle() {
 }
 
 @Composable
-private fun PrivacyHeroCard() {
+private fun PrivacyHeroCard(score: Int, sensitiveApps: Int, granted: Int, declared: Int) {
+    val accent = when {
+        score >= 75 -> V2Green
+        score >= 50 -> V2Amber
+        else -> V2Red
+    }
     V2GlassCard(
         Modifier.fillMaxWidth(),
         padding = 12.dp,
@@ -1010,15 +1519,15 @@ private fun PrivacyHeroCard() {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 V2NeonRing(
-                    progress = .76f,
+                    progress = score / 100f,
                     size = 112.dp,
                     stroke = 8.dp,
                     colors = listOf(V2Amber, V2Pink, V2Violet, V2Cyan),
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Rounded.Shield, null, tint = V2Amber, modifier = Modifier.size(20.dp))
-                        KText("76%", size = 23.sp, weight = FontWeight.Black)
-                        KText("مستوى الحماية", size = 7.sp, color = V2Soft)
+                        Icon(Icons.Rounded.Shield, null, tint = accent, modifier = Modifier.size(20.dp))
+                        KText("$score%", size = 23.sp, weight = FontWeight.Black)
+                        KText("مؤشر تقديري", size = 7.sp, color = V2Soft)
                     }
                 }
                 Spacer(Modifier.width(12.dp))
@@ -1026,37 +1535,41 @@ private fun PrivacyHeroCard() {
                     Box(
                         Modifier
                             .clip(RoundedCornerShape(50))
-                            .background(V2Red.copy(alpha = .18f))
-                            .border(1.dp, V2Red.copy(alpha = .55f), RoundedCornerShape(50))
+                            .background(accent.copy(alpha = .16f))
+                            .border(1.dp, accent.copy(alpha = .50f), RoundedCornerShape(50))
                             .padding(horizontal = 9.dp, vertical = 4.dp)
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Rounded.Shield, null, tint = V2Red, modifier = Modifier.size(13.dp))
+                            Icon(Icons.Rounded.Verified, null, tint = accent, modifier = Modifier.size(13.dp))
                             Spacer(Modifier.width(4.dp))
-                            KText("خطر مرتفع", size = 8.sp, weight = FontWeight.Bold, color = V2Red)
+                            KText("قراءة من PackageManager", size = 8.sp, weight = FontWeight.Bold, color = accent)
                         }
                     }
                     Spacer(Modifier.height(6.dp))
                     KText(
-                        "تم اكتشاف مخاطر خصوصية تحتاج مراجعة فورية.",
-                        size = 8.6.sp,
-                        lineHeight = 12.5.sp,
+                        "يُحسب المؤشر من نسبة الأذونات الحساسة الممنوحة فعليًا إلى المعلنة.",
+                        size = 8.4.sp,
+                        lineHeight = 12.sp,
                         color = V2Soft,
                     )
                     Spacer(Modifier.height(8.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        PrivacyCount("5", "أذونات حساسة", Icons.Rounded.Shield, V2Amber)
+                        PrivacyCount("${formatCount(sensitiveApps)}", "تطبيقًا حساسًا", Icons.Rounded.Shield, V2Amber)
                         Spacer(Modifier.width(12.dp))
                         Box(Modifier.width(1.dp).height(26.dp).background(Color.White.copy(alpha = .10f)))
                         Spacer(Modifier.width(12.dp))
-                        PrivacyCount("12", "تطبيقات متتبِّعة", Icons.Rounded.Radar, V2Violet)
+                        PrivacyCount("${formatCount(granted)}/${formatCount(declared)}", "إذن ممنوح/معلن", Icons.Rounded.Radar, V2Violet)
                     }
                 }
             }
             Spacer(Modifier.height(10.dp))
-            V2ProgressBar(.76f, height = 5.dp, colors = listOf(V2Amber, V2Pink, V2Violet, V2Cyan))
+            V2ProgressBar(score / 100f, height = 5.dp, colors = listOf(V2Amber, V2Pink, V2Violet, V2Cyan))
             Spacer(Modifier.height(4.dp))
-            KText("إصلاح الأذونات الثلاثة الأعلى خطورة يرفع الدرجة إلى 92%.", size = 7.4.sp, color = V2Muted)
+            KText(
+                "يمكنك سحب أي إذن من إعدادات التطبيق في Android.",
+                size = 7.4.sp,
+                color = V2Muted,
+            )
         }
     }
 }
@@ -1073,42 +1586,48 @@ private fun PrivacyCount(value: String, label: String, icon: androidx.compose.ui
     }
 }
 
-private data class PrivacyDomain(
-    val title: String,
-    val count: String,
-    val icon: androidx.compose.ui.graphics.vector.ImageVector,
-    val accent: Color,
-)
+private fun privacyDomainIcon(key: String): androidx.compose.ui.graphics.vector.ImageVector = when (key) {
+    "camera" -> Icons.Rounded.CameraAlt
+    "microphone" -> Icons.Rounded.Mic
+    "location" -> Icons.Rounded.LocationOn
+    "files" -> Icons.Rounded.Folder
+    "contacts" -> Icons.Rounded.Person
+    "notifications" -> Icons.Rounded.NotificationsActive
+    else -> Icons.Rounded.Shield
+}
 
-private val privacyDomains = listOf(
-    PrivacyDomain("الكاميرا", "3 تطبيقات", Icons.Rounded.CameraAlt, V2Pink),
-    PrivacyDomain("الموقع", "4 تطبيقات", Icons.Rounded.LocationOn, V2Cyan),
-    PrivacyDomain("النشاط في الخلفية", "6 تطبيقات", Icons.Rounded.Layers, V2Violet),
-    PrivacyDomain("أدوات التتبع", "2 تطبيقات", Icons.Rounded.Radar, V2Blue),
-    PrivacyDomain("الإشعارات", "7 تطبيقات", Icons.Rounded.NotificationsActive, V2Amber),
-    PrivacyDomain("الأذونات الحساسة", "5 أذونات", Icons.Rounded.Shield, V2Green),
-)
+private fun privacyDomainAccent(key: String): Color = when (key) {
+    "camera" -> V2Pink
+    "microphone" -> V2Amber
+    "location" -> V2Cyan
+    "files" -> V2Violet
+    "contacts" -> V2Blue
+    "notifications" -> V2Green
+    else -> V2Soft
+}
 
 @Composable
-private fun PrivacyDomainGrid(onOpenDetail: () -> Unit) {
+private fun PrivacyDomainGrid(groups: List<AppPermissionGroup>, onOpen: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
-        privacyDomains.chunked(3).forEach { row ->
+        groups.chunked(3).forEach { row ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                row.forEach { domain ->
-                    PrivacyDomainCard(domain, Modifier.weight(1f), onOpenDetail)
+                row.forEach { group ->
+                    PrivacyDomainCard(group, Modifier.weight(1f), onOpen)
                 }
+                repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
             }
         }
     }
 }
 
 @Composable
-private fun PrivacyDomainCard(domain: PrivacyDomain, modifier: Modifier, onClick: () -> Unit) {
+private fun PrivacyDomainCard(group: AppPermissionGroup, modifier: Modifier, onClick: () -> Unit) {
+    val accent = privacyDomainAccent(group.key)
     V2GlassCard(
         modifier.height(93.dp).clickable(onClick = onClick),
         padding = 8.dp,
         radius = 16.dp,
-        glow = domain.accent,
+        glow = accent,
         borderAlpha = .35f,
     ) {
         Column(
@@ -1116,72 +1635,100 @@ private fun PrivacyDomainCard(domain: PrivacyDomain, modifier: Modifier, onClick
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            V2IconTile(domain.icon, domain.accent, size = 31.dp, iconSize = 16.dp)
+            V2IconTile(privacyDomainIcon(group.key), accent, size = 31.dp, iconSize = 16.dp)
             Spacer(Modifier.height(4.dp))
-            KText(domain.title, size = 8.4.sp, weight = FontWeight.Bold, maxLines = 1, align = TextAlign.Center)
-            KText(domain.count, size = 7.sp, color = V2Soft, maxLines = 1)
-        }
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomEnd) {
-            Icon(Icons.Rounded.ChevronLeft, null, tint = V2Soft.copy(alpha = .8f), modifier = Modifier.size(13.dp))
+            KText(group.label, size = 8.4.sp, weight = FontWeight.Bold, maxLines = 1, align = TextAlign.Center)
+            KText(
+                "${formatCount(group.grantedCount)} ممنوح · ${formatCount(group.appCount)} معلن",
+                size = 7.sp,
+                color = V2Soft,
+                maxLines = 1,
+            )
         }
     }
 }
 
-private data class PrivacyChange(val app: String, val action: String, val whenText: String, val mark: AppMark, val accent: Color)
-
-private val privacyChanges = listOf(
-    PrivacyChange("صور Google", "تم منح إذن الكاميرا", "منذ 6 ساعات", AppMark.Photos, V2Blue),
-    PrivacyChange("خرائط Google", "تم منح إذن الموقع", "منذ 18 ساعة", AppMark.Generic, V2Green),
-    PrivacyChange("واتساب", "تم تعديل إذن الميكروفون", "منذ يوم واحد", AppMark.WhatsApp, V2Green),
-)
-
 @Composable
-private fun PrivacyChangesCard() {
+private fun SensitiveAppsCard(
+    apps: List<InstalledAppFacts>,
+    onOpenApp: (String) -> Unit,
+) {
     V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 20.dp, glow = V2Violet, borderAlpha = .42f) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.Schedule, null, tint = V2Amber, modifier = Modifier.size(17.dp))
+                Icon(Icons.Rounded.Shield, null, tint = V2Amber, modifier = Modifier.size(17.dp))
                 Spacer(Modifier.width(6.dp))
-                KText("آخر تغييرات الأذونات", size = 12.sp, weight = FontWeight.Black)
+                KText("تطبيقات تطلب أذونات حساسة", size = 12.sp, weight = FontWeight.Black)
                 Spacer(Modifier.weight(1f))
-                KText("آخر 24 ساعة", size = 7.6.sp, color = V2Muted)
+                KText("${formatCount(apps.size)}", size = 7.6.sp, color = V2Muted)
             }
             Spacer(Modifier.height(9.dp))
-            privacyChanges.forEachIndexed { index, change ->
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.width(12.dp), contentAlignment = Alignment.Center) {
+            if (apps.isEmpty()) {
+                KText(
+                    "لا توجد تطبيقات معلنة لأي من الأذونات الحساسة المرصودة.",
+                    size = 8.4.sp,
+                    color = V2Soft,
+                )
+            } else {
+                apps.forEachIndexed { index, app ->
+                    Row(
+                        Modifier.fillMaxWidth().clickable { onOpenApp(app.packageName) },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        AppIconImage(packageName = app.packageName, size = 34.dp)
+                        Spacer(Modifier.width(9.dp))
+                        Column(Modifier.weight(1f)) {
+                            KText(app.label, size = 9.2.sp, weight = FontWeight.Bold, maxLines = 1)
+                            KText(
+                                "${formatCount(app.sensitivePermissions.size)} أذونات حساسة معلنة · ${app.packageName}",
+                                size = 6.9.sp,
+                                color = V2Muted,
+                                maxLines = 1,
+                            )
+                        }
+                        SummaryPill(if (app.isSystem) "نظام" else "مستخدم", if (app.isSystem) V2Violet else V2Cyan)
+                    }
+                    if (index < apps.lastIndex) {
+                        Spacer(Modifier.height(6.dp))
                         Box(
                             Modifier
-                                .size(7.dp)
-                                .clip(CircleShape)
-                                .background(change.accent)
-                                .border(1.dp, Color.White.copy(alpha = .35f), CircleShape)
+                                .fillMaxWidth()
+                                .height(1.dp)
+                                .background(Color.White.copy(alpha = .07f))
                         )
+                        Spacer(Modifier.height(6.dp))
                     }
-                    Spacer(Modifier.width(4.dp))
-                    if (change.mark == AppMark.Generic) {
-                        V2IconTile(Icons.Rounded.LocationOn, change.accent, size = 34.dp, iconSize = 17.dp)
-                    } else {
-                        AppLogo(change.mark, size = 34.dp)
-                    }
-                    Spacer(Modifier.width(9.dp))
-                    Column(Modifier.weight(1f)) {
-                        KText(change.app, size = 9.2.sp, weight = FontWeight.Bold)
-                        KText(change.action, size = 7.3.sp, color = V2Muted)
-                    }
-                    SummaryPill(change.whenText, change.accent)
-                }
-                if (index < privacyChanges.lastIndex) {
-                    Spacer(Modifier.height(6.dp))
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .height(1.dp)
-                            .background(Color.White.copy(alpha = .07f))
-                    )
-                    Spacer(Modifier.height(6.dp))
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun AppIconImage(packageName: String, size: Dp) {
+    val bitmap = rememberAppIcon(packageName)
+    Box(
+        Modifier
+            .size(size)
+            .clip(RoundedCornerShape(10.dp))
+            .background(Color.White.copy(alpha = .06f))
+            .border(1.dp, Color.White.copy(alpha = .12f), RoundedCornerShape(10.dp)),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (bitmap != null) {
+            Image(
+                bitmap = bitmap,
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+            )
+        } else {
+            Icon(
+                Icons.Rounded.Shield,
+                null,
+                tint = V2Cyan,
+                modifier = Modifier.size(size * .55f),
+            )
         }
     }
 }
@@ -1195,7 +1742,8 @@ private fun PrivacyPreviewNote() {
         Icon(Icons.Rounded.Check, null, tint = V2Amber, modifier = Modifier.size(11.dp))
         Spacer(Modifier.width(5.dp))
         KText(
-            "درجة الخصوصية والأذونات هنا بيانات معاينة وليست قراءة مباشرة من الجهاز.",
+            "العدّ من PackageManager: الأذونات المعلنة في كل تطبيق وما مُنح منها فعليًا. " +
+                "لا يدّعي التطبيق قراءة سجل تغييرات الأذونات.",
             size = 7.2.sp,
             color = V2Muted,
         )

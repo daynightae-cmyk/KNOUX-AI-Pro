@@ -48,6 +48,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -92,6 +93,8 @@ import kotlin.math.sin
  * KNOUX AI V2 — Arabic reference palette
  * ------------------------------------------------------------------ */
 
+inline fun Color.withAlpha(alpha: Float): Color = Color(this.red, this.green, this.blue, alpha)
+
 val V2Deep = Color(0xFF050317)
 val V2Deep2 = Color(0xFF0C0627)
 val V2Panel = Color(0xFF160C36)
@@ -109,6 +112,77 @@ val V2Amber = Color(0xFFFFC857)
 val V2Soft = Color(0xFFBDB0E4)
 val V2Muted = Color(0xFF8E82B4)
 val V2GoldText = Color(0xFFFFD37B)
+
+/* ------------------------------------------------------------------ *
+ * Pro Identity — complete brand change when Pro activates
+ * ------------------------------------------------------------------ */
+
+// Pro-exclusive palette (gold/amber theme)
+val ProDeep = Color(0xFF1A1005)
+val ProDeep2 = Color(0xFF2A1705)
+val ProPanel = Color(0xFF3D280A)
+val ProPanel2 = Color(0xFF2A1705)
+val ProGlassTop = Color(0xFF5C3D0F)
+val ProGlassBottom = Color(0xFF2A1705)
+val ProBorder = Color(0xFFFFC857)
+val ProViolet = Color(0xFFFFB043)
+val ProPink = Color(0xFFFF8A6B)
+val ProCyan = Color(0xFFFFD37B)
+val ProBlue = Color(0xFFFF9F3A)
+val ProGreen = Color(0xFF37F3B4)
+val ProRed = Color(0xFFFF5677)
+val ProAmber = Color(0xFFFFC857)
+val ProSoft = Color(0xFFFFE7AA)
+val ProMuted = Color(0xFFD4B870)
+val ProGold = Color(0xFFFFD37B)
+val ProGoldBright = Color(0xFFFFE9B0)
+
+/**
+ * Pro identity configuration - provides gold theme when Pro is active.
+ * Use LocalProTheme.current to access Pro-aware colors throughout the app.
+ */
+data class ProTheme(
+    val isPro: Boolean,
+    val deep: Color,
+    val deep2: Color,
+    val panel: Color,
+    val panel2: Color,
+    val glassTop: Color,
+    val glassBottom: Color,
+    val border: Color,
+    val violet: Color,
+    val pink: Color,
+    val cyan: Color,
+    val blue: Color,
+    val green: Color,
+    val red: Color,
+    val amber: Color,
+    val soft: Color,
+    val muted: Color,
+    val gold: Color,
+    val goldBright: Color,
+) {
+    companion object {
+        val Standard = ProTheme(
+            isPro = false,
+            deep = V2Deep, deep2 = V2Deep2, panel = V2Panel, panel2 = V2Panel2,
+            glassTop = V2GlassTop, glassBottom = V2GlassBottom, border = V2Border,
+            violet = V2Violet, pink = V2Pink, cyan = V2Cyan, blue = V2Blue,
+            green = V2Green, red = V2Red, amber = V2Amber, soft = V2Soft, muted = V2Muted,
+            gold = V2GoldText, goldBright = Color(0xFFFFE9B0),
+        )
+        val Pro = ProTheme(
+            isPro = true,
+            deep = ProDeep, deep2 = ProDeep2, panel = ProPanel, panel2 = ProPanel2,
+            glassTop = ProGlassTop, glassBottom = ProGlassBottom, border = ProBorder,
+            violet = ProViolet, pink = ProPink, cyan = ProCyan, blue = ProBlue,
+            green = ProGreen, red = ProRed, amber = ProAmber, soft = ProSoft, muted = ProMuted,
+            gold = ProGold, goldBright = ProGoldBright,
+        )
+    }
+}
+
+val LocalProTheme = staticCompositionLocalOf { ProTheme.Standard }
 
 /** The Arabic UI face used by every V2 text node. */
 val V2Font = KnouxArabic
@@ -176,43 +250,77 @@ fun KText(
 
 @Composable
 fun V2Background(modifier: Modifier = Modifier) {
+    val proTheme = LocalProTheme.current
+    val isPro = proTheme.isPro
     Canvas(modifier.fillMaxSize()) {
         drawRect(
             Brush.verticalGradient(
-                0f to Color(0xFF060318),
-                0.30f to V2Deep2,
-                0.67f to Color(0xFF10062F),
-                1f to Color(0xFF170940),
+                0f to (if (isPro) proTheme.deep else Color(0xFF060318)),
+                0.30f to (if (isPro) proTheme.deep2 else V2Deep2),
+                0.67f to (if (isPro) Color(0xFF1A1005) else Color(0xFF10062F)),
+                1f to (if (isPro) Color(0xFF2A1705) else Color(0xFF170940)),
             )
         )
 
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(V2Cyan.copy(alpha = 0.12f), Color.Transparent),
-                center = Offset(size.width * 0.82f, size.height * 0.12f),
+        if (isPro) {
+            // Pro background - gold/amber theme
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(proTheme.cyan.withAlpha( 0.15f), Color.Transparent),
+                    center = Offset(size.width * 0.82f, size.height * 0.12f),
+                    radius = size.width * 0.68f,
+                ),
                 radius = size.width * 0.68f,
-            ),
-            radius = size.width * 0.68f,
-            center = Offset(size.width * 0.82f, size.height * 0.12f),
-        )
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(V2Pink.copy(alpha = 0.12f), Color.Transparent),
-                center = Offset(size.width * 0.08f, size.height * 0.35f),
+                center = Offset(size.width * 0.82f, size.height * 0.12f),
+            )
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(proTheme.pink.withAlpha( 0.15f), Color.Transparent),
+                    center = Offset(size.width * 0.08f, size.height * 0.35f),
+                    radius = size.width * 0.70f,
+                ),
                 radius = size.width * 0.70f,
-            ),
-            radius = size.width * 0.70f,
-            center = Offset(size.width * 0.08f, size.height * 0.35f),
-        )
-        drawCircle(
-            brush = Brush.radialGradient(
-                colors = listOf(Color(0xFF7A2DFF).copy(alpha = 0.24f), Color.Transparent),
-                center = Offset(size.width * 0.50f, size.height * 0.95f),
+                center = Offset(size.width * 0.08f, size.height * 0.35f),
+            )
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(proTheme.amber.withAlpha( 0.20f), Color.Transparent),
+                    center = Offset(size.width * 0.50f, size.height * 0.95f),
+                    radius = size.width * 0.90f,
+                ),
                 radius = size.width * 0.90f,
-            ),
-            radius = size.width * 0.90f,
-            center = Offset(size.width * 0.50f, size.height * 0.95f),
-        )
+                center = Offset(size.width * 0.50f, size.height * 0.95f),
+            )
+        } else {
+            // Standard background
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(V2Cyan.withAlpha( 0.12f), Color.Transparent),
+                    center = Offset(size.width * 0.82f, size.height * 0.12f),
+                    radius = size.width * 0.68f,
+                ),
+                radius = size.width * 0.68f,
+                center = Offset(size.width * 0.82f, size.height * 0.12f),
+            )
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(V2Pink.withAlpha( 0.12f), Color.Transparent),
+                    center = Offset(size.width * 0.08f, size.height * 0.35f),
+                    radius = size.width * 0.70f,
+                ),
+                radius = size.width * 0.70f,
+                center = Offset(size.width * 0.08f, size.height * 0.35f),
+            )
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(Color(0xFF7A2DFF).withAlpha( 0.24f), Color.Transparent),
+                    center = Offset(size.width * 0.50f, size.height * 0.95f),
+                    radius = size.width * 0.90f,
+                ),
+                radius = size.width * 0.90f,
+                center = Offset(size.width * 0.50f, size.height * 0.95f),
+            )
+        }
 
         drawMountains()
         drawStars()
@@ -238,7 +346,7 @@ private fun DrawScope.drawMountains() {
     drawPath(
         back,
         Brush.verticalGradient(
-            listOf(Color(0xFF2A1661).copy(alpha = 0.62f), Color(0xFF0A0524).copy(alpha = 0f)),
+            listOf(Color(0xFF2A1661).withAlpha( 0.62f), Color(0xFF0A0524).withAlpha( 0f)),
             startY = 0f,
             endY = size.height * 0.25f,
         )
@@ -260,7 +368,7 @@ private fun DrawScope.drawMountains() {
     drawPath(
         front,
         Brush.verticalGradient(
-            listOf(Color(0xFF10072E).copy(alpha = 0.92f), Color(0xFF07031A).copy(alpha = 0f)),
+            listOf(Color(0xFF10072E).withAlpha( 0.92f), Color(0xFF07031A).withAlpha( 0f)),
             startY = 0f,
             endY = size.height * 0.30f,
         )
@@ -279,7 +387,7 @@ private fun DrawScope.drawStars() {
     )
     stars.forEachIndexed { index, (x, y) ->
         drawCircle(
-            color = if (index % 5 == 0) V2Cyan.copy(alpha = .40f) else Color.White.copy(alpha = .18f),
+            color = if (index % 5 == 0) V2Cyan.withAlpha( .40f) else Color.White.withAlpha( .18f),
             radius = if (index % 7 == 0) 1.2.dp.toPx() else .7.dp.toPx(),
             center = Offset(size.width * x, size.height * y),
         )
@@ -303,7 +411,7 @@ private fun DrawScope.drawEnergyRibbon() {
     drawPath(
         path = path,
         brush = Brush.linearGradient(
-            listOf(Color.Transparent, V2Pink.copy(alpha = .20f), V2Cyan.copy(alpha = .15f), Color.Transparent),
+            listOf(Color.Transparent, V2Pink.withAlpha( .20f), V2Cyan.withAlpha( .15f), Color.Transparent),
             start = Offset(0f, size.height * .60f),
             end = Offset(size.width, size.height * .38f),
         ),
@@ -335,8 +443,8 @@ fun StagCrest(
             cubicTo(w * .43f, h * .44f, w * .43f, h * .65f, w * .32f, h)
             close()
         }
-        drawPath(neck, Brush.verticalGradient(listOf(accent.copy(alpha = .88f), Color(0xFF1A0C3B))))
-        drawPath(neck, Color.White.copy(alpha = .35f), style = Stroke(1.2.dp.toPx()))
+        drawPath(neck, Brush.verticalGradient(listOf(accent.withAlpha( .88f), Color(0xFF1A0C3B))))
+        drawPath(neck, Color.White.withAlpha( .35f), style = Stroke(1.2.dp.toPx()))
 
         // ears
         val ear = Path().apply {
@@ -345,7 +453,7 @@ fun StagCrest(
             quadraticTo(w * .24f, h * .30f, w * .32f, h * .32f)
             close()
         }
-        drawPath(ear, tint.copy(alpha = .75f))
+        drawPath(ear, tint.withAlpha( .75f))
 
         // antlers
         fun antler(points: List<Pair<Float, Float>>) {
@@ -360,7 +468,7 @@ fun StagCrest(
             )
             drawPath(
                 p,
-                color = tint.copy(alpha = glowAlpha),
+                color = tint.withAlpha( glowAlpha),
                 style = Stroke(width = 10.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
             )
         }
@@ -374,9 +482,9 @@ fun StagCrest(
         antler(listOf(.46f to .02f, .53f to .00f))
 
         // eye / nose lights
-        drawCircle(Color.White.copy(alpha = .92f), radius = w * .012f, center = Offset(w * .27f, h * .32f))
+        drawCircle(Color.White.withAlpha( .92f), radius = w * .012f, center = Offset(w * .27f, h * .32f))
         drawCircle(tint, radius = 2.dp.toPx(), center = Offset(w * .23f, h * .35f))
-        drawCircle(tint.copy(alpha = .55f), radius = 18.dp.toPx(), center = Offset(w * .33f, h * .28f))
+        drawCircle(tint.withAlpha( .55f), radius = 18.dp.toPx(), center = Offset(w * .33f, h * .28f))
     }
 }
 
@@ -455,30 +563,39 @@ fun HeaderIcon(icon: ImageVector, description: String, onClick: () -> Unit) {
         Modifier
             .size(36.dp)
             .clip(CircleShape)
-            .background(Color.White.copy(alpha = .035f))
-            .border(1.dp, Color.White.copy(alpha = .14f), CircleShape)
+            .background(Color.White.withAlpha( .035f))
+            .border(1.dp, Color.White.withAlpha( .14f), CircleShape)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, description, tint = Color.White.copy(alpha = .92f), modifier = Modifier.size(19.dp))
+        Icon(icon, description, tint = Color.White.withAlpha( .92f), modifier = Modifier.size(19.dp))
     }
 }
 
 @Composable
 fun BrandLockupV2() {
     // A brand lockup stays LTR even inside an RTL product shell.
+    val proTheme = LocalProTheme.current
+    val isPro = proTheme.isPro
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         Row(verticalAlignment = Alignment.CenterVertically) {
+            // Pro-aware symbol: gold tint when Pro is active
             Image(
                 painter = painterResource(R.drawable.knoux_symbol_alpha),
                 contentDescription = "KNOUX AI",
                 modifier = Modifier.size(28.dp),
+                colorFilter = if (isPro) 
+                    androidx.compose.ui.graphics.ColorFilter.tint(proTheme.goldBright) 
+                else null,
             )
             Spacer(Modifier.width(6.dp))
             Image(
                 painter = painterResource(R.drawable.knoux_wordmark_alpha),
                 contentDescription = "knoux ai",
                 modifier = Modifier.height(14.5.dp),
+                colorFilter = if (isPro) 
+                    androidx.compose.ui.graphics.ColorFilter.tint(proTheme.goldBright) 
+                else null,
             )
             Spacer(Modifier.width(7.dp))
             ProPill()
@@ -488,32 +605,56 @@ fun BrandLockupV2() {
 
 @Composable
 fun ProPill(modifier: Modifier = Modifier) {
+    val proTheme = LocalProTheme.current
+    val active = LocalProActive.current
+    val shape = RoundedCornerShape(50)
     Box(
         modifier
-            .clip(RoundedCornerShape(50))
-            .background(Brush.horizontalGradient(listOf(Color(0x33FFC857), Color(0x0EFFC857))))
-            .border(1.dp, V2Amber.copy(alpha = .72f), RoundedCornerShape(50))
+            .clip(shape)
+            .background(
+                if (active) {
+                    Brush.horizontalGradient(listOf(proTheme.goldBright, proTheme.amber, proTheme.gold))
+                } else {
+                    Brush.horizontalGradient(listOf(Color(0x33FFC857), Color(0x0EFFC857)))
+                }
+            )
+            .border(1.dp, if (active) proTheme.goldBright.withAlpha( .9f) else proTheme.amber.withAlpha( .72f), shape)
             .padding(horizontal = 9.dp, vertical = 3.dp),
     ) {
-        KText("PRO", size = 8.sp, weight = FontWeight.Bold, color = V2Amber, letterSpacing = .6.sp)
+        KText(
+            if (active) "PRO ✓" else "PRO",
+            size = 8.sp,
+            weight = FontWeight.Bold,
+            color = if (active) proTheme.deep else proTheme.amber,
+            letterSpacing = .6.sp,
+        )
     }
 }
 
 @Composable
 fun CrownHexButton(onClick: () -> Unit = {}) {
+    val proTheme = LocalProTheme.current
+    val isPro = proTheme.isPro
     Canvas(
         Modifier
             .size(34.dp)
             .clickable(onClick = onClick)
     ) {
         val path = hexagonPath(size.width * .5f, size.height * .5f, size.width * .47f)
-        drawPath(path, Brush.linearGradient(listOf(Color(0x44FFC857), Color(0x0CFF9D00))))
-        drawPath(path, V2Amber.copy(alpha = .85f), style = Stroke(1.dp.toPx()))
+        val gradient = if (isPro)
+            Brush.linearGradient(listOf(proTheme.goldBright.withAlpha( .4f), proTheme.amber.withAlpha( .1f)))
+        else
+            Brush.linearGradient(listOf(Color(0x44FFC857), Color(0x0CFF9D00)))
+        val borderColor = if (isPro) proTheme.amber else V2Amber
+        val crownColor = if (isPro) proTheme.gold else V2Amber
+        
+        drawPath(path, gradient)
+        drawPath(path, borderColor.withAlpha( .85f), style = Stroke(1.dp.toPx()))
         drawCrown(
             center = Offset(size.width * .5f, size.height * .50f),
             width = size.width * .50f,
             height = size.height * .38f,
-            color = V2Amber,
+            color = crownColor,
         )
     }
 }
@@ -586,6 +727,8 @@ fun V2BottomBar(
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val proTheme = LocalProTheme.current
+    val isPro = proTheme.isPro
     val selected = when (selectedRoute) {
         "home" -> "home"
         "clean", "smartclean", "deepscan", "duplicates", "residue", "duplicate-group",
@@ -609,12 +752,17 @@ fun V2BottomBar(
                     )
                 )
             }
-            drawPath(shape, Brush.verticalGradient(listOf(Color(0xFF291453), Color(0xFF0D0728))))
-            drawPath(shape, V2Border.copy(alpha = .48f), style = Stroke(1.dp.toPx()))
+            val bgColor1 = if (isPro) proTheme.deep else Color(0xFF291453)
+            val bgColor2 = if (isPro) proTheme.deep2 else Color(0xFF0D0728)
+            val borderColor = if (isPro) proTheme.border else V2Border
+            val accentColor = if (isPro) proTheme.cyan else V2Cyan
+            
+            drawPath(shape, Brush.verticalGradient(listOf(bgColor1, bgColor2)))
+            drawPath(shape, borderColor.withAlpha(.48f), style = Stroke(1.dp.toPx()))
             drawPath(
                 shape,
                 Brush.verticalGradient(
-                    listOf(Color.Transparent, V2Cyan.copy(alpha = .10f), Color.Transparent),
+                    listOf(Color.Transparent, accentColor.withAlpha( .10f), Color.Transparent),
                     0f,
                     size.height,
                 )
@@ -656,7 +804,7 @@ fun V2BottomBar(
             Canvas(Modifier.fillMaxSize()) {
                 drawCircle(
                     brush = Brush.radialGradient(
-                        listOf(V2Amber.copy(alpha = .38f), Color.Transparent),
+                        listOf(proTheme.amber.withAlpha( .38f), Color.Transparent),
                         radius = size.minDimension * .5f,
                     ),
                     radius = size.minDimension * .5f,
@@ -667,17 +815,18 @@ fun V2BottomBar(
                     .size(66.dp)
                     .clip(CircleShape)
                     .background(
-                        Brush.verticalGradient(
-                            listOf(Color(0xFF4A2A20), Color(0xFF1D0F0B))
-                        )
+                        if (isPro)
+                            Brush.verticalGradient(listOf(proTheme.deep2, proTheme.deep))
+                        else
+                            Brush.verticalGradient(listOf(Color(0xFF4A2A20), Color(0xFF1D0F0B)))
                     )
-                    .border(2.dp, V2Amber.copy(alpha = .9f), CircleShape)
-                    .border(1.dp, Color.White.copy(alpha = .22f), CircleShape),
+                    .border(2.dp, if (isPro) proTheme.goldBright.withAlpha( .9f) else V2Amber.withAlpha( .9f), CircleShape)
+                    .border(1.dp, if (isPro) proTheme.soft.withAlpha( .3f) else Color.White.withAlpha( .22f), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    CrownGold(size = 24.dp)
-                    KText("Pro", size = 10.sp, weight = FontWeight.Bold, color = V2GoldText)
+                    CrownGold(size = 24.dp, color = if (isPro) proTheme.gold else V2Amber)
+                    KText("Pro", size = 10.sp, weight = FontWeight.Bold, color = proTheme.gold)
                 }
             }
         }
@@ -700,10 +849,10 @@ private fun RowScope.BottomItem(
                     Modifier
                         .background(
                             Brush.verticalGradient(
-                                listOf(Color(0xFF6F34C9).copy(alpha = .82f), Color(0xFF31145F).copy(alpha = .66f))
+                                listOf(Color(0xFF6F34C9).withAlpha( .82f), Color(0xFF31145F).withAlpha( .66f))
                             )
                         )
-                        .border(1.dp, V2Violet.copy(alpha = .52f), RoundedCornerShape(19.dp))
+                        .border(1.dp, V2Violet.withAlpha( .52f), RoundedCornerShape(19.dp))
                 } else Modifier
             )
             .clickable(onClick = onClick),
@@ -713,7 +862,7 @@ private fun RowScope.BottomItem(
             Icon(
                 tab.icon ?: return@Column,
                 contentDescription = tab.label,
-                tint = if (active) Color.White else V2Soft.copy(alpha = .82f),
+                tint = if (active) Color.White else V2Soft.withAlpha( .82f),
                 modifier = Modifier.size(20.dp),
             )
             Spacer(Modifier.height(2.dp))
@@ -721,7 +870,7 @@ private fun RowScope.BottomItem(
                 tab.label,
                 size = 9.5.sp,
                 weight = if (active) FontWeight.Bold else FontWeight.Medium,
-                color = if (active) Color.White else V2Soft.copy(alpha = .85f),
+                color = if (active) Color.White else V2Soft.withAlpha( .85f),
                 maxLines = 1,
             )
         }
@@ -741,14 +890,22 @@ fun V2GlassCard(
     borderAlpha: Float = .48f,
     content: @Composable BoxScope.() -> Unit,
 ) {
+    val proTheme = LocalProTheme.current
+    val isPro = proTheme.isPro
     val shape = RoundedCornerShape(radius)
+    // Use Pro-aware colors when Pro is active
+    val glassTop = if (isPro) proTheme.glassTop else V2GlassTop
+    val glassBottom = if (isPro) proTheme.glassBottom else V2GlassBottom
+    val borderColor = if (isPro) proTheme.border else glow
+    val glowColor = if (isPro) proTheme.amber else glow
+    
     Box(
         modifier
             .clip(shape)
             .drawBehind {
                 drawCircle(
                     brush = Brush.radialGradient(
-                        listOf(glow.copy(alpha = .16f), Color.Transparent),
+                        listOf(glowColor.withAlpha( .16f), Color.Transparent),
                         center = Offset(size.width * .12f, 0f),
                         radius = size.width * .85f,
                     ),
@@ -757,15 +914,64 @@ fun V2GlassCard(
                 )
                 drawLine(
                     brush = Brush.horizontalGradient(
-                        listOf(Color.Transparent, glow.copy(alpha = .52f), Color.Transparent)
+                        listOf(Color.Transparent, glowColor.withAlpha( .52f), Color.Transparent)
                     ),
                     start = Offset(size.width * .10f, 1.dp.toPx()),
                     end = Offset(size.width * .90f, 1.dp.toPx()),
                     strokeWidth = 1.dp.toPx(),
                 )
             }
-            .background(Brush.verticalGradient(listOf(V2GlassTop.copy(alpha = .93f), V2GlassBottom.copy(alpha = .98f))))
-            .border(1.dp, glow.copy(alpha = borderAlpha), shape)
+            .background(Brush.verticalGradient(listOf(glassTop.withAlpha( .93f), glassBottom.withAlpha( .98f))))
+            .border(1.dp, borderColor.withAlpha( borderAlpha), shape)
+            .padding(padding),
+        content = content,
+    )
+}
+
+/**
+ * Pro-aware GlassCard that automatically uses gold theme when Pro is active.
+ * Use this for screens that should reflect Pro identity.
+ */
+@Composable
+fun V2ProGlassCard(
+    modifier: Modifier = Modifier,
+    padding: Dp = 14.dp,
+    radius: Dp = 20.dp,
+    borderAlpha: Float = .48f,
+    content: @Composable BoxScope.() -> Unit,
+) {
+    val proTheme = LocalProTheme.current
+    val isPro = proTheme.isPro
+    val shape = RoundedCornerShape(radius)
+    val glassTop = if (isPro) proTheme.glassTop else V2GlassTop
+    val glassBottom = if (isPro) proTheme.glassBottom else V2GlassBottom
+    val borderColor = if (isPro) proTheme.border else V2Border
+    val glowColor = if (isPro) proTheme.amber else V2Violet
+    
+    Box(
+        modifier
+            .clip(shape)
+            .drawBehind {
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        listOf(glowColor.withAlpha( .18f), Color.Transparent),
+                        center = Offset(size.width * .12f, 0f),
+                        radius = size.width * .85f,
+                    ),
+                    radius = size.width * .85f,
+                    center = Offset(size.width * .12f, 0f),
+                )
+                drawLine(
+                    brush = Brush.horizontalGradient(
+                        listOf(Color.Transparent, glowColor.withAlpha( .55f), Color.Transparent)
+                    ),
+                    start = Offset(size.width * .10f, 1.dp.toPx()),
+                    end = Offset(size.width * .90f, 1.dp.toPx()),
+                    strokeWidth = 1.dp.toPx(),
+                )
+            }
+            .background(Brush.verticalGradient(listOf(glassTop.withAlpha( .95f), glassBottom.withAlpha( .98f))))
+            .border(1.dp, borderColor.withAlpha( borderAlpha), shape)
             .padding(padding),
         content = content,
     )
@@ -790,14 +996,21 @@ fun V2GradientButton(
     contentColor: Color = Color.White,
     trailingChevron: Boolean = false,
 ) {
+    val proTheme = LocalProTheme.current
+    val isPro = proTheme.isPro
     val shape = RoundedCornerShape(50)
+    val gradient = if (isPro) 
+        Brush.horizontalGradient(listOf(proTheme.pink, proTheme.violet, proTheme.blue, proTheme.cyan))
+    else 
+        Brush.horizontalGradient(listOf(V2Pink, V2Violet, V2Blue, V2Cyan))
+    
     Row(
         modifier
             .fillMaxWidth()
             .height(height)
             .clip(shape)
-            .background(Brush.horizontalGradient(listOf(V2Pink, V2Violet, V2Blue, V2Cyan)))
-            .border(1.dp, Color.White.copy(alpha = .28f), shape)
+            .background(gradient)
+            .border(1.dp, Color.White.withAlpha( .28f), shape)
             .clickable(onClick = onClick)
             .padding(horizontal = 18.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -822,24 +1035,26 @@ fun V2GoldButton(
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
 ) {
+    val proTheme = LocalProTheme.current
+    val isPro = proTheme.isPro
     val shape = RoundedCornerShape(50)
     Row(
         modifier
             .fillMaxWidth()
             .height(48.dp)
             .clip(shape)
-            .background(Brush.horizontalGradient(listOf(Color(0xFF4C2C17), Color(0xFF20110B), Color(0xFF6C4420))))
-            .border(1.dp, V2Amber.copy(alpha = .78f), shape)
+            .background(Brush.horizontalGradient(listOf(proTheme.deep2, proTheme.deep, proTheme.panel)))
+            .border(1.dp, proTheme.amber.withAlpha( .78f), shape)
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
     ) {
         if (icon != null) {
-            Icon(icon, null, tint = V2GoldText, modifier = Modifier.size(18.dp))
+            Icon(icon, null, tint = proTheme.gold, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(7.dp))
         }
-        KText(text, size = 14.sp, weight = FontWeight.Bold, color = V2GoldText)
+        KText(text, size = 14.sp, weight = FontWeight.Bold, color = proTheme.gold)
     }
 }
 
@@ -851,6 +1066,8 @@ fun V2BrightGoldButton(
     modifier: Modifier = Modifier,
     icon: ImageVector? = null,
 ) {
+    val proTheme = LocalProTheme.current
+    val isPro = proTheme.isPro
     val shape = RoundedCornerShape(50)
     Row(
         modifier
@@ -858,21 +1075,24 @@ fun V2BrightGoldButton(
             .height(48.dp)
             .clip(shape)
             .background(
-                Brush.horizontalGradient(
-                    listOf(Color(0xFFFFE9B0), Color(0xFFD79A34), Color(0xFFFFD37B), Color(0xFFB8741A))
-                )
+                if (isPro)
+                    Brush.horizontalGradient(listOf(proTheme.goldBright, proTheme.amber, proTheme.gold, proTheme.violet))
+                else
+                    Brush.horizontalGradient(
+                        listOf(Color(0xFFFFE9B0), Color(0xFFD79A34), Color(0xFFFFD37B), Color(0xFFB8741A))
+                    )
             )
-            .border(1.dp, Color(0xFFFFE9B0).copy(alpha = .85f), shape)
+            .border(1.dp, if (isPro) proTheme.goldBright.withAlpha( .85f) else Color(0xFFFFE9B0).withAlpha( .85f), shape)
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
     ) {
         if (icon != null) {
-            Icon(icon, null, tint = Color(0xFF2A1705), modifier = Modifier.size(18.dp))
+            Icon(icon, null, tint = if (isPro) proTheme.deep else Color(0xFF2A1705), modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(7.dp))
         }
-        KText(text, size = 15.sp, weight = FontWeight.Black, color = Color(0xFF2A1705))
+        KText(text, size = 15.sp, weight = FontWeight.Black, color = if (isPro) proTheme.deep else Color(0xFF2A1705))
     }
 }
 
@@ -890,8 +1110,8 @@ fun V2GhostButton(
             .fillMaxWidth()
             .height(height)
             .clip(shape)
-            .background(Color.White.copy(alpha = .035f))
-            .border(1.dp, V2Border.copy(alpha = .50f), shape)
+            .background(Color.White.withAlpha( .035f))
+            .border(1.dp, V2Border.withAlpha( .50f), shape)
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -914,19 +1134,24 @@ fun V2NeonRing(
     colors: List<Color> = listOf(V2Cyan, V2Blue, V2Violet, V2Pink),
     content: @Composable BoxScope.() -> Unit,
 ) {
+    val proTheme = LocalProTheme.current
+    val isPro = proTheme.isPro
+    val proColors = if (isPro) listOf(proTheme.cyan, proTheme.blue, proTheme.violet, proTheme.pink) else colors
+    val glowColor = if (isPro) proTheme.amber else colors.last()
+    
     Box(modifier.size(size), contentAlignment = Alignment.Center) {
         Canvas(Modifier.fillMaxSize()) {
             val sw = stroke.toPx()
             val inset = sw / 2f
             drawCircle(
                 brush = Brush.radialGradient(
-                    listOf(colors.last().copy(alpha = .20f), Color.Transparent),
+                    listOf(glowColor.withAlpha( .20f), Color.Transparent),
                     radius = this.size.minDimension * .53f,
                 ),
                 radius = this.size.minDimension * .53f,
             )
             drawArc(
-                color = Color.White.copy(alpha = .08f),
+                color = Color.White.withAlpha( .08f),
                 startAngle = -90f,
                 sweepAngle = 360f,
                 useCenter = false,
@@ -935,7 +1160,7 @@ fun V2NeonRing(
                 style = Stroke(sw, cap = StrokeCap.Round),
             )
             val sweep = 360f * progress.coerceIn(0f, 1f)
-            val brush = Brush.sweepGradient(colors, center)
+            val brush = Brush.sweepGradient(proColors, center)
             drawArc(
                 brush = brush,
                 startAngle = -90f,
@@ -959,7 +1184,7 @@ fun V2NeonRing(
                 val angle = Math.toRadians((-90f + sweep).toDouble())
                 val r = (this.size.width - sw) / 2f
                 drawCircle(
-                    Color.White.copy(alpha = .95f),
+                    Color.White.withAlpha( .95f),
                     radius = sw * .34f,
                     center = Offset(center.x + (r * cos(angle)).toFloat(), center.y + (r * sin(angle)).toFloat()),
                 )
@@ -981,7 +1206,7 @@ fun V2ProgressBar(
             .fillMaxWidth()
             .height(height)
             .clip(RoundedCornerShape(50))
-            .background(Color.White.copy(alpha = .09f))
+            .background(Color.White.withAlpha( .09f))
     ) {
         Box(
             Modifier
@@ -1007,8 +1232,8 @@ fun V2MetricRow(
             Modifier
                 .size(26.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(accent.copy(alpha = .10f))
-                .border(1.dp, accent.copy(alpha = .28f), RoundedCornerShape(8.dp)),
+                .background(accent.withAlpha( .10f))
+                .border(1.dp, accent.withAlpha( .28f), RoundedCornerShape(8.dp)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(icon, null, tint = accent, modifier = Modifier.size(14.dp))
@@ -1034,8 +1259,8 @@ fun V2SearchField(
             .fillMaxWidth()
             .height(40.dp)
             .clip(RoundedCornerShape(14.dp))
-            .background(Color.White.copy(alpha = .045f))
-            .border(1.dp, V2Border.copy(alpha = .32f), RoundedCornerShape(14.dp))
+            .background(Color.White.withAlpha( .045f))
+            .border(1.dp, V2Border.withAlpha( .32f), RoundedCornerShape(14.dp))
             .clickable(onClick = onClick)
             .padding(horizontal = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -1058,8 +1283,8 @@ fun V2IconTile(
         modifier
             .size(size)
             .clip(RoundedCornerShape(size * .31f))
-            .background(Brush.linearGradient(listOf(accent.copy(alpha = .28f), Color(0xFF1B1040))))
-            .border(1.dp, accent.copy(alpha = .50f), RoundedCornerShape(size * .31f)),
+            .background(Brush.linearGradient(listOf(accent.withAlpha( .28f), Color(0xFF1B1040))))
+            .border(1.dp, accent.withAlpha( .50f), RoundedCornerShape(size * .31f)),
         contentAlignment = Alignment.Center,
     ) {
         Icon(icon, null, tint = accent, modifier = Modifier.size(iconSize))
@@ -1077,14 +1302,14 @@ fun V2RasterTile(
         Canvas(Modifier.fillMaxSize()) {
             drawCircle(
                 brush = Brush.radialGradient(
-                    listOf(accent.copy(alpha = .34f), Color.Transparent),
+                    listOf(accent.withAlpha( .34f), Color.Transparent),
                     radius = this.size.minDimension * .54f,
                 ),
                 radius = this.size.minDimension * .54f,
             )
             drawOval(
                 brush = Brush.horizontalGradient(
-                    listOf(Color.Transparent, accent.copy(alpha = .58f), Color.Transparent)
+                    listOf(Color.Transparent, accent.withAlpha( .58f), Color.Transparent)
                 ),
                 topLeft = Offset(this.size.width * .13f, this.size.height * .92f),
                 size = Size(this.size.width * .74f, 2.dp.toPx()),
@@ -1114,10 +1339,10 @@ fun V2Chip(
         modifier
             .clip(shape)
             .background(
-                if (active) Brush.horizontalGradient(listOf(V2Cyan.copy(alpha = .85f), V2Blue.copy(alpha = .90f)))
-                else Brush.horizontalGradient(listOf(Color.White.copy(alpha = .05f), Color.White.copy(alpha = .02f)))
+                if (active) Brush.horizontalGradient(listOf(V2Cyan.withAlpha( .85f), V2Blue.withAlpha( .90f)))
+                else Brush.horizontalGradient(listOf(Color.White.withAlpha( .05f), Color.White.withAlpha( .02f)))
             )
-            .border(if (active) 0.dp else 1.dp, if (active) Color.Transparent else accent.copy(alpha = .28f), shape)
+            .border(if (active) 0.dp else 1.dp, if (active) Color.Transparent else accent.withAlpha( .28f), shape)
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(horizontal = 13.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -1144,6 +1369,7 @@ fun V2StatCell(value: String, label: String, accent: Color, modifier: Modifier =
  * The KNOUX stag is the product mascot. The reference artwork is kept as a
  * raster asset so the antler filaments and holographic fur survive at phone
  * density; a very slow float/breath loop gives it life without distracting.
+ * When Pro is active, a golden crown appears above the stag.
  */
 @Composable
 fun V2DeerHeader(
@@ -1151,6 +1377,7 @@ fun V2DeerHeader(
     mirrored: Boolean = false,
     animated: Boolean = true,
 ) {
+    val proTheme = LocalProTheme.current
     val transition = rememberInfiniteTransition(label = "knouxDeer")
     val float by transition.animateFloat(
         initialValue = 0f,
@@ -1170,16 +1397,28 @@ fun V2DeerHeader(
         ),
         label = "deerBreath",
     )
-    Image(
-        painter = painterResource(R.drawable.knoux_deer_mascot),
-        contentDescription = null,
-        modifier = modifier.graphicsLayer {
-            translationY = float.dp.toPx()
-            scaleX = if (mirrored) -breath else breath
-            scaleY = breath
-        },
-        contentScale = ContentScale.Fit,
-    )
+    Box(modifier, contentAlignment = Alignment.TopCenter) {
+        // Golden crown when Pro is active
+        if (proTheme.isPro) {
+            CrownGold(
+                size = 28.dp,
+                color = proTheme.gold
+            )
+            Spacer(Modifier.height(-8.dp)) // Overlap crown with stag head
+        }
+        Image(
+            painter = painterResource(R.drawable.knoux_deer_mascot),
+            contentDescription = null,
+            modifier = Modifier
+                .fillMaxWidth()
+                .graphicsLayer {
+                    translationY = float.dp.toPx()
+                    scaleX = if (mirrored) -breath else breath
+                    scaleY = breath
+                },
+            contentScale = ContentScale.Fit,
+        )
+    }
 }
 
 /* ------------------------------------------------------------------ *
@@ -1201,8 +1440,8 @@ fun AppLogo(mark: AppMark, size: Dp = 42.dp, modifier: Modifier = Modifier) {
                         val w = this.size.width
                         val h = this.size.height
                         val base = Offset(w * .50f, h * .52f)
-                        drawCircle(V2Cyan.copy(alpha = .9f), radius = w * .14f, center = base + Offset(-w * .075f, 0f))
-                        drawCircle(V2Pink.copy(alpha = .85f), radius = w * .14f, center = base + Offset(w * .075f, 0f))
+                        drawCircle(V2Cyan.withAlpha( .9f), radius = w * .14f, center = base + Offset(-w * .075f, 0f))
+                        drawCircle(V2Pink.withAlpha( .85f), radius = w * .14f, center = base + Offset(w * .075f, 0f))
                         drawCircle(Color.White, radius = w * .10f, center = base)
                     }
                 }
@@ -1268,12 +1507,12 @@ fun MiniMountainThumb(
     Canvas(modifier.clip(RoundedCornerShape(12.dp))) {
         drawRect(
             Brush.verticalGradient(
-                listOf(Color(0xFF2A155C), Color(0xFF131036), accent.copy(alpha = .34f))
+                listOf(Color(0xFF2A155C), Color(0xFF131036), accent.withAlpha( .34f))
             )
         )
         drawCircle(
             brush = Brush.radialGradient(
-                listOf(Color(0xFFFFD882).copy(alpha = .55f), Color.Transparent),
+                listOf(Color(0xFFFFD882).withAlpha( .55f), Color.Transparent),
                 radius = size.width * .53f,
             ),
             radius = size.width * .53f,

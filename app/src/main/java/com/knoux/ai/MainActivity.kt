@@ -1,6 +1,7 @@
 package com.knoux.ai
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -21,6 +22,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -29,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -37,6 +41,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.knoux.ai.splash.KnouxSplashScreen
 import com.knoux.ai.ui.theme.KnouxTheme
+import com.knoux.ai.ui.v2.KnouxProState
+import com.knoux.ai.ui.v2.LocalProActive
+import com.knoux.ai.ui.v2.LocalProTheme
+import com.knoux.ai.ui.v2.ProTheme
 import com.knoux.ai.ui.v2.V2AiRecommendationsScreen
 import com.knoux.ai.ui.v2.V2AiScreen
 import com.knoux.ai.ui.v2.V2AppDetailScreen
@@ -62,6 +70,15 @@ import com.knoux.ai.ui.v2.V2SettingsScreenV2
 import com.knoux.ai.ui.v2.V2SmartCleanScreen
 import com.knoux.ai.ui.v2.V2StorageBreakdownScreen
 import com.knoux.ai.ui.v2.V2StorageScreen
+import com.knoux.ai.ui.v2.V2LargeFilesScreen
+import com.knoux.ai.ui.v2.V2OldBackupsScreen
+import com.knoux.ai.ui.v2.V2SystemLogsScreen
+import com.knoux.ai.ui.v2.V2DownloadCleanupScreen
+import com.knoux.ai.ui.v2.V2FileExplorerScreen
+import com.knoux.ai.ui.v2.V2DeviceInfoScreen
+import com.knoux.ai.ui.v2.V2NetworkScanScreen
+import com.knoux.ai.ui.v2.V2SecurityScanScreen
+import com.knoux.ai.ui.v2.V2NotificationManagerScreen
 import com.knoux.ai.ui.v2.V2ToolsHubScreen
 
 class MainActivity : androidx.fragment.app.FragmentActivity() {
@@ -70,6 +87,7 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
         enableEdgeToEdge()
         // Debug-only route injection so every screen can be inspected directly with adb.
         val debugRoute = if (BuildConfig.DEBUG) intent?.getStringExtra("route") else null
+        if (BuildConfig.DEBUG) Log.i("KnouxRoute", "onCreate route=$debugRoute")
         setContent {
             KnouxTheme {
                 KnouxApp(startRoute = debugRoute)
@@ -89,6 +107,9 @@ private const val ROUTE_APP_DETAIL = "app-detail"
 
 @Composable
 fun KnouxApp(startRoute: String? = null) {
+    val context = LocalContext.current
+    LaunchedEffect(Unit) { KnouxProState.load(context) }
+    val proActive = KnouxProState.active
     var splashDone by rememberSaveable { mutableStateOf(!startRoute.isNullOrBlank()) }
     var accountInfoVisible by remember { mutableStateOf(false) }
     val nav = rememberNavController()
@@ -110,7 +131,11 @@ fun KnouxApp(startRoute: String? = null) {
         }
     }
 
-    Box(Modifier.fillMaxSize()) {
+    CompositionLocalProvider(
+        LocalProTheme provides if (proActive) ProTheme.Pro else ProTheme.Standard,
+        LocalProActive provides proActive,
+    ) {
+        Box(Modifier.fillMaxSize()) {
         V2Background()
 
         Crossfade(
@@ -171,6 +196,7 @@ fun KnouxApp(startRoute: String? = null) {
                 }
             },
         )
+    }
     }
 }
 
@@ -339,6 +365,33 @@ private fun AppNavHost(
         }
         composable("ai-recommendations") {
             V2AiRecommendationsScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
+        }
+        composable("large-files") {
+            V2LargeFilesScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
+        }
+        composable("old-backups") {
+            V2OldBackupsScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
+        }
+        composable("system-logs") {
+            V2SystemLogsScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
+        }
+        composable("download-cleanup") {
+            V2DownloadCleanupScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
+        }
+        composable("file-explorer") {
+            V2FileExplorerScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
+        }
+        composable("device-info") {
+            V2DeviceInfoScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
+        }
+        composable("network-scan") {
+            V2NetworkScanScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
+        }
+        composable("security-scan") {
+            V2SecurityScanScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
+        }
+        composable("notification-manager") {
+            V2NotificationManagerScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
         }
     }
 }

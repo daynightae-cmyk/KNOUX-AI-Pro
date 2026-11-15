@@ -1,5 +1,8 @@
 package com.knoux.ai.ui.v2
 
+import android.content.Context
+import com.knoux.ai.ui.v2.KnouxProState
+import com.knoux.ai.ui.v2.markKnouxOnboardingSeen
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -32,6 +35,7 @@ import androidx.compose.material.icons.rounded.Article
 import androidx.compose.material.icons.rounded.Audiotrack
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Backup
+import androidx.compose.material.icons.rounded.Build
 import androidx.compose.material.icons.rounded.BatteryFull
 import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material.icons.rounded.Check
@@ -75,6 +79,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -85,6 +90,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -156,8 +162,8 @@ private fun PageHeading(
                 Modifier
                     .size(46.dp)
                     .clip(RoundedCornerShape(15.dp))
-                    .background(Brush.linearGradient(listOf(accent.copy(alpha = .34f), V2Violet.copy(alpha = .22f))))
-                    .border(1.dp, accent.copy(alpha = .52f), RoundedCornerShape(15.dp)),
+                    .background(Brush.linearGradient(listOf(accent.withAlpha( .34f), V2Violet.withAlpha( .22f))))
+                    .border(1.dp, accent.withAlpha( .52f), RoundedCornerShape(15.dp)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(icon, null, tint = Color.White, modifier = Modifier.size(24.dp))
@@ -167,14 +173,27 @@ private fun PageHeading(
 }
 
 @Composable
-private fun InfoLine(label: String, value: String, accent: Color = V2Soft) {
+private fun InfoLine(label: String, value: String, accent: Color = V2Soft, onClick: (() -> Unit)? = null) {
+    val modifier = Modifier.fillMaxWidth().padding(vertical = 7.dp).then(
+        if (onClick != null) Modifier
+            .fillMaxWidth()
+            .padding(vertical = 7.dp)
+            .clickable(onClick = onClick)
+            .background(Color.White.withAlpha( .02f), RoundedCornerShape(8.dp))
+            .padding(horizontal = 8.dp)
+        else Modifier.fillMaxWidth().padding(vertical = 7.dp)
+    )
     Row(
-        Modifier.fillMaxWidth().padding(vertical = 7.dp),
+        modifier,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         KText(label, size = 9.5.sp, color = V2Soft)
         Spacer(Modifier.weight(1f))
         KText(value, size = 9.5.sp, weight = FontWeight.SemiBold, color = accent)
+        if (onClick != null) {
+            Spacer(Modifier.width(4.dp))
+            Icon(Icons.Rounded.Build, null, tint = V2Amber.withAlpha( .6f), modifier = Modifier.size(14.dp))
+        }
     }
 }
 
@@ -184,7 +203,7 @@ private fun HairLine() {
         Modifier
             .fillMaxWidth()
             .height(1.dp)
-            .background(Color.White.copy(alpha = .08f))
+            .background(Color.White.withAlpha( .08f))
     )
 }
 
@@ -208,10 +227,10 @@ internal fun V2Toggle(checked: Boolean, onChange: (Boolean) -> Unit, accent: Col
             .size(width = 42.dp, height = 24.dp)
             .clip(RoundedCornerShape(50))
             .background(
-                if (checked) Brush.horizontalGradient(listOf(accent.copy(alpha = .90f), V2Violet))
-                else Brush.horizontalGradient(listOf(Color.White.copy(alpha = .10f), Color.White.copy(alpha = .06f)))
+                if (checked) Brush.horizontalGradient(listOf(accent.withAlpha( .90f), V2Violet))
+                else Brush.horizontalGradient(listOf(Color.White.withAlpha( .10f), Color.White.withAlpha( .06f)))
             )
-            .border(1.dp, if (checked) Color.White.copy(alpha = .28f) else Color.White.copy(alpha = .18f), RoundedCornerShape(50))
+            .border(1.dp, if (checked) Color.White.withAlpha( .28f) else Color.White.withAlpha( .18f), RoundedCornerShape(50))
             .clickable { onChange(!checked) }
             .padding(3.dp),
         contentAlignment = if (checked) Alignment.CenterEnd else Alignment.CenterStart,
@@ -374,10 +393,10 @@ private fun AppFilterChip(
             .height(34.dp)
             .clip(shape)
             .background(
-                if (active) Brush.horizontalGradient(listOf(V2Cyan.copy(alpha = .88f), V2Blue.copy(alpha = .92f)))
-                else Brush.horizontalGradient(listOf(Color.White.copy(alpha = .055f), Color.White.copy(alpha = .02f)))
+                if (active) Brush.horizontalGradient(listOf(V2Cyan.withAlpha( .88f), V2Blue.withAlpha( .92f)))
+                else Brush.horizontalGradient(listOf(Color.White.withAlpha( .055f), Color.White.withAlpha( .02f)))
             )
-            .border(1.dp, if (active) Color.Transparent else V2Border.copy(alpha = .26f), shape)
+            .border(1.dp, if (active) Color.Transparent else V2Border.withAlpha( .26f), shape)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
@@ -433,8 +452,8 @@ internal fun SummaryPill(text: String, accent: Color) {
     Box(
         Modifier
             .clip(RoundedCornerShape(50))
-            .background(accent.copy(alpha = .12f))
-            .border(1.dp, accent.copy(alpha = .28f), RoundedCornerShape(50))
+            .background(accent.withAlpha( .12f))
+            .border(1.dp, accent.withAlpha( .28f), RoundedCornerShape(50))
             .padding(horizontal = 8.dp, vertical = 3.dp)
     ) {
         KText(text, size = 7.6.sp, weight = FontWeight.SemiBold, color = accent)
@@ -455,11 +474,11 @@ private fun ManagedAppRow(
             .clip(shape)
             .background(
                 Brush.horizontalGradient(
-                    if (checked) listOf(app.accent.copy(alpha = .13f), V2Panel2)
-                    else listOf(Color.White.copy(alpha = .04f), V2Panel2)
+                    if (checked) listOf(app.accent.withAlpha( .13f), V2Panel2)
+                    else listOf(Color.White.withAlpha( .04f), V2Panel2)
                 )
             )
-            .border(1.dp, if (checked) app.accent.copy(alpha = .45f) else Color.White.copy(alpha = .10f), shape)
+            .border(1.dp, if (checked) app.accent.withAlpha( .45f) else Color.White.withAlpha( .10f), shape)
             .clickable(onClick = onClick)
             .padding(horizontal = 9.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -664,8 +683,8 @@ private fun PermissionRow(
             Modifier
                 .size(30.dp)
                 .clip(RoundedCornerShape(9.dp))
-                .background(accent.copy(alpha = .10f))
-                .border(1.dp, accent.copy(alpha = .26f), RoundedCornerShape(9.dp)),
+                .background(accent.withAlpha( .10f))
+                .border(1.dp, accent.withAlpha( .26f), RoundedCornerShape(9.dp)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(icon, null, tint = accent, modifier = Modifier.size(15.dp))
@@ -678,7 +697,7 @@ private fun PermissionRow(
         Box(
             Modifier
                 .clip(RoundedCornerShape(50))
-                .background(accent.copy(alpha = .11f))
+                .background(accent.withAlpha( .11f))
                 .padding(horizontal = 7.dp, vertical = 2.dp)
         ) {
             KText(status, size = 7.2.sp, weight = FontWeight.Bold, color = accent)
@@ -808,8 +827,8 @@ private fun StorageCategoryRow(category: StorageCategoryV2) {
             Modifier
                 .size(30.dp)
                 .clip(RoundedCornerShape(9.dp))
-                .background(category.accent.copy(alpha = .12f))
-                .border(1.dp, category.accent.copy(alpha = .28f), RoundedCornerShape(9.dp)),
+                .background(category.accent.withAlpha( .12f))
+                .border(1.dp, category.accent.withAlpha( .28f), RoundedCornerShape(9.dp)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(category.icon, null, tint = category.accent, modifier = Modifier.size(15.dp))
@@ -822,7 +841,7 @@ private fun StorageCategoryRow(category: StorageCategoryV2) {
                 KText(category.size, size = 9.2.sp, weight = FontWeight.Bold, color = category.accent)
             }
             Spacer(Modifier.height(4.dp))
-            V2ProgressBar(category.fraction, height = 4.dp, colors = listOf(category.accent, category.accent.copy(alpha = .55f)))
+            V2ProgressBar(category.fraction, height = 4.dp, colors = listOf(category.accent, category.accent.withAlpha( .55f)))
         }
         Spacer(Modifier.width(8.dp))
         KText(category.percent, size = 7.6.sp, color = V2Muted, modifier = Modifier.width(26.dp), align = TextAlign.End)
@@ -837,7 +856,7 @@ private fun BigFileRow(title: String, size: String, icon: ImageVector, accent: C
                 Modifier
                     .size(34.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(accent.copy(alpha = .12f)),
+                    .background(accent.withAlpha( .12f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(icon, null, tint = accent, modifier = Modifier.size(17.dp))
@@ -955,7 +974,7 @@ private fun DrainRow(name: String, percent: String, fraction: Float, accent: Col
                     KText(percent, size = 9.2.sp, weight = FontWeight.Bold, color = accent)
                 }
                 Spacer(Modifier.height(4.dp))
-                V2ProgressBar(fraction, height = 4.dp, colors = listOf(accent, accent.copy(alpha = .52f)))
+                V2ProgressBar(fraction, height = 4.dp, colors = listOf(accent, accent.withAlpha( .52f)))
             }
         }
     }
@@ -1139,7 +1158,7 @@ fun V2SettingsScreenV2(onBack: () -> Unit) {
                                     .size(44.dp)
                                     .clip(CircleShape)
                                     .background(Brush.linearGradient(listOf(V2Violet, V2Cyan)))
-                                    .border(1.dp, Color.White.copy(alpha = .30f), CircleShape),
+                                    .border(1.dp, Color.White.withAlpha( .30f), CircleShape),
                                 contentAlignment = Alignment.Center,
                             ) {
                                 KText("K", size = 19.sp, weight = FontWeight.Black)
@@ -1193,9 +1212,22 @@ fun V2SettingsScreenV2(onBack: () -> Unit) {
                 }
                 item { V2SectionLabel("حول") }
                 item {
+                    var versionTapCount by remember { mutableStateOf(0) }
+                    var showDevPanel by remember { mutableStateOf(false) }
                     V2GlassCard(Modifier.fillMaxWidth(), padding = 11.dp, radius = 18.dp, glow = V2Violet, borderAlpha = .26f) {
                         Column {
-                            InfoLine("الإصدار", "1.0.0 (build 2)", Color.White)
+                            InfoLine(
+                                label = "الإصدار",
+                                value = "1.0.0 (build 2)",
+                                accent = Color.White,
+                                onClick = {
+                                    versionTapCount++
+                                    if (versionTapCount >= 5) {
+                                        showDevPanel = true
+                                        versionTapCount = 0
+                                    }
+                                }
+                            )
                             HairLine()
                             InfoLine("البناء", "معاينة تصميم V2", Color.White)
                             HairLine()
@@ -1203,6 +1235,9 @@ fun V2SettingsScreenV2(onBack: () -> Unit) {
                             HairLine()
                             SettingNavRow(Icons.Rounded.Info, "شروط الاستخدام", "عرض", V2Muted)
                         }
+                    }
+                    if (showDevPanel) {
+                        DeveloperPanel(onDismiss = { showDevPanel = false })
                     }
                 }
                 item { PreviewNote("هذه الإعدادات واجهة معاينة؛ لا تغيّر سلوك النظام فعليًا بعد.") }
@@ -1466,7 +1501,7 @@ fun V2DuplicateGroupScreen(onBack: () -> Unit, onPro: () -> Unit) {
                                             .align(Alignment.TopStart)
                                             .padding(4.dp)
                                             .clip(RoundedCornerShape(50))
-                                            .background(Color.Black.copy(alpha = .55f))
+                                            .background(Color.Black.withAlpha( .55f))
                                             .padding(horizontal = 5.dp, vertical = 2.dp)
                                     ) {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1609,7 +1644,7 @@ private fun FolderBreakdownRow(title: String, size: String, fraction: Float, acc
                     KText(size, size = 9.2.sp, weight = FontWeight.Bold, color = Color.White)
                 }
                 Spacer(Modifier.height(4.dp))
-                V2ProgressBar(fraction, height = 4.dp, colors = listOf(accent, accent.copy(alpha = .50f)))
+                V2ProgressBar(fraction, height = 4.dp, colors = listOf(accent, accent.withAlpha( .50f)))
             }
         }
     }
@@ -1801,7 +1836,7 @@ private fun BarTrendChart() {
             val accent = accents[index % accents.size]
             drawRoundRect(
                 brush = Brush.verticalGradient(
-                    listOf(accent.copy(alpha = if (index == 0) 1f else .82f), accent.copy(alpha = .18f))
+                    listOf(accent.withAlpha( if (index == 0) 1f else .82f), accent.withAlpha( .18f))
                 ),
                 topLeft = Offset(index * (barWidth + gap) + barWidth * .14f, size.height - h),
                 size = androidx.compose.ui.geometry.Size(barWidth * .72f, h),
@@ -1819,6 +1854,644 @@ private fun ReportDetailRow(title: String, value: String, icon: ImageVector, acc
             Spacer(Modifier.width(9.dp))
             KText(title, size = 9.4.sp, weight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
             KText(value, size = 9.4.sp, weight = FontWeight.Bold, color = accent)
+        }
+    }
+}
+
+/* ------------------------------------------------------------------ *
+ * Developer Panel (5-tap on version)
+ * ------------------------------------------------------------------ */
+
+@Composable
+private fun DeveloperPanel(onDismiss: () -> Unit) {
+    val context = LocalContext.current
+    val proActive = LocalProActive.current
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(Color.Black.withAlpha( .75f))
+            .clickable(onClick = onDismiss),
+        contentAlignment = Alignment.Center,
+    ) {
+        V2GlassCard(
+            Modifier
+                .width(340.dp)
+                .padding(20.dp)
+                .clickable(onClick = {}),
+            padding = 20.dp,
+            radius = 24.dp,
+            glow = V2Amber,
+            borderAlpha = .65f,
+        ) {
+            Column(Modifier.width(300.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    CrownGold(size = 28.dp, color = V2Amber)
+                    Spacer(Modifier.width(8.dp))
+                    KText("لوحة المطور", size = 18.sp, weight = FontWeight.Black, color = V2Amber)
+                    Spacer(Modifier.weight(1f))
+                    Icon(Icons.Rounded.Close, null, tint = V2Soft, modifier = Modifier
+                        .size(24.dp)
+                        .clickable(onClick = onDismiss)
+                    )
+                }
+                Spacer(Modifier.height(16.dp))
+                Box(
+                    Modifier.fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color.Black.withAlpha( .3f))
+                        .border(1.dp, V2Amber.withAlpha( .3f), RoundedCornerShape(16.dp))
+                        .padding(16.dp),
+                ) {
+                    val proStatusText = if (proActive) "مفعّل ✓" else "معطل"
+                    val proStatusColor = if (proActive) V2Green else V2Amber
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        DevRow("حالة Pro", proStatusText, proStatusColor)
+                        DevRow("إصدار التطبيق", "1.0.0 (build 2)", V2Cyan)
+                        DevRow("نموذج التصميم", "V2 (Arabic-first)", V2Violet)
+                        DevRow("الخط", "KnouxArabic", V2Pink)
+                        DividerLine()
+                        DevRow("تفعيل Pro محلي", "", V2Amber, action = {
+                            KnouxProState.setActive(context, !proActive)
+                            onDismiss()
+                        })
+                        DevRow("إعادة تعيين Onboarding", "", V2Pink, action = {
+                            markKnouxOnboardingSeen(context, false)
+                            onDismiss()
+                        })
+                        DevRow("إعادة تعيين جميع الإعدادات", "", V2Red, action = {
+                            // Reset all SharedPreferences
+                            context.applicationContext.getSharedPreferences("knoux_pro_v1", Context.MODE_PRIVATE).edit().clear().commit()
+                            context.applicationContext.getSharedPreferences("knoux_prefs", Context.MODE_PRIVATE).edit().clear().commit()
+                            onDismiss()
+                        })
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                KText(
+                    "اضغط على الإصدار 5 مرات لفتح هذه اللوحة",
+                    size = 7.5.sp,
+                    color = V2Muted,
+                    align = TextAlign.Center,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DevRow(label: String, value: String, accent: Color, action: (() -> Unit)? = null) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp)
+            .then(if (action != null) Modifier
+                .fillMaxWidth()
+                .clickable(onClick = action)
+                .background(Color.White.withAlpha( .03f), RoundedCornerShape(8.dp))
+                .padding(horizontal = 8.dp, vertical = 4.dp)
+            else Modifier.fillMaxWidth().padding(vertical = 6.dp)),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        KText(label, size = 9.sp, color = V2Soft, weight = FontWeight.Medium)
+        Spacer(Modifier.weight(1f))
+        if (value.isNotBlank()) {
+            KText(value, size = 9.sp, weight = FontWeight.Bold, color = accent)
+        }
+        if (action != null) {
+            Icon(Icons.Rounded.ChevronLeft, null, tint = accent, modifier = Modifier.size(16.dp))
+        }
+    }
+}
+
+@Composable
+private fun DividerLine() {
+    Box(Modifier.fillMaxWidth().height(1.dp).background(Color.White.withAlpha( .1f)))
+}
+
+/* ------------------------------------------------------------------ *
+ * Large Files
+ * ------------------------------------------------------------------ */
+
+private data class LargeFileV2(val name: String, val size: String, val path: String, val icon: androidx.compose.ui.graphics.vector.ImageVector, val accent: Color)
+
+private val largeFiles = listOf(
+    LargeFileV2("فيديو 4K — رحلة الجبال.mp4", "2.4 GB", "DCIM/Camera", Icons.Rounded.Videocam, V2Pink),
+    LargeFileV2("أرشيف الصور — 2025.zip", "1.8 GB", "Download", Icons.Rounded.Archive, V2Violet),
+    LargeFileV2("نسخة احتياطية قديمة.ab", "1.2 GB", "Android/backup", Icons.Rounded.Backup, V2Amber),
+    LargeFileV2("فيلم طويل.mkv", "980 MB", "DCIM/Movies", Icons.Rounded.Videocam, V2Pink),
+    LargeFileV2("مستندات العمل.pdf", "450 MB", "Documents", Icons.Rounded.Description, V2Cyan),
+    LargeFileV2("لعبة كبيرة.apk", "1.1 GB", "Download", Icons.Rounded.Folder, V2Green),
+    LargeFileV2("تسجيل صوتي طويل.m4a", "320 MB", "Recordings", Icons.Rounded.Audiotrack, V2Blue),
+    LargeFileV2("مجموعة صور RAW", "850 MB", "DCIM/Camera", Icons.Rounded.PhotoLibrary, V2Violet),
+)
+
+@Composable
+fun V2LargeFilesScreen(onBack: () -> Unit, onPro: () -> Unit) {
+    var selected by remember { mutableStateOf(setOf<Int>()) }
+    InteriorScaffold(
+        onBack = onBack,
+        onPro = onPro,
+        bottomBar = {
+            V2GradientButton(
+                "حذف ${selected.size} ملفات محددة",
+                {},
+                icon = Icons.Rounded.Delete,
+                trailingChevron = true,
+            )
+        },
+    ) {
+        item { PageHeading("الملفات الكبيرة", "أكبر الملفات التي تستهلك مساحة", Icons.Rounded.Storage, V2Amber) }
+        item { V2SectionLabel("قائمة الملفات", trailing = "${largeFiles.size} ملف") }
+        items(largeFiles.size) { index ->
+            val item = largeFiles[index]
+            val checked = selected.contains(index)
+            V2GlassCard(
+                Modifier.fillMaxWidth().clickable {
+                    selected = if (checked) selected - index else selected + index
+                },
+                padding = 10.dp,
+                radius = 16.dp,
+                glow = item.accent,
+                borderAlpha = if (checked) .50f else .18f,
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        Modifier.size(38.dp).clip(RoundedCornerShape(10.dp))
+                            .background(item.accent.withAlpha(.12f))
+                            .border(1.dp, item.accent.withAlpha(.32f), RoundedCornerShape(10.dp)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(item.icon, null, tint = item.accent, modifier = Modifier.size(18.dp))
+                    }
+                    Spacer(Modifier.width(9.dp))
+                    Column(Modifier.weight(1f)) {
+                        KText(item.name, size = 9.4.sp, weight = FontWeight.SemiBold, maxLines = 1)
+                        KText(item.path, size = 7.2.sp, color = V2Muted, maxLines = 1)
+                    }
+                    KText(item.size, size = 9.4.sp, weight = FontWeight.Bold, color = item.accent)
+                    Spacer(Modifier.width(8.dp))
+                    V2Check(checked, item.accent, onToggle = { selected = if (checked) selected - index else selected + index })
+                }
+            }
+        }
+        item { PreviewNote("أحجام الملفات ومساراتها بيانات معاينة حتى تُربط بقراءة التخزين الفعلية.") }
+    }
+}
+
+/* ------------------------------------------------------------------ *
+ * Old Backups
+ * ------------------------------------------------------------------ */
+
+private data class OldBackupV2(val name: String, val date: String, val size: String, val path: String, val accent: Color)
+
+private val oldBackups = listOf(
+    OldBackupV2("نسخة نظام 2025", "12 مايو 2025", "1.2 GB", "Android/backup/full_2025", V2Amber),
+    OldBackupV2("نسخة تطبيقات واتساب", "3 مارس 2025", "850 MB", "Android/backup/whatsapp", V2Violet),
+    OldBackupV2("نسخة صور Google", "1 يناير 2025", "620 MB", "Android/backup/photos", V2Cyan),
+    OldBackupV2("نسخة إعدادات النظام", "15 يونيو 2025", "150 MB", "Android/backup/settings", V2Green),
+)
+
+@Composable
+fun V2OldBackupsScreen(onBack: () -> Unit, onPro: () -> Unit) {
+    var selected by remember { mutableStateOf(setOf<Int>()) }
+    InteriorScaffold(
+        onBack = onBack,
+        onPro = onPro,
+        bottomBar = {
+            V2GradientButton(
+                "حذف ${selected.size} نسخ احتياطية",
+                {},
+                icon = Icons.Rounded.Delete,
+                trailingChevron = true,
+            )
+        },
+    ) {
+        item { PageHeading("النسخ الاحتياطية القديمة", "مراجعة وحذف النسخ غير المستخدمة", Icons.Rounded.Backup, V2Amber) }
+        item { V2SectionLabel("النسخ المتاحة", trailing = "${oldBackups.size} نسخة") }
+        items(oldBackups.size) { index ->
+            val item = oldBackups[index]
+            val checked = selected.contains(index)
+            V2GlassCard(
+                Modifier.fillMaxWidth().clickable {
+                    selected = if (checked) selected - index else selected + index
+                },
+                padding = 10.dp,
+                radius = 16.dp,
+                glow = item.accent,
+                borderAlpha = if (checked) .50f else .18f,
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        Modifier.size(38.dp).clip(RoundedCornerShape(10.dp))
+                            .background(item.accent.withAlpha(.12f))
+                            .border(1.dp, item.accent.withAlpha(.32f), RoundedCornerShape(10.dp)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(Icons.Rounded.Backup, null, tint = item.accent, modifier = Modifier.size(18.dp))
+                    }
+                    Spacer(Modifier.width(9.dp))
+                    Column(Modifier.weight(1f)) {
+                        KText(item.name, size = 9.4.sp, weight = FontWeight.SemiBold, maxLines = 1)
+                        KText("${item.date} · ${item.path}", size = 7.2.sp, color = V2Muted, maxLines = 1)
+                    }
+                    KText(item.size, size = 9.4.sp, weight = FontWeight.Bold, color = item.accent)
+                    Spacer(Modifier.width(8.dp))
+                    V2Check(checked, item.accent, onToggle = { selected = if (checked) selected - index else selected + index })
+                }
+            }
+        }
+        item { PreviewNote("حذف النسخ الاحتياطية لا يسترجع المساحة فوراً حتى يتم فراغ سلة المهملات.") }
+    }
+}
+
+/* ------------------------------------------------------------------ *
+ * System Logs
+ * ------------------------------------------------------------------ */
+
+private data class SystemLogV2(val app: String, val level: String, val message: String, val time: String, val accent: Color)
+
+private val systemLogs = listOf(
+    SystemLogV2("النظام", "معلومات", "تم تشغيل الجهاز بنجاح", "منذ 4 ساعات", V2Cyan),
+    SystemLogV2("واتساب", "تحذير", "فشل في مزامنة النسخة الاحتياطية", "منذ 3 ساعات", V2Amber),
+    SystemLogV2("التيك توك", "خطأ", "توقف التطبيق بشكل غير متوقع", "منذ ساعتين", V2Red),
+    SystemLogV2("المتصفح", "معلومات", "تم تحديث ملفات الكاش", "منذ ساعة", V2Green),
+    SystemLogV2("النظام", "معلومات", "تم تثبيت تحديث أمني", "منذ 30 دقيقة", V2Cyan),
+    SystemLogV2("اليوتيوب", "تحذير", "استهلاك بيانات مرتفع", "منذ 15 دقيقة", V2Amber),
+    SystemLogV2("الصور", "معلومات", "تم نسخ الصور احتياطياً", "منذ 10 دقائق", V2Violet),
+    SystemLogV2("النظام", "خطأ", "فشل في قراءة بطاقة الذاكرة", "منذ 5 دقائق", V2Red),
+)
+
+@Composable
+fun V2SystemLogsScreen(onBack: () -> Unit, onPro: () -> Unit) {
+    InteriorScaffold(
+        onBack = onBack,
+        onPro = onPro,
+    ) {
+        item { PageHeading("سجلات النظام", "عرض سجلات التطبيقات والنظام", Icons.Rounded.Description, V2Cyan) }
+        item { V2SectionLabel("آخر السجلات", trailing = "${systemLogs.size} سجل") }
+        items(systemLogs.size) { index ->
+            val log = systemLogs[index]
+            V2GlassCard(
+                Modifier.fillMaxWidth(),
+                padding = 10.dp,
+                radius = 16.dp,
+                glow = log.accent,
+                borderAlpha = .24f,
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        Modifier.size(32.dp).clip(RoundedCornerShape(8.dp))
+                            .background(log.accent.withAlpha(.12f))
+                            .border(1.dp, log.accent.withAlpha(.32f), RoundedCornerShape(8.dp)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            when (log.level) {
+                                "خطأ" -> Icons.Rounded.Report
+                                "تحذير" -> Icons.Rounded.WarningAmber
+                                else -> Icons.Rounded.Info
+                            },
+                            null,
+                            tint = log.accent,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                    Spacer(Modifier.width(9.dp))
+                    Column(Modifier.weight(1f)) {
+                        KText(log.app, size = 9.4.sp, weight = FontWeight.SemiBold, maxLines = 1)
+                        KText(log.message, size = 7.6.sp, color = V2Soft, maxLines = 1)
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        KText(log.time, size = 7.6.sp, color = V2Muted)
+                        Box(
+                            Modifier.clip(RoundedCornerShape(50))
+                                .background(log.accent.withAlpha(.12f))
+                                .border(1.dp, log.accent.withAlpha(.32f), RoundedCornerShape(50))
+                                .padding(horizontal = 6.dp, vertical = 2.dp),
+                        ) {
+                            KText(log.level, size = 7.sp, weight = FontWeight.Bold, color = log.accent)
+                        }
+                    }
+                }
+            }
+        }
+        item { PreviewNote("السجلات هنا بيانات معاينة حتى تُربط بقراءة النظام الفعلية.") }
+    }
+}
+
+/* ------------------------------------------------------------------ *
+ * Download Cleanup
+ * ------------------------------------------------------------------ */
+
+private data class DownloadFileV2(val name: String, val size: String, val type: String, val accent: Color)
+
+private val downloadFiles = listOf(
+    DownloadFileV2("مستند العمل.docx", "2.4 MB", "مستند", V2Cyan),
+    DownloadFileV2("صورة journey.jpg", "3.2 MB", "صورة", V2Pink),
+    DownloadFileV2("تطبيق الألعاب.apk", "45.6 MB", "تطبيق", V2Green),
+    DownloadFileV2("مقطع الرحلة.mp4", "120 MB", "فيديو", V2Violet),
+    DownloadFileV2("ملف Musik.mp3", "5.4 MB", "صوت", V2Amber),
+    DownloadFileV2("أرشيف bestanden.zip", "15.2 MB", "أرشيف", V2Blue),
+    DownloadFileV2("كتاب تعليمي.pdf", "8.9 MB", "مستند", V2Cyan),
+    DownloadFileV2("تطبيق التوصيل.apk", "32.1 MB", "تطبيق", V2Green),
+)
+
+@Composable
+fun V2DownloadCleanupScreen(onBack: () -> Unit, onPro: () -> Unit) {
+    var selected by remember { mutableStateOf(setOf<Int>()) }
+    InteriorScaffold(
+        onBack = onBack,
+        onPro = onPro,
+        bottomBar = {
+            V2GradientButton(
+                "حذف ${selected.size} ملفات من التنزيلات",
+                {},
+                icon = Icons.Rounded.Delete,
+                trailingChevron = true,
+            )
+        },
+    ) {
+        item { PageHeading("تنظيف التنزيلات", "مراجعة وحذف الملفات المحملة", Icons.Rounded.Download, V2Cyan) }
+        item { V2SectionLabel("ملفات التنزيل", trailing = "${downloadFiles.size} ملف") }
+        items(downloadFiles.size) { index ->
+            val item = downloadFiles[index]
+            val checked = selected.contains(index)
+            V2GlassCard(
+                Modifier.fillMaxWidth().clickable {
+                    selected = if (checked) selected - index else selected + index
+                },
+                padding = 10.dp,
+                radius = 16.dp,
+                glow = item.accent,
+                borderAlpha = if (checked) .50f else .18f,
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        Modifier.size(38.dp).clip(RoundedCornerShape(10.dp))
+                            .background(item.accent.withAlpha(.12f))
+                            .border(1.dp, item.accent.withAlpha(.32f), RoundedCornerShape(10.dp)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(Icons.Rounded.Folder, null, tint = item.accent, modifier = Modifier.size(18.dp))
+                    }
+                    Spacer(Modifier.width(9.dp))
+                    Column(Modifier.weight(1f)) {
+                        KText(item.name, size = 9.4.sp, weight = FontWeight.SemiBold, maxLines = 1)
+                        KText(item.type, size = 7.2.sp, color = V2Muted, maxLines = 1)
+                    }
+                    KText(item.size, size = 9.4.sp, weight = FontWeight.Bold, color = item.accent)
+                    Spacer(Modifier.width(8.dp))
+                    V2Check(checked, item.accent, onToggle = { selected = if (checked) selected - index else selected + index })
+                }
+            }
+        }
+        item { PreviewNote("يمكن استعادة الملفات المحذوفة من سلة المهملات خلال 30 يوماً.") }
+    }
+}
+
+/* ------------------------------------------------------------------ *
+ * File Explorer
+ * ------------------------------------------------------------------ */
+
+private data class FolderItemV2(val name: String, val items: String, val accent: Color)
+
+private val folders = listOf(
+    FolderItemV2("Android", "124 عنصراً", V2Violet),
+    FolderItemV2("DCIM", "89 عنصراً", V2Pink),
+    FolderItemV2("Download", "67 عنصراً", V2Cyan),
+    FolderItemV2("WhatsApp", "45 عنصراً", V2Green),
+    FolderItemV2("Telegram", "38 عنصراً", V2Blue),
+    FolderItemV2("Documents", "23 عنصراً", V2Amber),
+    FolderItemV2("Music", "15 عنصراً", V2Pink),
+    FolderItemV2("Movies", "12 عنصراً", V2Violet),
+)
+
+@Composable
+fun V2FileExplorerScreen(onBack: () -> Unit, onPro: () -> Unit) {
+    InteriorScaffold(
+        onBack = onBack,
+        onPro = onPro,
+    ) {
+        item { PageHeading("مستكشف الملفات", "تصفح الملفات والمجلدات على جهازك", Icons.Rounded.Folder, V2Cyan) }
+        item { V2SectionLabel("المجلدات الرئيسية", trailing = "${folders.size} مجلد") }
+        items(folders.size) { index ->
+            val folder = folders[index]
+            V2GlassCard(
+                Modifier.fillMaxWidth().clickable { /* navigate into folder */ },
+                padding = 10.dp,
+                radius = 16.dp,
+                glow = folder.accent,
+                borderAlpha = .24f,
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        Modifier.size(38.dp).clip(RoundedCornerShape(10.dp))
+                            .background(folder.accent.withAlpha(.12f))
+                            .border(1.dp, folder.accent.withAlpha(.32f), RoundedCornerShape(10.dp)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(Icons.Rounded.Folder, null, tint = folder.accent, modifier = Modifier.size(18.dp))
+                    }
+                    Spacer(Modifier.width(9.dp))
+                    Column(Modifier.weight(1f)) {
+                        KText(folder.name, size = 9.6.sp, weight = FontWeight.SemiBold)
+                        KText(folder.items, size = 7.4.sp, color = V2Soft)
+                    }
+                    Icon(Icons.Rounded.ChevronLeft, null, tint = V2Soft, modifier = Modifier.size(15.dp))
+                }
+            }
+        }
+        item { PreviewNote("تصفح الملفات يتطلب إذن الوصول إلى التخزين من النظام.") }
+    }
+}
+
+/* ------------------------------------------------------------------ *
+ * Device Info
+ * ------------------------------------------------------------------ */
+
+@Composable
+fun V2DeviceInfoScreen(onBack: () -> Unit, onPro: () -> Unit) {
+    val context = LocalContext.current
+    val packageInfo = remember { context.packageManager.getPackageInfo(context.packageName, 0) }
+    InteriorScaffold(
+        onBack = onBack,
+        onPro = onPro,
+    ) {
+        item { PageHeading("معلومات الجهاز", "عرض مواصفات الجهاز وإصدار النظام", Icons.Rounded.Android, V2Violet) }
+        item {
+            V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 20.dp, glow = V2Violet, borderAlpha = .42f) {
+                Column {
+                    InfoLine("اسم التطبيق", "KNOUX AI Pro", Color.White)
+                    HairLine()
+                    InfoLine("الإصدار", "${packageInfo.versionName ?: "1.0.0"} (build ${packageInfo.versionCode})", Color.White)
+                    HairLine()
+                    InfoLine(label = "معرّف الحزمة", value = "com.knoux.ai.pro", accent = Color.White)
+                    HairLine()
+                    InfoLine("نظام التشغيل", "Android", Color.White)
+                    HairLine()
+                    InfoLine("واجهة المستخدم", "Compose Material 3", Color.White)
+                    HairLine()
+                    InfoLine("الاتجاه", "العربية (RTL)", Color.White)
+                    HairLine()
+                    InfoLine("النموذج الأولي", "V2 (Arabic-first)", Color.White)
+                }
+            }
+        }
+        item { PreviewNote("معلومات الجهاز 여기 بيانات معاينة حتى تُربط بقراءة النظام الفعلية.") }
+    }
+}
+
+/* ------------------------------------------------------------------ *
+ * Network Scan
+ * ------------------------------------------------------------------ */
+
+@Composable
+fun V2NetworkScanScreen(onBack: () -> Unit, onPro: () -> Unit) {
+    InteriorScaffold(
+        onBack = onBack,
+        onPro = onPro,
+    ) {
+        item { PageHeading("فحص الشبكة", "فحص الاتصالات واستهلاك البيانات", Icons.Rounded.Wifi, V2Cyan) }
+        item {
+            V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 20.dp, glow = V2Cyan, borderAlpha = .52f) {
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        KText("الشبكة المتصلة", size = 9.6.sp, weight = FontWeight.SemiBold, color = V2Soft)
+                        Spacer(Modifier.weight(1f))
+                        KText("Wi-Fi · آمن", size = 9.2.sp, weight = FontWeight.Bold, color = V2Green)
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        KText("استهلاك البيانات", size = 9.6.sp, weight = FontWeight.SemiBold, color = V2Soft)
+                        Spacer(Modifier.weight(1f))
+                        KText("2.4 GB هذا الشهر", size = 9.2.sp, weight = FontWeight.Bold, color = V2Cyan)
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        KText("أكثر التطبيقات استهلاكاً", size = 9.6.sp, weight = FontWeight.SemiBold, color = V2Soft)
+                        Spacer(Modifier.weight(1f))
+                        KText("اليوتيوب · 45%", size = 9.2.sp, weight = FontWeight.Bold, color = V2Pink)
+                    }
+                }
+            }
+        }
+        item { V2SectionLabel("تطبيقات استهلاك البيانات", trailing = "آخر 7 أيام") }
+        item {
+            NetworkRow("اليوتيوب", "45%", V2Pink)
+            NetworkRow("التيك توك", "28%", V2Violet)
+            NetworkRow("الفيسبوك", "15%", V2Blue)
+            NetworkRow("إنستغرام", "12%", V2Pink)
+        }
+        item { PreviewNote("بيانات الشبكة هنا معاينة تصميمية حتى تُربط بقراءة النظام الفعلية.") }
+    }
+}
+
+@Composable
+private fun NetworkRow(name: String, percent: String, accent: Color) {
+    V2GlassCard(Modifier.fillMaxWidth(), padding = 8.dp, radius = 12.dp, glow = accent, borderAlpha = .20f) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            KText(name, size = 9.sp, weight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+            KText(percent, size = 8.8.sp, weight = FontWeight.Bold, color = accent)
+        }
+    }
+}
+
+/* ------------------------------------------------------------------ *
+ * Security Scan
+ * ------------------------------------------------------------------ */
+
+@Composable
+fun V2SecurityScanScreen(onBack: () -> Unit, onPro: () -> Unit) {
+    InteriorScaffold(
+        onBack = onBack,
+        onPro = onPro,
+    ) {
+        item { PageHeading("فحص الأمان", "فحص الثغرات والمخاطر الأمنية", Icons.Rounded.Shield, V2Pink) }
+        item {
+            V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 20.dp, glow = V2Pink, borderAlpha = .52f) {
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        KText("مستوى الأمان", size = 9.6.sp, weight = FontWeight.SemiBold, color = V2Soft)
+                        Spacer(Modifier.weight(1f))
+                        KText("82%", size = 20.sp, weight = FontWeight.Black, color = V2Green)
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    V2ProgressBar(.82f, height = 5.dp, colors = listOf(V2Pink, V2Violet, V2Cyan))
+                }
+            }
+        }
+        item { V2SectionLabel("نتائج الفحص", trailing = "4 فحوصات مكتملة") }
+        item {
+            SecurityRow("الثغرات المعروفة", "لا توجد ثغرات حرجة", V2Green, Icons.Rounded.Check)
+            SecurityRow("التطبيقات الضارة", "لا تطبيقات مشبوهة", V2Green, Icons.Rounded.Check)
+            SecurityRow("شبكة Wi-Fi", "شبكة آمنة ومشفرة", V2Green, Icons.Rounded.Check)
+            SecurityRow("إعدادات القفل", "قفل الشاشة مفعل", V2Green, Icons.Rounded.Check)
+        }
+        item { PreviewNote("فحص الأمان هنا بيانات معاينة حتى تُربط بقراءة النظام الفعلية.") }
+    }
+}
+
+@Composable
+private fun SecurityRow(title: String, status: String, accent: Color, icon: androidx.compose.ui.graphics.vector.ImageVector) {
+    V2GlassCard(Modifier.fillMaxWidth(), padding = 8.dp, radius = 12.dp, glow = accent, borderAlpha = .20f) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, null, tint = accent, modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(8.dp))
+            KText(title, size = 9.sp, weight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+            KText(status, size = 8.8.sp, color = V2Soft)
+        }
+    }
+}
+
+/* ------------------------------------------------------------------ *
+ * Notification Manager
+ * ------------------------------------------------------------------ */
+
+@Composable
+fun V2NotificationManagerScreen(onBack: () -> Unit, onPro: () -> Unit) {
+    InteriorScaffold(
+        onBack = onBack,
+        onPro = onPro,
+    ) {
+        item { PageHeading("إدارة الإشعارات", "التحكم في إشعارات التطبيقات", Icons.Rounded.Notifications, V2Amber) }
+        item { V2SectionLabel("التطبيقات التي ترسل إشعارات", trailing = "12 تطبيق") }
+        item {
+            NotificationRow("واتساب", "4 إشعارات جديدة", V2Green, true)
+            NotificationRow("التيك توك", "2 إشعارات جديدة", V2Violet, true)
+            NotificationRow("اليوتيوب", "لا إشعارات", V2Pink, false)
+            NotificationRow("الفيسبوك", "6 إشعارات جديدة", V2Blue, true)
+            NotificationRow("إنستغرام", "لا إشعارات", V2Amber, false)
+            NotificationRow("الرسائل", "لا إشعارات", V2Cyan, false)
+        }
+        item { PreviewNote("إدارة الإشعارات تفتح إعدادات النظام للتطبيقات المحددة.") }
+    }
+}
+
+@Composable
+private fun NotificationRow(name: String, status: String, accent: Color, enabled: Boolean) {
+    V2GlassCard(Modifier.fillMaxWidth(), padding = 8.dp, radius = 12.dp, glow = accent, borderAlpha = .20f) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier.size(32.dp).clip(RoundedCornerShape(8.dp))
+                    .background(accent.withAlpha(.12f))
+                    .border(1.dp, accent.withAlpha(.32f), RoundedCornerShape(8.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Rounded.Notifications, null, tint = accent, modifier = Modifier.size(16.dp))
+            }
+            Spacer(Modifier.width(9.dp))
+            Column(Modifier.weight(1f)) {
+                KText(name, size = 9.4.sp, weight = FontWeight.SemiBold, maxLines = 1)
+                KText(status, size = 7.4.sp, color = V2Soft, maxLines = 1)
+            }
+            Box(
+                Modifier.clip(RoundedCornerShape(50))
+                    .background(if (enabled) V2Green.withAlpha(.20f) else V2Red.withAlpha(.20f))
+                    .border(1.dp, if (enabled) V2Green.withAlpha(.40f) else V2Red.withAlpha(.40f), RoundedCornerShape(50))
+                    .padding(horizontal = 6.dp, vertical = 2.dp),
+            ) {
+                KText(if (enabled) "مفعل" else "معطل", size = 7.sp, weight = FontWeight.Bold, color = if (enabled) V2Green else V2Red)
+            }
         }
     }
 }

@@ -41,8 +41,11 @@ import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.Storage
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Verified
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -57,6 +60,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -94,6 +98,22 @@ private val cleanServices = listOf(
         "التنظيف الذكي", "مراجعة الملفات المؤقتة والكاش", "smartclean",
         R.drawable.knoux_home_icon_clean, V2Cyan, "2.92 GB", "مقترح",
     ),
+    HubV2(
+        "الملفات الكبيرة", "تحديد أكبر الملفات واستعادة المساحة", "large-files",
+        R.drawable.knoux_home_icon_storage, V2Amber, "6.2 GB", "قابلة للاستعادة",
+    ),
+    HubV2(
+        "نسخ احتياطية قديمة", "حذف النسخ الاحتياطية غير المستخدمة", "old-backups",
+        R.drawable.knoux_svc_residue, V2Violet, "3.1 GB", " قابلة للحذف",
+    ),
+    HubV2(
+        "سجلات النظام", "مسح سجلات التطبيقات والنظام القديمة", "system-logs",
+        R.drawable.knoux_clean_icon_empty, V2Cyan, "78 MB", "قابل للإزالة",
+    ),
+    HubV2(
+        "ملفات التحميل", "تنظيف مجلد التنزيلات من الملفات القديمة", "download-cleanup",
+        R.drawable.knoux_svc_apps, V2Pink, "4.5 GB", "في التنزيلات",
+    ),
 )
 
 private val toolServices = listOf(
@@ -116,6 +136,26 @@ private val toolServices = listOf(
     HubV2(
         "تحسين الأداء", "توصيات ذكية للذاكرة والسرعة", "ai",
         R.drawable.knoux_home_icon_ai, V2Pink, "+32%", "تحسن متوقع",
+    ),
+    HubV2(
+        "مستكشف الملفات", "تصفح الملفات والمجلدات على الجهاز", "file-explorer",
+        R.drawable.knoux_svc_residue, V2Cyan, "جميع", "المجلدات",
+    ),
+    HubV2(
+        "معلومات الجهاز", "عرض مواصفات الجهاز وإصدار النظام", "device-info",
+        R.drawable.knoux_home_icon_ai, V2Violet, "كامل", "المواصفات",
+    ),
+    HubV2(
+        "فحص الشبكة", "فحص الاتصالات واستهلاك البيانات", "network-scan",
+        R.drawable.knoux_svc_deepscan, V2Cyan, "الشبكة", "الحالة",
+    ),
+    HubV2(
+        "فحص الأمان", "فحص الثغرات والمخاطر الأمنية", "security-scan",
+        R.drawable.knoux_home_icon_privacy, V2Pink, "الأمان", "الحالة",
+    ),
+    HubV2(
+        "إدارة الإشعارات", "التحكم في إشعارات التطبيقات", "notification-manager",
+        R.drawable.knoux_svc_duplicates, V2Amber, "الإشعارات", "المدارة",
     ),
 )
 
@@ -144,7 +184,7 @@ fun V2CleanHubScreen(
             ) {
                 item { TabTitle("التنظيف الذكي", "كل ما يحتاجه جهازك في مكان واحد") }
                 item { CleanHeroCard(onStart = { onNavigate("deepscan") }) }
-                item { V2SectionLabel("أدوات التنظيف", trailing = "4 خدمات") }
+                item { V2SectionLabel("أدوات التنظيف", trailing = "8 خدمات") }
                 item { ServiceGrid(cleanServices, onNavigate) }
                 item { BestNextAction(onClick = { onNavigate("smartclean") }) }
                 item { SmartHint() }
@@ -178,7 +218,7 @@ fun V2ToolsHubScreen(
             ) {
                 item { TabTitle("أدوات الجهاز", "تحكم كامل في الأداء والخصوصية والمساحة") }
                 item { ToolsSummaryCard() }
-                item { V2SectionLabel("كل الأدوات", trailing = "5 أدوات") }
+                item { V2SectionLabel("كل الأدوات", trailing = "10 أدوات") }
                 item { ToolsGrid(toolServices, onNavigate) }
                 item { ToolsTip() }
             }
@@ -680,11 +720,42 @@ private fun gbText(value: Double): String =
 
 @Composable
 fun V2SmartCleanScreen(onBack: () -> Unit, onOpenDeepScan: () -> Unit, onPro: () -> Unit) {
-    var selected by remember { mutableStateOf(setOf(0, 1)) }
-    val selectedGb = cleanSizesGb.filterIndexed { index, _ -> selected.contains(index) }.sum()
-    val selectedSize = gbText(selectedGb)
-    val totalSize = gbText(cleanTotalGb)
-    val selectedProgress = if (cleanTotalGb > 0) (selectedGb / cleanTotalGb).toFloat() else 0f
+    val context = LocalContext.current
+    val (refresh, bump) = rememberRefreshCounter()
+    val facts = rememberDeviceFacts(refresh)
+    var confirm by remember { mutableStateOf(false) }
+    var lastFreed by remember { mutableStateOf<Long?>(null) }
+
+    val cacheBytes = facts.ownCacheBytes
+    val cacheText = formatBytes(cacheBytes)
+    val progress = if (facts.storage.freeBytes > 0L) {
+        (cacheBytes.toFloat() / (facts.storage.freeBytes + cacheBytes).toFloat()).coerceIn(0f, 1f)
+    } else 0f
+
+    if (confirm) {
+        AlertDialog(
+            onDismissRequest = { confirm = false },
+            title = { androidx.compose.material3.Text("تنظيف كاش KNOUX") },
+            text = {
+                androidx.compose.material3.Text(
+                    "سيتم حذف $cacheText من ملفات كاش KNOUX فقط (${formatCount(facts.ownCacheFiles)} ملف). " +
+                        "لن تُحذف صورك أو مستنداتك أو بيانات التطبيقات الأخرى."
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirm = false
+                    lastFreed = clearOwnCache(context)
+                    bump()
+                }) { androidx.compose.material3.Text("حذف الكاش") }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirm = false }) {
+                    androidx.compose.material3.Text("إلغاء")
+                }
+            },
+        )
+    }
 
     Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)) {
         Column(Modifier.fillMaxSize()) {
@@ -697,38 +768,98 @@ fun V2SmartCleanScreen(onBack: () -> Unit, onOpenDeepScan: () -> Unit, onPro: ()
                 item { SmartCleanHeader() }
                 item {
                     SmartCleanSummary(
-                        selectedSize = selectedSize,
-                        totalSize = totalSize,
-                        selectedProgress = selectedProgress,
-                        onOpenDeepScan = onOpenDeepScan,
+                        selectedSize = cacheText,
+                        totalSize = formatBytes(facts.storage.usedBytes),
+                        selectedProgress = progress,
+                        cacheFiles = facts.ownCacheFiles,
+                        storageFree = formatBytes(facts.storage.freeBytes),
+                        health = facts.healthEstimate,
                     )
                 }
                 item {
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        KText("اختر عناصر التنظيف", size = 12.5.sp, weight = FontWeight.Bold)
-                        Spacer(Modifier.weight(1f))
-                        KText("${selected.size} من ${cleanCategories.size} محدد", size = 8.5.sp, color = V2Cyan)
-                    }
-                }
-                items(cleanCategories.size) { index ->
-                    CleanCategoryRow(
-                        item = cleanCategories[index],
-                        checked = selected.contains(index),
-                        onToggle = { selected = if (selected.contains(index)) selected - index else selected + index },
+                    RealCleanRow(
+                        title = "ذاكرة KNOUX المؤقتة",
+                        subtitle = "${formatCount(facts.ownCacheFiles)} ملفًا داخل مجلدات الكاش",
+                        value = cacheText,
+                        accent = V2Cyan,
+                        icon = Icons.Rounded.CleaningServices,
                     )
                 }
+                item {
+                    RealCleanRow(
+                        title = "ذاكرة التطبيقات الأخرى",
+                        subtitle = "يحتاج صلاحية وصول خاصة — لا يُقدَّر بدل الجهاز",
+                        value = "مقيد",
+                        accent = V2Amber,
+                        icon = Icons.Rounded.Storage,
+                    )
+                }
+                item {
+                    RealCleanRow(
+                        title = "ملفات النظام المؤقتة",
+                        subtitle = "يديرها Android ويحذفها تلقائيًا",
+                        value = "تلقائي",
+                        accent = V2Violet,
+                        icon = Icons.Rounded.Shield,
+                    )
+                }
+                if (lastFreed != null) {
+                    item {
+                        V2GlassCard(
+                            Modifier.fillMaxWidth(),
+                            padding = 10.dp,
+                            radius = 16.dp,
+                            glow = V2Green,
+                            borderAlpha = .45f,
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Rounded.Verified, null, tint = V2Green, modifier = Modifier.size(20.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Column(Modifier.weight(1f)) {
+                                    KText("تم حذف كاش KNOUX فعليًا", size = 10.sp, weight = FontWeight.Bold, color = V2Green)
+                                    KText(
+                                        "المساحة المحررة: ${formatBytes(lastFreed ?: 0L)} · أعد القراءة للتأكد",
+                                        size = 8.sp,
+                                        color = V2Soft,
+                                    )
+                                }
+                                Icon(
+                                    Icons.Rounded.Refresh,
+                                    null,
+                                    tint = V2Cyan,
+                                    modifier = Modifier.size(20.dp).clickable { lastFreed = null; bump() },
+                                )
+                            }
+                        }
+                    }
+                }
                 item { CleanSafetyCard() }
-                item { PreviewNote("أحجام العناصر هنا بيانات معاينة حتى تُربط بقراءة التخزين الفعلية.") }
+                item {
+                    PreviewNote(
+                        "الأحجام هنا مقروءة من كاش KNOUX على هذا الهاتف. " +
+                            "المعالجة المزيفة أو أرقام المعاينة غير مستخدمة في هذه الشاشة."
+                    )
+                }
             }
             Row(
                 Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Box(Modifier.weight(.82f)) {
-                    V2GhostButton("مراجعة", onClick = onOpenDeepScan, icon = Icons.Rounded.History, height = 46.dp)
+                    V2GhostButton(
+                        "تحديث",
+                        onClick = { lastFreed = null; bump() },
+                        icon = Icons.Rounded.Refresh,
+                        height = 46.dp,
+                    )
                 }
                 Box(Modifier.weight(1.18f)) {
-                    V2GradientButton("تنظيف $selectedSize", onClick = onOpenDeepScan, icon = Icons.Rounded.CleaningServices, height = 46.dp)
+                    V2GradientButton(
+                        if (cacheBytes > 0L) "تنظيف $cacheText" else "لا يوجد كاش",
+                        onClick = { if (cacheBytes > 0L) confirm = true else bump() },
+                        icon = Icons.Rounded.CleaningServices,
+                        height = 46.dp,
+                    )
                 }
             }
         }
@@ -736,17 +867,23 @@ fun V2SmartCleanScreen(onBack: () -> Unit, onOpenDeepScan: () -> Unit, onPro: ()
 }
 
 @Composable
-private fun SmartCleanHeader() {
-    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+private fun RealCleanRow(
+    title: String,
+    subtitle: String,
+    value: String,
+    accent: Color,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+) {
+    V2GlassCard(Modifier.fillMaxWidth(), padding = 10.dp, radius = 16.dp, glow = accent, borderAlpha = .25f) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            V2IconTile(Icons.Rounded.CleaningServices, V2Pink, size = 38.dp, iconSize = 20.dp)
-            Spacer(Modifier.width(8.dp))
-            androidx.compose.material3.Text(
-                "التنظيف الذكي",
-                style = TextStyle(fontFamily = V2Font, fontWeight = FontWeight.Black, fontSize = 26.sp, color = Color.White)
-            )
+            V2IconTile(icon, accent, size = 37.dp, iconSize = 19.dp)
+            Spacer(Modifier.width(9.dp))
+            Column(Modifier.weight(1f)) {
+                KText(title, size = 10.5.sp, weight = FontWeight.Bold)
+                KText(subtitle, size = 7.6.sp, color = V2Soft)
+            }
+            KText(value, size = 9.5.sp, weight = FontWeight.Bold, color = accent)
         }
-        KText("مراجعة الملفات المؤقتة والكاش قبل أي حذف", size = 10.sp, color = V2Soft, align = TextAlign.Center)
     }
 }
 
@@ -755,7 +892,9 @@ private fun SmartCleanSummary(
     selectedSize: String,
     totalSize: String,
     selectedProgress: Float,
-    onOpenDeepScan: () -> Unit,
+    cacheFiles: Int,
+    storageFree: String,
+    health: Int,
 ) {
     V2GlassCard(
         Modifier.fillMaxWidth(),
@@ -773,7 +912,7 @@ private fun SmartCleanSummary(
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     KText(selectedSize, size = 17.sp, weight = FontWeight.Black)
-                    KText("محدد للتنظيف", size = 7.5.sp, color = V2Soft)
+                    KText("كاش KNOUX", size = 7.5.sp, color = V2Soft)
                 }
             }
             Spacer(Modifier.width(11.dp))
@@ -781,17 +920,32 @@ private fun SmartCleanSummary(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Rounded.Verified, null, tint = V2Green, modifier = Modifier.size(13.dp))
                     Spacer(Modifier.width(4.dp))
-                    KText("فحص مكتمل", size = 9.5.sp, weight = FontWeight.Bold, color = V2Green)
+                    KText("قراءة مباشرة", size = 9.5.sp, weight = FontWeight.Bold, color = V2Green)
                 }
                 Spacer(Modifier.height(4.dp))
-                KText("جاهز للتنظيف", size = 21.sp, weight = FontWeight.Black)
-                KText("قابلة للتنظيف من إجمالي $totalSize", size = 8.sp, color = V2Soft)
+                KText("$cacheFiles ملفًا", size = 21.sp, weight = FontWeight.Black)
+                KText("داخل كاش KNOUX فقط · صحة تقديرية $health%", size = 8.sp, color = V2Soft)
                 Spacer(Modifier.height(5.dp))
                 V2ProgressBar(selectedProgress, height = 5.dp)
                 Spacer(Modifier.height(5.dp))
-                KText("آخر فحص: اليوم 12:51", size = 7.3.sp, color = V2Muted)
+                KText("$storageFree متاحة · مستخدم الجهاز $totalSize", size = 7.3.sp, color = V2Muted)
             }
         }
+    }
+}
+
+@Composable
+private fun SmartCleanHeader() {
+    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            V2IconTile(Icons.Rounded.CleaningServices, V2Pink, size = 38.dp, iconSize = 20.dp)
+            Spacer(Modifier.width(8.dp))
+            androidx.compose.material3.Text(
+                "التنظيف الذكي",
+                style = TextStyle(fontFamily = V2Font, fontWeight = FontWeight.Black, fontSize = 26.sp, color = Color.White)
+            )
+        }
+        KText("مراجعة الملفات المؤقتة والكاش قبل أي حذف", size = 10.sp, color = V2Soft, align = TextAlign.Center)
     }
 }
 
