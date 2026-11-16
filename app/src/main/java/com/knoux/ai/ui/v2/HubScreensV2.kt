@@ -25,6 +25,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Apps
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.Bolt
@@ -84,78 +85,78 @@ private data class HubV2(
 private val cleanServices = listOf(
     HubV2(
         "الفحص العميق", "تحليل شامل للجهاز في فحص واحد", "deepscan",
-        R.drawable.knoux_svc_deepscan, V2Cyan, "5", "وحدات",
+        R.drawable.knoux_svc_deepscan, V2Cyan, "فحص", "مباشر",
     ),
     HubV2(
         "الملفات المكررة", "اكتشاف الصور والفيديو والمستندات المكررة", "duplicates",
-        R.drawable.knoux_svc_duplicates, V2Violet, "2.8 GB", "مكرر",
+        R.drawable.knoux_svc_duplicates, V2Violet, "MediaStore", "بعد المنح",
     ),
     HubV2(
         "بقايا التطبيقات", "تنظيف الملفات والمجلدات المتبقية", "residue",
-        R.drawable.knoux_svc_residue, V2Pink, "2.84 GB", "قابل للتنظيف",
+        R.drawable.knoux_svc_residue, V2Pink, "كاش", "مقروء",
     ),
     HubV2(
         "التنظيف الذكي", "مراجعة الملفات المؤقتة والكاش", "smartclean",
-        R.drawable.knoux_home_icon_clean, V2Cyan, "2.92 GB", "مقترح",
+        R.drawable.knoux_home_icon_clean, V2Cyan, "كاش", "هذا الجهاز",
     ),
     HubV2(
         "الملفات الكبيرة", "تحديد أكبر الملفات واستعادة المساحة", "large-files",
-        R.drawable.knoux_home_icon_storage, V2Amber, "6.2 GB", "قابلة للاستعادة",
+        R.drawable.knoux_home_icon_storage, V2Amber, "وسائط", "مقروءة",
     ),
     HubV2(
         "نسخ احتياطية قديمة", "حذف النسخ الاحتياطية غير المستخدمة", "old-backups",
-        R.drawable.knoux_svc_residue, V2Violet, "3.1 GB", " قابلة للحذف",
+        R.drawable.knoux_svc_residue, V2Violet, "معاينة", "غير مرتبطة",
     ),
     HubV2(
         "سجلات النظام", "مسح سجلات التطبيقات والنظام القديمة", "system-logs",
-        R.drawable.knoux_clean_icon_empty, V2Cyan, "78 MB", "قابل للإزالة",
+        R.drawable.knoux_clean_icon_empty, V2Cyan, "معاينة", "غير مرتبطة",
     ),
     HubV2(
         "ملفات التحميل", "تنظيف مجلد التنزيلات من الملفات القديمة", "download-cleanup",
-        R.drawable.knoux_svc_apps, V2Pink, "4.5 GB", "في التنزيلات",
+        R.drawable.knoux_svc_apps, V2Pink, "معاينة", "غير مرتبطة",
     ),
 )
 
 private val toolServices = listOf(
     HubV2(
         "مدير التطبيقات", "إدارة التطبيقات والمساحة والاستخدام", "appmanager",
-        R.drawable.knoux_svc_apps, V2Cyan, "54", "تطبيق",
+        R.drawable.knoux_svc_apps, V2Cyan, "PackageManager", "مباشر",
     ),
     HubV2(
         "فحص الخصوصية", "تحليل الأذونات والمخاطر", "privacy",
-        R.drawable.knoux_home_icon_privacy, V2Violet, "86%", "درجة الخصوصية",
+        R.drawable.knoux_home_icon_privacy, V2Violet, "أذونات", "مباشرة",
     ),
     HubV2(
         "تحليل التخزين", "معرفة أين تذهب كل مساحة", "storage",
-        R.drawable.knoux_home_icon_storage, V2Cyan, "67%", "مستخدم",
+        R.drawable.knoux_home_icon_storage, V2Cyan, "StatFs", "مباشر",
     ),
     HubV2(
         "توفير البطارية", "تقليل الاستهلاك وإدارة الخلفية", "battery",
-        R.drawable.knoux_home_icon_battery, V2Green, "93%", "صحة البطارية",
+        R.drawable.knoux_home_icon_battery, V2Green, "BatteryManager", "مباشر",
     ),
     HubV2(
         "تحسين الأداء", "توصيات ذكية للذاكرة والسرعة", "ai",
-        R.drawable.knoux_home_icon_ai, V2Pink, "+32%", "تحسن متوقع",
+        R.drawable.knoux_home_icon_ai, V2Pink, "توصيات", "من القراءة",
     ),
     HubV2(
         "مستكشف الملفات", "تصفح الملفات والمجلدات على الجهاز", "file-explorer",
-        R.drawable.knoux_svc_residue, V2Cyan, "جميع", "المجلدات",
+        R.drawable.knoux_svc_residue, V2Cyan, "معاينة", "غير مرتبطة",
     ),
     HubV2(
         "معلومات الجهاز", "عرض مواصفات الجهاز وإصدار النظام", "device-info",
-        R.drawable.knoux_home_icon_ai, V2Violet, "كامل", "المواصفات",
+        R.drawable.knoux_home_icon_ai, V2Violet, "Build", "مباشر",
     ),
     HubV2(
         "فحص الشبكة", "فحص الاتصالات واستهلاك البيانات", "network-scan",
-        R.drawable.knoux_svc_deepscan, V2Cyan, "الشبكة", "الحالة",
+        R.drawable.knoux_svc_deepscan, V2Cyan, "معاينة", "غير مرتبطة",
     ),
     HubV2(
         "فحص الأمان", "فحص الثغرات والمخاطر الأمنية", "security-scan",
-        R.drawable.knoux_home_icon_privacy, V2Pink, "الأمان", "الحالة",
+        R.drawable.knoux_home_icon_privacy, V2Pink, "معاينة", "غير مرتبطة",
     ),
     HubV2(
         "إدارة الإشعارات", "التحكم في إشعارات التطبيقات", "notification-manager",
-        R.drawable.knoux_svc_duplicates, V2Amber, "الإشعارات", "المدارة",
+        R.drawable.knoux_svc_duplicates, V2Amber, "معاينة", "غير مرتبطة",
     ),
 )
 
@@ -167,6 +168,7 @@ fun V2CleanHubScreen(
     onProfile: () -> Unit,
     onNotifications: () -> Unit,
 ) {
+    val facts = rememberDeviceFacts()
     Box(
         Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)
     ) {
@@ -183,7 +185,15 @@ fun V2CleanHubScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 item { TabTitle("التنظيف الذكي", "كل ما يحتاجه جهازك في مكان واحد") }
-                item { CleanHeroCard(onStart = { onNavigate("deepscan") }) }
+                item {
+                    CleanHeroCard(
+                        cacheBytes = facts.ownCacheBytes,
+                        cacheFiles = facts.ownCacheFiles,
+                        storageFree = facts.storage.freeBytes,
+                        health = facts.healthEstimate,
+                        onStart = { onNavigate("deepscan") },
+                    )
+                }
                 item { V2SectionLabel("أدوات التنظيف", trailing = "8 خدمات") }
                 item { ServiceGrid(cleanServices, onNavigate) }
                 item { BestNextAction(onClick = { onNavigate("smartclean") }) }
@@ -201,6 +211,7 @@ fun V2ToolsHubScreen(
     onProfile: () -> Unit,
     onNotifications: () -> Unit,
 ) {
+    val facts = rememberDeviceFacts()
     Box(
         Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)
     ) {
@@ -217,7 +228,7 @@ fun V2ToolsHubScreen(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 item { TabTitle("أدوات الجهاز", "تحكم كامل في الأداء والخصوصية والمساحة") }
-                item { ToolsSummaryCard() }
+                item { ToolsSummaryCard(facts.storage, facts.installedCount) }
                 item { V2SectionLabel("كل الأدوات", trailing = "10 أدوات") }
                 item { ToolsGrid(toolServices, onNavigate) }
                 item { ToolsTip() }
@@ -251,7 +262,13 @@ fun TabTitle(title: String, subtitle: String) {
 }
 
 @Composable
-private fun CleanHeroCard(onStart: () -> Unit) {
+private fun CleanHeroCard(
+    cacheBytes: Long,
+    cacheFiles: Int,
+    storageFree: Long,
+    health: Int,
+    onStart: () -> Unit,
+) {
     V2GlassCard(
         Modifier.fillMaxWidth(),
         padding = 13.dp,
@@ -262,14 +279,14 @@ private fun CleanHeroCard(onStart: () -> Unit) {
         Column {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 V2NeonRing(
-                    progress = .92f,
+                    progress = if (health > 0) health / 100f else 0f,
                     size = 92.dp,
                     stroke = 7.dp,
                     colors = listOf(V2Pink, V2Violet, V2Blue, V2Cyan),
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        KText("92%", size = 23.sp, weight = FontWeight.Black)
-                        KText("صحة الجهاز", size = 7.5.sp, color = V2Soft)
+                        KText(if (health > 0) "$health%" else "—", size = 23.sp, weight = FontWeight.Black)
+                        KText("تقدير الجهاز", size = 7.5.sp, color = V2Soft)
                     }
                 }
                 Spacer(Modifier.width(12.dp))
@@ -277,15 +294,15 @@ private fun CleanHeroCard(onStart: () -> Unit) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Rounded.Verified, null, tint = V2Green, modifier = Modifier.size(14.dp))
                         Spacer(Modifier.width(4.dp))
-                        KText("جاهز للتحسين", size = 11.sp, weight = FontWeight.Bold, color = V2Green)
+                        KText("قراءة مباشرة", size = 11.sp, weight = FontWeight.Bold, color = V2Green)
                     }
                     Spacer(Modifier.height(4.dp))
-                    KText("3.42 GB", size = 25.sp, weight = FontWeight.Black, color = Color.White)
-                    KText("مساحة قابلة للاستعادة بعد المراجعة", size = 8.5.sp, color = V2Soft)
+                    KText(formatBytes(cacheBytes), size = 25.sp, weight = FontWeight.Black, color = Color.White)
+                    KText("كاش KNOUX قابل للمراجعة قبل الحذف", size = 8.5.sp, color = V2Soft)
                     Spacer(Modifier.height(7.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        MiniTag("11 " + "ملفًا مؤقتًا", V2Cyan)
-                        MiniTag("3 مجموعات", V2Violet)
+                        MiniTag("$cacheFiles ملفًا", V2Cyan)
+                        MiniTag("${formatBytes(storageFree)} متاحة", V2Violet)
                     }
                 }
             }
@@ -385,7 +402,7 @@ private fun BestNextAction(onClick: () -> Unit) {
             Spacer(Modifier.width(9.dp))
             Column(Modifier.weight(1f)) {
                 KText("الخطوة التالية المقترحة", size = 11.sp, weight = FontWeight.Bold)
-                KText("ابدأ بمراجعة 2.92 GB من الملفات المؤقتة قبل أي حذف.", size = 8.3.sp, color = V2Soft)
+                KText("ابدأ بمراجعة كاش KNOUX والملفات المؤقتة قبل أي حذف.", size = 8.3.sp, color = V2Soft)
             }
             Icon(Icons.Rounded.ChevronLeft, null, tint = V2Soft, modifier = Modifier.size(17.dp))
         }
@@ -402,7 +419,8 @@ private fun SmartHint() {
 }
 
 @Composable
-private fun ToolsSummaryCard() {
+private fun ToolsSummaryCard(storage: StorageFacts, apps: Int) {
+    val progress = storage.usedFraction.coerceIn(0f, 1f)
     V2GlassCard(
         Modifier.fillMaxWidth(),
         padding = 12.dp,
@@ -412,24 +430,24 @@ private fun ToolsSummaryCard() {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             V2NeonRing(
-                progress = .67f,
+                progress = progress,
                 size = 78.dp,
                 stroke = 6.dp,
                 colors = listOf(V2Cyan, V2Blue, V2Violet),
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    KText("67%", size = 20.sp, weight = FontWeight.Black)
+                    KText("${(progress * 100).toInt()}%", size = 20.sp, weight = FontWeight.Black)
                     KText("تخزين", size = 7.sp, color = V2Soft)
                 }
             }
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
-                KText("مساحة التطبيقات", size = 11.sp, weight = FontWeight.Bold)
-                KText("46.8 GB / 72.4 GB", size = 15.sp, weight = FontWeight.Bold, color = V2Cyan)
+                KText("مساحة الجهاز", size = 11.sp, weight = FontWeight.Bold)
+                KText("${formatBytes(storage.usedBytes)} / ${formatBytes(storage.totalBytes)}", size = 15.sp, weight = FontWeight.Bold, color = V2Cyan)
                 Spacer(Modifier.height(5.dp))
-                V2ProgressBar(progress = .67f)
+                V2ProgressBar(progress)
                 Spacer(Modifier.height(5.dp))
-                KText("يمكن تحرير مساحة أكبر بمراجعة التطبيقات غير المستخدمة.", size = 7.9.sp, color = V2Soft)
+                KText("${formatBytes(storage.freeBytes)} متاحة · $apps تطبيقًا مثبتًا", size = 7.9.sp, color = V2Soft)
             }
             Spacer(Modifier.width(8.dp))
             Icon(Icons.Rounded.Storage, null, tint = V2Cyan, modifier = Modifier.size(30.dp))
@@ -484,6 +502,12 @@ fun V2ReportsScreen(
     onProfile: () -> Unit,
     onNotifications: () -> Unit,
 ) {
+    val context = LocalContext.current
+    val navigate = LocalServiceNavigate.current
+    val (refresh, bump) = rememberRefreshCounter()
+    val facts = rememberDeviceFacts(refresh)
+    val history = remember(refresh) { readScanHistory(context) }
+
     Box(
         Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)
     ) {
@@ -499,50 +523,60 @@ fun V2ReportsScreen(
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                item { TabTitle("التقارير الذكية", "ملخص واضح لصحة جهازك وتطوره") }
-                item { ReportScoreCard() }
-                item { WeekTrendCard() }
+                item {
+                    ServiceBanner(
+                        spec = ServiceSpecs.reports,
+                        status = if (facts.computedAt > 0L) "قراءة مباشرة" else "جاري القراءة",
+                        statusColor = if (facts.computedAt > 0L) V2Green else V2Amber,
+                        metric = "${history.size} فحص محفوظ",
+                    )
+                }
+                item { ReportScoreCard(facts) }
+                item { ReportSnapshotCard(facts, onRefresh = bump) }
                 item {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        ReportMiniStat("26.4 GB", "تمت استعادته", Icons.Rounded.Storage, V2Cyan, Modifier.weight(1f))
-                        ReportMiniStat("7", "إصلاحات خصوصية", Icons.Rounded.Shield, V2Violet, Modifier.weight(1f))
-                        ReportMiniStat("+32%", "تحسن الأداء", Icons.Rounded.RocketLaunch, V2Pink, Modifier.weight(1f))
+                        ReportMiniStat(formatBytes(facts.storage.freeBytes), "مساحة متاحة", Icons.Rounded.Storage, V2Cyan, Modifier.weight(1f))
+                        ReportMiniStat("${formatCount(facts.sensitiveAppCount)}", "تطبيق حساس", Icons.Rounded.Shield, V2Violet, Modifier.weight(1f))
+                        ReportMiniStat("${formatCount(facts.installedCount)}", "تطبيق مثبت", Icons.Rounded.Apps, V2Pink, Modifier.weight(1f))
                     }
                 }
-                item { V2SectionLabel("التقارير الأخيرة", trailing = "عرض الكل") }
+                item { ReportHistoryCard(history = history, onScan = { navigate("deepscan") }) }
+                item { V2SectionLabel("التقارير الأخيرة", trailing = "محلي") }
                 item {
                     ReportRow(
                         "تقرير الأداء الأسبوعي",
-                        "منذ 2 ساعة · تحسن إجمالي +32%",
+                        if (history.size < 2) "غير متاح · تحتاج قراءتين محفوظتين على الأقل"
+                        else "غير متاح · يعرض سجل القراءات أدناه فقط",
                         Icons.Rounded.BarChart,
-                        V2Cyan,
-                        onOpenDetail,
+                        V2Amber,
+                        { navigate("deepscan") },
                     )
                 }
                 item {
                     ReportRow(
-                        "سجل عمليات التنظيف",
-                        "آخر 7 أيام · 31 عملية",
+                        "سجل عمليات الفحص",
+                        if (history.isEmpty()) "لا فحص محفوظ بعد" else "${history.size} عملية محفوظة محليًا",
                         Icons.Rounded.CleaningServices,
                         V2Pink,
-                        onOpenDetail,
+                        { navigate("deepscan") },
                     )
                 }
                 item {
                     ReportRow(
                         "حالة الخصوصية",
-                        "آخر فحص · 43 تطبيقًا",
+                        "${formatCount(facts.sensitiveAppCount)} تطبيقًا بأذونات حساسة",
                         Icons.Rounded.Shield,
                         V2Violet,
-                        onOpenDetail,
+                        { navigate("privacy") },
                     )
                 }
+                item { ServiceSubGrid(ServiceSpecs.reports) }
                 item {
                     Spacer(Modifier.height(1.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Rounded.Verified, null, tint = V2Green, modifier = Modifier.size(12.dp))
                         Spacer(Modifier.width(4.dp))
-                        KText("القيم المعروضة هي بيانات معاينة وليست قياسًا مباشرًا من الجهاز.", size = 7.4.sp, color = V2Muted)
+                        KText("البطاقات أعلاه مقروءة من الجهاز. تقرير الاتجاه الأسبوعي غير متاح حتى تتراكم قراءات كافية.", size = 7.2.sp, color = V2Muted)
                     }
                 }
             }
@@ -551,7 +585,61 @@ fun V2ReportsScreen(
 }
 
 @Composable
-private fun ReportScoreCard() {
+private fun ReportHistoryCard(history: List<ScanHistoryEntry>, onScan: () -> Unit) {
+    V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 20.dp, glow = V2Cyan, borderAlpha = .30f) {
+        Column {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Rounded.History, null, tint = V2Cyan, modifier = Modifier.size(16.dp))
+                Spacer(Modifier.width(5.dp))
+                KText("سجل القياسات المحفوظة", size = 10.5.sp, weight = FontWeight.Bold)
+                Spacer(Modifier.weight(1f))
+                KText("${history.size}/24", size = 8.sp, color = V2Soft)
+            }
+            Spacer(Modifier.height(8.dp))
+            if (history.isEmpty()) {
+                KText(
+                    "لا توجد قراءة محفوظة بعد. شغّل الفحص العميق ليُحفظ أول قياس على هذا الهاتف.",
+                    size = 8.4.sp,
+                    lineHeight = 12.sp,
+                    color = V2Soft,
+                )
+                Spacer(Modifier.height(7.dp))
+                Box(
+                    Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(V2Cyan.withAlpha(.13f))
+                        .border(1.dp, V2Cyan.withAlpha(.34f), RoundedCornerShape(10.dp))
+                        .clickable(onClick = onScan)
+                        .padding(horizontal = 10.dp, vertical = 5.dp)
+                ) {
+                    KText("بدء فحص عميق", size = 7.8.sp, weight = FontWeight.Bold, color = V2Cyan)
+                }
+            } else {
+                history.take(4).forEachIndexed { index, entry ->
+                    if (index > 0) Spacer(Modifier.height(6.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(Modifier.size(6.dp).clip(CircleShape).background(V2Cyan))
+                        Spacer(Modifier.width(6.dp))
+                        Column(Modifier.weight(1f)) {
+                            KText(formatScanTime(entry.timestamp), size = 8.8.sp, weight = FontWeight.SemiBold)
+                            KText(
+                                "${formatCount(entry.appsScanned)} تطبيق · ${formatBytes(entry.storageUsedBytes)} مستخدم" +
+                                    (entry.batteryLevel?.let { " · بطارية $it%" } ?: ""),
+                                size = 7.4.sp,
+                                color = V2Soft,
+                            )
+                        }
+                        KText(formatBytes(entry.cacheBytes), size = 8.sp, weight = FontWeight.Bold, color = V2Pink)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReportScoreCard(facts: DeviceFacts) {
+    val score = facts.healthEstimate
     V2GlassCard(
         Modifier.fillMaxWidth(),
         padding = 13.dp,
@@ -561,14 +649,14 @@ private fun ReportScoreCard() {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             V2NeonRing(
-                progress = .92f,
+                progress = score / 100f,
                 size = 105.dp,
                 stroke = 8.dp,
                 colors = listOf(V2Pink, V2Violet, V2Blue, V2Cyan),
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    KText("92%", size = 26.sp, weight = FontWeight.Black)
-                    KText("صحة الجهاز", size = 8.sp, color = V2Soft)
+                    KText(if (score > 0) "$score%" else "—", size = 26.sp, weight = FontWeight.Black)
+                    KText("تقدير الجهاز", size = 8.sp, color = V2Soft)
                 }
             }
             Spacer(Modifier.width(13.dp))
@@ -576,18 +664,62 @@ private fun ReportScoreCard() {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Rounded.Verified, null, tint = V2Green, modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(4.dp))
-                    KText("أداء ممتاز", size = 11.sp, weight = FontWeight.Bold, color = V2Green)
+                    KText("مؤشر تقديري", size = 11.sp, weight = FontWeight.Bold, color = V2Green)
                 }
                 Spacer(Modifier.height(4.dp))
-                KText("جهازك أسرع بنسبة 32% خلال الأسبوع الماضي، مع استهلاك طاقة أقل بنسبة 24%.", size = 9.sp, lineHeight = 13.sp, color = V2Soft)
+                KText(
+                    "يُحسب من التخزين والبطارية والأذونات على هذا الهاتف، وليس من سجل سحابي.",
+                    size = 8.8.sp,
+                    lineHeight = 12.5.sp,
+                    color = V2Soft,
+                )
                 Spacer(Modifier.height(7.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    KText("+32%", size = 15.sp, weight = FontWeight.Black, color = V2Cyan)
+                    KText("${(facts.storage.usedFraction * 100).toInt()}%", size = 15.sp, weight = FontWeight.Black, color = V2Cyan)
                     Spacer(Modifier.width(4.dp))
-                    KText("تحسن الأداء", size = 8.sp, color = V2Muted)
+                    KText("تخزين مستخدم", size = 8.sp, color = V2Muted)
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ReportSnapshotCard(facts: DeviceFacts, onRefresh: () -> Unit) {
+    V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 20.dp, glow = V2Violet, borderAlpha = .34f) {
+        Column {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                KText("آخر قراءة من الجهاز", size = 10.5.sp, weight = FontWeight.Bold)
+                Spacer(Modifier.weight(1f))
+                Box(
+                    Modifier
+                        .clip(RoundedCornerShape(9.dp))
+                        .background(V2Cyan.withAlpha(.12f))
+                        .border(1.dp, V2Cyan.withAlpha(.30f), RoundedCornerShape(9.dp))
+                        .clickable(onClick = onRefresh)
+                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                ) {
+                    KText("تحديث", size = 7.2.sp, weight = FontWeight.Bold, color = V2Cyan)
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            ReportSnapshotLine("التخزين", "${formatBytes(facts.storage.usedBytes)} / ${formatBytes(facts.storage.totalBytes)}", V2Cyan)
+            Spacer(Modifier.height(6.dp))
+            ReportSnapshotLine("البطارية", facts.battery.levelPercent?.let { "$it% · ${facts.battery.statusLabel}" } ?: "غير متاح", V2Green)
+            Spacer(Modifier.height(6.dp))
+            ReportSnapshotLine("كاش KNOUX", "${formatBytes(facts.ownCacheBytes)} · ${formatCount(facts.ownCacheFiles)} ملف", V2Pink)
+            Spacer(Modifier.height(6.dp))
+            ReportSnapshotLine("الأذونات الحساسة", "${formatCount(facts.sensitiveAppCount)} تطبيق", V2Amber)
+        }
+    }
+}
+
+@Composable
+private fun ReportSnapshotLine(label: String, value: String, accent: Color) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        KText(label, size = 8.8.sp, color = V2Soft)
+        Spacer(Modifier.weight(1f))
+        KText(value, size = 9.sp, weight = FontWeight.Bold, color = accent)
     }
 }
 
@@ -704,20 +836,6 @@ private fun ReportRow(
 
 private data class CleanCategory(val name: String, val sub: String, val size: String, val icon: Int, val accent: Color)
 
-private val cleanCategories = listOf(
-    CleanCategory("ذاكرة التخزين المؤقت", "بيانات مؤقتة من التطبيقات", "1.73 GB", R.drawable.knoux_clean_icon_cache, V2Cyan),
-    CleanCategory("الملفات المؤقتة", "ملفات النظام غير الضرورية", "684 MB", R.drawable.knoux_clean_icon_temp, V2Violet),
-    CleanCategory("ملفات التثبيت", "حزم APK قديمة", "356 MB", R.drawable.knoux_clean_icon_apk, V2Pink),
-    CleanCategory("سجلات التطبيقات", "تقارير أعطال قديمة", "78 MB", R.drawable.knoux_clean_icon_empty, V2Amber),
-    CleanCategory("سلة المحذوفات", "ملفات في سلة المهملات", "70 MB", R.drawable.knoux_clean_icon_recycle, V2Cyan),
-)
-
-private val cleanSizesGb = listOf(1.73, .684, .356, .078, .070)
-private val cleanTotalGb = cleanSizesGb.sum()
-
-private fun gbText(value: Double): String =
-    String.format(java.util.Locale.US, "%.2f GB", value)
-
 @Composable
 fun V2SmartCleanScreen(onBack: () -> Unit, onOpenDeepScan: () -> Unit, onPro: () -> Unit) {
     val context = LocalContext.current
@@ -765,7 +883,14 @@ fun V2SmartCleanScreen(onBack: () -> Unit, onOpenDeepScan: () -> Unit, onPro: ()
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(9.dp),
             ) {
-                item { SmartCleanHeader() }
+                item {
+                    ServiceBanner(
+                        spec = ServiceSpecs.smartClean,
+                        status = if (cacheBytes > 0L) "كاش مقروء" else "لا كاش الآن",
+                        statusColor = if (cacheBytes > 0L) V2Green else V2Muted,
+                        metric = "$cacheText · ${formatCount(facts.ownCacheFiles)} ملف",
+                    )
+                }
                 item {
                     SmartCleanSummary(
                         selectedSize = cacheText,
@@ -833,6 +958,7 @@ fun V2SmartCleanScreen(onBack: () -> Unit, onOpenDeepScan: () -> Unit, onPro: ()
                         }
                     }
                 }
+                item { ServiceSubGrid(ServiceSpecs.smartClean) }
                 item { CleanSafetyCard() }
                 item {
                     PreviewNote(

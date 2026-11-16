@@ -51,6 +51,7 @@ import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Key
 import androidx.compose.material.icons.rounded.Language
+import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Memory
 import androidx.compose.material.icons.rounded.Notifications
@@ -60,6 +61,7 @@ import androidx.compose.material.icons.rounded.PhotoLibrary
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.PowerSettingsNew
 import androidx.compose.material.icons.rounded.Radar
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Report
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Security
@@ -296,35 +298,52 @@ fun V2AppManagerScreen(
     onOpenDetail: () -> Unit,
     onPro: () -> Unit,
 ) {
-    var filter by remember { mutableStateOf(0) }
-    val selected = remember { mutableStateOf(setOf(0, 2)) }
-    val selectedCount = selected.value.size
+    val context = LocalContext.current
+    val (refresh, bump) = rememberRefreshCounter()
+    val facts = rememberDeviceFacts(refresh)
+    var filter by remember { mutableStateOf(1) }
+
+    val apps = remember(facts, filter) {
+        val base = when (filter) {
+            1 -> facts.installedApps.filter { !it.isSystem }
+            2 -> facts.installedApps.filter { it.isSystem }
+            else -> facts.installedApps
+        }
+        base.sortedWith(
+            compareByDescending<InstalledAppFacts> { it.appBytes ?: 0L }
+                .thenBy { it.label.lowercase() }
+        )
+    }
 
     InteriorScaffold(
         onBack = onBack,
         onPro = onPro,
         bottomBar = {
             V2GradientButton(
-                "مراجعة $selectedCount تطبيقات محددة",
-                onOpenDetail,
+                "فتح إعدادات التطبيقات",
+                { openAllAppSettings(context) },
                 icon = Icons.Rounded.Apps,
                 trailingChevron = true,
             )
         },
     ) {
         item {
-            PageHeading(
-                "مدير التطبيقات",
-                "إدارة المساحة والاستخدام والأذونات لكل تطبيق",
-                Icons.Rounded.Apps,
-                V2Violet,
+            ServiceBanner(
+                spec = ServiceSpecs.appManager,
+                status = if (facts.computedAt > 0L) "PackageManager" else "جاري القراءة",
+                statusColor = if (facts.computedAt > 0L) V2Green else V2Amber,
+                metric = "${formatCount(facts.installedCount)} تطبيق",
             )
         }
-        item { AppManagerSummary() }
-        item { V2SearchField("ابحث عن تطبيق أو حزمة…") }
+        item { AppManagerRealSummary(facts) }
         item {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                appFilters.forEachIndexed { index, label ->
+                val labels = listOf(
+                    "الكل (${formatCount(facts.installedCount)})",
+                    "مستخدم (${formatCount(facts.userAppCount)})",
+                    "نظام (${formatCount(facts.installedCount - facts.userAppCount)})",
+                )
+                labels.forEachIndexed { index, label ->
                     AppFilterChip(
                         text = label,
                         active = filter == index,
@@ -341,41 +360,99 @@ fun V2AppManagerScreen(
                 KText("مرتبة حسب الحجم", size = 8.sp, color = V2Muted)
             }
         }
-        items(managedAppsV2.size) { index ->
-            val app = managedAppsV2[index]
-            ManagedAppRow(
-                app = app,
-                checked = selected.value.contains(index),
-                onToggle = {
-                    selected.value = if (selected.value.contains(index)) {
-                        selected.value - index
-                    } else {
-                        selected.value + index
-                    }
-                },
-                onClick = onOpenDetail,
-            )
-        }
-        item {
-            V2GlassCard(
-                Modifier.fillMaxWidth(),
-                padding = 11.dp,
-                radius = 17.dp,
-                glow = V2Amber,
-                borderAlpha = .30f,
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Rounded.WarningAmber, null, tint = V2Amber, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Column(Modifier.weight(1f)) {
-                        KText("8 تطبيقات لم تُستخدم منذ 30 يومًا", size = 9.5.sp, weight = FontWeight.Bold)
-                        KText("مراجعتها قد تحرر حتى 2.4 GB من المساحة.", size = 7.8.sp, color = V2Soft)
-                    }
-                }
+        if (apps.isEmpty()) {
+            item {
+                ServiceCapabilityCard(
+                    title = if (facts.computedAt == 0L) "جاري قراءة الحزم" else "لا تطبيقات في هذا التصنيف",
+                    body = "تُقرأ القائمة من PackageManager على هذا الهاتف فقط، بدون أي بيانات تجريبية.",
+                    state = ServiceState.LIVE,
+                    actionLabel = "تحديث",
+                    onAction = bump,
+                )
             }
         }
+        items(apps.size) { index ->
+            val app = apps[index]
+            RealInstalledAppRow(app) { openAppInfo(context, app.packageName) }
+        }
+        item { ServiceSubGrid(ServiceSpecs.appManager) }
         item {
-            PreviewNote("أسماء الحزم والأحجام هنا بيانات معاينة وليست قراءة مباشرة من الجهاز.")
+            PreviewNote(
+                "المصدر: PackageManager. حجم الحزمة يظهر فقط عندما يوفره النظام؛ " +
+                    "الغياب يعني «غير متاح» وليس صفرًا. تفاصيل الأذونات تُفتح في إعدادات Android الرسمية."
+            )
+        }
+    }
+}
+
+@Composable
+private fun AppManagerRealSummary(facts: DeviceFacts) {
+    V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 20.dp, glow = V2Violet, borderAlpha = .40f) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            RealSummaryCell("${formatCount(facts.installedCount)}", "مثبت", V2Violet, Modifier.weight(1f))
+            Box(Modifier.width(1.dp).height(30.dp).background(Color.White.withAlpha(.09f)))
+            RealSummaryCell("${formatCount(facts.userAppCount)}", "مستخدم", V2Cyan, Modifier.weight(1f))
+            Box(Modifier.width(1.dp).height(30.dp).background(Color.White.withAlpha(.09f)))
+            RealSummaryCell("${formatCount(facts.sensitiveAppCount)}", "حساس", V2Amber, Modifier.weight(1f))
+        }
+    }
+}
+
+@Composable
+private fun RealSummaryCell(value: String, label: String, accent: Color, modifier: Modifier = Modifier) {
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        KText(value, size = 16.sp, weight = FontWeight.Black, color = accent)
+        KText(label, size = 7.6.sp, color = V2Soft)
+    }
+}
+
+@Composable
+private fun RealInstalledAppRow(app: InstalledAppFacts, onClick: () -> Unit) {
+    val icon = rememberAppIcon(app.packageName)
+    V2GlassCard(
+        Modifier.fillMaxWidth().clickable(onClick = onClick),
+        padding = 9.dp,
+        radius = 15.dp,
+        glow = if (app.isSystem) V2Violet else V2Cyan,
+        borderAlpha = .22f,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier
+                    .size(38.dp)
+                    .clip(RoundedCornerShape(11.dp))
+                    .background(V2Deep2)
+                    .border(1.dp, (if (app.isSystem) V2Violet else V2Cyan).withAlpha(.28f), RoundedCornerShape(11.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (icon != null) {
+                    androidx.compose.foundation.Image(
+                        bitmap = icon,
+                        contentDescription = null,
+                        modifier = Modifier.size(34.dp),
+                    )
+                } else {
+                    Icon(Icons.Rounded.Android, null, tint = V2Soft, modifier = Modifier.size(19.dp))
+                }
+            }
+            Spacer(Modifier.width(9.dp))
+            Column(Modifier.weight(1f)) {
+                KText(app.label, size = 10.sp, weight = FontWeight.Bold, maxLines = 1)
+                KText(
+                    buildString {
+                        append(app.packageName)
+                        if (app.isSystem) append(" · نظام")
+                        if (!app.isEnabled) append(" · معطّل")
+                    },
+                    size = 7.2.sp,
+                    color = V2Muted,
+                    maxLines = 1,
+                )
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                KText(app.appBytes?.let { formatBytes(it) } ?: "غير متاح", size = 8.8.sp, weight = FontWeight.Bold, color = V2Cyan)
+                KText(app.versionName ?: "—", size = 7.sp, color = V2Muted, maxLines = 1)
+            }
         }
     }
 }
@@ -748,42 +825,71 @@ private val storageCategories = listOf(
 
 @Composable
 fun V2StorageScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> Unit) {
+    val context = LocalContext.current
+    val (refresh, bump) = rememberRefreshCounter()
+    val facts = rememberDeviceFacts(refresh)
+    val storage = facts.storage
+
     InteriorScaffold(
         onBack = onBack,
         onPro = onPro,
         bottomBar = {
-            V2GradientButton("عرض التفصيل الكامل", onOpenDetail, icon = Icons.Rounded.Storage, trailingChevron = true)
+            V2GradientButton("إعدادات التخزين في Android", { openStorageSettings(context) }, icon = Icons.Rounded.Storage, trailingChevron = true)
         },
     ) {
         item {
-            PageHeading("تحليل التخزين", "اعرف أين تذهب كل مساحة على جهازك", Icons.Rounded.Storage, V2Cyan)
+            ServiceBanner(
+                spec = ServiceSpecs.storage,
+                status = if (storage.totalBytes > 0L) "StatFs مقروء" else "جاري القراءة",
+                statusColor = if (storage.totalBytes > 0L) V2Green else V2Amber,
+                metric = "${(storage.usedFraction * 100).toInt()}% مستخدم",
+            )
         }
-        item { StorageHeroCard() }
-        item { V2SectionLabel("حسب النوع", trailing = "بيانات معاينة") }
-        item {
-            V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 20.dp, glow = V2Cyan, borderAlpha = .28f) {
-                Column {
-                    SegmentedBar(storageCategories.map { it.fraction to it.accent }, height = 11)
-                    Spacer(Modifier.height(11.dp))
-                    storageCategories.forEachIndexed { index, category ->
-                        StorageCategoryRow(category)
-                        if (index != storageCategories.lastIndex) {
-                            Spacer(Modifier.height(8.dp))
-                        }
-                    }
+        item { StorageHeroCard(storage, facts.ownCacheBytes, onRefresh = bump) }
+        item { V2SectionLabel("القراءة الفعلية", trailing = "من الجهاز") }
+        item { RealStorageBreakdown(facts) }
+        item { V2SectionLabel("أكبر الملفات", trailing = if (facts.media.permissionGranted) "MediaStore" else "بعد المنح") }
+        if (!facts.media.permissionGranted) {
+            item {
+                ServiceCapabilityCard(
+                    title = "صلاحية الصور والفيديو مطلوبة",
+                    body = "لا يقرأ KNOUX مكتبتك قبل موافقتك. تُطلب الصلاحية من شاشة الملفات المكررة أو من إعدادات Android.",
+                    state = ServiceState.PERMISSION,
+                )
+            }
+        } else if (facts.media.largestFiles.isEmpty()) {
+            item {
+                ServiceCapabilityCard(
+                    title = "لا ملفات وسائط لعرضها",
+                    body = "فُحصت المكتبة المصرح بها ولم تُعد MediaStore أي ملفات قابلة للعرض.",
+                    state = ServiceState.LIVE,
+                )
+            }
+        } else {
+            facts.media.largestFiles.take(4).forEach { file ->
+                item {
+                    LoadingFileRow(
+                        title = file.name,
+                        subtitle = file.bucket ?: if (file.isVideo) "فيديو" else "صورة",
+                        size = formatBytes(file.sizeBytes),
+                        accent = if (file.isVideo) V2Pink else V2Violet,
+                    )
                 }
             }
         }
-        item { V2SectionLabel("أكبر الملفات", trailing = "عرض الكل") }
-        item { BigFileRow("فيديو 4K — رحلة الجبال", "2.4 GB", Icons.Rounded.Videocam, V2Pink) }
-        item { BigFileRow("أرشيف الصور — 2025", "1.8 GB", Icons.Rounded.PhotoLibrary, V2Violet) }
-        item { BigFileRow("نسخة احتياطية قديمة", "1.2 GB", Icons.Rounded.Archive, V2Amber) }
-        item { PreviewNote("أحجام الفئات هنا عرض تصميمي وليست قياسًا مباشرًا من الجهاز.") }
+        item { ServiceSubGrid(ServiceSpecs.storage) }
+        item {
+            PreviewNote(
+                "الأرقام أعلاه من StatFs وMediaStore على هذا الهاتف. أحجام التطبيقات المنفصلة تحتاج " +
+                    "صلاحية Usage Access، وتظهر «مقيدة» بدل رقم تقديري."
+            )
+        }
     }
 }
 
 @Composable
-private fun StorageHeroCard() {
+private fun StorageHeroCard(storage: StorageFacts, cacheBytes: Long, onRefresh: () -> Unit) {
+    val progress = storage.usedFraction.coerceIn(0f, 1f)
     V2GlassCard(
         Modifier.fillMaxWidth(),
         padding = 13.dp,
@@ -793,29 +899,101 @@ private fun StorageHeroCard() {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             V2NeonRing(
-                progress = .67f,
+                progress = progress,
                 size = 112.dp,
                 stroke = 8.dp,
                 colors = listOf(V2Pink, V2Violet, V2Blue, V2Cyan),
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    KText("67%", size = 26.sp, weight = FontWeight.Black)
+                    KText("${(progress * 100).toInt()}%", size = 26.sp, weight = FontWeight.Black)
                     KText("مستخدم", size = 8.sp, color = V2Soft)
                 }
             }
             Spacer(Modifier.width(13.dp))
             Column(Modifier.weight(1f)) {
-                KText("46.8 GB", size = 22.sp, weight = FontWeight.Black)
-                KText("من إجمالي 72.4 GB", size = 8.4.sp, color = V2Soft)
+                KText(formatBytes(storage.usedBytes), size = 22.sp, weight = FontWeight.Black)
+                KText("من إجمالي ${formatBytes(storage.totalBytes)}", size = 8.4.sp, color = V2Soft)
                 Spacer(Modifier.height(7.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Rounded.Check, null, tint = V2Green, modifier = Modifier.size(13.dp))
                     Spacer(Modifier.width(4.dp))
-                    KText("25.6 GB متاحة", size = 9.sp, weight = FontWeight.SemiBold, color = V2Green)
+                    KText("${formatBytes(storage.freeBytes)} متاحة", size = 9.sp, weight = FontWeight.SemiBold, color = V2Green)
                 }
                 Spacer(Modifier.height(5.dp))
-                KText("يمكن تحرير حتى 6.2 GB بمراجعة الملفات الكبيرة.", size = 7.8.sp, color = V2Muted)
+                KText("كاش KNOUX المقروء: ${formatBytes(cacheBytes)} · يُحذف بتأكيدك فقط.", size = 7.8.sp, color = V2Muted)
+                Spacer(Modifier.height(5.dp))
+                Box(
+                    Modifier
+                        .clip(RoundedCornerShape(9.dp))
+                        .background(V2Cyan.withAlpha(.12f))
+                        .border(1.dp, V2Cyan.withAlpha(.30f), RoundedCornerShape(9.dp))
+                        .clickable(onClick = onRefresh)
+                        .padding(horizontal = 9.dp, vertical = 4.dp)
+                ) {
+                    KText("تحديث القراءة", size = 7.4.sp, weight = FontWeight.Bold, color = V2Cyan)
+                }
             }
+        }
+    }
+}
+
+@Composable
+private fun RealStorageBreakdown(facts: DeviceFacts) {
+    val total = facts.storage.totalBytes.coerceAtLeast(1L)
+    val mediaGranted = facts.media.permissionGranted
+    val images = if (mediaGranted) facts.media.imagesBytes else 0L
+    val videos = if (mediaGranted) facts.media.videosBytes else 0L
+    val cache = facts.ownCacheBytes
+    val others = (facts.storage.usedBytes - images - videos - cache).coerceAtLeast(0L)
+    V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 20.dp, glow = V2Cyan, borderAlpha = .28f) {
+        Column {
+            listOf(
+                Triple("الصور", if (mediaGranted) formatBytes(images) else "بعد المنح", images),
+                Triple("الفيديو", if (mediaGranted) formatBytes(videos) else "بعد المنح", videos),
+                Triple("كاش KNOUX", formatBytes(cache), cache),
+                Triple("النظام والتطبيقات", formatBytes(others), others),
+            ).forEachIndexed { index, (name, value, bytes) ->
+                RealStorageRow(
+                    name = name,
+                    value = value,
+                    fraction = (bytes.toFloat() / total.toFloat()).coerceIn(0f, 1f),
+                    accent = when (index) {
+                        0 -> V2Pink
+                        1 -> V2Violet
+                        2 -> V2Cyan
+                        else -> V2Amber
+                    },
+                )
+                if (index != 3) Spacer(Modifier.height(8.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun RealStorageRow(name: String, value: String, fraction: Float, accent: Color) {
+    Column(Modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            KText(name, size = 9.4.sp, weight = FontWeight.SemiBold)
+            Spacer(Modifier.weight(1f))
+            KText(value, size = 9.sp, weight = FontWeight.Bold, color = accent)
+        }
+        Spacer(Modifier.height(3.dp))
+        V2ProgressBar(fraction, height = 4.dp, colors = listOf(accent, accent.withAlpha(.55f)))
+    }
+}
+
+@Composable
+private fun LoadingFileRow(title: String, subtitle: String, size: String, accent: Color) {
+    V2GlassCard(Modifier.fillMaxWidth(), padding = 9.dp, radius = 15.dp, glow = accent, borderAlpha = .24f) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            V2IconTile(Icons.Rounded.PhotoLibrary, accent, size = 32.dp, iconSize = 16.dp)
+            Spacer(Modifier.width(8.dp))
+            Column(Modifier.weight(1f)) {
+                KText(title, size = 9.2.sp, weight = FontWeight.SemiBold, maxLines = 1)
+                KText(subtitle, size = 7.2.sp, color = V2Muted, maxLines = 1)
+            }
+            KText(size, size = 9.2.sp, weight = FontWeight.Bold, color = accent)
         }
     }
 }
@@ -874,53 +1052,90 @@ private fun BigFileRow(title: String, size: String, icon: ImageVector, accent: C
 
 @Composable
 fun V2BatteryScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> Unit) {
-    var mode by remember { mutableStateOf(1) }
-    val modes = listOf("اقتصادي", "متوازن", "أداء")
+    val context = LocalContext.current
+    val (refresh, bump) = rememberRefreshCounter()
+    val facts = rememberDeviceFacts(refresh)
+    val battery = facts.battery
+    val openUsagePermission: () -> Unit = { openUsageAccessSettings(context) }
 
     InteriorScaffold(
         onBack = onBack,
         onPro = onPro,
         bottomBar = {
-            V2GhostButton("تشخيص البطارية", onOpenDetail, icon = Icons.Rounded.Thermostat, height = 47.dp)
-        },
-    ) {
-        item { PageHeading("توفير البطارية", "تحكم في الاستهلاك وحرارة الجهاز", Icons.Rounded.BatteryFull, V2Green) }
-        item { BatteryHeroCard() }
-        item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                modes.forEachIndexed { index, label ->
-                    AppFilterChip(
-                        text = label,
-                        active = mode == index,
-                        modifier = Modifier.weight(1f),
-                        onClick = { mode = index },
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                Box(Modifier.weight(1f)) {
+                    V2GhostButton("تحديث", onClick = bump, icon = Icons.Rounded.Refresh, height = 47.dp)
+                }
+                Box(Modifier.weight(1f)) {
+                    V2GhostButton(
+                        "إعدادات البطارية",
+                        onClick = { openBatterySaverSettings(context) },
+                        icon = Icons.Rounded.Settings,
+                        height = 47.dp,
                     )
                 }
             }
-        }
-        item { V2SectionLabel("الأكثر استهلاكًا", trailing = "آخر 24 ساعة") }
-        item { DrainRow("TikTok", "32%", .82f, V2Pink, AppMark.TikTok) }
-        item { DrainRow("YouTube", "24%", .64f, V2Red, AppMark.YouTube) }
-        item { DrainRow("WhatsApp", "11%", .32f, V2Green, AppMark.WhatsApp) }
+        },
+    ) {
         item {
-            V2GlassCard(Modifier.fillMaxWidth(), padding = 11.dp, radius = 17.dp, glow = V2Cyan, borderAlpha = .28f) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Rounded.Thermostat, null, tint = V2Cyan, modifier = Modifier.size(20.dp))
-                    Spacer(Modifier.width(8.dp))
-                    Column(Modifier.weight(1f)) {
-                        KText("حرارة الجهاز مستقرة", size = 9.8.sp, weight = FontWeight.Bold)
-                        KText("34° مئوية · لا يوجد ارتفاع غير طبيعي", size = 7.8.sp, color = V2Soft)
-                    }
-                    KText("جيد", size = 8.sp, weight = FontWeight.Bold, color = V2Green)
+            ServiceBanner(
+                spec = ServiceSpecs.battery,
+                status = if (battery.levelPercent != null) "BatteryManager" else "جاري القراءة",
+                statusColor = if (battery.levelPercent != null) V2Green else V2Amber,
+                metric = battery.levelPercent?.let { "$it% · ${battery.statusLabel}" } ?: "غير متاح",
+            )
+        }
+        item { BatteryHeroCard(battery) }
+        item { V2SectionLabel("القراءة الفعلية", trailing = "من النظام") }
+        item {
+            V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 20.dp, glow = V2Green, borderAlpha = .30f) {
+                Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+                    BatteryFactRow("الحالة", battery.statusLabel, V2Green)
+                    BatteryFactRow("الصحة", battery.healthLabel, V2Cyan)
+                    BatteryFactRow("الحرارة", battery.temperatureC?.let { String.format(java.util.Locale.US, "%.1f°C", it) } ?: "غير متاح", V2Amber)
+                    BatteryFactRow("الجهد", battery.voltageMv?.let { "${formatCount(it)} mV" } ?: "غير متاح", V2Violet)
+                    BatteryFactRow("التقنية", battery.technology ?: "غير متاح", V2Soft)
+                    BatteryFactRow("الشاحن", if (battery.charging) "متصل" else "غير متصل", if (battery.charging) V2Green else V2Muted)
                 }
             }
         }
-        item { PreviewNote("نِسب الاستهلاك والوقت المتبقي قيم معاينة وليست قراءة من النظام.") }
+        item { V2SectionLabel("إدارة الاستهلاك", trailing = "يدوي") }
+        item {
+            ServiceCapabilityCard(
+                title = "استهلاك التطبيقات التفصيلي",
+                body = if (facts.usageAccessGranted) {
+                    "صلاحية الاستخدام ممنوحة، لكن قراءة الاستهلاك لكل تطبيق لم تُدمج بعد. لا تُعرض أرقام تقديرية."
+                } else {
+                    "Android يخفي استهلاك كل تطبيق حتى تمنح Usage Access. لن يعرض KNOUX نسبًا وهمية."
+                },
+                state = if (facts.usageAccessGranted) ServiceState.PREVIEW else ServiceState.PERMISSION,
+                actionLabel = if (facts.usageAccessGranted) null else "فتح الصلاحية",
+                onAction = if (facts.usageAccessGranted) null else openUsagePermission,
+            )
+        }
+        item {
+            ServiceCapabilityCard(
+                title = "وضع توفير البطارية",
+                body = "يُدار من إعدادات Android الرسمية. لا يغيّر KNOUX إعدادات النظام تلقائيًا.",
+                state = ServiceState.RESTRICTED,
+                actionLabel = "فتح",
+                onAction = { openBatterySettings(context) },
+            )
+        }
+        item { ServiceSubGrid(ServiceSpecs.battery) }
+        item {
+            PreviewNote(
+                "كل القيم أعلاه من BatteryManager لحظة القراءة. الوقت المتبقي غير معروض " +
+                    "لأن Android لا يوفره بشكل موثوق لكل الأجهزة."
+            )
+        }
     }
 }
 
 @Composable
-private fun BatteryHeroCard() {
+private fun BatteryHeroCard(battery: BatteryFacts) {
+    val level = battery.levelPercent
+    val progress = (level ?: 0) / 100f
     V2GlassCard(
         Modifier.fillMaxWidth(),
         padding = 13.dp,
@@ -930,14 +1145,14 @@ private fun BatteryHeroCard() {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             V2NeonRing(
-                progress = .93f,
+                progress = progress.coerceIn(0f, 1f),
                 size = 112.dp,
                 stroke = 8.dp,
                 colors = listOf(V2Green, V2Cyan, V2Blue),
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    KText("93%", size = 28.sp, weight = FontWeight.Black)
-                    KText("صحة البطارية", size = 7.6.sp, color = V2Soft)
+                    KText(level?.let { "$it%" } ?: "—", size = 28.sp, weight = FontWeight.Black)
+                    KText("مستوى البطارية", size = 7.6.sp, color = V2Soft)
                 }
             }
             Spacer(Modifier.width(13.dp))
@@ -945,19 +1160,32 @@ private fun BatteryHeroCard() {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Rounded.Bolt, null, tint = V2Green, modifier = Modifier.size(15.dp))
                     Spacer(Modifier.width(4.dp))
-                    KText("الوقت المتبقي", size = 9.sp, color = V2Soft)
+                    KText(battery.statusLabel, size = 11.sp, weight = FontWeight.Bold, color = V2Green)
                 }
-                KText("14 س 20 د", size = 20.sp, weight = FontWeight.Black)
+                Spacer(Modifier.height(4.dp))
+                KText(battery.healthLabel, size = 18.sp, weight = FontWeight.Black)
+                KText("صحة البطارية من النظام", size = 7.6.sp, color = V2Muted)
                 Spacer(Modifier.height(6.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Rounded.Thermostat, null, tint = V2Amber, modifier = Modifier.size(14.dp))
-                    Spacer(Modifier.width(4.dp))
-                    KText("34° مئوية", size = 9.sp, weight = FontWeight.SemiBold, color = V2Amber)
+                battery.temperatureC?.let {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Rounded.Thermostat, null, tint = V2Amber, modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(4.dp))
+                        KText(String.format(java.util.Locale.US, "%.1f°C", it), size = 9.sp, weight = FontWeight.SemiBold, color = V2Amber)
+                    }
+                    Spacer(Modifier.height(4.dp))
                 }
-                Spacer(Modifier.height(5.dp))
-                KText("الشحن السريع غير متصل", size = 7.6.sp, color = V2Muted)
+                KText(if (battery.charging) "الشاحن متصل" else "يعمل على البطارية", size = 7.6.sp, color = V2Soft)
             }
         }
+    }
+}
+
+@Composable
+private fun BatteryFactRow(label: String, value: String, accent: Color) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        KText(label, size = 9.sp, color = V2Soft)
+        Spacer(Modifier.weight(1f))
+        KText(value, size = 9.4.sp, weight = FontWeight.Bold, color = accent)
     }
 }
 
@@ -999,54 +1227,183 @@ private val aiActions = listOf(
     AiAction("تبريد الجهاز", "إيقاف النشاط الثقيل مؤقتًا", "-4°", Icons.Rounded.Thermostat, V2Amber),
 )
 
+private data class LiveRecommendation(
+    val key: String,
+    val title: String,
+    val detail: String,
+    val value: String,
+    val icon: ImageVector,
+    val accent: Color,
+)
+
 @Composable
 fun V2AiScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> Unit) {
-    val applied = remember { mutableStateOf(setOf<Int>()) }
+    val context = LocalContext.current
+    val navigate = LocalServiceNavigate.current
+    val (refresh, bump) = rememberRefreshCounter()
+    val facts = rememberDeviceFacts(refresh)
+    val storage = facts.storage
+    val battery = facts.battery
+
+    val recommendations = buildList {
+        if (facts.ownCacheBytes > 0L) add(
+            LiveRecommendation(
+                "cache",
+                "تنظيف كاش KNOUX",
+                "ملفات مؤقتة داخل التطبيق فقط، بعد تأكيدك",
+                formatBytes(facts.ownCacheBytes),
+                Icons.Rounded.CleaningServices,
+                V2Pink,
+            )
+        )
+        if (storage.totalBytes > 0L && storage.usedFraction >= .80f) add(
+            LiveRecommendation(
+                "storage",
+                "مساحة التخزين مشغولة",
+                "راجع أكبر الملفات قبل أي حذف",
+                "${(storage.usedFraction * 100).toInt()}%",
+                Icons.Rounded.Storage,
+                V2Cyan,
+            )
+        )
+        if (facts.media.duplicateGroups.isNotEmpty()) add(
+            LiveRecommendation(
+                "duplicates",
+                "نسخ وسائط مكررة",
+                "مجموعات مطابقة بالحجم والنوع من MediaStore",
+                "${facts.media.duplicateGroups.size} مجموعة",
+                Icons.Rounded.Layers,
+                V2Violet,
+            )
+        )
+        if (facts.sensitiveAppCount > 0) add(
+            LiveRecommendation(
+                "privacy",
+                "أذونات حساسة ممنوحة",
+                "راجع الكاميرا والميكروفون والموقع",
+                "${formatCount(facts.sensitiveAppCount)} تطبيق",
+                Icons.Rounded.Shield,
+                V2Amber,
+            )
+        )
+        battery.levelPercent?.let { level ->
+            if (level <= 35 && !battery.charging) add(
+                LiveRecommendation(
+                    "battery",
+                    "بطارية منخفضة",
+                    "افتح وضع توفير البطارية من إعدادات Android",
+                    "$level%",
+                    Icons.Rounded.BatteryFull,
+                    V2Green,
+                )
+            )
+        }
+        if (!facts.usageAccessGranted) add(
+            LiveRecommendation(
+                "usage",
+                "استهلاك التطبيقات غير مقروء",
+                "صلاحية Usage Access غير ممنوحة",
+                "مقيد",
+                Icons.Rounded.Speed,
+                V2Muted,
+            )
+        )
+        if (facts.installedCount > 0) add(
+            LiveRecommendation(
+                "apps",
+                "مراجعة التطبيقات المثبتة",
+                "الأحجام والأذونات من PackageManager",
+                "${formatCount(facts.installedCount)} تطبيق",
+                Icons.Rounded.Apps,
+                V2Blue,
+            )
+        )
+    }
+
+    fun run(key: String) {
+        when (key) {
+            "cache" -> navigate("smartclean")
+            "storage" -> navigate("storage")
+            "duplicates" -> navigate("duplicates")
+            "privacy" -> navigate("privacy")
+            "battery" -> openBatterySaverSettings(context)
+            "usage" -> openUsageAccessSettings(context)
+            "apps" -> navigate("appmanager")
+        }
+    }
+
     InteriorScaffold(
         onBack = onBack,
         onPro = onPro,
         bottomBar = {
             V2GradientButton(
-                "تطبيق التحسينات المحددة (${applied.value.size})",
-                onOpenDetail,
-                icon = Icons.Rounded.AutoAwesome,
+                "تحديث التوصيات",
+                bump,
+                icon = Icons.Rounded.Refresh,
                 trailingChevron = true,
             )
         },
     ) {
-        item { PageHeading("تحسين الأداء", "توصيات ذكية مبنية على حالة الجهاز", Icons.Rounded.AutoAwesome, V2Pink) }
-        item { AiScoreCard() }
-        item { V2SectionLabel("التوصيات", trailing = "4 اقتراحات") }
-        items(aiActions.size) { index ->
-            val action = aiActions[index]
-            val isApplied = applied.value.contains(index)
-            AiActionRow(
-                action = action,
-                applied = isApplied,
-                onToggle = {
-                    applied.value = if (isApplied) applied.value - index else applied.value + index
-                },
+        item {
+            ServiceBanner(
+                spec = ServiceSpecs.ai,
+                status = if (facts.computedAt > 0L) "قراءة مباشرة" else "جاري القراءة",
+                statusColor = if (facts.computedAt > 0L) V2Green else V2Amber,
+                metric = "${recommendations.size} توصية",
             )
         }
         item {
-            V2GlassCard(Modifier.fillMaxWidth(), padding = 11.dp, radius = 17.dp, glow = V2GoldText, borderAlpha = .30f) {
+            AiScoreCard(
+                score = facts.healthEstimate,
+                storageUsed = storage.usedFraction,
+                batteryLevel = battery.levelPercent,
+                apps = facts.installedCount,
+            )
+        }
+        item { V2SectionLabel("التوصيات", trailing = "${recommendations.size} مرتبة بالأثر") }
+        if (recommendations.isEmpty()) {
+            item {
+                ServiceCapabilityCard(
+                    title = "لا توصيات حالية",
+                    body = "كل القراءات المتاحة ضمن النطاق الطبيعي. تُحدَّث التوصيات مع كل قراءة جديدة.",
+                    state = ServiceState.LIVE,
+                )
+            }
+        }
+        items(recommendations.size) { index ->
+            val action = recommendations[index]
+            LiveRecommendationRow(action) { run(action.key) }
+        }
+        item {
+            V2GlassCard(
+                Modifier.fillMaxWidth(),
+                padding = 11.dp,
+                radius = 17.dp,
+                glow = V2GoldText,
+                borderAlpha = .30f,
+            ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Rounded.AutoAwesome, null, tint = V2Amber, modifier = Modifier.size(20.dp))
                     Spacer(Modifier.width(8.dp))
                     Column(Modifier.weight(1f)) {
                         KText("تحسينات Pro الأعمق", size = 9.8.sp, weight = FontWeight.Bold, color = V2GoldText)
-                        KText("تحليل مستمر وتوصيات مخصصة حسب استخدامك.", size = 7.8.sp, color = V2Soft)
+                        KText("غير متاح في هذا الإصدار — لا يوجد محرك تغيير تلقائي لإعدادات النظام.", size = 7.6.sp, color = V2Soft)
                     }
-                    Icon(Icons.Rounded.ChevronLeft, null, tint = V2Amber, modifier = Modifier.size(17.dp))
                 }
             }
         }
-        item { PreviewNote("الأرقام هنا معاينة تصميمية، لا يتم تعديل إعدادات النظام فعليًا في هذا البناء.") }
+        item { ServiceSubGrid(ServiceSpecs.ai) }
+        item {
+            PreviewNote(
+                "كل توصية مبنية على قراءة فعلية من هذا الهاتف. التنفيذ يفتح الشاشة أو إعدادات Android " +
+                    "المختصة؛ لا يوجد تطبيق تلقائي لأي تغيير."
+            )
+        }
     }
 }
 
 @Composable
-private fun AiScoreCard() {
+private fun AiScoreCard(score: Int, storageUsed: Float, batteryLevel: Int?, apps: Int) {
     V2GlassCard(
         Modifier.fillMaxWidth(),
         padding = 13.dp,
@@ -1056,14 +1413,14 @@ private fun AiScoreCard() {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             V2NeonRing(
-                progress = .94f,
+                progress = score / 100f,
                 size = 108.dp,
                 stroke = 8.dp,
                 colors = listOf(V2Cyan, V2Blue, V2Violet, V2Pink),
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    KText("94", size = 30.sp, weight = FontWeight.Black)
-                    KText("نقطة الأداء", size = 7.4.sp, color = V2Soft)
+                    KText(if (score > 0) "$score" else "—", size = 30.sp, weight = FontWeight.Black)
+                    KText("تقدير الجهاز", size = 7.2.sp, color = V2Soft)
                 }
             }
             Spacer(Modifier.width(13.dp))
@@ -1071,13 +1428,47 @@ private fun AiScoreCard() {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Rounded.Check, null, tint = V2Green, modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(4.dp))
-                    KText("أداء ممتاز", size = 11.sp, weight = FontWeight.Bold, color = V2Green)
+                    KText("مؤشر تقديري", size = 11.sp, weight = FontWeight.Bold, color = V2Green)
                 }
                 Spacer(Modifier.height(4.dp))
-                KText("هناك 4 تحسينات متاحة قد ترفع النتيجة إلى 98.", size = 8.6.sp, color = V2Soft)
+                KText(
+                    "يُحسب من التخزين والبطارية والأذونات، وليس قياسًا لسرعة المعالج.",
+                    size = 8.2.sp,
+                    lineHeight = 11.5.sp,
+                    color = V2Soft,
+                )
                 Spacer(Modifier.height(6.dp))
-                V2ProgressBar(.94f, height = 5.dp, colors = listOf(V2Pink, V2Violet, V2Cyan))
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    KText("تخزين ${(storageUsed * 100).toInt()}%", size = 7.6.sp, color = V2Cyan)
+                    KText(batteryLevel?.let { "بطارية $it%" } ?: "بطارية —", size = 7.6.sp, color = V2Green)
+                    KText("$apps تطبيق", size = 7.6.sp, color = V2Violet)
+                }
+                Spacer(Modifier.height(6.dp))
+                V2ProgressBar(score / 100f, height = 5.dp, colors = listOf(V2Pink, V2Violet, V2Cyan))
             }
+        }
+    }
+}
+
+@Composable
+private fun LiveRecommendationRow(action: LiveRecommendation, onClick: () -> Unit) {
+    V2GlassCard(
+        Modifier.fillMaxWidth().clickable(onClick = onClick),
+        padding = 10.dp,
+        radius = 17.dp,
+        glow = action.accent,
+        borderAlpha = .34f,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            V2IconTile(action.icon, action.accent, size = 36.dp, iconSize = 18.dp)
+            Spacer(Modifier.width(9.dp))
+            Column(Modifier.weight(1f)) {
+                KText(action.title, size = 9.8.sp, weight = FontWeight.Bold)
+                KText(action.detail, size = 7.4.sp, color = V2Muted, maxLines = 1)
+            }
+            KText(action.value, size = 8.8.sp, weight = FontWeight.Bold, color = action.accent)
+            Spacer(Modifier.width(5.dp))
+            Icon(Icons.Rounded.ChevronLeft, null, tint = V2Soft, modifier = Modifier.size(15.dp))
         }
     }
 }

@@ -153,7 +153,22 @@ fun V2DeepScanScreen(onBack: () -> Unit, onOpenSummary: () -> Unit, onPro: () ->
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                item { ScanScreenHeader(finished = finished, paused = paused) }
+                item {
+                    ServiceBanner(
+                        spec = ServiceSpecs.deepScan,
+                        status = when {
+                            finished -> "اكتمل الفحص"
+                            paused -> "متوقف مؤقتًا"
+                            else -> "جاري الفحص"
+                        },
+                        statusColor = when {
+                            finished -> V2Green
+                            paused -> V2Amber
+                            else -> V2Cyan
+                        },
+                        metric = "${(progress * 100).toInt()}% · ${formatCount(facts.installedCount)} تطبيق",
+                    )
+                }
                 item {
                     ScanOrbCard(
                         progress = progress,
@@ -172,6 +187,7 @@ fun V2DeepScanScreen(onBack: () -> Unit, onOpenSummary: () -> Unit, onPro: () ->
                 item { ScanModulesCard(completed = completed) }
                 item { ScanResultsCard(facts = facts, finished = finished) }
                 item { ScanHistoryCard(history = history) }
+                item { ServiceSubGrid(ServiceSpecs.deepScan) }
                 item {
                     PreviewNote(
                         "كل القيم أعلاه مقروءة من هذا الجهاز لحظة الفحص وحُفظت في سجل محلي. " +
@@ -615,30 +631,14 @@ fun V2DuplicatesScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 item {
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f)) {
-                            androidx.compose.material3.Text(
-                                "الملفات المكررة",
-                                style = androidx.compose.ui.text.TextStyle(
-                                    fontFamily = V2Font,
-                                    fontWeight = FontWeight.Black,
-                                    fontSize = 27.sp,
-                                    color = Color.White,
-                                )
-                            )
-                            KText("اكتشف وراجع النسخ المتطابقة بأمان", size = 10.sp, color = V2Soft)
-                        }
-                        Box(
-                            Modifier
-                                .size(43.dp)
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(Brush.linearGradient(listOf(V2Cyan.copy(alpha = .30f), V2Violet.copy(alpha = .28f))))
-                                .border(1.dp, V2Cyan.copy(alpha = .46f), RoundedCornerShape(14.dp)),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Icon(Icons.Rounded.Layers, null, tint = Color.White, modifier = Modifier.size(23.dp))
-                        }
-                    }
+                    ServiceBanner(
+                        spec = ServiceSpecs.duplicates,
+                        status = if (media.permissionGranted) "MediaStore متاح" else "يحتاج صلاحية",
+                        statusColor = if (media.permissionGranted) V2Green else V2Amber,
+                        metric = if (media.permissionGranted) {
+                            "${formatBytes(reclaimable)} · ${formatCount(duplicateFiles)} ملف"
+                        } else null,
+                    )
                 }
 
                 if (!media.permissionGranted) {
@@ -730,6 +730,7 @@ fun V2DuplicatesScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -
                         }
                     }
                 }
+                item { ServiceSubGrid(ServiceSpecs.duplicates) }
                 item {
                     PreviewNote(
                         "المصدر: MediaStore بعد منح الصلاحية. المطابقة الحالية حسب الحجم والنوع " +
@@ -1113,7 +1114,14 @@ fun V2ResidueScreen(onBack: () -> Unit, onReview: () -> Unit, onPro: () -> Unit)
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(9.dp),
             ) {
-                item { ResidueTitle() }
+                item {
+                    ServiceBanner(
+                        spec = ServiceSpecs.residue,
+                        status = "كاش KNOUX مقروء",
+                        statusColor = V2Green,
+                        metric = "$cacheText · ${formatCount(facts.ownCacheFiles)} ملف",
+                    )
+                }
                 item {
                     ResidueHeroCard(
                         cacheBytes = cacheBytes,
@@ -1181,6 +1189,7 @@ fun V2ResidueScreen(onBack: () -> Unit, onReview: () -> Unit, onPro: () -> Unit)
                         }
                     }
                 }
+                item { ServiceSubGrid(ServiceSpecs.residue) }
                 item { ResidueSafetyCard(cacheBytes) }
                 item {
                     PreviewNote(
@@ -1455,7 +1464,14 @@ fun V2PrivacyScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> U
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                item { PrivacyTitle() }
+                item {
+                    ServiceBanner(
+                        spec = ServiceSpecs.privacy,
+                        status = "PackageManager",
+                        statusColor = V2Green,
+                        metric = "${formatCount(granted)}/${formatCount(declared)} إذن",
+                    )
+                }
                 item {
                     PrivacyHeroCard(
                         score = score,
@@ -1467,6 +1483,7 @@ fun V2PrivacyScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> U
                 item { V2SectionLabel("مجالات الخصوصية", trailing = "قراءة مباشرة") }
                 item { PrivacyDomainGrid(groups) { openAllAppSettings(context) } }
                 item { SensitiveAppsCard(sensitiveApps) { packageName -> openAppInfo(context, packageName) } }
+                item { ServiceSubGrid(ServiceSpecs.privacy) }
                 item { PrivacyPreviewNote() }
             }
             V2BrightGoldButton(

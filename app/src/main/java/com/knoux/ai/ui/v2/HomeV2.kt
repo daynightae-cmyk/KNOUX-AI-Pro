@@ -27,10 +27,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Apps
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material.icons.rounded.ChevronRight
+import androidx.compose.material.icons.rounded.CleaningServices
 import androidx.compose.material.icons.rounded.Eco
 import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.Memory
@@ -96,6 +98,7 @@ fun V2HomeScreen(
     onProfile: () -> Unit,
     onNotifications: () -> Unit,
 ) {
+    val facts = rememberDeviceFacts()
     Box(
         Modifier
             .fillMaxSize()
@@ -157,10 +160,11 @@ fun V2HomeScreen(
                     Spacer(Modifier.height(9.dp))
                 }
 
-                item { DeviceHealthCard() }
+                item { DeviceHealthCard(facts) }
                 item { Spacer(Modifier.height(10.dp)) }
                 item {
                     HomeScanCenterpiece(
+                        score = facts.healthEstimate,
                         onScan = { onNavigate("deepscan") },
                         onInsights = { onNavigate("ai") },
                         onProtection = { onNavigate("privacy") },
@@ -175,13 +179,19 @@ fun V2HomeScreen(
                 item { Spacer(Modifier.height(9.dp)) }
                 item { V2GlassCard(Modifier.fillMaxWidth(), padding = 9.dp, radius = 16.dp, glow = V2Cyan, borderAlpha = .22f) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        HomeStat(Icons.Rounded.Eco, "-24%", "استهلاك الطاقة", V2Green, Modifier.weight(.9f))
+                        HomeStat(
+                            Icons.Rounded.Bolt,
+                            facts.battery.levelPercent?.let { "$it%" } ?: "—",
+                            "مستوى البطارية",
+                            V2Green,
+                            Modifier.weight(.9f),
+                        )
                         StatDivider()
-                        HomeStat(Icons.Rounded.RocketLaunch, "+32%", "تحسن الأداء", V2Pink, Modifier.weight(.85f))
+                        HomeStat(Icons.Rounded.Apps, "${formatCount(facts.installedCount)}", "تطبيق مثبت", V2Pink, Modifier.weight(.85f))
                         StatDivider()
-                        HomeStat(Icons.Rounded.Shield, "0", "تهديدات حرجة", V2Cyan, Modifier.weight(.75f))
+                        HomeStat(Icons.Rounded.CleaningServices, formatBytes(facts.ownCacheBytes), "كاش KNOUX", V2Cyan, Modifier.weight(.85f))
                         StatDivider()
-                        HomeStat(Icons.Rounded.Storage, "26.4 GB", "يمكن استعادتها", V2Violet, Modifier.weight(1f))
+                        HomeStat(Icons.Rounded.Storage, formatBytes(facts.storage.freeBytes), "مساحة متاحة", V2Violet, Modifier.weight(1f))
                     }
                 } }
                 item {
@@ -191,10 +201,10 @@ fun V2HomeScreen(
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Icon(Icons.Rounded.Verified, null, tint = V2Amber, modifier = Modifier.size(11.dp))
+                        Icon(Icons.Rounded.Verified, null, tint = V2Green, modifier = Modifier.size(11.dp))
                         Spacer(Modifier.width(4.dp))
                         KText(
-                            "أرقام هذه الشاشة بيانات معاينة تصميمية، وليست قياسًا مباشرًا من الجهاز.",
+                            "هذه الأرقام مقروءة من الجهاز الآن، وليست بيانات معاينة.",
                             size = 7.2.sp,
                             color = V2Muted,
                         )
@@ -206,7 +216,10 @@ fun V2HomeScreen(
 }
 
 @Composable
-private fun DeviceHealthCard() {
+private fun DeviceHealthCard(facts: DeviceFacts) {
+    val score = facts.healthEstimate
+    val storage = facts.storage
+    val battery = facts.battery
     V2GlassCard(
         modifier = Modifier.fillMaxWidth(),
         padding = 11.dp,
@@ -219,20 +232,38 @@ private fun DeviceHealthCard() {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                HealthLine(Icons.Rounded.Storage, "التخزين", "46.8 GB / 72.4 GB", .65f, V2Cyan)
-                HealthLine(Icons.Rounded.Memory, "الذاكرة", "5.6 GB / 8 GB", .70f, V2Blue)
-                HealthLine(Icons.Rounded.Bolt, "البطارية", "93%", .93f, V2Green)
+                HealthLine(
+                    Icons.Rounded.Storage,
+                    "التخزين",
+                    "${formatBytes(storage.usedBytes)} / ${formatBytes(storage.totalBytes)}",
+                    storage.usedFraction,
+                    V2Cyan,
+                )
+                HealthLine(
+                    Icons.Rounded.Bolt,
+                    "البطارية",
+                    battery.levelPercent?.let { "$it% · ${battery.statusLabel}" } ?: "غير متاح",
+                    (battery.levelPercent ?: 0) / 100f,
+                    V2Green,
+                )
+                HealthLine(
+                    Icons.Rounded.Shield,
+                    "أذونات حساسة",
+                    "${formatCount(facts.sensitiveAppCount)} تطبيق",
+                    if (facts.installedCount > 0) facts.sensitiveAppCount.toFloat() / facts.installedCount else 0f,
+                    V2Amber,
+                )
             }
             Spacer(Modifier.width(10.dp))
             V2NeonRing(
-                progress = .92f,
+                progress = score / 100f,
                 size = 88.dp,
                 stroke = 7.dp,
                 colors = listOf(V2Pink, V2Violet, V2Blue, V2Cyan),
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    KText("92%", size = 26.sp, weight = FontWeight.Black)
-                    KText("صحة الجهاز", size = 8.sp, color = V2Soft)
+                    KText(if (score > 0) "$score%" else "—", size = 26.sp, weight = FontWeight.Black)
+                    KText("تقدير الجهاز", size = 8.sp, color = V2Soft)
                     Spacer(Modifier.height(2.dp))
                     Icon(Icons.Rounded.Verified, null, tint = V2Amber, modifier = Modifier.size(11.dp))
                 }
@@ -278,6 +309,7 @@ private fun HealthLine(
 
 @Composable
 private fun HomeScanCenterpiece(
+    score: Int,
     onScan: () -> Unit,
     onInsights: () -> Unit,
     onProtection: () -> Unit,
@@ -330,6 +362,7 @@ private fun HomeScanCenterpiece(
         )
 
         HomeScanOrb(
+            score = score,
             Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = 1.dp)
@@ -339,7 +372,7 @@ private fun HomeScanCenterpiece(
 }
 
 @Composable
-private fun HomeScanOrb(modifier: Modifier = Modifier) {
+private fun HomeScanOrb(score: Int, modifier: Modifier = Modifier) {
     Box(modifier.size(162.dp), contentAlignment = Alignment.Center) {
         Canvas(Modifier.fillMaxSize()) {
             drawCircle(
@@ -405,7 +438,7 @@ private fun HomeScanOrb(modifier: Modifier = Modifier) {
                         .border(1.dp, V2Cyan.copy(alpha = .28f), RoundedCornerShape(50))
                         .padding(horizontal = 9.dp, vertical = 2.dp)
                 ) {
-                    KText("72% جاهز", size = 7.5.sp, color = V2Cyan)
+                    KText(if (score > 0) "$score% جاهز" else "قراءة الجهاز…", size = 7.5.sp, color = V2Cyan)
                 }
             }
         }
@@ -574,27 +607,6 @@ private fun ProBanner(onClick: () -> Unit) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             CrownGold(size = 38.dp)
             KText("PRO", size = 6.4.sp, weight = FontWeight.Black, color = V2Amber, letterSpacing = .8.sp)
-        }
-    }
-}
-
-@Composable
-private fun HomeStatsStrip() {
-    V2GlassCard(
-        modifier = Modifier.fillMaxWidth(),
-        padding = 9.dp,
-        radius = 16.dp,
-        glow = V2Cyan,
-        borderAlpha = .22f,
-    ) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            HomeStat(Icons.Rounded.Storage, "26.4 GB", "يمكن استعادتها", V2Violet, Modifier.weight(1f))
-            StatDivider()
-            HomeStat(Icons.Rounded.Shield, "0", "تهديد حرجة", V2Cyan, Modifier.weight(.75f))
-            StatDivider()
-            HomeStat(Icons.Rounded.RocketLaunch, "+32%", "تحسن الأداء", V2Pink, Modifier.weight(.85f))
-            StatDivider()
-            HomeStat(Icons.Rounded.Eco, "-24%", "استهلاك الطاقة", V2Green, Modifier.weight(.9f))
         }
     }
 }

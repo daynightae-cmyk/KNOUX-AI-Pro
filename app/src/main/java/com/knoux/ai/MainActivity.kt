@@ -41,10 +41,15 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.knoux.ai.splash.KnouxSplashScreen
 import com.knoux.ai.ui.theme.KnouxTheme
+import com.knoux.ai.ui.screens.WelcomeScreen
+import com.knoux.ai.ui.v2.KnouxOnboarding
 import com.knoux.ai.ui.v2.KnouxProState
 import com.knoux.ai.ui.v2.LocalProActive
 import com.knoux.ai.ui.v2.LocalProTheme
+import com.knoux.ai.ui.v2.LocalServiceNavigate
 import com.knoux.ai.ui.v2.ProTheme
+import com.knoux.ai.ui.v2.hasSeenKnouxOnboarding
+import com.knoux.ai.ui.v2.markKnouxOnboardingSeen
 import com.knoux.ai.ui.v2.V2AiRecommendationsScreen
 import com.knoux.ai.ui.v2.V2AiScreen
 import com.knoux.ai.ui.v2.V2AppDetailScreen
@@ -105,12 +110,26 @@ private const val SETTINGS_ROUTE = "settings"
 
 private const val ROUTE_APP_DETAIL = "app-detail"
 
+private enum class EntryStage { Splash, Onboarding, Auth, Shell }
+
 @Composable
 fun KnouxApp(startRoute: String? = null) {
     val context = LocalContext.current
     LaunchedEffect(Unit) { KnouxProState.load(context) }
     val proActive = KnouxProState.active
-    var splashDone by rememberSaveable { mutableStateOf(!startRoute.isNullOrBlank()) }
+    val entryDebugRoute = startRoute?.takeIf { it == "onboarding" || it == "auth" }
+    val shellStartRoute = startRoute?.takeUnless { it == "onboarding" || it == "auth" }
+    val onboardingSeen = remember { hasSeenKnouxOnboarding(context) }
+    var entryStage by rememberSaveable {
+        mutableStateOf(
+            when {
+                entryDebugRoute == "onboarding" -> EntryStage.Onboarding
+                entryDebugRoute == "auth" -> EntryStage.Auth
+                !startRoute.isNullOrBlank() -> EntryStage.Shell
+                else -> EntryStage.Splash
+            }
+        )
+    }
     var accountInfoVisible by remember { mutableStateOf(false) }
     val nav = rememberNavController()
     val backStackEntry by nav.currentBackStackEntryAsState()
@@ -134,18 +153,33 @@ fun KnouxApp(startRoute: String? = null) {
     CompositionLocalProvider(
         LocalProTheme provides if (proActive) ProTheme.Pro else ProTheme.Standard,
         LocalProActive provides proActive,
+        LocalServiceNavigate provides open,
     ) {
         Box(Modifier.fillMaxSize()) {
         V2Background()
 
         Crossfade(
-            targetState = splashDone,
+            targetState = entryStage,
             animationSpec = tween(420),
-            label = "splash-handoff",
-        ) { ready ->
-            if (!ready) {
-                KnouxSplashScreen(onFinished = { splashDone = true })
-            } else {
+            label = "entry-handoff",
+        ) { stage ->
+            when (stage) {
+                EntryStage.Splash -> KnouxSplashScreen(
+                    onFinished = {
+                        entryStage = if (onboardingSeen) EntryStage.Auth else EntryStage.Onboarding
+                    }
+                )
+                EntryStage.Onboarding -> KnouxOnboarding(
+                    onFinish = {
+                        markKnouxOnboardingSeen(context)
+                        entryStage = EntryStage.Auth
+                    }
+                )
+                EntryStage.Auth -> WelcomeScreen(
+                    onContinueAsGuest = { entryStage = EntryStage.Shell },
+                    onOpenAccountInfo = { accountInfoVisible = true },
+                )
+                EntryStage.Shell -> {
                 Scaffold(
                     containerColor = Color.Transparent,
                     contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -167,7 +201,7 @@ fun KnouxApp(startRoute: String? = null) {
                 ) { inner ->
                     AppNavHost(
                         nav = nav,
-                        startRoute = startRoute,
+                        startRoute = shellStartRoute,
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(inner),
@@ -175,6 +209,7 @@ fun KnouxApp(startRoute: String? = null) {
                         goBack = goBack,
                         onAccount = { accountInfoVisible = true },
                     )
+                }
                 }
             }
         }
@@ -186,8 +221,8 @@ fun KnouxApp(startRoute: String? = null) {
             title = { Text("KNOUX ID") },
             text = {
                 Text(
-                    "حسابك غير مرتبط في هذا البناء. وضع الضيف يشغّل كل الأدوات على هذا الهاتف " +
-                        "بدون حساب أو رفع أو تتبّع. عند إتاحة المزامنة السحابية سيظهر تسجيل الدخول هنا."
+                    "يمكنك الدخول بحساب Google أو Passkey أو البريد وكلمة المرور/رمز OTP، " +
+                        "أو المتابعة كضيف. وضع الضيف يشغّل الأدوات محليًا بدون اعتباره اشتراكًا أو استحقاق Pro."
                 )
             },
             confirmButton = {
