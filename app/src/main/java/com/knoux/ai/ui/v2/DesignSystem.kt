@@ -233,10 +233,28 @@ fun KText(
 ) {
     val resolved = text.v2Bidi()
     val direction = if (ArabicLetters.containsMatchIn(text)) TextDirection.Rtl else TextDirection.Ltr
+    // One palette switch for every text node: when Pro is active the standard
+    // neon accents resolve to their gold/amber counterparts without touching
+    // each screen. In standard mode every mapping is the identity.
+    val proTheme = LocalProTheme.current
+    val themedColor = when (color) {
+        KnouxText -> proTheme.soft
+        V2Cyan -> proTheme.cyan
+        V2Pink -> proTheme.pink
+        V2Violet -> proTheme.violet
+        V2Blue -> proTheme.blue
+        V2Amber -> proTheme.amber
+        V2Green -> proTheme.green
+        V2Red -> proTheme.red
+        V2Soft -> proTheme.soft
+        V2Muted -> proTheme.muted
+        V2GoldText -> proTheme.gold
+        else -> color
+    }
     Text(
         text = resolved,
         modifier = modifier,
-        style = kStyle(size, weight, color, lineHeight, letterSpacing)
+        style = kStyle(size, weight, themedColor, lineHeight, letterSpacing)
             .copy(textDirection = direction),
         textAlign = align,
         maxLines = maxLines,
@@ -322,13 +340,13 @@ fun V2Background(modifier: Modifier = Modifier) {
             )
         }
 
-        drawMountains()
-        drawStars()
-        drawEnergyRibbon()
+        drawMountains(isPro)
+        drawStars(isPro, proTheme)
+        drawEnergyRibbon(isPro, proTheme)
     }
 }
 
-private fun DrawScope.drawMountains() {
+private fun DrawScope.drawMountains(isPro: Boolean) {
     val back = Path().apply {
         moveTo(0f, size.height * 0.20f)
         lineTo(size.width * 0.11f, size.height * 0.13f)
@@ -346,7 +364,10 @@ private fun DrawScope.drawMountains() {
     drawPath(
         back,
         Brush.verticalGradient(
-            listOf(Color(0xFF2A1661).withAlpha( 0.62f), Color(0xFF0A0524).withAlpha( 0f)),
+            listOf(
+                (if (isPro) ProPanel else Color(0xFF2A1661)).withAlpha(0.62f),
+                (if (isPro) ProDeep else Color(0xFF0A0524)).withAlpha(0f),
+            ),
             startY = 0f,
             endY = size.height * 0.25f,
         )
@@ -368,14 +389,17 @@ private fun DrawScope.drawMountains() {
     drawPath(
         front,
         Brush.verticalGradient(
-            listOf(Color(0xFF10072E).withAlpha( 0.92f), Color(0xFF07031A).withAlpha( 0f)),
+            listOf(
+                (if (isPro) ProDeep2 else Color(0xFF10072E)).withAlpha(0.92f),
+                (if (isPro) ProDeep else Color(0xFF07031A)).withAlpha(0f),
+            ),
             startY = 0f,
             endY = size.height * 0.30f,
         )
     )
 }
 
-private fun DrawScope.drawStars() {
+private fun DrawScope.drawStars(isPro: Boolean, proTheme: ProTheme) {
     val stars = listOf(
         .05f to .06f, .13f to .15f, .21f to .05f, .29f to .18f, .38f to .08f,
         .49f to .14f, .58f to .04f, .66f to .20f, .74f to .09f, .84f to .16f,
@@ -387,14 +411,16 @@ private fun DrawScope.drawStars() {
     )
     stars.forEachIndexed { index, (x, y) ->
         drawCircle(
-            color = if (index % 5 == 0) V2Cyan.withAlpha( .40f) else Color.White.withAlpha( .18f),
+            color = if (index % 5 == 0) {
+                (if (isPro) proTheme.gold else V2Cyan).withAlpha(.40f)
+            } else Color.White.withAlpha(.18f),
             radius = if (index % 7 == 0) 1.2.dp.toPx() else .7.dp.toPx(),
             center = Offset(size.width * x, size.height * y),
         )
     }
 }
 
-private fun DrawScope.drawEnergyRibbon() {
+private fun DrawScope.drawEnergyRibbon(isPro: Boolean, proTheme: ProTheme) {
     val path = Path().apply {
         moveTo(-size.width * .1f, size.height * .57f)
         cubicTo(
@@ -411,7 +437,12 @@ private fun DrawScope.drawEnergyRibbon() {
     drawPath(
         path = path,
         brush = Brush.linearGradient(
-            listOf(Color.Transparent, V2Pink.withAlpha( .20f), V2Cyan.withAlpha( .15f), Color.Transparent),
+            listOf(
+                Color.Transparent,
+                (if (isPro) proTheme.pink else V2Pink).withAlpha(.20f),
+                (if (isPro) proTheme.cyan else V2Cyan).withAlpha(.15f),
+                Color.Transparent,
+            ),
             start = Offset(0f, size.height * .60f),
             end = Offset(size.width, size.height * .38f),
         ),
@@ -840,6 +871,11 @@ private fun RowScope.BottomItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val proTheme = LocalProTheme.current
+    val isPro = proTheme.isPro
+    val activeTop = if (isPro) proTheme.amber else Color(0xFF6F34C9)
+    val activeBottom = if (isPro) proTheme.deep2 else Color(0xFF31145F)
+    val activeBorder = if (isPro) proTheme.gold else V2Violet
     Box(
         modifier
             .fillMaxSize()
@@ -849,10 +885,10 @@ private fun RowScope.BottomItem(
                     Modifier
                         .background(
                             Brush.verticalGradient(
-                                listOf(Color(0xFF6F34C9).withAlpha( .82f), Color(0xFF31145F).withAlpha( .66f))
+                                listOf(activeTop.withAlpha(.82f), activeBottom.withAlpha(.66f))
                             )
                         )
-                        .border(1.dp, V2Violet.withAlpha( .52f), RoundedCornerShape(19.dp))
+                        .border(1.dp, activeBorder.withAlpha(.52f), RoundedCornerShape(19.dp))
                 } else Modifier
             )
             .clickable(onClick = onClick),
@@ -862,7 +898,7 @@ private fun RowScope.BottomItem(
             Icon(
                 tab.icon ?: return@Column,
                 contentDescription = tab.label,
-                tint = if (active) Color.White else V2Soft.withAlpha( .82f),
+                tint = if (active) Color.White else proTheme.soft.withAlpha(.82f),
                 modifier = Modifier.size(20.dp),
             )
             Spacer(Modifier.height(2.dp))
@@ -870,7 +906,7 @@ private fun RowScope.BottomItem(
                 tab.label,
                 size = 9.5.sp,
                 weight = if (active) FontWeight.Bold else FontWeight.Medium,
-                color = if (active) Color.White else V2Soft.withAlpha( .85f),
+                color = if (active) Color.White else proTheme.soft.withAlpha(.85f),
                 maxLines = 1,
             )
         }
@@ -1104,24 +1140,25 @@ fun V2GhostButton(
     icon: ImageVector? = null,
     height: Dp = 44.dp,
 ) {
+    val proTheme = LocalProTheme.current
     val shape = RoundedCornerShape(50)
     Row(
         modifier
             .fillMaxWidth()
             .height(height)
             .clip(shape)
-            .background(Color.White.withAlpha( .035f))
-            .border(1.dp, V2Border.withAlpha( .50f), shape)
+            .background(Color.White.withAlpha(if (proTheme.isPro) .06f else .035f))
+            .border(1.dp, proTheme.border.withAlpha(.50f), shape)
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
     ) {
         if (icon != null) {
-            Icon(icon, null, tint = V2Soft, modifier = Modifier.size(16.dp))
+            Icon(icon, null, tint = proTheme.soft, modifier = Modifier.size(16.dp))
             Spacer(Modifier.width(6.dp))
         }
-        KText(text, size = 12.5.sp, weight = FontWeight.Bold, color = KnouxText, maxLines = 1)
+        KText(text, size = 12.5.sp, weight = FontWeight.Bold, color = proTheme.soft, maxLines = 1)
     }
 }
 

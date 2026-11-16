@@ -1,5 +1,14 @@
 package com.knoux.ai.ui.v2
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -39,10 +48,17 @@ import androidx.compose.material.icons.rounded.Verified
 import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -56,6 +72,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.cos
@@ -295,6 +312,37 @@ fun ServiceBanner(
     metric: String? = null,
 ) {
     val proActive = LocalProActive.current
+    var entered by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { entered = true }
+    val iconScale by animateFloatAsState(
+        targetValue = if (entered) 1f else .58f,
+        animationSpec = spring(dampingRatio = .52f, stiffness = 210f),
+        label = "sectionIconScale",
+    )
+    val iconAlpha by animateFloatAsState(
+        targetValue = if (entered) 1f else 0f,
+        animationSpec = tween(520),
+        label = "sectionIconAlpha",
+    )
+    val iconTilt by animateFloatAsState(
+        targetValue = if (entered) 0f else -14f,
+        animationSpec = spring(dampingRatio = .55f, stiffness = 180f),
+        label = "sectionIconTilt",
+    )
+    val loop = rememberInfiniteTransition(label = "sectionHeaderLoop")
+    val pulse by loop.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(2400, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "sectionPulse",
+    )
+    val orbit by loop.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(tween(14000, easing = LinearEasing)),
+        label = "sectionOrbit",
+    )
+
     V2GlassCard(
         modifier.fillMaxWidth(),
         padding = 12.dp,
@@ -302,65 +350,122 @@ fun ServiceBanner(
         glow = spec.accent,
         borderAlpha = .55f,
     ) {
-        Column(Modifier.fillMaxWidth()) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        KText(
-                            "KNOUX AI",
-                            size = 7.5.sp,
-                            weight = FontWeight.Black,
-                            color = spec.accent,
-                            letterSpacing = 1.8.sp,
-                        )
-                        Spacer(Modifier.width(5.dp))
-                        Box(
-                            Modifier
-                                .clip(RoundedCornerShape(50))
-                                .background(spec.accent.withAlpha(.14f))
-                                .border(1.dp, spec.accent.withAlpha(.37f), RoundedCornerShape(50))
-                                .padding(horizontal = 5.dp, vertical = 1.dp)
-                        ) {
-                            KText(spec.order, size = 7.sp, weight = FontWeight.Bold, color = spec.accent)
-                        }
-                        if (proActive) {
-                            Spacer(Modifier.width(5.dp))
-                            ProPill()
-                        }
-                    }
-                    Spacer(Modifier.height(1.dp))
-                    KText(spec.title, size = 23.sp, weight = FontWeight.Black, color = Color.White)
+        Box(Modifier.fillMaxWidth()) {
+            // Section mascot: fixed inside every section header, kept subtle.
+            V2DeerHeader(
+                Modifier
+                    .align(Alignment.CenterEnd)
+                    .width(96.dp)
+                    .height(118.dp)
+                    .alpha(.16f),
+                animated = true,
+            )
+            Column(Modifier.fillMaxWidth()) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     KText(
-                        spec.english,
-                        size = 7.6.sp,
-                        weight = FontWeight.Bold,
-                        color = spec.accent2,
-                        letterSpacing = 1.4.sp,
+                        "KNOUX AI",
+                        size = 7.5.sp,
+                        weight = FontWeight.Black,
+                        color = spec.accent,
+                        letterSpacing = 1.8.sp,
                     )
-                    Spacer(Modifier.height(3.dp))
-                    KText(spec.tagline, size = 8.6.sp, lineHeight = 12.sp, color = V2Soft, maxLines = 2)
-                    Spacer(Modifier.height(6.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
-                        ServiceStatusChip(status, statusColor)
-                        if (metric != null) ServiceGlassChip(metric)
-                    }
-                }
-                Spacer(Modifier.width(8.dp))
-                ServiceArt(spec, Modifier.size(96.dp))
-            }
-            Spacer(Modifier.height(8.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                spec.chips.take(2).forEach { chip ->
+                    Spacer(Modifier.width(5.dp))
                     Box(
                         Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(9.dp))
-                            .background(Color.White.withAlpha(.045f))
-                            .border(1.dp, spec.accent.withAlpha(.20f), RoundedCornerShape(9.dp))
-                            .padding(horizontal = 7.dp, vertical = 4.dp),
-                        contentAlignment = Alignment.Center,
+                            .clip(RoundedCornerShape(50))
+                            .background(spec.accent.withAlpha(.14f))
+                            .border(1.dp, spec.accent.withAlpha(.37f), RoundedCornerShape(50))
+                            .padding(horizontal = 5.dp, vertical = 1.dp)
                     ) {
-                        KText(chip, size = 7.4.sp, color = V2Soft, maxLines = 1)
+                        KText(spec.order, size = 7.sp, weight = FontWeight.Bold, color = spec.accent)
+                    }
+                    if (proActive) {
+                        Spacer(Modifier.width(5.dp))
+                        ProPill()
+                    }
+                    Spacer(Modifier.weight(1f))
+                    ServiceStatusChip(status, statusColor)
+                }
+                Spacer(Modifier.height(3.dp))
+                Box(Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
+                    Canvas(Modifier.size(106.dp)) {
+                        val center = Offset(size.width / 2f, size.height / 2f)
+                        val radius = size.minDimension / 2f
+                        drawCircle(
+                            color = spec.accent.copy(alpha = .10f + .20f * pulse),
+                            radius = radius,
+                            center = center,
+                            style = Stroke(1.4.dp.toPx()),
+                        )
+                        drawCircle(
+                            color = spec.accent2.copy(alpha = .16f),
+                            radius = radius * .85f,
+                            center = center,
+                            style = Stroke(.9.dp.toPx()),
+                        )
+                        val angle = Math.toRadians(orbit.toDouble())
+                        drawCircle(
+                            color = Color.White.copy(alpha = .85f),
+                            radius = 2.1.dp.toPx(),
+                            center = Offset(
+                                center.x + (radius * .92f * cos(angle)).toFloat(),
+                                center.y + (radius * .92f * sin(angle)).toFloat(),
+                            ),
+                        )
+                    }
+                    ServiceArt(
+                        spec,
+                        Modifier
+                            .size(92.dp)
+                            .graphicsLayer {
+                                scaleX = iconScale
+                                scaleY = iconScale
+                                alpha = iconAlpha
+                                rotationZ = iconTilt
+                            },
+                    )
+                }
+                Spacer(Modifier.height(2.dp))
+                KText(spec.title, size = 23.sp, weight = FontWeight.Black, color = Color.White, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
+                KText(
+                    spec.english,
+                    size = 7.6.sp,
+                    weight = FontWeight.Bold,
+                    color = spec.accent2,
+                    letterSpacing = 1.4.sp,
+                    modifier = Modifier.fillMaxWidth(),
+                    align = TextAlign.Center,
+                )
+                Spacer(Modifier.height(3.dp))
+                KText(
+                    spec.tagline,
+                    size = 8.6.sp,
+                    lineHeight = 12.sp,
+                    color = V2Soft,
+                    maxLines = 2,
+                    modifier = Modifier.fillMaxWidth(),
+                    align = TextAlign.Center,
+                )
+                if (metric != null) {
+                    Spacer(Modifier.height(5.dp))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                        ServiceGlassChip(metric)
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+                    spec.chips.take(2).forEach { chip ->
+                        Box(
+                            Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(9.dp))
+                                .background(Color.White.withAlpha(.045f))
+                                .border(1.dp, spec.accent.withAlpha(.20f), RoundedCornerShape(9.dp))
+                                .padding(horizontal = 7.dp, vertical = 4.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            KText(chip, size = 7.4.sp, color = V2Soft, maxLines = 1)
+                        }
                     }
                 }
             }
@@ -729,21 +834,25 @@ private fun ServiceSubTile(item: ServiceSubItem, modifier: Modifier, onClick: ()
         ServiceState.PREVIEW -> "معاينة"
         ServiceState.READY -> "فتح"
     }
-    Box(
-        modifier
-            .height(72.dp)
-            .clip(RoundedCornerShape(15.dp))
-            .background(Brush.verticalGradient(listOf(V2GlassTop.withAlpha(.72f), V2GlassBottom.withAlpha(.92f))))
-            .border(1.dp, item.accent.withAlpha(.26f), RoundedCornerShape(15.dp))
-            .clickable(onClick = onClick)
-            .padding(9.dp)
+    // Same 91.dp rhythm as the Home service cards: a section tile must never
+    // read as a smaller, secondary object than the card the owner taps on Home.
+    V2GlassCard(
+        modifier = modifier
+            .height(91.dp)
+            .clickable(onClick = onClick),
+        padding = 9.dp,
+        radius = 15.dp,
+        glow = item.accent,
+        borderAlpha = .34f,
     ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            V2IconTile(item.icon, item.accent, size = 31.dp, iconSize = 15.dp)
+            V2IconTile(item.icon, item.accent, size = 34.dp, iconSize = 17.dp)
             Spacer(Modifier.width(7.dp))
             Column(Modifier.weight(1f)) {
-                KText(item.title, size = 9.2.sp, weight = FontWeight.Bold, maxLines = 1)
-                Spacer(Modifier.height(2.dp))
+                KText(item.title, size = 9.4.sp, weight = FontWeight.Bold, maxLines = 1)
+                Spacer(Modifier.height(1.dp))
+                KText(item.subtitle, size = 6.8.sp, color = V2Soft, maxLines = 1)
+                Spacer(Modifier.height(3.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(3.5.dp).clip(androidx.compose.foundation.shape.CircleShape).background(stateColor))
                     Spacer(Modifier.width(3.dp))

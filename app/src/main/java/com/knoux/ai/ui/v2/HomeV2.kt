@@ -495,40 +495,38 @@ private fun HomeServiceGridRow(services: List<HomeServiceMini>, onNavigate: (Str
 
 @Composable
 private fun HomeServiceTile(service: HomeServiceMini, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val shape = RoundedCornerShape(15.dp)
-    Column(
-        modifier
+    // The Home tile is the rhythm anchor: every section tile reuses this exact
+    // 91.dp height, 15.dp radius and glass surface.
+    V2GlassCard(
+        modifier = modifier
             .height(91.dp)
-            .clip(shape)
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        Color(0xFF25124F).copy(alpha = .92f),
-                        Color(0xFF0C0724).copy(alpha = .97f),
-                    )
-                )
-            )
-            .border(1.dp, service.accent.copy(alpha = .40f), shape)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 3.dp, vertical = 6.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
+            .clickable(onClick = onClick),
+        padding = 5.dp,
+        radius = 15.dp,
+        glow = service.accent,
+        borderAlpha = .36f,
     ) {
-        if (service.glyph != null) {
-            V2NeonGlyph(service.glyph, service.accent, size = 50.dp)
-        } else {
-            V2RasterTile(image = service.art, size = 52.dp, accent = service.accent)
+        Column(
+            Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            if (service.glyph != null) {
+                V2NeonGlyph(service.glyph, service.accent, size = 50.dp)
+            } else {
+                V2RasterTile(image = service.art, size = 52.dp, accent = service.accent)
+            }
+            Spacer(Modifier.height(2.dp))
+            KText(
+                service.title,
+                size = 8.2.sp,
+                weight = FontWeight.SemiBold,
+                color = Color.White,
+                lineHeight = 10.5.sp,
+                align = TextAlign.Center,
+                maxLines = 2,
+            )
         }
-        Spacer(Modifier.height(2.dp))
-        KText(
-            service.title,
-            size = 8.2.sp,
-            weight = FontWeight.SemiBold,
-            color = Color.White,
-            lineHeight = 10.5.sp,
-            align = TextAlign.Center,
-            maxLines = 2,
-        )
     }
 }
 
@@ -557,6 +555,7 @@ private fun V2NeonGlyph(icon: ImageVector, accent: Color, size: Dp = 46.dp) {
 
 @Composable
 private fun ProBanner(onClick: () -> Unit) {
+    val proTheme = LocalProTheme.current
     val shape = RoundedCornerShape(18.dp)
     Row(
         Modifier
@@ -565,12 +564,16 @@ private fun ProBanner(onClick: () -> Unit) {
             .clip(shape)
             .background(
                 Brush.horizontalGradient(
-                    listOf(
-                        Color(0xFF22104D),
-                        Color(0xFF3C1C6B),
-                        Color(0xFF24104D),
-                        Color(0xFF170A38),
-                    )
+                    if (proTheme.isPro) {
+                        listOf(proTheme.deep2, proTheme.panel, proTheme.deep2, proTheme.deep)
+                    } else {
+                        listOf(
+                            Color(0xFF22104D),
+                            Color(0xFF3C1C6B),
+                            Color(0xFF24104D),
+                            Color(0xFF170A38),
+                        )
+                    }
                 )
             )
             .border(1.dp, V2Amber.copy(alpha = .45f), shape)

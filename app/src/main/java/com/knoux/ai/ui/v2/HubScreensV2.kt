@@ -1131,6 +1131,8 @@ private fun CleanSafetyCard() {
 
 @Composable
 fun V2ProScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
+    val context = LocalContext.current
+    val proActive = LocalProActive.current
     Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)) {
         Canvas(Modifier.fillMaxSize()) {
             drawCircle(
@@ -1164,6 +1166,47 @@ fun V2ProScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                 }
                 item { ProHighlightCard() }
                 item {
+                    V2GlassCard(
+                        Modifier.fillMaxWidth(),
+                        padding = 12.dp,
+                        radius = 20.dp,
+                        glow = if (proActive) V2Green else V2Amber,
+                        borderAlpha = .42f,
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            V2IconTile(
+                                if (proActive) Icons.Rounded.Verified else Icons.Rounded.AutoAwesome,
+                                if (proActive) V2Green else V2Amber,
+                                size = 38.dp,
+                                iconSize = 19.dp,
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Column(Modifier.weight(1f)) {
+                                KText(
+                                    if (proActive) "وضع Pro مفعّل على هذا البناء" else "معاينة هوية Pro الكاملة",
+                                    size = 10.sp,
+                                    weight = FontWeight.Bold,
+                                )
+                                Spacer(Modifier.height(2.dp))
+                                KText(
+                                    if (proActive) "الخلفية والبطاقات والنصوص وشريط التنقل تحوّلت إلى الذهبي الداكن."
+                                    else "فعّل الوضع لترى التطبيق كاملًا بالهوية الذهبية الداكنة، ثم أوقفه للعودة للنيون.",
+                                    size = 7.6.sp,
+                                    lineHeight = 11.sp,
+                                    color = V2Soft,
+                                )
+                            }
+                        }
+                    }
+                }
+                item {
+                    V2GoldButton(
+                        text = if (proActive) "إيقاف وضع Pro" else "تفعيل وضع Pro",
+                        onClick = { KnouxProState.setActive(context, !proActive) },
+                        icon = if (proActive) Icons.Rounded.Check else Icons.Rounded.Star,
+                    )
+                }
+                item {
                     V2GlassCard(Modifier.fillMaxWidth(), padding = 13.dp, radius = 21.dp, glow = V2Amber, borderAlpha = .38f) {
                         Column(verticalArrangement = Arrangement.spacedBy(11.dp)) {
                             ProFeature(Icons.Rounded.AutoAwesome, "توصيات ذكاء اصطناعي متقدمة", "تحليل أعمق وتقارير مخصصة حسب استخدامك")
@@ -1175,7 +1218,7 @@ fun V2ProScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                     }
                 }
                 item {
-                    V2GoldButton(
+                    V2GhostButton(
                         text = "استكشاف مزايا Pro",
                         onClick = { onNavigate("reports") },
                         icon = Icons.Rounded.Star,
@@ -1190,7 +1233,7 @@ fun V2ProScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                 }
                 item {
                     KText(
-                        "هذه الشاشة تعرض مزايا الإصدار Pro في وضع المعاينة. لا يوجد شراء فعلي أو خصم في هذا البناء.",
+                        "تفعيل Pro هنا هو تبديل معاينة محلي محفوظ على هذا الهاتف فقط. لا يوجد شراء فعلي أو خصم في هذا البناء.",
                         size = 7.8.sp,
                         color = V2Muted,
                         align = TextAlign.Center,
