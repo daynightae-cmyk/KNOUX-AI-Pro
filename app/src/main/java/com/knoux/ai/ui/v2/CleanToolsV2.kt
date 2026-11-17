@@ -429,7 +429,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.selectionItems(facts:
         item {
             ServiceCapabilityCard(
                 title = "لا مجموعات تكرار حالية",
-                body = "لم تُعد MediaStore مجموعتين متطابقتين في الحجم والنوع. هذا يعني عدم وجود مرشح للحذف.",
+                body = "لم تظهر نسخ متطابقة في نطاق الوسائط المقروءة.",
                 state = ServiceState.LIVE,
             )
         }

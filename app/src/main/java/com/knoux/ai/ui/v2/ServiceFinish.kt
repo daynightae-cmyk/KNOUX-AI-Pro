@@ -57,6 +57,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
@@ -159,7 +161,7 @@ object ServiceSpecs {
         order = "02",
         title = "الملفات المكررة",
         english = "DUPLICATE FINDER",
-        tagline = "مطابقة الصور والفيديو بالحجم والنوع من MediaStore",
+        tagline = "مطابقة الصور والفيديو ببصمة SHA-256",
         accent = V2Violet,
         accent2 = V2Cyan,
         glyph = Icons.Rounded.Layers,
@@ -324,10 +326,6 @@ fun ServiceBanner(
         borderAlpha = .55f,
     ) {
         Box(Modifier.fillMaxWidth()) {
-            // A soft accent bloom stands in for the raster mascot here. The stag
-            // artwork carries its own dark scene backdrop, so inside this gold
-            // glass card it read as a pasted rectangle and crossed the centred
-            // title. The bloom keeps the atmosphere without covering the type.
             Box(
                 Modifier
                     .align(Alignment.TopCenter)
@@ -367,6 +365,17 @@ fun ServiceBanner(
                 }
                 Spacer(Modifier.height(3.dp))
                 Box(Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
+                    V2DeerHeader(
+                        Modifier
+                            .align(if (LocalLayoutDirection.current == LayoutDirection.Rtl) Alignment.TopStart else Alignment.TopEnd)
+                            .size(width = 78.dp, height = 76.dp)
+                            .graphicsLayer {
+                                transformOrigin = androidx.compose.ui.graphics.TransformOrigin(1f, 0f)
+                                scaleX = 1.24f
+                                scaleY = 1.24f
+                            },
+                        animated = false,
+                    )
                     Canvas(Modifier.size(106.dp)) {
                         val center = Offset(size.width / 2f, size.height / 2f)
                         val radius = size.minDimension / 2f

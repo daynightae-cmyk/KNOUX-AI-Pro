@@ -109,7 +109,12 @@ fun V2HomeScreen(
                 .align(Alignment.TopStart)
                 .absoluteOffset(x = 2.dp, y = 33.dp)
                 .size(width = 170.dp, height = 267.dp)
-                .graphicsLayer { alpha = .96f }
+                .graphicsLayer {
+                    transformOrigin = androidx.compose.ui.graphics.TransformOrigin(1f, 0f)
+                    scaleX = 1.16f
+                    scaleY = 1.16f
+                    alpha = .92f
+                }
         )
 
         Column(Modifier.fillMaxSize()) {
@@ -164,10 +169,9 @@ fun V2HomeScreen(
                 item { Spacer(Modifier.height(10.dp)) }
                 item {
                     HomeScanCenterpiece(
-                        score = facts.healthEstimate,
-                        onScan = { onNavigate("deepscan") },
-                        onInsights = { onNavigate("ai") },
-                        onProtection = { onNavigate("privacy") },
+                        onScan = { onNavigate("hub-deepscan") },
+                        onInsights = { onNavigate("hub-ai") },
+                        onProtection = { onNavigate("hub-privacy") },
                     )
                 }
                 item { Spacer(Modifier.height(11.dp)) }
@@ -187,7 +191,7 @@ fun V2HomeScreen(
                             Modifier.weight(.9f),
                         )
                         StatDivider()
-                        HomeStat(Icons.Rounded.Apps, "${formatCount(facts.installedCount)}", "تطبيق مثبت", V2Pink, Modifier.weight(.85f))
+                        HomeStat(Icons.Rounded.Apps, "${formatCount(facts.installedCount)}", "تطبيق ظاهر", V2Pink, Modifier.weight(.85f))
                         StatDivider()
                         HomeStat(Icons.Rounded.CleaningServices, formatBytes(facts.ownCacheBytes), "كاش KNOUX", V2Cyan, Modifier.weight(.85f))
                         StatDivider()
@@ -309,7 +313,6 @@ internal fun HealthLine(
 
 @Composable
 private fun HomeScanCenterpiece(
-    score: Int,
     onScan: () -> Unit,
     onInsights: () -> Unit,
     onProtection: () -> Unit,
@@ -340,9 +343,9 @@ private fun HomeScanCenterpiece(
 
         SideActionCard(
             title = "توصيات ذكية",
-            subtitle = "+ AI Insights",
+            subtitle = "AI Insights",
             icon = Icons.Rounded.AutoAwesome,
-            accent = V2Amber,
+            accent = V2Cyan,
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .offset(x = 2.dp, y = 21.dp)
@@ -350,10 +353,10 @@ private fun HomeScanCenterpiece(
             onClick = onInsights,
         )
         SideActionCard(
-            title = "حماية فورية",
-            subtitle = "Real Protection",
+            title = "فحص الخصوصية",
+            subtitle = "Privacy Sweep",
             icon = Icons.Rounded.Shield,
-            accent = V2Amber,
+            accent = V2Blue,
             modifier = Modifier
                 .align(Alignment.CenterStart)
                 .offset(x = (-2).dp, y = 21.dp)
@@ -362,7 +365,6 @@ private fun HomeScanCenterpiece(
         )
 
         HomeScanOrb(
-            score = score,
             Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = 1.dp)
@@ -372,7 +374,7 @@ private fun HomeScanCenterpiece(
 }
 
 @Composable
-private fun HomeScanOrb(score: Int, modifier: Modifier = Modifier) {
+private fun HomeScanOrb(modifier: Modifier = Modifier) {
     Box(modifier.size(162.dp), contentAlignment = Alignment.Center) {
         Canvas(Modifier.fillMaxSize()) {
             drawCircle(
@@ -384,7 +386,7 @@ private fun HomeScanOrb(score: Int, modifier: Modifier = Modifier) {
             )
             drawArc(
                 brush = Brush.sweepGradient(
-                    listOf(V2Amber, V2Violet, V2Cyan, V2Pink, V2Amber),
+                    listOf(V2Blue, V2Violet, V2Cyan, V2Pink, V2Blue),
                     center,
                 ),
                 startAngle = -70f,
@@ -393,7 +395,7 @@ private fun HomeScanOrb(score: Int, modifier: Modifier = Modifier) {
                 style = Stroke(4.dp.toPx(), cap = StrokeCap.Round),
             )
             drawArc(
-                color = V2Amber.copy(alpha = .28f),
+                color = V2Blue.copy(alpha = .28f),
                 startAngle = 8f,
                 sweepAngle = 336f,
                 useCenter = false,
@@ -406,8 +408,8 @@ private fun HomeScanOrb(score: Int, modifier: Modifier = Modifier) {
                 useCenter = false,
                 style = Stroke(1.dp.toPx()),
             )
-            drawCircle(color = V2Amber.copy(alpha = .9f), radius = 3.dp.toPx(), center = Offset(size.width * .81f, size.height * .20f))
-            drawCircle(color = V2Amber.copy(alpha = .8f), radius = 2.3.dp.toPx(), center = Offset(size.width * .16f, size.height * .33f))
+            drawCircle(color = V2Cyan.copy(alpha = .9f), radius = 3.dp.toPx(), center = Offset(size.width * .81f, size.height * .20f))
+            drawCircle(color = V2Blue.copy(alpha = .8f), radius = 2.3.dp.toPx(), center = Offset(size.width * .16f, size.height * .33f))
         }
         Box(
             Modifier
@@ -418,7 +420,7 @@ private fun HomeScanOrb(score: Int, modifier: Modifier = Modifier) {
                         listOf(Color(0xFF25115C), Color(0xFF0F082B)),
                     )
                 )
-                .border(1.dp, V2Amber.copy(alpha = .46f), CircleShape),
+                .border(1.dp, V2Blue.copy(alpha = .56f), CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -438,7 +440,7 @@ private fun HomeScanOrb(score: Int, modifier: Modifier = Modifier) {
                         .border(1.dp, V2Cyan.copy(alpha = .28f), RoundedCornerShape(50))
                         .padding(horizontal = 9.dp, vertical = 2.dp)
                 ) {
-                    KText(if (score > 0) "$score% جاهز" else "قراءة الجهاز…", size = 7.5.sp, color = V2Cyan)
+                    KText("فتح قسم الفحص", size = 7.5.sp, color = V2Cyan)
                 }
             }
         }

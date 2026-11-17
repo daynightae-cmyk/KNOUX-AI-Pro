@@ -646,7 +646,7 @@ fun V2DuplicatesScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -
                         PermissionNeededCard(
                             title = "صلاحية الصور والفيديو مطلوبة",
                             body = "لا يقرأ KNOUX مكتبتك قبل موافقتك. بعد المنح تُطابق النسخ " +
-                                "بالحجم والنوع المتساويين فقط، ويعرض أسماء وأحجام حقيقية.",
+                                "ببصمة SHA-256 للوسائط التي أمكن قراءتها ضمن حدود الفحص.",
                             accent = V2Violet,
                         )
                     }
@@ -686,7 +686,7 @@ fun V2DuplicatesScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -
                             EmptyStateCard(
                                 title = "لا توجد نسخ متطابقة حاليًا",
                                 body = "فُحصت ${formatCount(media.images)} صورة و${formatCount(media.videos)} فيديو " +
-                                    "من مكتبتك المصرح بها. أي نسخة جديدة بنفس الحجم والنوع ستظهر هنا.",
+                                    "في نطاق الوسائط التي فُحصت من مكتبتك المصرح بها.",
                                 accent = V2Green,
                             )
                         }
@@ -733,8 +733,8 @@ fun V2DuplicatesScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -
                 item { ServiceSubGrid(ServiceSpecs.duplicates) }
                 item {
                     PreviewNote(
-                        "المصدر: MediaStore بعد منح الصلاحية. المطابقة الحالية حسب الحجم والنوع " +
-                            "وليس Hash موثقًا، والحذف يمر عبر نافذة تأكيد Android الرسمية."
+                        "المطابقة ببصمة SHA-256 لما يصل إلى 256 ملفًا و128 MB، بحد 32 MB للملف. " +
+                            "الحذف يحتاج تأكيد Android."
                     )
                 }
             }
@@ -902,7 +902,7 @@ private fun RealDuplicateGroupCard(
                         maxLines = 1,
                     )
                     KText(
-                        "${formatBytes(group.sizeBytes)} لكل نسخة · متطابق بالحجم والنوع",
+                        "${formatBytes(group.sizeBytes)} لكل نسخة · متطابق المحتوى",
                         size = 7.6.sp,
                         color = V2Soft,
                         maxLines = 1,

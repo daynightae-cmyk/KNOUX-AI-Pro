@@ -123,11 +123,6 @@ private enum class EntryStage { Splash, Onboarding, Auth, Shell }
 @Composable
 fun KnouxApp(startRoute: String? = null) {
     val context = LocalContext.current
-    // Synchronous restore: the saved Pro identity must be known before the first
-    // frame, otherwise heavy device scans delay the effect and the UI renders
-    // the standard theme for a moment.
-    remember { KnouxProState.load(context) }
-    val proActive = KnouxProState.active
     val entryDebugRoute = startRoute?.takeIf { it == "onboarding" || it == "auth" }
     val shellStartRoute = startRoute?.takeUnless { it == "onboarding" || it == "auth" }
     val onboardingSeen = remember { hasSeenKnouxOnboarding(context) }
@@ -141,6 +136,7 @@ fun KnouxApp(startRoute: String? = null) {
             }
         )
     }
+    var signedIn by rememberSaveable { mutableStateOf(false) }
     var accountInfoVisible by remember { mutableStateOf(false) }
     val nav = rememberNavController()
     val backStackEntry by nav.currentBackStackEntryAsState()
@@ -161,10 +157,15 @@ fun KnouxApp(startRoute: String? = null) {
         }
     }
 
+    // The Pro visual preview drives the whole shell: golden theme + the red PRO
+    // markers on the 50 paid services. It is a debug/preview presentation, not a
+    // verified entitlement (billing is Stage 2); LocalProActive stays false in
+    // release until a real entitlement is supplied.
+    val proPreview = KnouxProState.previewEnabled
     CompositionLocalProvider(
-        LocalProTheme provides if (proActive) ProTheme.Pro else ProTheme.Standard,
-        LocalProActive provides proActive,
         LocalServiceNavigate provides open,
+        LocalProTheme provides if (proPreview) ProTheme.Pro else ProTheme.Standard,
+        LocalProActive provides proPreview,
     ) {
         Box(Modifier.fillMaxSize()) {
         V2Background()
@@ -187,7 +188,14 @@ fun KnouxApp(startRoute: String? = null) {
                     }
                 )
                 EntryStage.Auth -> WelcomeScreen(
-                    onContinueAsGuest = { entryStage = EntryStage.Shell },
+                    onContinueAsGuest = {
+                        signedIn = false
+                        entryStage = EntryStage.Shell
+                    },
+                    onSignedIn = {
+                        signedIn = true
+                        entryStage = EntryStage.Shell
+                    },
                     onOpenAccountInfo = { accountInfoVisible = true },
                 )
                 EntryStage.Shell -> {
@@ -229,7 +237,7 @@ fun KnouxApp(startRoute: String? = null) {
     if (accountInfoVisible) {
         AlertDialog(
             onDismissRequest = { accountInfoVisible = false },
-            title = { Text("KNOUX ID") },
+            title = { Text(if (signedIn) "KNOUX ID · تم تسجيل الدخول" else "KNOUX ID") },
             text = {
                 Text(
                     "يمكنك الدخول بحساب Google أو Passkey أو البريد وكلمة المرور/رمز OTP، " +

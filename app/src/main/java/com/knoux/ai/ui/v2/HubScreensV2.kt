@@ -1131,7 +1131,7 @@ private fun CleanSafetyCard() {
 @Composable
 fun V2ProScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
     val context = LocalContext.current
-    val proActive = LocalProActive.current
+    val previewEnabled = KnouxProState.previewEnabled
     Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)) {
         Canvas(Modifier.fillMaxSize()) {
             drawCircle(
@@ -1169,27 +1169,27 @@ fun V2ProScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                         Modifier.fillMaxWidth(),
                         padding = 12.dp,
                         radius = 20.dp,
-                        glow = if (proActive) V2Green else V2Amber,
+                        glow = if (previewEnabled) V2Cyan else V2Amber,
                         borderAlpha = .42f,
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             V2IconTile(
-                                if (proActive) Icons.Rounded.Verified else Icons.Rounded.AutoAwesome,
-                                if (proActive) V2Green else V2Amber,
+                                Icons.Rounded.AutoAwesome,
+                                if (previewEnabled) V2Cyan else V2Amber,
                                 size = 38.dp,
                                 iconSize = 19.dp,
                             )
                             Spacer(Modifier.width(8.dp))
                             Column(Modifier.weight(1f)) {
                                 KText(
-                                    if (proActive) "وضع Pro مفعّل على هذا البناء" else "معاينة هوية Pro الكاملة",
+                                    "استحقاق Pro غير متاح حاليًا",
                                     size = 10.sp,
                                     weight = FontWeight.Bold,
                                 )
                                 Spacer(Modifier.height(2.dp))
                                 KText(
-                                    if (proActive) "الخلفية والبطاقات والنصوص وشريط التنقل تحوّلت إلى الذهبي الداكن."
-                                    else "فعّل الوضع لترى التطبيق كاملًا بالهوية الذهبية الداكنة، ثم أوقفه للعودة للنيون.",
+                                    if (previewEnabled) "المعاينة البصرية مفعّلة لهذه الصفحة."
+                                    else "أدوات Pro تتطلب استحقاقًا من مزوّد الاشتراك.",
                                     size = 7.6.sp,
                                     lineHeight = 11.sp,
                                     color = V2Soft,
@@ -1198,12 +1198,14 @@ fun V2ProScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                         }
                     }
                 }
-                item {
-                    V2GoldButton(
-                        text = if (proActive) "إيقاف وضع Pro" else "تفعيل وضع Pro",
-                        onClick = { KnouxProState.setActive(context, !proActive) },
-                        icon = if (proActive) Icons.Rounded.Check else Icons.Rounded.Star,
-                    )
+                if (com.knoux.ai.BuildConfig.DEBUG) {
+                    item {
+                        V2GoldButton(
+                            text = if (previewEnabled) "إيقاف المعاينة الذهبية" else "معاينة هوية Pro",
+                            onClick = { KnouxProState.setPreviewEnabled(context, !previewEnabled) },
+                            icon = Icons.Rounded.Star,
+                        )
+                    }
                 }
                 item {
                     V2GlassCard(Modifier.fillMaxWidth(), padding = 13.dp, radius = 21.dp, glow = V2Amber, borderAlpha = .38f) {
@@ -1232,7 +1234,7 @@ fun V2ProScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                 }
                 item {
                     KText(
-                        "تفعيل Pro هنا هو تبديل معاينة محلي محفوظ على هذا الهاتف فقط. لا يوجد شراء فعلي أو خصم في هذا البناء.",
+                        "معاينة مزايا Pro. الاشتراك والشراء غير متاحين في هذا الإصدار.",
                         size = 7.8.sp,
                         color = V2Muted,
                         align = TextAlign.Center,

@@ -90,7 +90,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextDirection
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -699,7 +699,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.toolsList(
                 item {
                     ServiceCapabilityCard(
                         title = "لا مجموعات تكرار حالية",
-                        body = "لم تُعد MediaStore مجموعتين متطابقتين في الحجم والنوع. لا يوجد مرشح للحذف.",
+                        body = "لم تظهر نسخ متطابقة في نطاق الوسائط المقروءة.",
                         state = ServiceState.LIVE,
                     )
                 }
@@ -1050,8 +1050,13 @@ fun V2SectionHubScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
             Modifier
                 .align(Alignment.TopStart)
                 .absoluteOffset(x = 2.dp, y = 33.dp)
-                .size(width = 170.dp, height = 267.dp)
-                .graphicsLayer { alpha = .96f }
+                .size(width = 118.dp, height = 124.dp)
+                .graphicsLayer {
+                    transformOrigin = androidx.compose.ui.graphics.TransformOrigin(1f, 0f)
+                    scaleX = 1.30f
+                    scaleY = 1.30f
+                    alpha = .88f
+                }
         )
 
         Column(Modifier.fillMaxSize()) {

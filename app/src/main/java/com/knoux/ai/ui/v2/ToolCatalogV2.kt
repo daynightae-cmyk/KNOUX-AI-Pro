@@ -195,7 +195,7 @@ internal object SectionToolsCatalog {
         ),
         d(
             "duplicates", "dup-scan", "02.4", "فحص الملفات المتطابقة", "EXACT MATCHING SCAN",
-            "مطابقة دقيقة في الحجم والنوع، وليست تشابهًا بصريًا", Icons.Rounded.Radar, V2Violet,
+            "مطابقة محتوى الوسائط ببصمة SHA-256", Icons.Rounded.Radar, V2Violet,
             pro = true,
             metric = { f, _ -> "${formatCount(f.media.duplicateGroups.size)} مجموعة" },
             rows = { f, _ ->
@@ -206,7 +206,7 @@ internal object SectionToolsCatalog {
                     tr(Icons.Rounded.Info, "قاعدة المطابقة", "نفس الحجم + نفس نوع الوسائط", V2Amber),
                 )
             },
-            note = "هذه مطابقة دقيقة بالحجم والنوع، وليست Hash موثقًا. لا نسمّيها فحص تشابه ذكي حتى نضيف بصمة فعلية.",
+            note = "الفحص محدود إلى 256 ملفًا و128 MB إجمالًا، وبحد 32 MB للملف.",
             action = "duplicates", actionLabel = "فتح شاشة التكرار",
         ),
         d(
@@ -1453,7 +1453,7 @@ internal fun aiRecommendations(f: DeviceFacts): List<AiRecommendation> {
         items += AiRecommendation(
             "مراجعة الملفات المكررة",
             formatBytes(f.media.duplicateGroups.sumOf { it.reclaimableBytes }),
-            "${formatCount(f.media.duplicateGroups.size)} مجموعة بنفس الحجم والنوع، وتحتاج قرارك قبل الحذف.",
+            "${formatCount(f.media.duplicateGroups.size)} مجموعة متطابقة المحتوى، والحذف يحتاج تأكيدك.",
             Icons.Rounded.Layers, V2Violet,
         )
     }

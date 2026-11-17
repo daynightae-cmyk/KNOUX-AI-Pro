@@ -80,6 +80,8 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.knoux.ai.R
+import com.knoux.ai.ui.components.HeaderHalo
+import com.knoux.ai.ui.components.rememberMotionEnabled
 import com.knoux.ai.ui.theme.KnouxAmber
 import com.knoux.ai.ui.theme.KnouxArabic
 import com.knoux.ai.ui.theme.KnouxCyan
@@ -608,34 +610,28 @@ fun HeaderIcon(icon: ImageVector, description: String, onClick: () -> Unit) {
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
+        HeaderHalo(Modifier.matchParentSize(), color = V2Cyan)
         Icon(icon, description, tint = Color.White.withAlpha( .92f), modifier = Modifier.size(19.dp))
     }
 }
 
 @Composable
 fun BrandLockupV2() {
-    // A brand lockup stays LTR even inside an RTL product shell.
-    val proTheme = LocalProTheme.current
-    val isPro = proTheme.isPro
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            // Pro-aware symbol: gold tint when Pro is active
-            Image(
-                painter = painterResource(R.drawable.knoux_symbol_alpha),
-                contentDescription = "KNOUX AI",
-                modifier = Modifier.size(28.dp),
-                colorFilter = if (isPro) 
-                    androidx.compose.ui.graphics.ColorFilter.tint(proTheme.goldBright) 
-                else null,
-            )
+            Box(Modifier.size(28.dp), contentAlignment = Alignment.Center) {
+                HeaderHalo(Modifier.matchParentSize(), color = V2Violet)
+                Image(
+                    painter = painterResource(R.drawable.knoux_symbol_alpha),
+                    contentDescription = "KNOUX AI",
+                    modifier = Modifier.matchParentSize(),
+                )
+            }
             Spacer(Modifier.width(6.dp))
             Image(
                 painter = painterResource(R.drawable.knoux_wordmark_alpha),
                 contentDescription = "knoux ai",
                 modifier = Modifier.height(14.5.dp),
-                colorFilter = if (isPro) 
-                    androidx.compose.ui.graphics.ColorFilter.tint(proTheme.goldBright) 
-                else null,
             )
             Spacer(Modifier.width(7.dp))
             ProPill()
@@ -715,27 +711,26 @@ fun ProBadge(modifier: Modifier = Modifier, label: String = "PRO") {
 fun CrownHexButton(onClick: () -> Unit = {}) {
     val proTheme = LocalProTheme.current
     val isPro = proTheme.isPro
-    Canvas(
-        Modifier
-            .size(34.dp)
-            .clickable(onClick = onClick)
-    ) {
-        val path = hexagonPath(size.width * .5f, size.height * .5f, size.width * .47f)
-        val gradient = if (isPro)
-            Brush.linearGradient(listOf(proTheme.goldBright.withAlpha( .4f), proTheme.amber.withAlpha( .1f)))
-        else
-            Brush.linearGradient(listOf(Color(0x44FFC857), Color(0x0CFF9D00)))
-        val borderColor = if (isPro) proTheme.amber else V2Amber
-        val crownColor = if (isPro) proTheme.gold else V2Amber
-        
-        drawPath(path, gradient)
-        drawPath(path, borderColor.withAlpha( .85f), style = Stroke(1.dp.toPx()))
-        drawCrown(
-            center = Offset(size.width * .5f, size.height * .50f),
-            width = size.width * .50f,
-            height = size.height * .38f,
-            color = crownColor,
-        )
+    Box(Modifier.size(34.dp).clickable(onClickLabel = "Pro", onClick = onClick)) {
+        HeaderHalo(Modifier.matchParentSize(), color = proTheme.gold)
+        Canvas(Modifier.matchParentSize()) {
+            val path = hexagonPath(size.width * .5f, size.height * .5f, size.width * .47f)
+            val gradient = if (isPro)
+                Brush.linearGradient(listOf(proTheme.goldBright.withAlpha( .4f), proTheme.amber.withAlpha( .1f)))
+            else
+                Brush.linearGradient(listOf(Color(0x44FFC857), Color(0x0CFF9D00)))
+            val borderColor = if (isPro) proTheme.amber else V2Amber
+            val crownColor = if (isPro) proTheme.gold else V2Amber
+
+            drawPath(path, gradient)
+            drawPath(path, borderColor.withAlpha( .85f), style = Stroke(1.dp.toPx()))
+            drawCrown(
+                center = Offset(size.width * .5f, size.height * .50f),
+                width = size.width * .50f,
+                height = size.height * .38f,
+                color = crownColor,
+            )
+        }
     }
 }
 
@@ -922,9 +917,9 @@ private fun RowScope.BottomItem(
 ) {
     val proTheme = LocalProTheme.current
     val isPro = proTheme.isPro
-    val activeTop = if (isPro) proTheme.amber else Color(0xFF6F34C9)
-    val activeBottom = if (isPro) proTheme.deep2 else Color(0xFF31145F)
-    val activeBorder = if (isPro) proTheme.gold else V2Violet
+    val activeTop = if (isPro) proTheme.amber else Color(0xFF1357AD)
+    val activeBottom = if (isPro) proTheme.deep2 else Color(0xFF0D244E)
+    val activeBorder = if (isPro) proTheme.gold else V2Cyan
     Box(
         modifier
             .fillMaxSize()
@@ -1464,10 +1459,11 @@ fun V2DeerHeader(
     animated: Boolean = true,
 ) {
     val proTheme = LocalProTheme.current
+    val motion = animated && rememberMotionEnabled()
     val transition = rememberInfiniteTransition(label = "knouxDeer")
     val float by transition.animateFloat(
         initialValue = 0f,
-        targetValue = if (animated) -7f else 0f,
+        targetValue = if (motion) -5f else 0f,
         animationSpec = infiniteRepeatable(
             animation = tween(4200, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse,
@@ -1476,7 +1472,7 @@ fun V2DeerHeader(
     )
     val breath by transition.animateFloat(
         initialValue = .985f,
-        targetValue = if (animated) 1.012f else 1f,
+        targetValue = if (motion) 1.012f else .985f,
         animationSpec = infiniteRepeatable(
             animation = tween(5200, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse,
@@ -1493,7 +1489,7 @@ fun V2DeerHeader(
             Spacer(Modifier.height(-8.dp)) // Overlap crown with stag head
         }
         Image(
-            painter = painterResource(R.drawable.knoux_deer_mascot),
+            painter = painterResource(R.drawable.knoux_stag_official),
             contentDescription = null,
             modifier = Modifier
                 .fillMaxWidth()
