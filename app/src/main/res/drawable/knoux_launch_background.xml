@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Branded first-frame window background.
+  The activity can take a moment to inflate on a low-end device; this keeps the
+  brand mark and the violet/gold horizon visible instead of a flat empty frame.
+  It is a launch surface only - the Compose world replaces it immediately.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="270"
+                android:centerColor="#150A34"
+                android:endColor="#2A1705"
+                android:startColor="#0A0522"
+                android:type="linear" />
+        </shape>
+    </item>
+    <item
+        android:width="132dp"
+        android:height="132dp"
+        android:gravity="center">
+        <bitmap
+            android:gravity="fill"
+            android:src="@drawable/ic_splash_logo" />
+    </item>
+</layer-list>

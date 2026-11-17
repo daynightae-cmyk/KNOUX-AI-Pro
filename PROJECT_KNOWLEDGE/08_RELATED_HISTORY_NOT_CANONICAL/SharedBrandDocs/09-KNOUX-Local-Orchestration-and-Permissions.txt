@@ -1,0 +1,64 @@
+KNOUX REPAIR
+LOCAL ORCHESTRATION, PERMISSIONS, AND POLICY GATES
+
+RULE
+Agent proposes.
+Local orchestrator authorizes.
+User approves when required.
+Local bridge executes.
+
+POLICY CHECKS
+1. Tool exists.
+2. Tool is enabled.
+3. Family/service match is valid.
+4. Parameters are valid.
+5. Risk is classified.
+6. Admin requirement is known.
+7. User approval is obtained where needed.
+8. Reboot impact is disclosed.
+9. Backup requirement is considered.
+10. Rollback is known where possible.
+11. Execution occurs.
+12. Verification follows.
+
+APPROVAL UI
+Action:
+Reason:
+Expected Benefit:
+Affected Scope:
+Risk:
+Administrator Required:
+Reboot Required:
+Backup Required:
+Rollback:
+Parameters:
+
+Buttons:
+Cancel
+Review
+Execute
+
+READ-ONLY BATCHING
+May group bounded related diagnostics.
+Do not launch broad sweeps unnecessarily.
+
+PATH SAFETY
+Resolve canonical paths.
+Prevent traversal.
+Protect user-profile areas.
+Avoid wildcard destructive actions.
+
+PROCESS/SERVICE SAFETY
+Do not terminate/restart critical components without policy support and explicit approval.
+
+REGISTRY SAFETY
+Before registry changes identify exact key/value, explain effect, back up when appropriate, provide rollback, verify after change.
+
+DRIVER SAFETY
+Driver install/remove/rollback requires exact device context, approval, reboot disclosure, and rollback consideration.
+
+NETWORK SAFETY
+Warn that network reset may affect downloads, remote sessions, VPN, DNS, and adapters.
+
+MODEL IS NOT THE SECURITY BOUNDARY
+Critical restrictions must exist in local code, not only prompts.

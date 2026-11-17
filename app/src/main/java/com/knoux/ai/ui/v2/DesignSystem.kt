@@ -112,6 +112,8 @@ val V2Amber = Color(0xFFFFC857)
 val V2Soft = Color(0xFFBDB0E4)
 val V2Muted = Color(0xFF8E82B4)
 val V2GoldText = Color(0xFFFFD37B)
+val V2ProRed = Color(0xFFFF1744)
+val V2ProRedDeep = Color(0xFF8B0018)
 
 /* ------------------------------------------------------------------ *
  * Pro Identity — complete brand change when Pro activates
@@ -230,9 +232,14 @@ fun KText(
     maxLines: Int = Int.MAX_VALUE,
     overflow: TextOverflow = TextOverflow.Clip,
     letterSpacing: TextUnit = 0.sp,
+    textDirection: TextDirection? = null,
 ) {
     val resolved = text.v2Bidi()
-    val direction = if (ArabicLetters.containsMatchIn(text)) TextDirection.Rtl else TextDirection.Ltr
+    // A Latin-only label inside an RTL row would infer an LTR paragraph and
+    // then align to the left of its slot, colliding with the value. Callers
+    // that know the row direction can pin it explicitly.
+    val direction = textDirection
+        ?: if (ArabicLetters.containsMatchIn(text)) TextDirection.Rtl else TextDirection.Ltr
     // One palette switch for every text node: when Pro is active the standard
     // neon accents resolve to their gold/amber counterparts without touching
     // each screen. In standard mode every mapping is the identity.
@@ -273,18 +280,20 @@ fun V2Background(modifier: Modifier = Modifier) {
     Canvas(modifier.fillMaxSize()) {
         drawRect(
             Brush.verticalGradient(
-                0f to (if (isPro) proTheme.deep else Color(0xFF060318)),
-                0.30f to (if (isPro) proTheme.deep2 else V2Deep2),
-                0.67f to (if (isPro) Color(0xFF1A1005) else Color(0xFF10062F)),
-                1f to (if (isPro) Color(0xFF2A1705) else Color(0xFF170940)),
+                0f to (if (isPro) Color(0xFF0A0522) else Color(0xFF060318)),
+                0.30f to (if (isPro) Color(0xFF150A34) else V2Deep2),
+                0.67f to (if (isPro) Color(0xFF241238) else Color(0xFF10062F)),
+                1f to (if (isPro) Color(0xFF3A2208) else Color(0xFF170940)),
             )
         )
 
         if (isPro) {
-            // Pro background - gold/amber theme
+            // Pro keeps the original violet night world (as the reference) and
+            // layers the brown-gold warmth on the horizon, the stag glow and the
+            // glass — "البني واللون الأصلي" together, not a flat brown wash.
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(proTheme.cyan.withAlpha( 0.15f), Color.Transparent),
+                    colors = listOf(Color(0xFF7A2DFF).withAlpha(0.20f), Color.Transparent),
                     center = Offset(size.width * 0.82f, size.height * 0.12f),
                     radius = size.width * 0.68f,
                 ),
@@ -293,7 +302,7 @@ fun V2Background(modifier: Modifier = Modifier) {
             )
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(proTheme.pink.withAlpha( 0.15f), Color.Transparent),
+                    colors = listOf(proTheme.pink.withAlpha(0.14f), Color.Transparent),
                     center = Offset(size.width * 0.08f, size.height * 0.35f),
                     radius = size.width * 0.70f,
                 ),
@@ -302,12 +311,12 @@ fun V2Background(modifier: Modifier = Modifier) {
             )
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(proTheme.amber.withAlpha( 0.20f), Color.Transparent),
-                    center = Offset(size.width * 0.50f, size.height * 0.95f),
-                    radius = size.width * 0.90f,
+                    colors = listOf(proTheme.amber.withAlpha(0.26f), Color.Transparent),
+                    center = Offset(size.width * 0.50f, size.height * 0.97f),
+                    radius = size.width * 0.92f,
                 ),
-                radius = size.width * 0.90f,
-                center = Offset(size.width * 0.50f, size.height * 0.95f),
+                radius = size.width * 0.92f,
+                center = Offset(size.width * 0.50f, size.height * 0.97f),
             )
         } else {
             // Standard background
@@ -365,8 +374,8 @@ private fun DrawScope.drawMountains(isPro: Boolean) {
         back,
         Brush.verticalGradient(
             listOf(
-                (if (isPro) ProPanel else Color(0xFF2A1661)).withAlpha(0.62f),
-                (if (isPro) ProDeep else Color(0xFF0A0524)).withAlpha(0f),
+                (if (isPro) Color(0xFF3A1E6E) else Color(0xFF2A1661)).withAlpha(0.62f),
+                (if (isPro) Color(0xFF0A0524) else Color(0xFF0A0524)).withAlpha(0f),
             ),
             startY = 0f,
             endY = size.height * 0.25f,
@@ -390,8 +399,8 @@ private fun DrawScope.drawMountains(isPro: Boolean) {
         front,
         Brush.verticalGradient(
             listOf(
-                (if (isPro) ProDeep2 else Color(0xFF10072E)).withAlpha(0.92f),
-                (if (isPro) ProDeep else Color(0xFF07031A)).withAlpha(0f),
+                (if (isPro) Color(0xFF1A0C3C) else Color(0xFF10072E)).withAlpha(0.92f),
+                (if (isPro) Color(0xFF07031A) else Color(0xFF07031A)).withAlpha(0f),
             ),
             startY = 0f,
             endY = size.height * 0.30f,
@@ -658,6 +667,46 @@ fun ProPill(modifier: Modifier = Modifier) {
             weight = FontWeight.Bold,
             color = if (active) proTheme.deep else proTheme.amber,
             letterSpacing = .6.sp,
+        )
+    }
+}
+
+/**
+ * Strong red Pro marker used on Pro-only services and their section header.
+ * It is intentionally louder than the gold Pro pill: the owner asked for a
+ * clearly different, stronger signal that appears only while Pro is active.
+ */
+@Composable
+fun ProBadge(modifier: Modifier = Modifier, label: String = "PRO") {
+    // Strong red Pro marker: hot red core, deep red edge, bright rim and a
+    // white pulse dot so it reads instantly on both gold and violet surfaces.
+    Row(
+        modifier
+            .clip(RoundedCornerShape(50))
+            .background(
+                Brush.horizontalGradient(
+                    listOf(Color(0xFFFF2D55), V2ProRed, Color(0xFFC40027), V2ProRedDeep)
+                )
+            )
+            .border(1.dp, Color(0xFFFF9AAE), RoundedCornerShape(50))
+            .padding(horizontal = 6.dp, vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            Modifier
+                .size(4.5.dp)
+                .clip(CircleShape)
+                .background(Color.White)
+                .border(.6.dp, Color(0xFFFFC2CE), CircleShape)
+        )
+        Spacer(Modifier.width(3.dp))
+        KText(
+            label,
+            size = 7.sp,
+            weight = FontWeight.Black,
+            color = Color.White,
+            letterSpacing = .5.sp,
+            maxLines = 1,
         )
     }
 }

@@ -1,0 +1,427 @@
+{
+  "snapshot_as_of": "2026-11-13 11:51 Asia/Dubai (UTC+04:00)",
+  "source": "Windows PC Pro feature catalog and 2026-11-13 Mobile master",
+  "note": "50 immutable requirement IDs. NOT evidence of actual entitlement, billing or completed implementation.",
+  "sections": [
+    {
+      "section_id": "smart_clean",
+      "name": "AI Smart Clean",
+      "feature_count": 5,
+      "features": [
+        {
+          "feature_id": "smart_clean_unlimited",
+          "stage_windows": "PC01",
+          "stage_linux_mobile": "M08",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "smart_clean_scheduled",
+          "stage_windows": "PC01",
+          "stage_linux_mobile": "M08",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "smart_clean_deep_analysis",
+          "stage_windows": "PC01",
+          "stage_linux_mobile": "M08",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "smart_clean_priority",
+          "stage_windows": "PC01",
+          "stage_linux_mobile": "M08",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "smart_clean_rollback",
+          "stage_windows": "PC01",
+          "stage_linux_mobile": "M08",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        }
+      ]
+    },
+    {
+      "section_id": "duplicate_finder",
+      "name": "Duplicate Files Pro",
+      "feature_count": 5,
+      "features": [
+        {
+          "feature_id": "dup_verified_hashing",
+          "stage_windows": "PC02",
+          "stage_linux_mobile": "M02",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "dup_keeper_protection",
+          "stage_windows": "PC02",
+          "stage_linux_mobile": "M02",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "dup_smart_similarity",
+          "stage_windows": "PC02",
+          "stage_linux_mobile": "M02",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "dup_batch_review",
+          "stage_windows": "PC02",
+          "stage_linux_mobile": "M02",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "dup_recovery_journal",
+          "stage_windows": "PC02",
+          "stage_linux_mobile": "M02",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        }
+      ]
+    },
+    {
+      "section_id": "app_residue",
+      "name": "App Residue Pro",
+      "feature_count": 5,
+      "features": [
+        {
+          "feature_id": "residue_own_cache",
+          "stage_windows": "PC03",
+          "stage_linux_mobile": "M03",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "residue_accessible_candidates",
+          "stage_windows": "PC03",
+          "stage_linux_mobile": "M03",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "residue_saf_profiles",
+          "stage_windows": "PC03",
+          "stage_linux_mobile": "M03",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "residue_safe_trash",
+          "stage_windows": "PC03",
+          "stage_linux_mobile": "M03",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "residue_history",
+          "stage_windows": "PC03",
+          "stage_linux_mobile": "M03",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        }
+      ]
+    },
+    {
+      "section_id": "privacy_sweep",
+      "name": "Privacy Sweep Pro",
+      "feature_count": 5,
+      "features": [
+        {
+          "feature_id": "prv_realtime",
+          "stage_windows": "PC04",
+          "stage_linux_mobile": "M04",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "prv_vault",
+          "stage_windows": "PC04",
+          "stage_linux_mobile": "M04",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "prv_tracker",
+          "stage_windows": "PC04",
+          "stage_linux_mobile": "M04",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "prv_report",
+          "stage_windows": "PC04",
+          "stage_linux_mobile": "M04",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "prv_history",
+          "stage_windows": "PC04",
+          "stage_linux_mobile": "M04",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        }
+      ]
+    },
+    {
+      "section_id": "deep_scan",
+      "name": "Deep Scan Pro",
+      "feature_count": 5,
+      "features": [
+        {
+          "feature_id": "scan_malware",
+          "stage_windows": "PC05",
+          "stage_linux_mobile": "M07",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "scan_hidden",
+          "stage_windows": "PC05",
+          "stage_linux_mobile": "M07",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "scan_schedule",
+          "stage_windows": "PC05",
+          "stage_linux_mobile": "M07",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "scan_custom",
+          "stage_windows": "PC05",
+          "stage_linux_mobile": "M07",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "scan_forensic",
+          "stage_windows": "PC05",
+          "stage_linux_mobile": "M07",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        }
+      ]
+    },
+    {
+      "section_id": "reports",
+      "name": "Reports & Insights Pro",
+      "feature_count": 5,
+      "features": [
+        {
+          "feature_id": "rep_export",
+          "stage_windows": "PC06",
+          "stage_linux_mobile": "M09",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "rep_history",
+          "stage_windows": "PC06",
+          "stage_linux_mobile": "M09",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "rep_ai_insights",
+          "stage_windows": "PC06",
+          "stage_linux_mobile": "M09",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "rep_compare",
+          "stage_windows": "PC06",
+          "stage_linux_mobile": "M09",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "rep_schedule",
+          "stage_windows": "PC06",
+          "stage_linux_mobile": "M09",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        }
+      ]
+    },
+    {
+      "section_id": "app_manager",
+      "name": "App Manager Pro",
+      "feature_count": 5,
+      "features": [
+        {
+          "feature_id": "app_batch",
+          "stage_windows": "PC07",
+          "stage_linux_mobile": "M05",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "app_freeze",
+          "stage_windows": "PC07",
+          "stage_linux_mobile": "M05",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "app_backup",
+          "stage_windows": "PC07",
+          "stage_linux_mobile": "M05",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "app_usage",
+          "stage_windows": "PC07",
+          "stage_linux_mobile": "M05",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "app_clone",
+          "stage_windows": "PC07",
+          "stage_linux_mobile": "M05",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        }
+      ]
+    },
+    {
+      "section_id": "storage_analyzer",
+      "name": "Storage Analyzer Pro",
+      "feature_count": 5,
+      "features": [
+        {
+          "feature_id": "sto_detailed_breakdown",
+          "stage_windows": "PC08",
+          "stage_linux_mobile": "M01",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "sto_large_files",
+          "stage_windows": "PC08",
+          "stage_linux_mobile": "M01",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "sto_growth_trends",
+          "stage_windows": "PC08",
+          "stage_linux_mobile": "M01",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "sto_capacity_planner",
+          "stage_windows": "PC08",
+          "stage_linux_mobile": "M01",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "sto_export",
+          "stage_windows": "PC08",
+          "stage_linux_mobile": "M01",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        }
+      ]
+    },
+    {
+      "section_id": "battery_saver",
+      "name": "Battery Saver Pro",
+      "feature_count": 5,
+      "features": [
+        {
+          "feature_id": "bat_thermal_timeline",
+          "stage_windows": "PC09",
+          "stage_linux_mobile": "M06",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "bat_charge_profiles",
+          "stage_windows": "PC09",
+          "stage_linux_mobile": "M06",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "bat_usage_context",
+          "stage_windows": "PC09",
+          "stage_linux_mobile": "M06",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "bat_smart_alerts",
+          "stage_windows": "PC09",
+          "stage_linux_mobile": "M06",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "bat_recommendations",
+          "stage_windows": "PC09",
+          "stage_linux_mobile": "M06",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        }
+      ]
+    },
+    {
+      "section_id": "ai_optimization",
+      "name": "AI Optimization Pro",
+      "feature_count": 5,
+      "features": [
+        {
+          "feature_id": "opt_gaming",
+          "stage_windows": "PC10",
+          "stage_linux_mobile": "M10",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "opt_ai_learn",
+          "stage_windows": "PC10",
+          "stage_linux_mobile": "M10",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "opt_thermal",
+          "stage_windows": "PC10",
+          "stage_linux_mobile": "M10",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "opt_network",
+          "stage_windows": "PC10",
+          "stage_linux_mobile": "M10",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        },
+        {
+          "feature_id": "opt_scene",
+          "stage_windows": "PC10",
+          "stage_linux_mobile": "M10",
+          "specification_only": true,
+          "availability": "NOT_INDEPENDENTLY_VERIFIED"
+        }
+      ]
+    }
+  ]
+}

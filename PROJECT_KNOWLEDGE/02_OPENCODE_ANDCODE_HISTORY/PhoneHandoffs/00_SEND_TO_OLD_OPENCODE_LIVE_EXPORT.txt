@@ -1,0 +1,19 @@
+TO THE EXISTING OpenCode AGENT RUNNING /root/workspace/KNOUX-AI
+Owner is migrating the current KNOUX-AI mobile source to AndCode, on the SAME Android phone.
+MANDATORY: preserve every unique file and Git history. Do not use an older phone snapshot or GitHub main as the live source.
+
+CURRENT ACTION — after the current safe in-flight operation finishes:
+1. Identify actual workspace via pwd / git rev-parse --show-toplevel; confirm exact /root/workspace/KNOUX-AI.
+2. Print real git HEAD, branch, git status --porcelain=v1 -uall, remote -v, worktrees, reflog, stash; identify concurrent agents.
+3. Ensure consistent source export by avoiding concurrent writes during snapshot. Create a timestamped private archive containing .git, tracked source, ALL untracked work, approved images/design assets/QA/screenshots, reports and latest APK. Never run git reset/clean, or delete/overwrite files.
+4. SHA256 the archive; list entries; verify tar validity and source HEAD/status before/after. If sources changed, label INCONSISTENT and retry after writers stop. Do not claim coherent export otherwise.
+5. Capture ACTUAL Gradle test XML, build logs, installed/debug APK and SHA256 separately. Do not claim that newest APK includes unbuilt source changes.
+6. Transfer through the *same already-authorized phone file bridge* used earlier for app-debug.apk into Android shared storage folder:
+   /sdcard/Download/KNOUX_AndCode_Migration_20261113/
+   If the bridge expects a path only relative to Download, use Download/KNOUX_AndCode_Migration_20261113/.
+7. Name files clearly as LIVE_SOURCE_YYYYMMDD_HHMM.tar.gz, LIVE_SOURCE.sha256, LATEST_BUILT_APP.apk, LATEST_BUILT_APP.apk.sha256, LATEST_STATUS.md and test evidence directory/archive.
+8. PROVE file transfer and checksum on the Android destination. If the bridge cannot transfer a large archive, report exact error/limit and export safe split parts with manifest; do not label it delivered until files actually exist on phone.
+9. Do NOT expose secrets in chat or on public endpoints. Archives may contain .env and tokens and must remain private. Do not automatically bring credentials into new AndCode runtime.
+10. Do not stop/delete the existing OpenCode application or its original project data. Continue existing M00-M15 goal only from verified current state.
+
+DELIVERY EVIDENCE REQUIRED: actual source HEAD, dirty/untracked inventory, archive byte size + SHA256, transfer destination and verified destination SHA256, APK build SHA256 and runtime evidence, missing items and remaining tasks.

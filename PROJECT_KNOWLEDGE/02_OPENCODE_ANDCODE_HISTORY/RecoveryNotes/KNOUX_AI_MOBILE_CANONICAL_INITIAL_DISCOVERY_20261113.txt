@@ -1,0 +1,25 @@
+﻿KNOUX AI MOBILE — INITIAL DISCOVERY, REAL ANDROID ADB
+Date 2026-11-13 (Dubai)
+DO NOT REPRESENT THIS DOCUMENT AS A FULL ARCHIVE AUDIT.
+
+Verified ADB device now: 1334825549012211, itel S686LN, Android API35 (USB device state).
+Wireless mDNS advertisements detected [REDACTED_NETWORK_ENDPOINT] and :38341; endpoints change and are not a guaranteed working transport.
+Mobile app on phone: com.knoux.ai.debug.
+Installed apps (user 0): com.yugahashimoto.andcode; ai.sol.opencode; com.termux.
+Old OpenCode package app.getopencode not present for Android user 0.
+Current phone shared storage roughly 227GB total, 131GB available.
+
+CONFIRMED ORIGINAL SOURCES:
+Historical mobile OpenCode extracted folder in Download/OpenCode/_knoux_snapshots-20261111-210018/KNOUX-AI with Git HEAD cffe7b4f7cc1de4beb5539202dbcf067de19741e (as read previously).
+Historical mobile source archive: Download/OpenCode/_knoux_snapshots-20261111-210018/_knoux_snapshots/KNOUX-AI-export-20261111-132741.tar.gz; 480861731 bytes; SHA256 df944bfa4a1ef14a92f8580354c3ba0dcd04a5595d7952590fe2a2c301c164c5; independently verified again in recovery pass.
+Independently verified second archive copy on Windows: K:\KNOUX-Phone-Exports\RECOVERY_20261113\KNOUX-AI-export-20261111-132741.VERIFIED.tar.gz; same size and SHA-256.
+Nov13 M08 APK found: Download/OpenCode/app-debug.apk, 35386564 bytes; prior SHA256 cf3e3c785b662c89663f9c862b5a13ffe70c21b16238880a1ed68f236f813e76. APK IS NOT SOURCE.
+Historic archive ZIPs: Download/OpenCode/_knoux_snapshots-20261111-210018.zip (~2.3GB); Download/OpenCode/KNOUX-AI-export-20261111-123056.manifest-20261111-210304.zip (~1.6GB).
+OpenCode_shared.tar (~6.8GiB) resides in Download/KNOUX_AppGetOpenCode_Export_20261113_1325 and DOES NOT back up protected private /data/data application workspace.
+Download/KNOUX-AI-main.zip (1062272615 bytes) classified as separate Windows/PC lane candidate, NEVER blindly use to reconstruct mobile source.
+Prior report named mobile source commit 64aeb002b1ab5d1da42ac7f0787bbd2318192a4b and M09.DATA; this source commit has NOT yet been physically recovered.
+New GitHub KNOUX-AI-Pro was last checked private but size=0, not a verified push.
+Unverified Nov13 KNOUX_AI_LATEST_FULL_SOURCE.tar.gz and QA archive were NOT FOUND in accessible shared storage in the preceding direct recovery checks; search all candidates again, no fake closure.
+
+OUTPUT STATUS AT THIS MOMENT: FOLDER_AND_OWNER_CONTRACT_CREATED; NOT YET RECONCILED; MOBILE_CURRENT_SOURCE_UNVERIFIED.
+No original archive, source, app package, phone data or Windows repo has been deleted or overwritten in this setup step.

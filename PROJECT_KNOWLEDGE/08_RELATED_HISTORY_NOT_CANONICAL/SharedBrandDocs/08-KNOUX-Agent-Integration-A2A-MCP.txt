@@ -1,0 +1,65 @@
+KNOUX REPAIR
+AGENT INTEGRATION, A2A, MCP, AND APPLICATION EMBEDDING
+
+PRODUCT UX MODEL
+
+1. GLOBAL ASSISTANT
+Available from application shell/top bar.
+Handles broad questions and cross-family diagnosis.
+
+2. FAMILY ASSISTANT
+Automatically receives active family, selected service, visible tools, and verified evidence references.
+
+3. TOOL RESULT ASSISTANT
+Receives selected tool, purpose, verified result, and user's question.
+Useful actions:
+- Explain Result
+- Find Root Cause
+- Recommend Safe Fix
+- Create Repair Plan
+- What Should I Verify Next?
+
+CONTEXT ENVELOPE
+{
+  "sessionId": "...",
+  "family": "...",
+  "service": "...",
+  "tool": {"id": "...", "name": "..."},
+  "userQuestion": "...",
+  "verifiedEvidence": [],
+  "uiContext": {"screen": "...", "selectedService": "..."}
+}
+
+Do not include secrets.
+
+A2A
+Suitable for exposing the deployed agent to authorized application clients.
+It does not grant automatic Windows access, user authorization, or elevation.
+
+MCP
+MCP capability must be verified at runtime.
+Configured endpoint presence does not prove health.
+
+FRONTEND SECURITY
+Never place cloud credentials in React.
+Preferred:
+React -> local/server-side KNOUX assistant route -> authenticated remote agent.
+
+LOCAL ORCHESTRATION
+Agent proposes structured intent.
+Local KNOUX validates tool and parameters.
+Local policy determines approval.
+User confirms if required.
+Local bridge executes.
+Verified result returns.
+Agent explains result.
+
+SESSIONS
+Preserve context and evidence references, but never turn old evidence into current live state.
+
+PRIVACY
+Send only necessary summarized evidence.
+Never send passwords, API keys, access tokens, private keys, credential stores, full environment variables, or unrelated personal files.
+
+OFFLINE
+If AI is unavailable, keep local KNOUX tools usable and report AI unavailability clearly.

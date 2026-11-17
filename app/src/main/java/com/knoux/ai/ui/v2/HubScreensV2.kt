@@ -194,8 +194,7 @@ fun V2CleanHubScreen(
                         onStart = { onNavigate("deepscan") },
                     )
                 }
-                item { V2SectionLabel("أدوات التنظيف", trailing = "8 خدمات") }
-                item { ServiceGrid(cleanServices, onNavigate) }
+                item { ServiceSubGrid(ServiceSpecs.smartClean, title = "خدمات التنظيف الذكي") }
                 item { BestNextAction(onClick = { onNavigate("smartclean") }) }
                 item { SmartHint() }
             }

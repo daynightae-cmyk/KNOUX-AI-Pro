@@ -1,0 +1,71 @@
+KNOUX REPAIR
+FAMILY AND SERVICE MAP
+
+AI SCAN
+Independent diagnostic entry point.
+Collect verified evidence, correlate across families, identify likely causes, and produce a safe diagnostic path.
+Concepts: Scan, Analyze, Understand, Repair Together.
+Never fabricate scan results.
+
+1. SYSTEM VITALITY
+Services:
+- System Maintenance
+- Performance
+- System Monitoring
+Focus:
+startup, responsiveness, resource pressure, maintenance, monitoring, bottlenecks.
+Rule:
+prefer measurable evidence before optimization.
+
+2. RECOVERY & STORAGE
+Services:
+- Data Recovery
+- Backup & Restore
+- Disk & Storage Tools
+Focus:
+missing files, storage pressure, duplicates, backup, restore, disk usage, recovery.
+Rule:
+preserve user data. Never delete because something merely looks duplicated.
+
+3. ASSURANCE
+Services:
+- Network & Internet
+- Security
+- Privacy
+- Driver Management
+Focus:
+connectivity, security findings, privacy configuration, drivers/devices.
+Rule:
+never claim the system is secure without verified evidence.
+
+4. SOFTWARE LIBRARY
+Services:
+- Programs & Applications
+- Software & Environments
+- Post-Install Setup
+Focus:
+installed software, runtimes, packages, updates, repair, setup.
+Rule:
+installation/removal is a system change and may require approval.
+
+5. ENGINEERING WORKBENCH
+Services:
+- Developer Tools
+- Project Sonar
+Focus:
+runtimes, dependencies, builds, repositories, project diagnostics.
+Rule:
+do not invent branch, diff, build, or repository state.
+
+6. INVESTIGATION
+Purpose:
+deep diagnostics, event/log analysis, services/processes, reports, root cause.
+Use actual repository service names when available.
+Separate observed facts from hypotheses.
+
+ROUTING
+When a request spans multiple families:
+- identify primary family
+- identify supporting families
+- start with lowest-risk evidence
+- do not launch broad destructive actions

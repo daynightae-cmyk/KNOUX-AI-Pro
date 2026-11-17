@@ -1,0 +1,19 @@
+KNOUX AI PRO — CANONICAL WINDOWS CONTINUATION / EXECUTE NOW
+
+The attached KNOUX_AI_PRO_WINDOWS_CANONICAL_MASTER_20261115.md supersedes previous phone/AndCode recovery instructions.
+
+SOURCE & ONLY MODIFIABLE PROJECT:
+K:\KNOUX-AI-Pro  |  https://github.com/daynightae-cmyk/KNOUX-AI-Pro.git  |  master
+
+SEPARATE PROJECT — DO NOT TOUCH:
+D:\KNOUX-AI  |  https://github.com/daynightae-cmyk/KNOUX-AI.git  |  main
+
+Do NOT collect, recover, transfer or synchronize source from the itel or /root/workspace/KNOUX-AI. Pro Android source is already on Windows K:.
+
+Use the uploaded PRO visual references and the unified contract. Execute in-place, preserve existing shell/services/auth/unique work, fix only reproduced build errors, build locally, and test on dedicated Samsung SM-A025F via explicitly verified Windows ADB target.
+
+First inspect live HEAD, master, origin/master, status -uall, worktrees, active agents, service manifest, test history and existing approved assets. Then implement premium Obsidian Navy / Royal Violet / Electric Cyan / Champagne Gold identity and existing M00–M15 workflows with real evidence.
+
+Note: a GitHub metadata check on Nov 15 showed Pro visibility=public despite the owner's expected private classification. Treat this as a security mismatch; don't print credentials or change visibility without authorization.
+
+NO RESTART. NO LOST UNIQUE WORK. NO COMPETING AGENT OVERWRITE. NO FAKE PASS.

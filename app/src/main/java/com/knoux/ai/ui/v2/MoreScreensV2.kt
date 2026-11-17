@@ -248,7 +248,7 @@ internal fun V2Toggle(checked: Boolean, onChange: (Boolean) -> Unit, accent: Col
 }
 
 @Composable
-private fun SegmentedBar(segments: List<Pair<Float, Color>>, height: Int = 9) {
+internal fun SegmentedBar(segments: List<Pair<Float, Color>>, height: Int = 9) {
     Row(
         Modifier
             .fillMaxWidth()

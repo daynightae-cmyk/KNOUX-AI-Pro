@@ -1,0 +1,25 @@
+KNOUX AI MOBILE — CORRECT FALSE TRANSFER CLOSURE
+2026-11-13
+
+DIRECT OWNER FOLLOW-UP: Do not start M09 or import older source until the transfer is real.
+
+INDEPENDENT ANDROID ADB FACTS
+At 18:13 +04 on the REAL itel S686LN phone, /sdcard/Download/KNOUX_AndCode_Migration_20261113/ held only previous instructions, M08 debug APK and screenshot.
+KNOUX_AI_LATEST_FULL_SOURCE.tar.gz, KNOUX_AI_QA_EVIDENCE.tar.gz, KNOUX_AI_ANDCODE_HANDOFF.md and their SHA files WERE NOT THERE.
+A shared-storage filename search did not locate KNOUX_AI_LATEST_FULL_SOURCE.tar.gz or KNOUX_AI_ANDCODE_HANDOFF.md.
+Claimed complete delivery is therefore contradicted by target inspection. The old M08 APK is SHA256 cf3e3c785b662c89663f9c862b5a13ffe70c21b16238880a1ed68f236f813e76.
+
+EXECUTE CORRECTION
+1. In ORIGINAL /root/workspace/KNOUX-AI environment, locate the claimed exports, inspect stat, sha256sum and tar -tzf, plus actual Git HEAD/status and running writers. Do not rebuild or discard unique source to fix transfer.
+2. A container path /sdcard/Download is NOT necessarily the real Android shared storage. Determine which filesystem the files inhabit.
+3. Use a REAL owner-authorized transfer mechanism: OpenCode native artifact attachment/export/download saved to Android Downloads; or authenticated secure transfer to the Windows ADB host followed by adb push. Never put sensitive source on a public unauthenticated HTTP server.
+4. The authorized Windows host currently supports ADB; it must rediscover serial and wireless endpoint dynamically. A new pairing code is NOT required if a previously authorized transport works.
+5. Deliver all NINE listed artifacts: SOURCE tar.gz+sha256, QA tar.gz+sha256, APK+sha256, GIT_STATUS, WORK_INVENTORY, ANDCODE_HANDOFF. The report labelled 8/8 though its own table listed 9.
+6. On REAL Android destination /sdcard/Download/KNOUX_AndCode_Migration_20261113/, run ls -lh, compute sha256sum for actual source/QA/APK and compare with source-generated checksums. Prove exact byte counts and hash match, independent of source-side validation.
+7. If actual phone transfer unavailable, report BLOCKED_NO_REAL_PHONE_TRANSFER and provide private downloadable artifacts and practical instructions for Windows adb push. Never call it DELIVERED without on-phone proof.
+8. Preserve .git, tracked/untracked source, designs, screenshots, test evidence and all unique work. No git reset/clean/force-push, uninstall, clear-data or conflicting writer edits. Independent D:\KNOUX-AI Windows repo is off-limits.
+9. Do not assert exports have no secrets without evidence. Do not disclose API keys in reports or public links.
+10. After verified transfer, AndCode safely imports into a NEW workspace, verifies HEAD 64aeb002b1ab5d1da42ac7f0787bbd2318192a4b against actual .git, then resumes at actual M09.DATA based on files, not agent claims. Do not substitute 2026-11-11 snapshots.
+
+REQUIRED REPORT
+Source filesystem and path, exact destination phone path, source+destination hashes and sizes, Git HEAD/status, Android transfer proof, exact blocker if present. No fake closure.

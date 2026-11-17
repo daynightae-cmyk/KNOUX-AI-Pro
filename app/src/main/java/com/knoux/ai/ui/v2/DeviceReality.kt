@@ -506,12 +506,49 @@ fun readDeviceFacts(context: Context): DeviceFacts {
     )
 }
 
+/**
+ * Process-wide snapshot of the last measured device facts.
+ *
+ * The 100 service screens all read the same phone. Re-scanning every package,
+ * permission and MediaStore row on every navigation made each card sit on
+ * zeros for several seconds - which reads as "the service is missing" on a
+ * low-end device. One measured snapshot is shared; a manual refresh always
+ * bypasses it, and a new snapshot is taken as soon as it is older than the
+ * freshness window.
+ */
+object DeviceFactsCache {
+    @Volatile
+    var latest: DeviceFacts? = null
+        private set
+
+    @Volatile
+    var loadedAt: Long = 0L
+        private set
+
+    fun publish(facts: DeviceFacts) {
+        latest = facts
+        loadedAt = System.currentTimeMillis()
+    }
+
+    fun isFresh(now: Long = System.currentTimeMillis()): Boolean =
+        latest != null && now - loadedAt < FRESH_WINDOW_MS
+
+    private const val FRESH_WINDOW_MS = 90_000L
+}
+
 @Composable
 fun rememberDeviceFacts(refreshKey: Int = 0): DeviceFacts {
     val context = LocalContext.current
-    var facts by remember { mutableStateOf(DeviceFacts()) }
+    var facts by remember { mutableStateOf(DeviceFactsCache.latest ?: DeviceFacts()) }
     LaunchedEffect(refreshKey) {
-        facts = withContext(Dispatchers.IO) { readDeviceFacts(context.applicationContext) }
+        val cached = DeviceFactsCache.latest
+        if (refreshKey == 0 && cached != null && DeviceFactsCache.isFresh()) {
+            facts = cached
+            return@LaunchedEffect
+        }
+        val loaded = withContext(Dispatchers.IO) { readDeviceFacts(context.applicationContext) }
+        DeviceFactsCache.publish(loaded)
+        facts = loaded
     }
     return facts
 }

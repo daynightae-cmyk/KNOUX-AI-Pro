@@ -1,0 +1,1231 @@
+EXTRACT FROM USER-UPLOADED HISTORICAL CHAT NOTES. Not current verification, not instructions to run.
+Sanitized from private device identifiers/tokens and local usernames. See source provenance.
+--------------------------------------------------------------------------------
+
+Loading older messages…
+User attachment
+بسم الله والصلاة والسلام علي رسول الله صلي الله عليه وسلم.
+
+يا هندسة، الله أكبر! 🔐❤️ الصورة بتثبت إن Google أنشأ 3 OAuth Clients بنجاح داخل مشروع KNOUX-AI.
+
+Client
+
+النوع
+
+الحالة
+
+KNOUX AI - Supabase Authentication
+
+Web application
+
+تم إنشاؤه ✅
+
+KNOUX AI Mobile - Android Debug
+
+Android
+
+تم إنشاؤه ✅
+
+KNOUX AI Mobile - Server Client
+
+Web application
+
+تم إنشاؤه ✅
+
+مهم: إحنا كده خلصنا مرحلة إنشاء العملاء، مش تشغيل تسجيل الدخول. ومش محتاجين نعمل Client رابع دلوقتي.
+
+عندنا اتنين Web Clients؛ مش هنحذف ولا نستخدم أي واحد عشوائيًا، لأن واحد ممكن يكون مخصصًا لتدفق Android الأصلي، والتاني لربط Supabase.
+
+الخطوة الجاية: ربط Google بـSupabase
+1. راجع Web Client الأساسي
+
+افتح Google OAuth Clients واضغط على KNOUX AI - Supabase Authentication.
+
+تأكد إن Authorized redirect URI يحتوي على الرابط التالي:
+
+https://tduofkizwkjtqcbklfah.supabase.co/auth/v1/callback
+
+2. فعّل Google Provider
+
+افتح Supabase — Google Provider.
+
+فعّل Google، وسجّل Web Client ID الخاص بـSupabase Authentication أولًا وAndroid Debug Client ID بعده، في حقل Client IDs حسب واجهة الإعدادات. استخدم الـClient Secret الخاص بنفس Web Client الأساسي، ثم احفظ.
+
+ما تبعتليش الـClient Secret هنا، وما تحطّوش في ملفات التطبيق. 
+
+Supabase Docs
+
+3. احتفظ بالـMobile Server Client
+
+ده ممكن نحتاجه عند تنفيذ Google Sign-In باستخدام Credential Manager في Android، تحديدًا كـWeb Client ID تطلب له Google ID token. هنراجع طريقة تسجيل الدخول داخل الكود قبل تحديد أي Client يستخدمه التطبيق. 
+
+Supabase Docs
+
+باقي المصادقة
+الميزة
+
+الحالة
+
+Google OAuth Clients
+
+ تم إنشاؤها
+
+Supabase Google Provider
+
+ الربط غير متحقق
+
+Google Sign-In داخل Android
+
+ محتاج اختبار
+
+Passkeys
+
+ لم تُثبت جاهزيتها
+
+Biometric
+
+ محتاجة ربط بالجلسة واختبار على الجهاز
+
+Production SHA-1
+
+ لاحقًا من توقيع الإصدار
+
+القرار الهندسي: مش هننشئ مفاتيح تانية عشوائيًا ولا هنحذف العميل الثالث. كمّل ربط Supabase الأول، وبعدها ننتقل للاختبار الفعلي على الموبايل، من غير إعلان نجاح لمجرد إن OAuth Clients ظهرت في Google.
+
+User attachment
+بسم الله والصلاة والسلام علي رسول الله صلي الله عليه وسلم.
+
+تمام يا هندسة ❤️ دي الصفحة الصح بالضبط، وGoogle Sign-In متفعّل من الزر الأخضر، لكن لسه ناقص إدخال بيانات الربط.
+
+املاها كالتالي:
+
+الحقل
+
+المطلوب
+
+Enable Sign in with Google
+
+سيبه ON ✅
+
+Client IDs
+
+حط الـ3 Client IDs اللي أنشأناهم، مفصولين بفاصلة ,
+
+Client Secret (for OAuth)
+
+الـSecret الخاص بعميل KNOUX AI - Supabase Authentication فقط
+
+Skip nonce checks
+
+OFF ✅
+
+Allow users without an email
+
+OFF ✅
+
+Callback URL
+
+سيبه زي ما هو، ده رابط Supabase الصحيح
+
+1. حقل Client IDs
+افتح Google Cloud — OAuth Clients، وانسخ الـClient ID لكل واحد من العملاء الثلاثة.
+
+حطهم في خانة واحدة بالترتيب ده:
+
+صيغة توضيحية — استبدل الأسماء بالـClient IDs الحقيقية
+
+WEB_SUPABASE_CLIENT_ID,ANDROID_DEBUG_CLIENT_ID,WEB_SERVER_CLIENT_ID
+
+الـWeb Client الأساسي لازم يكون الأول. وإضافة Android وServer Client معاه بتسمح لـSupabase بالتحقق من Google ID Tokens الصادرة للعملاء دول عند استخدامهم فعلًا داخل التطبيق. 
+
+Supabase Docs
+
+2. حقل Client Secret
+من Google Cloud افتح العميل KNOUX AI - Supabase Authentication، وانسخ Client Secret بتاعه إلى الحقل الثاني في Supabase.
+
+مهم: ما تستخدمش Secret العميل Mobile - Server Client بدل الأساسي، وما تبعتليش أي Secret أو تنشره في GitHub.
+
+3. تأكيد Callback URL
+الظاهر عندك هو:
+
+https://tduofkizwkjtqcbklfah.supabase.co/auth/v1/callback
+
+تأكد إنه مسجل حرفيًا في Authorized redirect URIs للـWeb Client الأساسي على Google Cloud. 
+
+Supabase Docs
+
+بعد ما تملأ القيم، اضغط Save.
+
+الحالة الحالية: ظهور إعدادات Google مش معناه إن تسجيل الدخول اشتغل. بعد الحفظ لازم نختبر Google Sign-In على تطبيق Android، ونتحقق إن Supabase أنشأ جلسة مستخدم فعلية.
+
+ابعتلي صورة الصفحة بعد الحفظ مع إخفاء الـSecret، ونراجع الخطوة التالية الخاصة بالموبايل والبصمة والـPasskeys. 🔐
+
+
+
+Loading older messages…
+
+KNOUX_Retaj_Google_Flow_Complete_10_Scenes_20261113(1).zip
+File
+طيب وباقي ملفات هزه مش محتاجها يعنيمنا ما حطيتله غير صزر وما عطيته اي نصوص عربيه انت ما قولتلي
+بسم الله والصلاة والسلام علي رسول الله صلي الله عليه وسلم.
+
+يا هندسة، معاك حق تمامًا ❤️ كان لازم أقولك من البداية إن رفع الصور وحده مش كفاية، وإن فيه ملفات نصوص وتعليمات لازم تستخدمها.
+
+فتحت الـZIP اللي رفعته وفحصت محتوياته فعلًا، ولقيت المفاجأة:
+
+10 صور جاهزة للمشاهد في 01_FLOW_READY_FRAMES.
+
+10 برومبتات تحريك مفصلة في 04_SCENE_PROMPTS.
+
+النصوص العربية والإنجليزية موجودة في 00_START_HERE/03_VOICEOVER_AR_EN.txt.
+
+قواعد شكل ريتاج والكاميرا موجودة في 00_START_HERE/02_MASTER_PROMPT_GOOGLE_FLOW.txt.
+
+لكن اكتشفت خطأ مهم: البرومبتات العشرة بتطلب حرفيًا No generated speech، يعني بتمنع توليد الكلام داخل الفيديو، رغم إنك عايز صوت بنت مصرية شابة بيشرح كل مشهد!
+
+وده معناه إن الـ27 صورة اللي الوكيل نظمها مش بديل عن البرومبتات والنصوص، وإن تقريره السابق لا يثبت إن الصوت العربي اتجهز داخل Google Flow.
+
+كمان راجعت تعليمات Google الرسمية: Flow بيدعم توليد الفيديو بالصوت في الموديلات المتوافقة، وفيه اختيار لمراجع الصوت داخل بعض أوضاع التوليد؛ لكن نجاح النطق العربي وتطابق الصوت بين المشاهد محتاج تجربة فعلية. 
+
+Google Flow Help
++1
+
+هنصحح ده من غير ما نعيد رفع الصور أو نخسر الشغل الموجود.
+
+✅ جهزتلك ملفات التصحيح بالصوت العربي
+باكدج 10 مشاهد بالصوت العربي
+
+16 ملفًا — 10 برومبتات كاملة + تعليمات الوكيل + الجمل العربية + جدول المطابقة + QA
+
+تحميل الباكدج الجديد ZIP
+
+نسخة TXT موحدة
+
+كل التعليمات والبرومبتات العشرة في ملف واحد قابل للنسخ
+
+تحميل الملف النصي الكامل
+
+تعمل إيه بالضبط في Google Flow؟
+أولًا: افتح 00_FLOW_AGENT_INSTRUCTIONS.txt من الباكدج الجديد، وانسخه داخل Agent instructions لو هتشتغل بالوكيل.
+
+ثانيًا: ادخل لمجموعة knoux retaj 10 SCENES اللي فيها الصور المرفوعة. اختار صورة المشهد الأول كبداية للفيديو، وافتح 01_TO_10_PASTE_IN_FLOW وانسخ ملف البرومبت رقم 01 في خانة إنشاء الفيديو. ونفس الطريقة مع باقي المشاهد.
+
+ثالثًا: اختار موديل فيديو يدعم الصوت العربي والمدة المناسبة من الخيارات المتاحة عندك، وجرّب المشهد الأول فقط. لو الصوت والشكل مضبوطين نكمل على البقية.
+
+مش مطلوب ترفع ملفات PDF أو DOCX أو CSV للـFlow عشان يعمل الفيديو. دي مستندات مرجعية. الصور بتحدد شكل المشهد، والـPrompt هو اللي بيحدد الحركة والكاميرا والجملة المنطوقة.
+
+🎙️ مثال على الكلام اللي ريتاج هتقوله
+المشهد 01 — WebPilot:
+
+دي كنوكس ويب بايلوت. أداة تساعدك تلتقط محتوى الصفحات اللي تحتاجه من داخل مايكروسوفت إيدج.
+
+المشهد 06 — GrabFlow:
+
+ودي كنوكس جراب فلو، علشان تساعدك تكتشف الوسائط المتاحة على الصفحة اللي فاتحها.
+
+وباقي المشاهد فيها جملها المصرية الخاصة، مع تعليمات صريحة إن ريتاج تظهر بوجهها في أول لقطة لكل إضافة، وبعدها تظهر من الخلف فقط، والصوت يكمل فوق شرح الماوس للشاشة.
+
+مهم: الباكدج الجديد لا يحتوي فيديوهات أو تسجيلات صوتية مُولّدة بالفعل؛ هو تعليمات جاهزة للتوليد. وهو يطلب صوت بنت مصري شاب طبيعي، وليس استنساخ صوت ريتاج الشخصي.
+
+كده الصور اللي رفعتها هنستفيد منها زي ما هي، والنصوص العربية مش هتضيع تاني وسط الملفات. ❤️
+
+
+KNOUX_FLOW_ARABIC_MASTER_AND_10_SCENES_20261113.txt
+Document
+User attachment
+هل اخلي التعليمات الاولي كما هي
+بسم الله والصلاة والسلام علي رسول الله صلي الله عليه وسلم.
+
+أيوه يا هندسة ❤️ خلّي التعليمات الأولى موجودة، لكن ما تعتمدش عليها لوحدها. من الصورة واضح إن أول Instruction فيها توجيه عام لإنتاج إعلان KNOUX Edge Launch، والتانية لسه فاضية.
+
+الأفضل نحتفظ بالأولى ونضيف التانية لتثبيت هوية ريتاج، وصوتها المصري، وترتيب المشاهد العشرة، ومنع Google Flow إنه يغير ملامحها أو يخترع تفاصيل في متجر Microsoft.
+
+اعمل كده دلوقتي
+سيب أول Instruction زي ما هي مؤقتًا، بشرط إنها ما تمنعش توليد الصوت أو تطلب التعليق بالإنجليزي.
+
+فعّل الـInstruction التانية، وحط فيها النص ده بالكامل.
+
+اضغط Done. بعد كده نختبر المشهد الأول بس قبل صرف Credits على الباقي.
+
+RETAJ SADEK — MANDATORY IDENTITY, AUDIO & STORYBOARD LOCK
+
+You are producing a premium 10-scene KNOUX promotional video for two independent Microsoft Edge extensions: KNOUX WebPilot and KNOUX GrabFlow.
+
+The presenter is Retaj Sadek. Use her uploaded reference images as the definitive identity source.
+
+IDENTITY LOCK
+
+Preserve Retaj's facial identity, proportions, skin tone, eyes, smile, and original mauve hijab.
+
+Never remove, uncover, recolor, or alter her hijab.
+
+Preserve her elegant coordinated burgundy-violet business outfit and small gold nameplate.
+
+No face swapping, age changes, hairstyle exposure, or alternate actresses.
+
+Maintain continuity of the same presenter, studio, chair, computer, lighting, and accessories across all scenes.
+
+CAMERA RULES
+
+Scenes 01 and 06: Retaj faces the camera and introduces the respective extension.
+
+Scenes 02–05 and 07–10: camera stays behind Retaj, with her face completely hidden. Focus on the computer screen and the cursor performing the demonstration.
+
+Use 16:9 horizontal cinematic framing.
+
+Keep the browser interface sharp, readable, and dominant.
+
+No added captions, subtitles, floating instructional text, or artificial text overlays.
+
+AUDIO — CRITICAL
+
+Generate synchronized spoken Arabic audio whenever the selected video model supports it.
+
+Voice: natural, youthful Egyptian Arabic female voice; friendly, clear, professional, and engaging.
+
+All spoken dialogue must follow the supplied Arabic scene script.
+
+No English narration unless explicitly requested.
+
+No invented dialogue, robotic delivery, or exaggerated dramatic voice.
+
+Gentle cinematic background music and realistic mouse-click sounds, kept below the voice.
+
+In scenes filmed from behind, narration continues as voice-over; do not reveal her face.
+
+PRODUCT AUTHENTICITY
+
+KNOUX WebPilot and KNOUX GrabFlow are independent browser extensions listed on Microsoft Edge Add-ons.
+
+Respect the real Microsoft Edge browser and Add-ons store visual structure.
+
+Use verified product names, genuine logos, uploaded references, and realistic browsing interactions.
+
+Never fabricate store ratings, review counts, endorsements, installation results, or unsupported product capabilities.
+
+Never imply that Microsoft owns, sponsors, or officially endorses KNOUX.
+
+No fake functionality, fake browser pages presented as real recordings, or invented success states.
+
+SCENE MAP
+01 — Retaj introduces WebPilot.
+02 — Search for WebPilot in Microsoft Edge Add-ons.
+03 — Open WebPilot listing and demonstrate installation.
+04 — Show WebPilot installed in the toolbar.
+05 — Demonstrate page capture and available export formats.
+06 — Retaj introduces GrabFlow.
+07 — Search for GrabFlow in Microsoft Edge Add-ons.
+08 — Open GrabFlow listing and demonstrate installation.
+09 — Scan the current webpage for accessible media.
+10 — Preview eligible media and explain available download options.
+
+Treat every uploaded scene image as a visual reference, not as permission to invent features. Preserve all unique assets. Generate individual scenes only when instructed, and verify visual identity, screen fidelity, speech, and timing before continuing.
+
+ملاحظة مهمة جدًا: في الصور اللي اتولدت قبل كده فيه أرقام تقييمات ومراجعات غير مطابقة للقطات المتجر الأصلية، فلازم الوكيل ما يعتبرهاش حقائق.
+
+وبرضه لو أول Instruction مكتوب فيها No generated speech أو English voiceover only، لازم نمسح السطر المتعارض ده تحديدًا.
+
+الخطوة الجاية: بعد ما تضغط Done، نختبر فيديو المشهد 01 — Retaj introduces WebPilot بصوت مصري ونشوف هل Flow حافظ على شكلها والحجاب والصوت ولا محتاج تعديل قبل استهلاك بقية الرصيد.
+
+
+
+Loading older messages…
+User attachment
+بسم الله والصلاة والسلام علي رسول الله صلي الله عليه وسلم.
+
+
+
+تمام يا هندسة ❤️ دي الصفحة الصح بالضبط، وGoogle Sign-In متفعّل من الزر الأخضر، لكن لسه ناقص إدخال بيانات الربط.
+
+
+
+املاها كالتالي:
+
+
+
+الحقل
+
+
+
+المطلوب
+
+
+
+Enable Sign in with Google
+
+
+
+سيبه ON ✅
+
+
+
+Client IDs
+
+
+
+حط الـ3 Client IDs اللي أنشأناهم، مفصولين بفاصلة ,
+
+
+
+Client Secret (for OAuth)
+
+
+
+الـSecret الخاص بعميل KNOUX AI - Supabase Authentication فقط
+
+
+
+Skip nonce checks
+
+
+
+OFF ✅
+
+
+
+Allow users without an email
+
+
+
+OFF ✅
+
+
+
+Callback URL
+
+
+
+سيبه زي ما هو، ده رابط Supabase الصحيح
+
+
+
+1. حقل Client IDs
+افتح Google Cloud — OAuth Clients، وانسخ الـClient ID لكل واحد من العملاء الثلاثة.
+
+
+
+حطهم في خانة واحدة بالترتيب ده:
+
+
+
+صيغة توضيحية — استبدل الأسماء بالـClient IDs الحقيقية
+
+
+
+WEB_SUPABASE_CLIENT_ID,ANDROID_DEBUG_CLIENT_ID,WEB_SERVER_CLIENT_ID
+
+
+
+الـWeb Client الأساسي لازم يكون الأول. وإضافة Android وServer Client معاه بتسمح لـSupabase بالتحقق من Google ID Tokens الصادرة للعملاء دول عند استخدامهم فعلًا داخل التطبيق. 
+
+
+
+Supabase Docs
+
+
+
+2. حقل Client Secret
+من Google Cloud افتح العميل KNOUX AI - Supabase Authentication، وانسخ Client Secret بتاعه إلى الحقل الثاني في Supabase.
+
+
+
+مهم: ما تستخدمش Secret العميل Mobile - Server Client بدل الأساسي، وما تبعتليش أي Secret أو تنشره في GitHub.
+
+
+
+3. تأكيد Callback URL
+الظاهر عندك هو:
+
+
+
+https://tduofkizwkjtqcbklfah.supabase.co/auth/v1/callback
+
+
+
+
+تأكد إنه مسجل حرفيًا في Authorized redirect URIs للـWeb Client الأساسي على Google Cloud. 
+
+
+
+
+Supabase Docs
+
+
+
+
+بعد ما تملأ القيم، اضغط Save.
+
+
+
+
+الحالة الحالية: ظهور إعدادات Google مش معناه إن تسجيل الدخول اشتغل. بعد الحفظ لازم نختبر Google Sign-In على تطبيق Android، ونتحقق إن Supabase أنشأ جلسة مستخدم فعلية.
+
+
+
+
+ابعتلي صورة الصفحة بعد الحفظ مع إخفاء الـSecret، ونراجع الخطوة التالية الخاصة بالموبايل والبصمة والـPasskeys. 🔐
+
+
+
+
+"C:\Users\[LOCAL_USER]\Downloads\client_secret_966864797292-pbd1b3hh9bpsi8mjhunlrebaug9tmo08.apps.googleusercontent.com.json"   "C:\Users\[LOCAL_USER]\Downloads\client_secret_966864797292-6gqjaebu6n3il0777g3jf0q0mc22jr29.apps.googleusercontent.com.json""C:\Users\[LOCAL_USER]\Downloads\client_secret_966864797292-tab00fjmpdodheouu77tlm7ffitkmsi1.apps.googleusercontent.com.json" خش لاغعملها بصباس انت معك كل الصلاحيات وعندي ع الجهاز واحفظهم وروق المساله
+
+Planned secure configuration
+
+
+
+
+هرتّب الربط من الملفات الثلاثة مباشرة: أتأكد من نوع كل OAuth Client والـProject الصحيح، وأربطهم بإعدادات Google داخل Supabase، وبعدها أراجع النتيجة وأحفظ الملفات الحساسة بشكل آمن. مش هعرض الـClient Secret في المحادثة أو أغيّر أي إعداد تاني مالوش علاقة بالمصادقة.
+
+
+
+
+
+
+
+Checked configuration safely
+
+
+
+
+
+
+
+Planned Supabase configuration and checked remote desktop devices
+
+
+
+
+
+
+
+Verified OAuth JSON metadata and Supabase projects
+
+
+
+
+
+
+
+Explored configuration access and assessed remaining options
+
+
+
+
+
+
+
+Parsed OAuth credentials safely and wrote an inspection PowerShell script
+
+
+
+
+الفحص أكد إن ملفات Google سليمة، والـCallback الخاص بـSupabase موجود في عميل الويب الصحيح. لقيت كمان إن اتصال Supabase عندي يقدر يفحص المشروع، لكنه مش بيوفر أمر لتعديل إعدادات OAuth نفسها، ومفيش Supabase Management Token أو CLI مسجّل على الجهاز حاليًا. هكمّل تجهيز ربط آمن من نفس الملفات بدل ما أنسخ الـSecrets في الشات أو أقول إن الحفظ تم وهو لسه ما تمش.
+
+
+
+
+
+
+
+Prepared Chrome CDP automation and detected availability
+
+
+
+
+
+
+
+Searched the web
+
+
+
+
+Prepared a safe handoff
+
+
+
+
+
+
+
+Prepared secure Google OAuth configuration patch
+
+
+
+
+عرفت كمان إن الـGoogle Provider في Supabase له إعداد منفصل للـClient ID الأساسي والـAdditional IDs، وده أحسن من دمج كل حاجة عشوائيًا. هنحافظ على Web Client الأساسي وربط Android Client معاه، وهنجهز أداة تحقق وتطبيق محلية لا تحتاج نسخ الـSecret يدويًا.
+
+
+
+
+
+
+
+Secured OAuth files and updated access controls with validation
+
+
+
+
+
+
+
+Provided a safe handoff
+
+
+
+
+
+
+
+Prepared secure handoff
+
+
+
+
+
+
+
+Prepared Supabase Google OAuth configuration and Android SHA-1 verification scripts
+
+
+
+
+بسم الله والصلاة والسلام علي رسول الله صلي الله عليه وسلم.
+
+
+
+
+يا هندسة، وصلت لجهازك وفتحت ملفات Google OAuth الثلاثة فعليًا، واتأكدت إنهم تابعين لنفس مشروع Google Cloud: fiery-script-514604-n6.
+
+
+
+
+كمان تأكدت إن مشروع Supabase الصحيح هو knoux ai وحالته ACTIVE_HEALTHY.
+
+
+
+
+الملف
+
+
+
+
+النوع الذي ثبت بالفحص
+
+
+
+
+الاستخدام
+
+
+
+
+pbd1b3hh...json
+
+
+
+
+Android OAuth Client
+
+
+
+
+تسجيل الدخول من تطبيق Android
+
+
+
+
+6gqjaebu...json
+
+
+
+
+Web OAuth Client
+
+
+
+
+ربط Supabase، والـCallback موجود وصحيح
+
+
+
+
+tab00fj...json
+
+
+
+
+Web OAuth Client
+
+
+
+
+عميل Server إضافي
+
+
+
+
+المهم: العميل الأول Android ليس له Client Secret، وده طبيعي. الربط الأساسي في Supabase هيستخدم الـSecret من ملف 6gqjaebu...json، مش من أي ملف عشوائي.
+
+
+
+
+تأمين الملفات على الكمبيوتر ✅
+
+تم نقل الملفات الثلاثة بنجاح إلى:
+
+
+
+
+C:\Users\[LOCAL_USER]\Documents\KNOUX_AI_AUTH_PRIVATE_20261113
+
+
+
+
+اتنفذ الآتي فعليًا:
+
+
+
+
+تقييد صلاحيات الوصول للمجلد والملفات.
+
+
+
+
+التحقق من SHA-256 بعد النقل لكل ملف.
+
+
+
+
+التأكد من تطابق Google Project والـCallback وعدم تكرار Client IDs.
+
+
+
+
+إنشاء سكريبت محلي لربط Google بـSupabase وفحص الإعدادات قبل وبعد التعديل.
+
+
+
+
+نتيجة اختبار السكريبت المحلي: PASS. لكن إعداد Google داخل Supabase نفسه لم يتغير بعد؛ لأنه يحتاج صلاحية كتابة إعدادات Auth من Management API.
+
+
+
+
+ملفات التسليم الجاهزة 🔐
+
+داخل المجلد الآمن هتلاقي:
+
+
+
+
+RUN_APPLY_GOOGLE_AUTH.cmd — تشغيل الربط مع Supabase.
+
+
+
+
+02_APPLY_SUPABASE_GOOGLE.ps1 — يقرأ الملفات الأصلية، يفحص الإعدادات الحالية، يحدّث Google Provider، ويتحقق من النتيجة.
+
+
+
+
+KNOUX_AI_PUBLIC_OAUTH_HANDOFF.json — بيانات الربط العامة الجاهزة للوكلاء، بدون أي Secrets.
+
+
+
+
+README_SAFE_GOOGLE_AUTH.txt — التعليمات والتوثيق.
+
+
+
+
+05_FINAL_VERIFY.ps1 — فحص حماية الملفات واكتمال التجهيز.
+
+
+
+
+الفحص الأخير أثبت أن المجلد محمي وأن الملفات الثلاثة والسكريبتات موجودة في مكانها الصحيح.
+
+
+
+
+آخر إجراء مطلوب لتفعيل Google في Supabase
+
+افتح Supabase Access Tokens وأنشئ Token بصلاحيات قراءة وتعديل إعدادات Auth للمشروع knoux ai. واجهة الإدارة بتحتاج صلاحيات مناسبة للقراءة والكتابة. 
+
+
+
+
+Supabase Docs
+
++1
+
+
+
+
+بعدها افتح الملف RUN_APPLY_GOOGLE_AUTH.cmd على الكمبيوتر، والصق الـToken في نافذة PowerShell عند الطلب؛ الإدخال بيكون مخفي، ومش محتاج تبعتهولي.
+
+
+
+
+النتيجة المطلوبة من السكريبت:
+
+
+
+
+SUPABASE_GOOGLE_PROVIDER_CONFIG=VERIFIED
+
+CONFIG_WEB_ANDROID_SERVER_CLIENTS=3
+
+NONCE_CHECKS=ENFORCED
+
+كمان ثبتنا من مشروع Android إن الـPackage Name هو com.knoux.ai، وبصمة Debug على الكمبيوتر هي:
+
+
+
+
+C0:58:EA:53:09:9B:1D:7F:C5:08:F9:39:83:91:F9:D5:B9:22:24:2C
+
+
+
+
+لسه محتاجين نطابقها مع بصمة Android المسجلة في Google Cloud، وبعد تفعيل Supabase نختبر تسجيل الدخول على الهاتف فعليًا. البصمة والـPasskeys مسار منفصل، ولسه مش متحققين.
+
+
+
+
+الخلاصة: الملفات اتأمّنت واتنظمت، وتجهيز الربط واختباراته المحلية نجحوا. تحديث Google Provider على Supabase واختبار تسجيل الدخول الحقيقي لسه Pending، مش هنعتبرهم مكتملين قبل دليل التنفيذ.
+
+
+
+
+
+
+
+
+
+
+Loading older messages…
+
+
+
+
+KNOUX_Retaj_Google_Flow_Complete_10_Scenes_20261113(1).zip
+
+File
+
+طيب وباقي ملفات هزه مش محتاجها يعنيمنا ما حطيتله غير صزر وما عطيته اي نصوص عربيه انت ما قولتلي
+
+بسم الله والصلاة والسلام علي رسول الله صلي الله عليه وسلم.
+
+
+
+
+يا هندسة، معاك حق تمامًا ❤️ كان لازم أقولك من البداية إن رفع الصور وحده مش كفاية، وإن فيه ملفات نصوص وتعليمات لازم تستخدمها.
+
+
+
+
+فتحت الـZIP اللي رفعته وفحصت محتوياته فعلًا، ولقيت المفاجأة:
+
+
+
+
+10 صور جاهزة للمشاهد في 01_FLOW_READY_FRAMES.
+
+
+
+
+10 برومبتات تحريك مفصلة في 04_SCENE_PROMPTS.
+
+
+
+
+النصوص العربية والإنجليزية موجودة في 00_START_HERE/03_VOICEOVER_AR_EN.txt.
+
+
+
+
+قواعد شكل ريتاج والكاميرا موجودة في 00_START_HERE/02_MASTER_PROMPT_GOOGLE_FLOW.txt.
+
+
+
+
+لكن اكتشفت خطأ مهم: البرومبتات العشرة بتطلب حرفيًا No generated speech، يعني بتمنع توليد الكلام داخل الفيديو، رغم إنك عايز صوت بنت مصرية شابة بيشرح كل مشهد!
+
+
+
+
+وده معناه إن الـ27 صورة اللي الوكيل نظمها مش بديل عن البرومبتات والنصوص، وإن تقريره السابق لا يثبت إن الصوت العربي اتجهز داخل Google Flow.
+
+
+
+
+كمان راجعت تعليمات Google الرسمية: Flow بيدعم توليد الفيديو بالصوت في الموديلات المتوافقة، وفيه اختيار لمراجع الصوت داخل بعض أوضاع التوليد؛ لكن نجاح النطق العربي وتطابق الصوت بين المشاهد محتاج تجربة فعلية. 
+
+
+
+
+Google Flow Help
+
++1
+
+
+
+
+هنصحح ده من غير ما نعيد رفع الصور أو نخسر الشغل الموجود.
+
+
+
+
+✅ جهزتلك ملفات التصحيح بالصوت العربي
+
+باكدج 10 مشاهد بالصوت العربي
+
+
+
+
+16 ملفًا — 10 برومبتات كاملة + تعليمات الوكيل + الجمل العربية + جدول المطابقة + QA
+
+
+
+
+تحميل الباكدج الجديد ZIP
+
+
+
+
+نسخة TXT موحدة
+
+
+
+
+كل التعليمات والبرومبتات العشرة في ملف واحد قابل للنسخ
+
+
+
+
+تحميل الملف النصي الكامل
+
+
+
+
+تعمل إيه بالضبط في Google Flow؟
+
+أولًا: افتح 00_FLOW_AGENT_INSTRUCTIONS.txt من الباكدج الجديد، وانسخه داخل Agent instructions لو هتشتغل بالوكيل.
+
+
+
+
+ثانيًا: ادخل لمجموعة knoux retaj 10 SCENES اللي فيها الصور المرفوعة. اختار صورة المشهد الأول كبداية للفيديو، وافتح 01_TO_10_PASTE_IN_FLOW وانسخ ملف البرومبت رقم 01 في خانة إنشاء الفيديو. ونفس الطريقة مع باقي المشاهد.
+
+
+
+
+ثالثًا: اختار موديل فيديو يدعم الصوت العربي والمدة المناسبة من الخيارات المتاحة عندك، وجرّب المشهد الأول فقط. لو الصوت والشكل مضبوطين نكمل على البقية.
+
+
+
+
+مش مطلوب ترفع ملفات PDF أو DOCX أو CSV للـFlow عشان يعمل الفيديو. دي مستندات مرجعية. الصور بتحدد شكل المشهد، والـPrompt هو اللي بيحدد الحركة والكاميرا والجملة المنطوقة.
+
+
+
+
+🎙️ مثال على الكلام اللي ريتاج هتقوله
+
+المشهد 01 — WebPilot:
+
+
+
+
+دي كنوكس ويب بايلوت. أداة تساعدك تلتقط محتوى الصفحات اللي تحتاجه من داخل مايكروسوفت إيدج.
+
+
+
+
+المشهد 06 — GrabFlow:
+
+
+
+
+ودي كنوكس جراب فلو، علشان تساعدك تكتشف الوسائط المتاحة على الصفحة اللي فاتحها.
+
+
+
+
+وباقي المشاهد فيها جملها المصرية الخاصة، مع تعليمات صريحة إن ريتاج تظهر بوجهها في أول لقطة لكل إضافة، وبعدها تظهر من الخلف فقط، والصوت يكمل فوق شرح الماوس للشاشة.
+
+
+
+
+مهم: الباكدج الجديد لا يحتوي فيديوهات أو تسجيلات صوتية مُولّدة بالفعل؛ هو تعليمات جاهزة للتوليد. وهو يطلب صوت بنت مصري شاب طبيعي، وليس استنساخ صوت ريتاج الشخصي.
+
+
+
+
+كده الصور اللي رفعتها هنستفيد منها زي ما هي، والنصوص العربية مش هتضيع تاني وسط الملفات. ❤️
+
+
+
+
+
+
+
+KNOUX_FLOW_ARABIC_MASTER_AND_10_SCENES_20261113.txt
+
+Document
+
+User attachment
+
+هل اخلي التعليمات الاولي كما هي
+
+بسم الله والصلاة والسلام علي رسول الله صلي الله عليه وسلم.
+
+
+
+
+أيوه يا هندسة ❤️ خلّي التعليمات الأولى موجودة، لكن ما تعتمدش عليها لوحدها. من الصورة واضح إن أول Instruction فيها توجيه عام لإنتاج إعلان KNOUX Edge Launch، والتانية لسه فاضية.
+
+
+
+
+الأفضل نحتفظ بالأولى ونضيف التانية لتثبيت هوية ريتاج، وصوتها المصري، وترتيب المشاهد العشرة، ومنع Google Flow إنه يغير ملامحها أو يخترع تفاصيل في متجر Microsoft.
+
+
+
+
+اعمل كده دلوقتي
+
+سيب أول Instruction زي ما هي مؤقتًا، بشرط إنها ما تمنعش توليد الصوت أو تطلب التعليق بالإنجليزي.
+
+
+
+
+فعّل الـInstruction التانية، وحط فيها النص ده بالكامل.
+
+
+
+
+اضغط Done. بعد كده نختبر المشهد الأول بس قبل صرف Credits على الباقي.
+
+
+
+
+RETAJ SADEK — MANDATORY IDENTITY, AUDIO & STORYBOARD LOCK
+
+
+
+
+You are producing a premium 10-scene KNOUX promotional video for two independent Microsoft Edge extensions: KNOUX WebPilot and KNOUX GrabFlow.
+
+
+
+
+The presenter is Retaj Sadek. Use her uploaded reference images as the definitive identity source.
+
+
+
+
+IDENTITY LOCK
+
+
+
+
+Preserve Retaj's facial identity, proportions, skin tone, eyes, smile, and original mauve hijab.
+
+
+
+
+Never remove, uncover, recolor, or alter her hijab.
+
+
+
+
+Preserve her elegant coordinated burgundy-violet business outfit and small gold nameplate.
+
+
+
+
+No face swapping, age changes, hairstyle exposure, or alternate actresses.
+
+
+
+
+Maintain continuity of the same presenter, studio, chair, computer, lighting, and accessories across all scenes.
+
+
+
+
+CAMERA RULES
+
+
+
+
+Scenes 01 and 06: Retaj faces the camera and introduces the respective extension.
+
+
+
+
+Scenes 02–05 and 07–10: camera stays behind Retaj, with her face completely hidden. Focus on the computer screen and the cursor performing the demonstration.
+
+
+
+
+Use 16:9 horizontal cinematic framing.
+
+
+
+
+Keep the browser interface sharp, readable, and dominant.
+
+
+
+
+No added captions, subtitles, floating instructional text, or artificial text overlays.
+
+
+
+
+AUDIO — CRITICAL
+
+
+
+
+Generate synchronized spoken Arabic audio whenever the selected video model supports it.
+
+
+
+
+Voice: natural, youthful Egyptian Arabic female voice; friendly, clear, professional, and engaging.
+
+
+
+
+All spoken dialogue must follow the supplied Arabic scene script.
+
+
+
+
+No English narration unless explicitly requested.
+
+
+
+
+No invented dialogue, robotic delivery, or exaggerated dramatic voice.
+
+
+
+
+Gentle cinematic background music and realistic mouse-click sounds, kept below the voice.
+
+
+
+
+In scenes filmed from behind, narration continues as voice-over; do not reveal her face.
+
+
+
+
+PRODUCT AUTHENTICITY
+
+
+
+
+KNOUX WebPilot and KNOUX GrabFlow are independent browser extensions listed on Microsoft Edge Add-ons.
+
+
+
+
+Respect the real Microsoft Edge browser and Add-ons store visual structure.
+
+
+
+
+Use verified product names, genuine logos, uploaded references, and realistic browsing interactions.
+
+
+
+
+Never fabricate store ratings, review counts, endorsements, installation results, or unsupported product capabilities.
+
+
+
+
+Never imply that Microsoft owns, sponsors, or officially endorses KNOUX.
+
+
+
+
+No fake functionality, fake browser pages presented as real recordings, or invented success states.
+
+
+
+
+SCENE MAP
+
+01 — Retaj introduces WebPilot.
+
+02 — Search for WebPilot in Microsoft Edge Add-ons.
+
+03 — Open WebPilot listing and demonstrate installation.
+
+04 — Show WebPilot installed in the toolbar.
+
+05 — Demonstrate page capture and available export formats.
+
+06 — Retaj introduces GrabFlow.
+
+07 — Search for GrabFlow in Microsoft Edge Add-ons.
+
+08 — Open GrabFlow listing and demonstrate installation.
+
+09 — Scan the current webpage for accessible media.
+
+10 — Preview eligible media and explain available download options.
+
+
+
+
+Treat every uploaded scene image as a visual reference, not as permission to invent features. Preserve all unique assets. Generate individual scenes only when instructed, and verify visual identity, screen fidelity, speech, and timing before continuing.
+
+
+
+
+ملاحظة مهمة جدًا: في الصور اللي اتولدت قبل كده فيه أرقام تقييمات ومراجعات غير مطابقة للقطات المتجر الأصلية، فلازم الوكيل ما يعتبرهاش حقائق.
+
+
+
+
+وبرضه لو أول Instruction مكتوب فيها No generated speech أو English voiceover only، لازم نمسح السطر المتعارض ده تحديدًا.
+
+
+
+
+الخطوة الجاية: بعد ما تضغط Done، نختبر فيديو المشهد 01 — Retaj introduces WebPilot بصوت مصري ونشوف هل Flow حافظ على شكلها والحجاب والصوت ولا محتاج تعديل قبل استهلاك بقية الرصيد.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+⋮⋮⋮⋮
+
+
+
+
+go
+
+⋮⋮⋮⋮
+

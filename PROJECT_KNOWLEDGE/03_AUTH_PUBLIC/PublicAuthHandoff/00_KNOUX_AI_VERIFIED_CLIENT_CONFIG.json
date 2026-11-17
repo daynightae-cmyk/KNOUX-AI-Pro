@@ -1,0 +1,31 @@
+{
+  "product": "KNOUX AI",
+  "checked_at": "2026-11-14",
+  "auth_backend": "Supabase Auth",
+  "supabase_project_name": "knoux ai",
+  "supabase_project_ref": "tduofkizwkjtqcbklfah",
+  "supabase_url": "https://tduofkizwkjtqcbklfah.supabase.co",
+  "supabase_publishable_key": "sb_publishable_19JCfWlBOdUng5LHAoMfRg_hlFl7YnC",
+  "supabase_google_callback": "https://tduofkizwkjtqcbklfah.supabase.co/auth/v1/callback",
+  "google_cloud_project_id": "fiery-script-514604-n6",
+  "google_web_primary_client_id": "966864797292-6gqjaebu6n3il0777g3jf0q0mc22jr29.apps.googleusercontent.com",
+  "google_android_debug_client_id": "966864797292-pbd1b3hh9bpsi8mjhunlrebaug9tmo08.apps.googleusercontent.com",
+  "google_web_extra_server_client_id": "966864797292-tab00fjmpdodheouu77tlm7ffitkmsi1.apps.googleusercontent.com",
+  "verified_pc_android_package_id": "com.knoux.ai",
+  "pc_historical_debug_signing_sha1": "C0:58:EA:53:09:9B:1D:7F:C5:08:F9:39:83:91:F9:D5:B9:22:24:2C",
+  "supabase_project_status_at_inspection": "ACTIVE_HEALTHY",
+  "supabase_publishable_key_status_at_inspection": "enabled",
+  "oauth_web_primary_callback_file_verified": true,
+  "google_provider_remote_live_enabled": "NOT_VERIFIED",
+  "google_android_debug_sha1_registered": "NOT_VERIFIED",
+  "real_google_sign_in_e2e": "NOT_VERIFIED",
+  "passkey_rp_origin_assetlinks": "NOT_VERIFIED",
+  "android_release_signing_fingerprints": "NOT_VERIFIED",
+  "origin": "owner original Google OAuth JSON files on Windows, connected Supabase project",
+  "contains_private_secrets": false,
+  "warnings": [
+    "Google client IDs and Supabase publishable key are public client configuration only.",
+    "Never put Google Web client_secret, Supabase management PAT, service-role/secret API keys, refresh tokens or private signing key in Android/APK/Git/agent chat.",
+    "Windows Downloads/google-services.json belongs to KX Private VPN and MUST NOT be used for KNOUX AI."
+  ]
+}

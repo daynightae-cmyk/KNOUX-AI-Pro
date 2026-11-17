@@ -32,6 +32,17 @@ android {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
+        // The build that updates the launcher app the owner actually opens
+        // (com.knoux.ai, no ".debug" suffix). Debug-signed so it installs in
+        // place over the existing preview without touching user data.
+        create("preview") {
+            initWith(getByName("debug"))
+            applicationIdSuffix = ""
+            versionNameSuffix = "-preview"
+            isDebuggable = true
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += listOf("debug")
+        }
     }
 
     compileOptions {

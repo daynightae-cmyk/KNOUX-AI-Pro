@@ -1,0 +1,216 @@
+{
+  "as_of": "2026-11-13 11:51 Asia/Dubai (UTC+04:00)",
+  "windows_pc": {
+    "workspace": "D:\\KNOUX-AI",
+    "local_and_live_remote_sha": "b8577cbc7e798cfaf23a0f44650941be7ae332d0",
+    "manifest_current": "PC03/QUEUED",
+    "notes": "PC03 current source active despite QUEUED manifest; whole 44-case suite 4 failures at latest complete run",
+    "tasks": [
+      {
+        "task_id": "PC00",
+        "name": "Foundation and baseline",
+        "manifest_status_at_snapshot": "VERIFIED",
+        "current_code_state_at_snapshot": "REMOTE_COMMITTED_PER_MANIFEST",
+        "not_yet_production_release": true
+      },
+      {
+        "task_id": "PC01",
+        "name": "Smart Clean Full-Stack",
+        "manifest_status_at_snapshot": "VERIFIED",
+        "current_code_state_at_snapshot": "REMOTE_COMMITTED_PER_MANIFEST",
+        "not_yet_production_release": true
+      },
+      {
+        "task_id": "PC02",
+        "name": "Duplicates",
+        "manifest_status_at_snapshot": "VERIFIED",
+        "current_code_state_at_snapshot": "REMOTELY_COMMITTED_WITH_INDEPENDENT_REVIEW_FINDINGS",
+        "not_yet_production_release": true
+      },
+      {
+        "task_id": "PC03",
+        "name": "App Residue",
+        "manifest_status_at_snapshot": "QUEUED",
+        "current_code_state_at_snapshot": "ACTIVE_UNCOMMITTED_TEST_FAILURES_44_4",
+        "not_yet_production_release": true
+      },
+      {
+        "task_id": "PC04",
+        "name": "Privacy Sweep",
+        "manifest_status_at_snapshot": "QUEUED",
+        "current_code_state_at_snapshot": "QUEUED",
+        "not_yet_production_release": true
+      },
+      {
+        "task_id": "PC05",
+        "name": "Deep Scan",
+        "manifest_status_at_snapshot": "QUEUED",
+        "current_code_state_at_snapshot": "QUEUED",
+        "not_yet_production_release": true
+      },
+      {
+        "task_id": "PC06",
+        "name": "Reports",
+        "manifest_status_at_snapshot": "QUEUED",
+        "current_code_state_at_snapshot": "QUEUED",
+        "not_yet_production_release": true
+      },
+      {
+        "task_id": "PC07",
+        "name": "App Manager",
+        "manifest_status_at_snapshot": "QUEUED",
+        "current_code_state_at_snapshot": "QUEUED",
+        "not_yet_production_release": true
+      },
+      {
+        "task_id": "PC08",
+        "name": "Storage Analyzer",
+        "manifest_status_at_snapshot": "QUEUED",
+        "current_code_state_at_snapshot": "QUEUED",
+        "not_yet_production_release": true
+      },
+      {
+        "task_id": "PC09",
+        "name": "Battery Saver",
+        "manifest_status_at_snapshot": "QUEUED",
+        "current_code_state_at_snapshot": "QUEUED",
+        "not_yet_production_release": true
+      },
+      {
+        "task_id": "PC10",
+        "name": "AI Optimization",
+        "manifest_status_at_snapshot": "QUEUED",
+        "current_code_state_at_snapshot": "QUEUED",
+        "not_yet_production_release": true
+      },
+      {
+        "task_id": "PC11",
+        "name": "Home/Auth/Settings/Navigation",
+        "manifest_status_at_snapshot": "QUEUED",
+        "current_code_state_at_snapshot": "QUEUED",
+        "not_yet_production_release": true
+      },
+      {
+        "task_id": "PC12",
+        "name": "Verified Billing and Supabase Staging",
+        "manifest_status_at_snapshot": "QUEUED",
+        "current_code_state_at_snapshot": "QUEUED",
+        "not_yet_production_release": true
+      },
+      {
+        "task_id": "PC13",
+        "name": "Release Acceptance",
+        "manifest_status_at_snapshot": "QUEUED",
+        "current_code_state_at_snapshot": "QUEUED",
+        "not_yet_production_release": true
+      }
+    ]
+  },
+  "phone_linux": {
+    "workspace": "/root/workspace/KNOUX-AI",
+    "note": "Independent checkout; do not copy Windows status",
+    "tasks": [
+      {
+        "task_id": "M00",
+        "name": "Foundation",
+        "status": "NOT_INDEPENDENTLY_INSPECTED",
+        "reason": "Owner declared finished visual design, mobile Linux source/run not probed in current snapshot"
+      },
+      {
+        "task_id": "M01",
+        "name": "Storage Analyzer",
+        "status": "NOT_INDEPENDENTLY_INSPECTED",
+        "reason": "Owner declared finished visual design, mobile Linux source/run not probed in current snapshot"
+      },
+      {
+        "task_id": "M02",
+        "name": "Duplicate Finder",
+        "status": "NOT_INDEPENDENTLY_INSPECTED",
+        "reason": "Owner declared finished visual design, mobile Linux source/run not probed in current snapshot"
+      },
+      {
+        "task_id": "M03",
+        "name": "App Residue",
+        "status": "NOT_INDEPENDENTLY_INSPECTED",
+        "reason": "Owner declared finished visual design, mobile Linux source/run not probed in current snapshot"
+      },
+      {
+        "task_id": "M04",
+        "name": "Privacy Sweep",
+        "status": "NOT_INDEPENDENTLY_INSPECTED",
+        "reason": "Owner declared finished visual design, mobile Linux source/run not probed in current snapshot"
+      },
+      {
+        "task_id": "M05",
+        "name": "App Manager",
+        "status": "NOT_INDEPENDENTLY_INSPECTED",
+        "reason": "Owner declared finished visual design, mobile Linux source/run not probed in current snapshot"
+      },
+      {
+        "task_id": "M06",
+        "name": "Battery Saver",
+        "status": "NOT_INDEPENDENTLY_INSPECTED",
+        "reason": "Owner declared finished visual design, mobile Linux source/run not probed in current snapshot"
+      },
+      {
+        "task_id": "M07",
+        "name": "Deep Scan",
+        "status": "NOT_INDEPENDENTLY_INSPECTED",
+        "reason": "Owner declared finished visual design, mobile Linux source/run not probed in current snapshot"
+      },
+      {
+        "task_id": "M08",
+        "name": "Smart Clean",
+        "status": "NOT_INDEPENDENTLY_INSPECTED",
+        "reason": "Owner declared finished visual design, mobile Linux source/run not probed in current snapshot"
+      },
+      {
+        "task_id": "M09",
+        "name": "Reports & Insights",
+        "status": "NOT_INDEPENDENTLY_INSPECTED",
+        "reason": "Owner declared finished visual design, mobile Linux source/run not probed in current snapshot"
+      },
+      {
+        "task_id": "M10",
+        "name": "AI Optimization",
+        "status": "NOT_INDEPENDENTLY_INSPECTED",
+        "reason": "Owner declared finished visual design, mobile Linux source/run not probed in current snapshot"
+      },
+      {
+        "task_id": "M11",
+        "name": "Home / Navigation",
+        "status": "NOT_INDEPENDENTLY_INSPECTED",
+        "reason": "Owner declared finished visual design, mobile Linux source/run not probed in current snapshot"
+      },
+      {
+        "task_id": "M12",
+        "name": "Settings / Permissions",
+        "status": "NOT_INDEPENDENTLY_INSPECTED",
+        "reason": "Owner declared finished visual design, mobile Linux source/run not probed in current snapshot"
+      },
+      {
+        "task_id": "M13",
+        "name": "Identity / Authentication",
+        "status": "NOT_INDEPENDENTLY_INSPECTED",
+        "reason": "Owner declared finished visual design, mobile Linux source/run not probed in current snapshot"
+      },
+      {
+        "task_id": "M14",
+        "name": "Cloud & Pro",
+        "status": "NOT_INDEPENDENTLY_INSPECTED",
+        "reason": "Owner declared finished visual design, mobile Linux source/run not probed in current snapshot"
+      },
+      {
+        "task_id": "M15",
+        "name": "Release & E2E QA",
+        "status": "NOT_INDEPENDENTLY_INSPECTED",
+        "reason": "Owner declared finished visual design, mobile Linux source/run not probed in current snapshot"
+      }
+    ]
+  },
+  "status_rules": [
+    "A manifest VERIFIED label is an agent state, not an independently certified release",
+    "Always refresh before implementation",
+    "Never overwrite either live manifest from this static snapshot"
+  ]
+}

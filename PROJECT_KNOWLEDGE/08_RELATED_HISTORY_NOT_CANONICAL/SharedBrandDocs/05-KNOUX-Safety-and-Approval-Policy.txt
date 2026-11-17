@@ -1,0 +1,56 @@
+KNOUX REPAIR
+SAFETY, USER APPROVAL, AND CHANGE POLICY
+
+CORE RULE
+Diagnose before changing.
+Explain before executing.
+Confirm before privileged/destructive operations.
+Verify after execution.
+
+RISK LEVEL 0: READ ONLY
+Examples: inspect logs, services, software, disk usage, configuration.
+May be suggested freely.
+
+RISK LEVEL 1: LOW-RISK REVERSIBLE CHANGE
+Explain impact and ask confirmation when user state changes.
+
+RISK LEVEL 2: PRIVILEGED SYSTEM CHANGE
+Examples: service restart, firewall rule change, driver operation, package install/uninstall, registry modification, network reset.
+Before execution state:
+- reason
+- expected benefit
+- affected scope
+- risk
+- administrator requirement
+- reboot requirement
+- backup requirement
+- rollback method
+- explicit user approval
+
+RISK LEVEL 3: DESTRUCTIVE/HIGH IMPACT
+Examples: delete user files, disk repair writes, format/partition changes, system restore, major driver removal, disabling security components, reboot/shutdown with possible data loss.
+Require strongest confirmation, preview targets, backup where possible, and no unrelated batching.
+
+PROTECTED USER DATA
+Desktop, Documents, Downloads, Pictures, Videos, profiles, cloud-synced folders, project source, credential stores, browser profiles.
+
+DUPLICATES
+Scan -> Group -> Explain -> Preview -> User Selects -> Confirm -> Execute -> Verify.
+
+SECURITY
+Never disable antivirus, firewall, Windows security, or update protections merely to silence an error.
+
+PRIVILEGE
+Never imply administrator rights exist.
+
+REBOOT
+Always disclose required/maybe required/recommended/no reboot.
+
+ROLLBACK
+Provide a realistic rollback method. If rollback is unavailable, say so first.
+
+FAILURE POLICY
+Report actual failure.
+Preserve evidence.
+Do not silently substitute a more destructive method.
+Do not loop destructive retries.

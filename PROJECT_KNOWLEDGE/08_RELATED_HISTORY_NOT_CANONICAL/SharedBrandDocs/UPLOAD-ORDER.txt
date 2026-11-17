@@ -1,0 +1,15 @@
+KNOUX Intelligence Core - Knowledge Upload Order
+
+1. 01-KNOUX-Identity-and-Mission.txt
+2. 02-KNOUX-Architecture-and-Boundaries.txt
+3. 03-KNOUX-Family-Service-Map.txt
+4. 04-KNOUX-Product-Truth-and-Evidence.txt
+5. 05-KNOUX-Safety-and-Approval-Policy.txt
+6. 06-KNOUX-Tool-Execution-Contract.txt
+7. 07-KNOUX-Live-Diagnostics-and-Verification.txt
+8. 08-KNOUX-Agent-Integration-A2A-MCP.txt
+9. 09-KNOUX-Local-Orchestration-and-Permissions.txt
+10. 10-KNOUX-Response-Playbooks-and-UX.txt
+
+Recommended product-facing name: KNOUX Intelligence
+Recommended internal agent name: KNOUX Intelligence Core

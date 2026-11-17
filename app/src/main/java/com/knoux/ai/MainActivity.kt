@@ -23,7 +23,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,7 +57,13 @@ import com.knoux.ai.ui.v2.V2Background
 import com.knoux.ai.ui.v2.V2BatteryDiagnosticsScreen
 import com.knoux.ai.ui.v2.V2BatteryScreen
 import com.knoux.ai.ui.v2.V2BottomBar
+import com.knoux.ai.ui.v2.CleanTools
+import com.knoux.ai.ui.v2.SectionHub
+import com.knoux.ai.ui.v2.SectionTools
+import com.knoux.ai.ui.v2.V2SectionHubScreen
+import com.knoux.ai.ui.v2.V2SectionToolScreen
 import com.knoux.ai.ui.v2.V2CleanHubScreen
+import com.knoux.ai.ui.v2.V2CleanToolScreen
 import com.knoux.ai.ui.v2.V2DeepScanScreen
 import com.knoux.ai.ui.v2.V2DuplicateGroupScreen
 import com.knoux.ai.ui.v2.V2DuplicatesScreen
@@ -93,6 +98,9 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
         // Debug-only route injection so every screen can be inspected directly with adb.
         val debugRoute = if (BuildConfig.DEBUG) intent?.getStringExtra("route") else null
         if (BuildConfig.DEBUG) Log.i("KnouxRoute", "onCreate route=$debugRoute")
+        // Load the local Pro switch before the first composition so the very first
+        // frame already carries the saved identity (no purple flash, no missing badges).
+        KnouxProState.load(this)
         setContent {
             KnouxTheme {
                 KnouxApp(startRoute = debugRoute)
@@ -115,7 +123,10 @@ private enum class EntryStage { Splash, Onboarding, Auth, Shell }
 @Composable
 fun KnouxApp(startRoute: String? = null) {
     val context = LocalContext.current
-    LaunchedEffect(Unit) { KnouxProState.load(context) }
+    // Synchronous restore: the saved Pro identity must be known before the first
+    // frame, otherwise heavy device scans delay the effect and the UI renders
+    // the standard theme for a moment.
+    remember { KnouxProState.load(context) }
     val proActive = KnouxProState.active
     val entryDebugRoute = startRoute?.takeIf { it == "onboarding" || it == "auth" }
     val shellStartRoute = startRoute?.takeUnless { it == "onboarding" || it == "auth" }
@@ -369,6 +380,36 @@ private fun AppNavHost(
                 onOpenDeepScan = { open("deepscan") },
                 onPro = { open(ROUTE_PRO) },
             )
+        }
+        // Smart Clean's ten internal services. Each route opens its own screen.
+        CleanTools.routes.forEach { cleanRoute ->
+            composable(cleanRoute) {
+                V2CleanToolScreen(
+                    route = cleanRoute,
+                    onBack = goBack,
+                    onPro = { open(ROUTE_PRO) },
+                )
+            }
+        }
+        // Ten section hubs: each opens the ten independently routed services.
+        SectionHub.routes.forEach { hubRoute ->
+            composable(hubRoute) {
+                V2SectionHubScreen(
+                    route = hubRoute,
+                    onBack = goBack,
+                    onPro = { open(ROUTE_PRO) },
+                )
+            }
+        }
+        // The remaining 90 internal services (9 sections × 10), each on its own route.
+        SectionTools.defs.map { it.route }.forEach { toolRoute ->
+            composable(toolRoute) {
+                V2SectionToolScreen(
+                    route = toolRoute,
+                    onBack = goBack,
+                    onPro = { open(ROUTE_PRO) },
+                )
+            }
         }
         composable(SETTINGS_ROUTE) {
             V2SettingsScreenV2(onBack = goBack)

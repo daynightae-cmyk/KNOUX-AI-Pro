@@ -1,8 +1,10 @@
 package com.knoux.ai.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -14,15 +16,22 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Email
+import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Fingerprint
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Key
@@ -32,6 +41,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,10 +51,21 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -53,6 +74,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.LayoutDirection
 import com.knoux.ai.BuildConfig
 import com.knoux.ai.auth.KnouxAuthConfig
 import com.knoux.ai.auth.KnouxAuthController
@@ -63,8 +85,6 @@ import com.knoux.ai.ui.auth.FingerprintOrb
 import com.knoux.ai.ui.components.BrandLockup
 import com.knoux.ai.ui.components.rememberMotionEnabled
 import com.knoux.ai.ui.theme.ProArcticCyan
-import com.knoux.ai.ui.theme.ProArcticCyan
-import com.knoux.ai.ui.theme.ProTextSecondary
 import com.knoux.ai.ui.theme.ProTextSecondary
 import com.knoux.ai.ui.theme.ProTextPrimary
 import com.knoux.ai.ui.theme.ProBlue
@@ -96,11 +116,33 @@ fun WelcomeScreen(
     var message by remember { mutableStateOf<String?>(null) }
     var inProgress by remember { mutableStateOf(false) }
     var section by remember { mutableStateOf(AuthSection.Main) }
+    val scroll = rememberScrollState()
+    val isFingerprintEntry = section == AuthSection.Main
+    val isVerification = section == AuthSection.OTP
+    val backToFingerprint: () -> Unit = {
+        section = AuthSection.Main
+        message = null
+    }
+
+    BackHandler(enabled = !isFingerprintEntry && !inProgress) {
+        if (section == AuthSection.OTP || section == AuthSection.Recovery) {
+            section = AuthSection.EmailLogin
+            message = null
+        } else {
+            backToFingerprint()
+        }
+    }
     var appeared by remember { mutableStateOf(false) }
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var otpCode by remember { mutableStateOf("") }
+
+    LaunchedEffect(section) {
+        scroll.scrollTo(0)
+        if (section != AuthSection.OTP) otpCode = ""
+        if (isFingerprintEntry) password = ""
+    }
 
     LaunchedEffect(Unit) { appeared = true }
     LaunchedEffect(Unit) {
@@ -109,14 +151,18 @@ fun WelcomeScreen(
     }
 
     val heading = when {
-        state == AuthVisualState.Success -> "Identity verified"
-        state == AuthVisualState.Scanning -> "Scanning biometrics"
-        else -> "Unlock KNOUX AI"
+        state == AuthVisualState.Success -> "تم التحقق من الهوية"
+        state == AuthVisualState.Scanning -> "جارٍ التحقق بالبصمة"
+        isFingerprintEntry -> "افتح KNOUX AI"
+        isVerification -> "أكد هويتك"
+        else -> "مرحبًا بك في KNOUX AI"
     }
     val subheading = when {
-        state == AuthVisualState.Success -> "Opening your device workspace."
-        state == AuthVisualState.Scanning -> "Keep your finger on the sensor."
-        else -> "Confirm your identity to open the app."
+        state == AuthVisualState.Success -> "جارٍ فتح مساحة جهازك."
+        state == AuthVisualState.Scanning -> "أبقِ إصبعك على المستشعر."
+        isFingerprintEntry -> "أكد هويتك لفتح التطبيق."
+        isVerification -> "أدخل رمز التحقق المرسل إلى بريدك."
+        else -> "وصول آمن لذكاء جهازك."
     }
 
     val reveal by animateFloatAsState(
@@ -125,31 +171,35 @@ fun WelcomeScreen(
         label = "auth-reveal",
     )
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 20.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+      Column(
+          Modifier
+              .fillMaxSize()
+              .statusBarsPadding()
+              .navigationBarsPadding()
+              .imePadding()
+              .verticalScroll(scroll)
+              .padding(horizontal = 20.dp),
+          horizontalAlignment = Alignment.CenterHorizontally,
+      ) {
         Spacer(Modifier.height(14.dp))
 
-        Box(
+        Row(
             Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(22.dp))
-                .background(
-                    Brush.horizontalGradient(
-                        listOf(
-                            Color(0xFF1C1046).copy(alpha = 0.86f),
-                            Color(0xFF0C0826).copy(alpha = 0.82f),
-                        )
-                    )
-                )
-                .border(1.dp, ProBlue.copy(alpha = 0.30f), RoundedCornerShape(22.dp))
-                .padding(horizontal = 16.dp, vertical = 11.dp),
+                .padding(horizontal = 8.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             BrandLockup(symbolSize = 32.dp, wordmarkHeight = 16.dp)
+            Text(
+                "♛  PRO",
+                style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFFC94A)),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(18.dp))
+                    .border(1.dp, Color(0xFFFFC94A), RoundedCornerShape(18.dp))
+                    .padding(horizontal = 14.dp, vertical = 7.dp),
+            )
         }
 
         Spacer(Modifier.height(18.dp))
@@ -157,45 +207,61 @@ fun WelcomeScreen(
         Box(
             Modifier
                 .fillMaxWidth()
-                .height(276.dp),
+                .height(if (isFingerprintEntry) 232.dp else 132.dp),
             contentAlignment = Alignment.Center,
         ) {
-            FingerprintOrb(
-                state = state,
-                onClick = {
-                    if (inProgress) return@FingerprintOrb
-                    if (activity == null) {
-                        message = "Authentication requires an active UI context."
-                        return@FingerprintOrb
-                    }
-                    inProgress = true
-                    state = AuthVisualState.Scanning
-                    message = null
-                    scope.launch {
-                        try {
-                            val ok = controller.biometric(activity)
-                            if (ok) {
-                                state = AuthVisualState.Success
-                                onContinueAsGuest()
-                            } else {
-                                state = AuthVisualState.Idle
-                                message = "Biometric cancelled."
-                            }
-                        } catch (e: KnouxAuthException) {
-                            state = AuthVisualState.Idle
-                            message = when (e.code) {
-                                "no_session" -> "Sign in first using Google, Passkey or email."
-                                "biometric_unavailable" -> "Strong biometric not enrolled on this device."
-                                else -> e.message
-                            }
-                        } catch (e: Exception) {
-                            state = AuthVisualState.Idle
-                            message = "Biometric check failed."
-                        } finally { inProgress = false }
-                    }
-                },
-                modifier = Modifier.graphicsLayer { alpha = reveal },
+            AuthStag(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .offset(x = if (isFingerprintEntry) 8.dp else (-24).dp)
+                    .fillMaxWidth(if (isFingerprintEntry) 0.49f else 0.37f)
+                    .height(if (isFingerprintEntry) 224.dp else 128.dp),
+                alpha = 0.86f * reveal,
             )
+
+            if (isVerification) {
+                VerificationShield()
+            } else {
+                FingerprintOrb(
+                    state = state,
+                    onClick = {
+                        if (inProgress) return@FingerprintOrb
+                        if (activity == null) {
+                            message = "التحقق يحتاج واجهة نشطة."
+                            return@FingerprintOrb
+                        }
+                        inProgress = true
+                        state = AuthVisualState.Scanning
+                        message = null
+                        scope.launch {
+                            try {
+                                val ok = controller.biometric(activity)
+                                if (ok) {
+                                    state = AuthVisualState.Success
+                                    onContinueAsGuest()
+                                } else {
+                                    state = AuthVisualState.Idle
+                                    message = "Biometric cancelled."
+                                }
+                            } catch (e: KnouxAuthException) {
+                                state = AuthVisualState.Idle
+                                message = when (e.code) {
+                                    "no_session" -> "سجّل الدخول أولًا بحساب Google أو مفتاح المرور أو البريد."
+                                    "biometric_unavailable" -> "البصمة القوية غير مسجّلة على هذا الجهاز."
+                                    else -> e.message
+                                }
+                            } catch (e: Exception) {
+                                state = AuthVisualState.Idle
+                                message = "فشل التحقق بالبصمة."
+                            } finally { inProgress = false }
+                        }
+                    },
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .graphicsLayer { alpha = reveal },
+                    size = if (isFingerprintEntry) 208.dp else 117.dp,
+                )
+            }
         }
 
         Spacer(Modifier.height(4.dp))
@@ -237,7 +303,7 @@ fun WelcomeScreen(
 
         Spacer(Modifier.height(16.dp))
 
-        if (section == AuthSection.Main) {
+        if (isFingerprintEntry) {
             PasskeyButton(scope, inProgress, controller, activity) { v ->
                 inProgress = v.first; message = v.second
                 if (v.third) onContinueAsGuest()
@@ -253,7 +319,7 @@ fun WelcomeScreen(
             Spacer(Modifier.height(14.dp))
 
             AuthMethodButton(
-                label = "Continue with Email",
+                label = "المتابعة بالبريد الإلكتروني",
                 icon = Icons.Rounded.Email,
                 accent = ProArcticCyan,
                 enabled = !inProgress,
@@ -261,45 +327,169 @@ fun WelcomeScreen(
                 modifier = Modifier.graphicsLayer { alpha = reveal },
             )
         } else {
-            EmailSection(
-                section = section,
-                email = email, onEmail = { email = it },
-                password = password, onPassword = { password = it },
-                otpCode = otpCode, onOtp = { otpCode = it },
-                inProgress = inProgress,
-                controller = controller,
-                activity = activity,
-                scope = scope,
-                onBack = { section = AuthSection.Main; message = null },
-                onSection = { section = it; message = null },
-                onNavigate = { section = it; message = null },
-                onAuth = { onContinueAsGuest() },
-                onProgress = { inProgress = it },
-                onMessage = { message = it },
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(Color(0xFF1B1248).copy(alpha = 0.62f))
+                    .border(1.dp, ProBlue.copy(alpha = 0.50f), RoundedCornerShape(24.dp))
+                    .padding(14.dp),
+            ) {
+                if (section == AuthSection.EmailLogin || section == AuthSection.EmailSignup) {
+                    TextButton("العودة إلى البصمة", enabled = !inProgress, onClick = backToFingerprint)
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(18.dp))
+                            .background(Color.White.copy(alpha = 0.04f)),
+                    ) {
+                        Text(
+                            "تسجيل الدخول",
+                            textAlign = TextAlign.Center,
+                            style = TextStyle(
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (section == AuthSection.EmailLogin) ProTextPrimary else ProTextSecondary,
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(18.dp))
+                                .background(
+                                    Brush.horizontalGradient(
+                                        if (section == AuthSection.EmailLogin) {
+                                            listOf(Color(0xFFA936FF), Color(0xFF147BFF))
+                                        } else {
+                                            listOf(Color.Transparent, Color.Transparent)
+                                        }
+                                    )
+                                )
+                                .clickable { section = AuthSection.EmailLogin }
+                                .padding(vertical = 11.dp),
+                        )
+                        Text(
+                            "إنشاء حساب",
+                            textAlign = TextAlign.Center,
+                            style = TextStyle(
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (section == AuthSection.EmailSignup) ProTextPrimary else ProTextSecondary,
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .clip(RoundedCornerShape(18.dp))
+                                .background(
+                                    Brush.horizontalGradient(
+                                        if (section == AuthSection.EmailSignup) {
+                                            listOf(Color(0xFFA936FF), Color(0xFF147BFF))
+                                        } else {
+                                            listOf(Color.Transparent, Color.Transparent)
+                                        }
+                                    )
+                                )
+                                .clickable { section = AuthSection.EmailSignup }
+                                .padding(vertical = 11.dp),
+                        )
+                    }
+                } else if (section == AuthSection.Recovery) {
+                    Text(
+                        "استعادة الوصول",
+                        style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold, color = ProTextPrimary),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "سنرسل رابط استعادة آمنًا إلى بريدك.",
+                        style = TextStyle(fontSize = 10.sp, color = ProTextSecondary),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+
+                Spacer(Modifier.height(12.dp))
+                EmailSection(
+                    section = section,
+                    email = email, onEmail = { email = it },
+                    password = password, onPassword = { password = it },
+                    otpCode = otpCode, onOtp = { otpCode = it },
+                    inProgress = inProgress,
+                    controller = controller,
+                    activity = activity,
+                    scope = scope,
+                    onBack = { section = AuthSection.EmailLogin; message = null },
+                    onNavigate = { section = it; message = null },
+                    onAuth = { onContinueAsGuest() },
+                    onProgress = { inProgress = it },
+                    onMessage = { message = it },
+                )
+
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "أو تابع باستخدام",
+                    textAlign = TextAlign.Center,
+                    style = TextStyle(fontSize = 10.sp, color = ProTextSecondary),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(8.dp))
+                if (isVerification) {
+                    AuthMethodButton(
+                        label = "استخدام البصمة",
+                        icon = Icons.Rounded.Fingerprint,
+                        accent = ProArcticCyan,
+                        enabled = !inProgress,
+                        onClick = backToFingerprint,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    AuthMethodButton(
+                        label = "استخدام كلمة المرور",
+                        icon = Icons.Rounded.Key,
+                        accent = ProArcticCyan,
+                        enabled = !inProgress,
+                        onClick = { section = AuthSection.EmailLogin; message = null },
+                    )
+                    Spacer(Modifier.height(8.dp))
+                }
+                GoogleButton(scope, inProgress, googleConfigured, controller, activity) { v ->
+                    inProgress = v.first; message = v.second
+                    if (v.third) onContinueAsGuest()
+                }
+                Spacer(Modifier.height(8.dp))
+                PasskeyButton(scope, inProgress, controller, activity) { v ->
+                    inProgress = v.first; message = v.second
+                    if (v.third) onContinueAsGuest()
+                }
+                Spacer(Modifier.height(8.dp))
+                GuestButton(onContinueAsGuest)
+            }
+        }
+
+        Spacer(Modifier.height(14.dp))
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(18.dp))
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(Color(0xFF43147A).copy(alpha = 0.48f), Color(0xFF10174B).copy(alpha = 0.58f))
+                    )
+                )
+                .border(1.dp, ProBlue.copy(alpha = 0.48f), RoundedCornerShape(18.dp))
+                .clickable(onClick = onOpenAccountInfo)
+                .padding(horizontal = 14.dp, vertical = 11.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(Icons.Rounded.Info, contentDescription = null, tint = ProArcticCyan, modifier = Modifier.size(21.dp))
+            Spacer(Modifier.width(10.dp))
+            Text(
+                "خصوصية بالتصميم — أدوات على الجهاز، وصول شفاف، وبدون فحص خفي.",
+                style = TextStyle(fontSize = 10.sp, lineHeight = 14.sp, color = ProTextPrimary),
+                modifier = Modifier.weight(1f),
             )
         }
 
         Spacer(Modifier.height(14.dp))
-
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(14.dp))
-                .background(Color.White.copy(alpha = 0.04f))
-                .border(1.dp, Color.White.copy(alpha = 0.08f), RoundedCornerShape(14.dp))
-                .clickable(onClick = onOpenAccountInfo)
-                .padding(horizontal = 12.dp, vertical = 9.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(Icons.Rounded.Info, contentDescription = null, tint = ProTextSecondary, modifier = Modifier.size(14.dp))
-            Spacer(Modifier.width(8.dp))
-            Text(
-                "Guest mode keeps every tool on this device. No account, no upload, no tracking.",
-                style = TextStyle(fontSize = 9.sp, lineHeight = 12.5.sp, color = ProTextSecondary),
-            )
-        }
-
-        Spacer(Modifier.height(18.dp))
+        Spacer(Modifier.height(12.dp))
+      }
     }
 }
 
@@ -312,21 +502,21 @@ private fun PasskeyButton(
     onResult: (Triple<Boolean, String?, Boolean>) -> Unit,
 ) {
     AuthMethodButton(
-        label = "Use a passkey",
+        label = "استخدام مفتاح المرور",
         icon = Icons.Rounded.Key,
         accent = ProArcticCyan,
         enabled = !inProgress,
         onClick = {
-            if (activity == null) { onResult(Triple(false, "Authentication requires an active UI context.", false)); return@AuthMethodButton }
+            if (activity == null) { onResult(Triple(false, "التحقق يحتاج واجهة نشطة.", false)); return@AuthMethodButton }
             scope.launch {
                 onResult(Triple(true, null, false))
                 try {
                     val ok = controller.passkey(activity)
                     onResult(Triple(false, null, ok))
                 } catch (e: KnouxAuthException) {
-                    onResult(Triple(false, e.message ?: "Passkey sign-in failed.", false))
+                    onResult(Triple(false, e.message ?: "تعذر تسجيل الدخول بمفتاح المرور.", false))
                 } catch (e: Exception) {
-                    onResult(Triple(false, "Passkey unavailable or misconfigured.", false))
+                    onResult(Triple(false, "مفتاح المرور غير متاح أو غير مُعد.", false))
                 }
             }
         },
@@ -343,22 +533,22 @@ private fun GoogleButton(
     onResult: (Triple<Boolean, String?, Boolean>) -> Unit,
 ) {
     AuthMethodButton(
-        label = "Continue with Google",
+        label = "المتابعة بحساب Google",
         icon = Icons.Rounded.Person,
         accent = ProArcticCyan,
         enabled = configured && !inProgress,
-        trailing = if (configured) null else "Setup pending",
+        trailing = if (configured) null else "قيد الإعداد",
         onClick = {
-            if (activity == null) { onResult(Triple(false, "Authentication requires an active UI context.", false)); return@AuthMethodButton }
+            if (activity == null) { onResult(Triple(false, "التحقق يحتاج واجهة نشطة.", false)); return@AuthMethodButton }
             scope.launch {
                 onResult(Triple(true, null, false))
                 try {
                     val ok = controller.google(activity)
                     onResult(Triple(false, null, ok))
                 } catch (e: KnouxAuthException) {
-                    onResult(Triple(false, e.message ?: "Google sign-in failed.", false))
+                    onResult(Triple(false, e.message ?: "تعذر تسجيل الدخول بحساب Google.", false))
                 } catch (e: Exception) {
-                    onResult(Triple(false, "Sign-in cancelled or network error.", false))
+                    onResult(Triple(false, "أُلغي تسجيل الدخول أو حدث خطأ في الشبكة.", false))
                 }
             }
         },
@@ -368,7 +558,7 @@ private fun GoogleButton(
 @Composable
 private fun GuestButton(onContinueAsGuest: () -> Unit) {
     AuthMethodButton(
-        label = "Continue as Guest",
+        label = "المتابعة كضيف",
         icon = Icons.Rounded.Person,
         accent = ProBlue,
         onClick = onContinueAsGuest,
@@ -386,7 +576,6 @@ private fun EmailSection(
     activity: androidx.fragment.app.FragmentActivity?,
     scope: kotlinx.coroutines.CoroutineScope,
     onBack: () -> Unit,
-    onSection: (AuthSection) -> Unit,
     onNavigate: (AuthSection) -> Unit,
     onAuth: () -> Unit,
     onProgress: (Boolean) -> Unit,
@@ -401,9 +590,9 @@ private fun EmailSection(
                 scope.launch {
                     onProgress(true)
                     try {
-                        if (action()) onAuth() else onMessage("Check your email for a confirmation link.")
+                        if (action()) onAuth() else onMessage("تحقق من بريدك لرابط التأكيد.")
                     } catch (e: KnouxAuthException) { onMessage(e.message) }
-                    catch (e: Exception) { onMessage("Network error. Try again.") }
+                    catch (e: Exception) { onMessage("خطأ في الشبكة. حاول مرة أخرى.") }
                     finally { onProgress(false) }
                 }
             },
@@ -413,7 +602,7 @@ private fun EmailSection(
     Column(Modifier.fillMaxWidth()) {
         OutlinedTextField(
             value = email, onValueChange = onEmail,
-            label = { Text("Email") },
+            label = { Text("البريد الإلكتروني") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
             singleLine = true, enabled = !inProgress,
             colors = OutlinedTextFieldDefaults.colors(
@@ -428,7 +617,7 @@ private fun EmailSection(
         if (section == AuthSection.EmailLogin || section == AuthSection.EmailSignup) {
             OutlinedTextField(
                 value = password, onValueChange = onPassword,
-                label = { Text("Password") },
+                label = { Text("كلمة المرور") },
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
                 singleLine = true, enabled = !inProgress,
@@ -443,70 +632,67 @@ private fun EmailSection(
         }
 
         if (section == AuthSection.OTP) {
-            OutlinedTextField(
-                value = otpCode, onValueChange = onOtp,
-                label = { Text("Verification code") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
-                singleLine = true, enabled = !inProgress,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = ProTextPrimary, unfocusedTextColor = ProTextSecondary,
-                    focusedBorderColor = ProArcticCyan, unfocusedBorderColor = ProBlue.copy(alpha = 0.3f),
-                    focusedLabelColor = ProArcticCyan, unfocusedLabelColor = ProTextSecondary,
-                    cursorColor = ProArcticCyan,
-                ),
-                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-            )
+            VerificationCodeField(otpCode, onOtp, enabled = !inProgress)
+            Spacer(Modifier.height(14.dp))
         }
 
         when (section) {
             AuthSection.EmailLogin -> {
-                btn("Sign In") { controller.login(email, password) }
+                btn("تسجيل الدخول") { controller.login(email, password) }
                 Spacer(Modifier.height(6.dp))
-                TextButton("Create account") { onNavigate(AuthSection.EmailSignup) }
-                TextButton("Reset password") { onNavigate(AuthSection.Recovery) }
+                TextButton("إعادة تعيين كلمة المرور") { onNavigate(AuthSection.Recovery) }
+                TextButton("استخدام رمز التحقق بالبريد") { onNavigate(AuthSection.OTP) }
             }
             AuthSection.EmailSignup -> {
-                btn("Create Account") { controller.signup(email, password) }
+                btn("إنشاء حساب") { controller.signup(email, password) }
                 Spacer(Modifier.height(6.dp))
-                TextButton("Already have an account?") { onNavigate(AuthSection.EmailLogin) }
+                TextButton("لديك حساب بالفعل؟") { onNavigate(AuthSection.EmailLogin) }
             }
             AuthSection.OTP -> {
+                var codeSent by remember(email) { mutableStateOf(false) }
                 AuthMethodButton(
-                    label = "Verify Code", icon = Icons.Rounded.Email, accent = ProArcticCyan,
-                    enabled = !inProgress && otpCode.isNotBlank(),
+                    label = "تحقق من الرمز", icon = Icons.Rounded.Lock, accent = ProArcticCyan,
+                    enabled = !inProgress && email.isNotBlank() && otpCode.isNotBlank(),
                     onClick = {
                         scope.launch {
                             onProgress(true)
                             try {
                                 if (controller.verifyOtp(email, otpCode)) onAuth()
-                                else onMessage("Invalid or expired code.")
+                                else onMessage("الرمز غير صالح أو منتهي.")
                             } catch (e: KnouxAuthException) { onMessage(e.message) }
-                            catch (e: Exception) { onMessage("Verification failed.") }
+                            catch (e: Exception) { onMessage("فشل التحقق.") }
                             finally { onProgress(false) }
                         }
                     },
                 )
                 Spacer(Modifier.height(6.dp))
-                TextButton("Resend code") {
+                TextButton(
+                    label = if (codeSent) "إعادة إرسال الرمز" else "إرسال الرمز",
+                    enabled = !inProgress && email.isNotBlank(),
+                ) {
                     scope.launch {
                         onProgress(true)
-                        try { controller.sendOtp(email); onMessage("Code sent.") }
+                        try {
+                            controller.sendOtp(email)
+                            codeSent = true
+                            onMessage("تم إرسال الرمز.")
+                        }
                         catch (e: KnouxAuthException) { onMessage(e.message) }
-                        catch (e: Exception) { onMessage("Failed to send code.") }
+                        catch (e: Exception) { onMessage("تعذر إرسال الرمز.") }
                         finally { onProgress(false) }
                     }
                 }
             }
             AuthSection.Recovery -> {
                 AuthMethodButton(
-                    label = "Send Reset Link", icon = Icons.Rounded.Email, accent = ProArcticCyan,
+                    label = "إرسال رابط الاستعادة", icon = Icons.Rounded.Email, accent = ProArcticCyan,
                     enabled = !inProgress && email.isNotBlank(),
                     onClick = {
                         scope.launch {
                             onProgress(true)
-                            try { controller.recover(email); onMessage("Check your inbox.") }
+                            try { controller.recover(email); onMessage("تحقق من بريدك.") }
                             catch (e: KnouxAuthException) { onMessage(e.message) }
-                            catch (e: Exception) { onMessage("Recovery request failed.") }
+                            catch (e: Exception) { onMessage("تعذر طلب الاستعادة.") }
                             finally { onProgress(false) }
                         }
                     },
@@ -515,18 +701,118 @@ private fun EmailSection(
             else -> {}
         }
 
-        Spacer(Modifier.height(10.dp))
-        TextButton("Back") { onBack() }
+        if (section == AuthSection.Recovery) {
+            Spacer(Modifier.height(10.dp))
+            TextButton("استخدام كلمة المرور", enabled = !inProgress, onClick = onBack)
+        }
     }
 }
 
 @Composable
-private fun TextButton(label: String, onClick: () -> Unit) {
-    Text(
-        label,
-        style = TextStyle(fontSize = 11.sp, color = ProArcticCyan),
+private fun TextButton(label: String, enabled: Boolean = true, onClick: () -> Unit) {
+    Box(
         modifier = Modifier
-            .clickable(onClick = onClick)
-            .padding(vertical = 6.dp),
+            .heightIn(min = 48.dp)
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(horizontal = 4.dp),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        Text(
+            label,
+            style = TextStyle(fontSize = 12.sp, color = if (enabled) ProArcticCyan else ProTextSecondary),
+        )
+    }
+}
+
+@Composable
+private fun VerificationCodeField(
+    code: String,
+    onCode: (String) -> Unit,
+    enabled: Boolean,
+) {
+    var focused by remember { mutableStateOf(false) }
+    BasicTextField(
+        value = code,
+        onValueChange = { onCode(it.filter { digit -> digit in '0'..'9' }) },
+        modifier = Modifier
+            .fillMaxWidth()
+            .onFocusChanged { focused = it.isFocused }
+            .semantics { contentDescription = "Verification code" },
+        enabled = enabled,
+        singleLine = true,
+        textStyle = TextStyle(color = Color.Transparent, fontSize = 20.sp),
+        cursorBrush = SolidColor(Color.Transparent),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+        decorationBox = { innerTextField ->
+            Box(contentAlignment = Alignment.Center) {
+                innerTextField()
+                Row(
+                    modifier = Modifier.clearAndSetSemantics {},
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    repeat(6) { index ->
+                        val shape = RoundedCornerShape(12.dp)
+                        val digits = if (index == 5) code.drop(index) else code.getOrNull(index)?.toString().orEmpty()
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(48.dp)
+                                .background(Color(0xFF17133C), shape)
+                                .border(
+                                    if (focused && index == code.length.coerceAtMost(5)) 2.dp else 1.dp,
+                                    Brush.linearGradient(listOf(Color(0xFFCE69FF), ProArcticCyan)),
+                                    shape,
+                                ),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(
+                                digits,
+                                style = TextStyle(fontSize = if (digits.length <= 1) 20.sp else 12.sp, color = ProTextPrimary),
+                            )
+                        }
+                    }
+                }
+            }
+        },
     )
+}
+
+@Composable
+private fun VerificationShield() {
+    val violet = Color(0xFFC65BFF)
+    Box(Modifier.size(width = 188.dp, height = 128.dp), contentAlignment = Alignment.Center) {
+        Canvas(Modifier.fillMaxSize()) {
+            val w = size.width
+            val h = size.height
+            val shield = Path().apply {
+                moveTo(w * 0.5f, h * 0.08f)
+                quadraticTo(w * 0.61f, h * 0.24f, w * 0.75f, h * 0.25f)
+                lineTo(w * 0.75f, h * 0.49f)
+                cubicTo(w * 0.74f, h * 0.70f, w * 0.64f, h * 0.83f, w * 0.5f, h * 0.93f)
+                cubicTo(w * 0.36f, h * 0.83f, w * 0.26f, h * 0.70f, w * 0.25f, h * 0.49f)
+                lineTo(w * 0.25f, h * 0.25f)
+                quadraticTo(w * 0.39f, h * 0.24f, w * 0.5f, h * 0.08f)
+                close()
+            }
+            val gradient = Brush.horizontalGradient(listOf(violet, ProArcticCyan))
+            drawCircle(
+                Brush.radialGradient(listOf(ProBlue.copy(alpha = 0.43f), Color.Transparent)),
+                radius = h * 0.50f,
+            )
+            drawPath(
+                shield,
+                Brush.horizontalGradient(listOf(violet.copy(alpha = 0.26f), ProArcticCyan.copy(alpha = 0.20f))),
+            )
+            drawPath(shield, gradient, style = Stroke(2.dp.toPx()))
+            rotate(-12f) {
+                drawArc(
+                    gradient, startAngle = 5f, sweepAngle = 172f, useCenter = false,
+                    topLeft = Offset(w * 0.06f, h * 0.39f),
+                    size = Size(w * 0.88f, h * 0.35f),
+                    style = Stroke(2.dp.toPx()),
+                )
+            }
+        }
+        Icon(Icons.Rounded.Lock, contentDescription = null, tint = ProTextPrimary, modifier = Modifier.size(41.dp))
+    }
 }

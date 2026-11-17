@@ -75,19 +75,19 @@ private data class HomeServiceMini(
 )
 
 private val firstRow = listOf(
-    HomeServiceMini("الملفات\nالمكررة", "duplicates", R.drawable.knoux_home_icon_duplicate, V2Cyan),
-    HomeServiceMini("بقايا\nالتطبيقات", "residue", R.drawable.knoux_svc_residue, V2Pink),
-    HomeServiceMini("فحص\nالخصوصية", "privacy", R.drawable.knoux_home_icon_privacy, V2Violet),
-    HomeServiceMini("مدير\nالتطبيقات", "appmanager", R.drawable.knoux_svc_apps, V2Cyan),
-    HomeServiceMini("توفير\nالبطارية", "battery", R.drawable.knoux_home_icon_battery, V2Amber),
+    HomeServiceMini("الملفات\nالمكررة", "hub-duplicates", R.drawable.knoux_home_icon_duplicate, V2Cyan),
+    HomeServiceMini("بقيا\nالتطبيقات", "hub-residue", R.drawable.knoux_svc_residue, V2Pink),
+    HomeServiceMini("فحص\nالخصوصية", "hub-privacy", R.drawable.knoux_home_icon_privacy, V2Violet),
+    HomeServiceMini("مدير\nالتطبيقات", "hub-appmanager", R.drawable.knoux_svc_apps, V2Cyan),
+    HomeServiceMini("توفير\nالبطارية", "hub-battery", R.drawable.knoux_home_icon_battery, V2Amber),
 )
 
 private val secondRow = listOf(
-    HomeServiceMini("التنظيف\nالذكي", "smartclean", R.drawable.knoux_home_icon_clean, V2Violet),
-    HomeServiceMini("تحليل\nالتخزين", "storage", R.drawable.knoux_home_icon_storage, V2Cyan),
-    HomeServiceMini("الفحص\nالعميق", "deepscan", R.drawable.knoux_svc_deepscan, V2Pink),
-    HomeServiceMini("التقارير\nالذكية", "reports", 0, V2Violet, Icons.Rounded.BarChart),
-    HomeServiceMini("تحسين\nالأداء", "ai", R.drawable.knoux_home_icon_ai, V2Cyan),
+    HomeServiceMini("التنظيف\nالذكي", "hub-smartclean", R.drawable.knoux_home_icon_clean, V2Violet),
+    HomeServiceMini("تحليل\nالتخزين", "hub-storage", R.drawable.knoux_home_icon_storage, V2Cyan),
+    HomeServiceMini("الفحص\nالعميق", "hub-deepscan", R.drawable.knoux_svc_deepscan, V2Pink),
+    HomeServiceMini("التقارير\nالذكية", "hub-reports", 0, V2Violet, Icons.Rounded.BarChart),
+    HomeServiceMini("تحسين\nالأداء", "hub-ai", R.drawable.knoux_home_icon_ai, V2Cyan),
 )
 
 @Composable
@@ -273,7 +273,7 @@ private fun DeviceHealthCard(facts: DeviceFacts) {
 }
 
 @Composable
-private fun HealthLine(
+internal fun HealthLine(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
     value: String,
@@ -446,7 +446,7 @@ private fun HomeScanOrb(score: Int, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun SideActionCard(
+internal fun SideActionCard(
     title: String,
     subtitle: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -531,7 +531,7 @@ private fun HomeServiceTile(service: HomeServiceMini, onClick: () -> Unit, modif
 }
 
 @Composable
-private fun V2NeonGlyph(icon: ImageVector, accent: Color, size: Dp = 46.dp) {
+internal fun V2NeonGlyph(icon: ImageVector, accent: Color, size: Dp = 46.dp) {
     Box(Modifier.size(size), contentAlignment = Alignment.Center) {
         Canvas(Modifier.fillMaxSize()) {
             drawCircle(
@@ -554,7 +554,7 @@ private fun V2NeonGlyph(icon: ImageVector, accent: Color, size: Dp = 46.dp) {
 }
 
 @Composable
-private fun ProBanner(onClick: () -> Unit) {
+internal fun ProBanner(onClick: () -> Unit) {
     val proTheme = LocalProTheme.current
     val shape = RoundedCornerShape(18.dp)
     Row(
@@ -615,7 +615,7 @@ private fun ProBanner(onClick: () -> Unit) {
 }
 
 @Composable
-private fun HomeStat(
+internal fun HomeStat(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     value: String,
     label: String,
@@ -633,7 +633,7 @@ private fun HomeStat(
 }
 
 @Composable
-private fun StatDivider() {
+internal fun StatDivider() {
     Box(
         Modifier
             .width(1.dp)

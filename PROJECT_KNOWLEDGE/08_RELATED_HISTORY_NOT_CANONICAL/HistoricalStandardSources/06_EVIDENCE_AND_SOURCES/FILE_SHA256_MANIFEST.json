@@ -1,0 +1,346 @@
+{
+  "built_at": "2026-11-13",
+  "file_entries": [
+    {
+      "path": "00_START_HERE.md",
+      "bytes": 6109,
+      "sha256": "8b1bcbe685fa5cfdef62003759af116e9c7e786b1493c91e42718085b990083f"
+    },
+    {
+      "path": "01_AGENT_RULES/FULL_AGENT_OPERATING_CONTRACT.md",
+      "bytes": 7095,
+      "sha256": "7acbab4a4dd931a1b2cbab0c06f9617fc9c956dab923b1eca470a5f5af08b489"
+    },
+    {
+      "path": "01_AGENT_RULES/PROJECT_INSTRUCTIONS_PASTE.md",
+      "bytes": 4611,
+      "sha256": "79b862558f4ca75386dde3bb5ebd4f7b44888b2e267a7ce27009ba26a8dfae5c"
+    },
+    {
+      "path": "02_CANONICAL/BRAND_UI_AND_ASSET_DECISIONS.md",
+      "bytes": 3017,
+      "sha256": "fef766c0fa646efce0f72c8f4c12885b86055248c902f5d1c7120fea7b46b140"
+    },
+    {
+      "path": "02_CANONICAL/EXTERNAL_INTEGRATIONS_AND_AUTH_STATUS.md",
+      "bytes": 3483,
+      "sha256": "814d13d74c99748b06a29fe16b08a88bbe5781c46569b73dcd7fe6ca6ac47913"
+    },
+    {
+      "path": "02_CANONICAL/KNOUX_AI_LIVING_SOURCE_OF_TRUTH.md",
+      "bytes": 15186,
+      "sha256": "c17cf5119626bed604c4244327a850b1ab57042e4d325a637ef8358425272df2"
+    },
+    {
+      "path": "02_CANONICAL/SISTER_PROJECTS_AND_OUT_OF_SCOPE.md",
+      "bytes": 1619,
+      "sha256": "45018bd6db74e20d5f2d68c4ea6b94fc718d62d7747635db9734282ae0f6e658"
+    },
+    {
+      "path": "03_ORIGINAL_SPECS/COMPLETE_PROJECT_SOURCE_HISTORICAL.md",
+      "bytes": 67524,
+      "sha256": "12a7077363a97c3a441fd3ed0eeb2a5bd780886b59a6fe9ae9b6bbc2b4e685f0"
+    },
+    {
+      "path": "03_ORIGINAL_SPECS/MOBILE_20261112_PREVIOUS_FULL_MASTER.md",
+      "bytes": 116801,
+      "sha256": "187ee1703961580c4fc68c119110b5d97e6e42158a7c6a0a388c24c19bd90f66"
+    },
+    {
+      "path": "03_ORIGINAL_SPECS/MOBILE_APPROVED_ECOSYSTEM_FOUNDER_AUDIO.md",
+      "bytes": 22573,
+      "sha256": "fa9cdb1eee6fd91958ce7bd02d8334a8916a07938ebf4afbbfbe6bdbbcfb8671"
+    },
+    {
+      "path": "03_ORIGINAL_SPECS/MOBILE_SOURCE_CONTEXT_HISTORICAL.md",
+      "bytes": 40623,
+      "sha256": "503e7cd3052ea48ac51fe62b6f7119d303be96f4ee6b4e2a3dba9094a4f275f9"
+    },
+    {
+      "path": "03_ORIGINAL_SPECS/MOBILE_SUPREME_M00_M15_E2E_MASTER.md",
+      "bytes": 282313,
+      "sha256": "7b81664268fefdd28065ff7c2cd1e18236c65a9a8e9ef4cd4ef9e41d5aee7028"
+    },
+    {
+      "path": "03_ORIGINAL_SPECS/PROJECT_CANONICAL_CONTEXT_HISTORICAL.md",
+      "bytes": 69867,
+      "sha256": "4143b1eb12de04fe2feea250eab391fdfef3be1b49217e0ee0bdb02ebd6f5607"
+    },
+    {
+      "path": "03_ORIGINAL_SPECS/PROJECT_SOURCE_OF_TRUTH_HANDOFF_HISTORICAL.md",
+      "bytes": 27949,
+      "sha256": "d5393a8130543790490e9eba8e7bffe9e2bccd1bac96bde674c11ce5e3e7aa07"
+    },
+    {
+      "path": "04_TASKS/PRO_FEATURES_50_CATALOG_SNAPSHOT.json",
+      "bytes": 13200,
+      "sha256": "44aa8cd63485fdd8eddf05a3d75353a9985b095ea3e2d2097026a60c28d9f540"
+    },
+    {
+      "path": "04_TASKS/TASK_MANIFEST_SNAPSHOT_20261113.json",
+      "bytes": 7877,
+      "sha256": "5dbd2333d8c4a3b63aa463cb6416113b97b9faa14cad67a9c380d60716ce1a60"
+    },
+    {
+      "path": "04_TASKS/TASK_WRITING_AND_WORKFLOW_POLICY.md",
+      "bytes": 4259,
+      "sha256": "7e5d476963ba32730e8ce9dc572a832b74693e37563c15ff98f3f34d35cf2009"
+    },
+    {
+      "path": "05_REFERENCES/ONBOARDING/01_KNOUX_AI_MOBILE_ECOSYSTEM_APPROVED.png",
+      "bytes": 2543929,
+      "sha256": "d839656aed93d0e14edfccc1cc877a50c3dc2543a212902547ec69f4e1080f2e"
+    },
+    {
+      "path": "05_REFERENCES/ONBOARDING/02_KNOUX_AI_MOBILE_FOUNDER_APPROVED.png",
+      "bytes": 2479437,
+      "sha256": "7650780e027812297413aca800616203c79cc7610c1819270fa344814d5f14da"
+    },
+    {
+      "path": "05_REFERENCES/SERVICE_VISUALS/01_AI_Smart_Clean_Home.png",
+      "bytes": 1958289,
+      "sha256": "f04650c31f8f640f5db2263ef4a5a8b3c949e960512e131351cea17dd4fd7fd6"
+    },
+    {
+      "path": "05_REFERENCES/SERVICE_VISUALS/02_Privacy_Sweep.png",
+      "bytes": 2052547,
+      "sha256": "f702e84ad42f1755bb1a2120796907c83724e4bf55d60647a3c0aa6312b6e34e"
+    },
+    {
+      "path": "05_REFERENCES/SERVICE_VISUALS/03_Duplicate_Files_Finder.png",
+      "bytes": 2012605,
+      "sha256": "fae7a87a4af7b4ba242659a36c29c77af7459f055f6ed0c78bf45d3ff5e9d47c"
+    },
+    {
+      "path": "05_REFERENCES/SERVICE_VISUALS/04_Deep_Scan.png",
+      "bytes": 1952284,
+      "sha256": "c6348ff84f779a768059a588a5cbac05042d58d12e954a291e0c6dec49410c75"
+    },
+    {
+      "path": "05_REFERENCES/SERVICE_VISUALS/05_Reports_Insights.png",
+      "bytes": 2063933,
+      "sha256": "ce87c24d7ddeb67c9459dc6af24c6e8a4d5e32d8083c6d5e3bd810551bbbd279"
+    },
+    {
+      "path": "05_REFERENCES/SERVICE_VISUALS/06_App_Residue_Cleanup.png",
+      "bytes": 2004641,
+      "sha256": "e60a016d5462dfe85a1ccc28d7a2e1b2fd2ff4ef3669f1a14d5ac20f24f8a281"
+    },
+    {
+      "path": "05_REFERENCES/SERVICE_VISUALS/07_App_Manager.png",
+      "bytes": 2009503,
+      "sha256": "d42148286ed13f293e2b89804fc13712d3a7671ad7c06e25a14ba2f692081951"
+    },
+    {
+      "path": "05_REFERENCES/SERVICE_VISUALS/08_Storage_Analyzer.png",
+      "bytes": 2010709,
+      "sha256": "cfcefa6554f7364b2c582b55b746bb6f0deb67378fdccf91bbc9a37eb66f4d72"
+    },
+    {
+      "path": "05_REFERENCES/SERVICE_VISUALS/09_Battery_Saver.png",
+      "bytes": 1967752,
+      "sha256": "6466f7dea95f52ef0c84b11de97cdde58ee9f19ed787b0f16804a85ca75dc665"
+    },
+    {
+      "path": "05_REFERENCES/SERVICE_VISUALS/10_AI_Optimization.png",
+      "bytes": 1995875,
+      "sha256": "7d9843ba9c67873ba561f10a6cf50a99344326154b1588fa2b2cea922a9db208"
+    },
+    {
+      "path": "06_EVIDENCE_AND_SOURCES/CONVERSATION_HANDOFF_HISTORY_SANITIZED.txt",
+      "bytes": 25702,
+      "sha256": "7da9223e04e410e0a3ba07a14fe7d424eb2c9dacba840f509f5d0a2b942fba72"
+    },
+    {
+      "path": "06_EVIDENCE_AND_SOURCES/OAUTH_AND_GOOGLE_FLOW_RETAJ_HISTORICAL_SUMMARY.md",
+      "bytes": 25699,
+      "sha256": "be9624f67fc5b03d236a001ab071da08fb2dd96ceb7715de37eae847e96054f9"
+    },
+    {
+      "path": "06_EVIDENCE_AND_SOURCES/PC_KIRO_DEEP_AUDIT_HISTORICAL.md",
+      "bytes": 8840,
+      "sha256": "7caec8505863251168b77974e8beaaea2d8aa1c00b6f3ad6e695bffca4a5b800"
+    },
+    {
+      "path": "06_EVIDENCE_AND_SOURCES/RAW_OAUTH_AND_FLOW_CHAT_EXCERPTS_HISTORICAL_SANITIZED.txt",
+      "bytes": 60837,
+      "sha256": "9c28d4a5d9805d0df00b8097b443672b32c1107c08dad93f643992552e0a9e69"
+    },
+    {
+      "path": "06_EVIDENCE_AND_SOURCES/RAW_RETAJ_FLOW_CHAT_EXCERPTS_HISTORICAL_SANITIZED.txt",
+      "bytes": 35367,
+      "sha256": "92912d46b635bd46c5b62733b94e1c8c498518af8a5897b15e6a5b24ffc24656"
+    },
+    {
+      "path": "06_EVIDENCE_AND_SOURCES/RELATED_GOOGLE_FLOW_RETAJ_SUMMARY.md",
+      "bytes": 1173,
+      "sha256": "0da2f4727be531c7eaf6db03ab8d744f523ddc1ae78175f0e814006fdaa53ce3"
+    },
+    {
+      "path": "06_EVIDENCE_AND_SOURCES/SHARED_LINKS_ACCESS_STATUS.md",
+      "bytes": 1212,
+      "sha256": "9a0bb846c870151deac317846b141e46564d71df82fb9ec46d8e64133ff9ad43"
+    },
+    {
+      "path": "06_EVIDENCE_AND_SOURCES/SOURCE_MANIFEST_AND_LIMITATIONS.md",
+      "bytes": 2849,
+      "sha256": "4a82aadfdbeda4db456badbf0ddd86feb756332c41ed33cd957f7e24700eeede"
+    }
+  ],
+  "source_mapping": [
+    {
+      "source_basename": "KNOUX_AI_MOBILE_OPENCODE_SUPREME_FULL_FUNCTIONAL_E2E_MASTER_20261113.md",
+      "archived_as": "03_ORIGINAL_SPECS/MOBILE_SUPREME_M00_M15_E2E_MASTER.md",
+      "sha256_of_original": "7b81664268fefdd28065ff7c2cd1e18236c65a9a8e9ef4cd4ef9e41d5aee7028",
+      "sha256_of_archived": "7b81664268fefdd28065ff7c2cd1e18236c65a9a8e9ef4cd4ef9e41d5aee7028",
+      "bytes": 282313
+    },
+    {
+      "source_basename": "KNOUX_AI_MOBILE_OPENCODE_FINAL_END_TO_END_MASTER_20261112.md",
+      "archived_as": "03_ORIGINAL_SPECS/MOBILE_20261112_PREVIOUS_FULL_MASTER.md",
+      "sha256_of_original": "187ee1703961580c4fc68c119110b5d97e6e42158a7c6a0a388c24c19bd90f66",
+      "sha256_of_archived": "187ee1703961580c4fc68c119110b5d97e6e42158a7c6a0a388c24c19bd90f66",
+      "bytes": 116801
+    },
+    {
+      "source_basename": "KNOUX_AI_MOBILE_OPENCODE_TWO_SCREENS_SALAWAT_DIRECT_MP3_FINAL_20261113.md",
+      "archived_as": "03_ORIGINAL_SPECS/MOBILE_APPROVED_ECOSYSTEM_FOUNDER_AUDIO.md",
+      "sha256_of_original": "fa9cdb1eee6fd91958ce7bd02d8334a8916a07938ebf4afbbfbe6bdbbcfb8671",
+      "sha256_of_archived": "fa9cdb1eee6fd91958ce7bd02d8334a8916a07938ebf4afbbfbe6bdbbcfb8671",
+      "bytes": 22573
+    },
+    {
+      "source_basename": "KNOUX_AI_PROJECT_CANONICAL_CONTEXT_FULL_2026-11-13.txt",
+      "archived_as": "03_ORIGINAL_SPECS/PROJECT_CANONICAL_CONTEXT_HISTORICAL.md",
+      "sha256_of_original": "4143b1eb12de04fe2feea250eab391fdfef3be1b49217e0ee0bdb02ebd6f5607",
+      "sha256_of_archived": "4143b1eb12de04fe2feea250eab391fdfef3be1b49217e0ee0bdb02ebd6f5607",
+      "bytes": 69867
+    },
+    {
+      "source_basename": "KNOUX_AI_COMPLETE_PROJECT_SOURCE_2026-11-13.md",
+      "archived_as": "03_ORIGINAL_SPECS/COMPLETE_PROJECT_SOURCE_HISTORICAL.md",
+      "sha256_of_original": "0c5c8893b7868f5d883318e1cac9ec9621f69f38881ce6ccc3ea5f0c78dc19ec",
+      "sha256_of_archived": "12a7077363a97c3a441fd3ed0eeb2a5bd780886b59a6fe9ae9b6bbc2b4e685f0",
+      "bytes": 67524
+    },
+    {
+      "source_basename": "KNOUX_AI_PROJECT_SOURCE_OF_TRUTH_HANDOFF_2026-11-13.md",
+      "archived_as": "03_ORIGINAL_SPECS/PROJECT_SOURCE_OF_TRUTH_HANDOFF_HISTORICAL.md",
+      "sha256_of_original": "a52853fae1b0b54ff9cc40356c59593f4e5b690257551de4f5503470bc73a4dc",
+      "sha256_of_archived": "d5393a8130543790490e9eba8e7bffe9e2bccd1bac96bde674c11ce5e3e7aa07",
+      "bytes": 27949
+    },
+    {
+      "source_basename": "KNOUX_AI_PROJECT_SOURCE_CONTEXT_2026-11-13.md",
+      "archived_as": "03_ORIGINAL_SPECS/MOBILE_SOURCE_CONTEXT_HISTORICAL.md",
+      "sha256_of_original": "057ec7085fd1a45d425d36c67ff49418a4273fa2add75f2ddc2ab44cc7c7fdf8",
+      "sha256_of_archived": "503e7cd3052ea48ac51fe62b6f7119d303be96f4ee6b4e2a3dba9094a4f275f9",
+      "bytes": 40623
+    },
+    {
+      "source_basename": "KNOUX_COMPLETE_CONVERSATION_HANDOFF_2026-11-13 (1).txt",
+      "archived_as": "06_EVIDENCE_AND_SOURCES/CONVERSATION_HANDOFF_HISTORY_SANITIZED.txt",
+      "sha256_of_original": "58998c1d583b3803c9e2af8165d7550cd81773e3343410c408b5c4c41f366c20",
+      "sha256_of_archived": "7da9223e04e410e0a3ba07a14fe7d424eb2c9dacba840f509f5d0a2b942fba72",
+      "bytes": 25702
+    },
+    {
+      "source_basename": "KNOUX_AI_PC_KIRO76AE_AUDIT_OPENCODE_WORKFLOW_HANDOFF_20261113.md",
+      "archived_as": "06_EVIDENCE_AND_SOURCES/PC_KIRO_DEEP_AUDIT_HISTORICAL.md",
+      "sha256_of_original": "7caec8505863251168b77974e8beaaea2d8aa1c00b6f3ad6e695bffca4a5b800",
+      "sha256_of_archived": "7caec8505863251168b77974e8beaaea2d8aa1c00b6f3ad6e695bffca4a5b800",
+      "bytes": 8840
+    },
+    {
+      "source_basename": "Pasted text (2).txt",
+      "archived_as": "06_EVIDENCE_AND_SOURCES/OAUTH_AND_GOOGLE_FLOW_RETAJ_HISTORICAL_SUMMARY.md",
+      "sha256_of_original": "345a8656245a778e25d95ffdd1776983a2c1216afaf556688695a3f0e02753f5",
+      "sha256_of_archived": "be9624f67fc5b03d236a001ab071da08fb2dd96ceb7715de37eae847e96054f9",
+      "bytes": 25699
+    },
+    {
+      "source_basename": "01_KNOUX_AI_MOBILE_ECOSYSTEM_APPROVED.png",
+      "archived_as": "05_REFERENCES/ONBOARDING/01_KNOUX_AI_MOBILE_ECOSYSTEM_APPROVED.png",
+      "sha256_of_original": "d839656aed93d0e14edfccc1cc877a50c3dc2543a212902547ec69f4e1080f2e",
+      "sha256_of_archived": "d839656aed93d0e14edfccc1cc877a50c3dc2543a212902547ec69f4e1080f2e",
+      "bytes": 2543929
+    },
+    {
+      "source_basename": "02_KNOUX_AI_MOBILE_FOUNDER_APPROVED.png",
+      "archived_as": "05_REFERENCES/ONBOARDING/02_KNOUX_AI_MOBILE_FOUNDER_APPROVED.png",
+      "sha256_of_original": "7650780e027812297413aca800616203c79cc7610c1819270fa344814d5f14da",
+      "sha256_of_archived": "7650780e027812297413aca800616203c79cc7610c1819270fa344814d5f14da",
+      "bytes": 2479437
+    },
+    {
+      "source_basename": "01_AI_Smart_Clean_Home.png",
+      "archived_as": "05_REFERENCES/SERVICE_VISUALS/01_AI_Smart_Clean_Home.png",
+      "sha256_of_original": "f04650c31f8f640f5db2263ef4a5a8b3c949e960512e131351cea17dd4fd7fd6",
+      "sha256_of_archived": "f04650c31f8f640f5db2263ef4a5a8b3c949e960512e131351cea17dd4fd7fd6",
+      "bytes": 1958289
+    },
+    {
+      "source_basename": "02_Privacy_Sweep.png",
+      "archived_as": "05_REFERENCES/SERVICE_VISUALS/02_Privacy_Sweep.png",
+      "sha256_of_original": "f702e84ad42f1755bb1a2120796907c83724e4bf55d60647a3c0aa6312b6e34e",
+      "sha256_of_archived": "f702e84ad42f1755bb1a2120796907c83724e4bf55d60647a3c0aa6312b6e34e",
+      "bytes": 2052547
+    },
+    {
+      "source_basename": "03_Duplicate_Files_Finder.png",
+      "archived_as": "05_REFERENCES/SERVICE_VISUALS/03_Duplicate_Files_Finder.png",
+      "sha256_of_original": "fae7a87a4af7b4ba242659a36c29c77af7459f055f6ed0c78bf45d3ff5e9d47c",
+      "sha256_of_archived": "fae7a87a4af7b4ba242659a36c29c77af7459f055f6ed0c78bf45d3ff5e9d47c",
+      "bytes": 2012605
+    },
+    {
+      "source_basename": "04_Deep_Scan.png",
+      "archived_as": "05_REFERENCES/SERVICE_VISUALS/04_Deep_Scan.png",
+      "sha256_of_original": "c6348ff84f779a768059a588a5cbac05042d58d12e954a291e0c6dec49410c75",
+      "sha256_of_archived": "c6348ff84f779a768059a588a5cbac05042d58d12e954a291e0c6dec49410c75",
+      "bytes": 1952284
+    },
+    {
+      "source_basename": "05_Reports_Insights.png",
+      "archived_as": "05_REFERENCES/SERVICE_VISUALS/05_Reports_Insights.png",
+      "sha256_of_original": "ce87c24d7ddeb67c9459dc6af24c6e8a4d5e32d8083c6d5e3bd810551bbbd279",
+      "sha256_of_archived": "ce87c24d7ddeb67c9459dc6af24c6e8a4d5e32d8083c6d5e3bd810551bbbd279",
+      "bytes": 2063933
+    },
+    {
+      "source_basename": "06_App_Residue_Cleanup.png",
+      "archived_as": "05_REFERENCES/SERVICE_VISUALS/06_App_Residue_Cleanup.png",
+      "sha256_of_original": "e60a016d5462dfe85a1ccc28d7a2e1b2fd2ff4ef3669f1a14d5ac20f24f8a281",
+      "sha256_of_archived": "e60a016d5462dfe85a1ccc28d7a2e1b2fd2ff4ef3669f1a14d5ac20f24f8a281",
+      "bytes": 2004641
+    },
+    {
+      "source_basename": "07_App_Manager.png",
+      "archived_as": "05_REFERENCES/SERVICE_VISUALS/07_App_Manager.png",
+      "sha256_of_original": "d42148286ed13f293e2b89804fc13712d3a7671ad7c06e25a14ba2f692081951",
+      "sha256_of_archived": "d42148286ed13f293e2b89804fc13712d3a7671ad7c06e25a14ba2f692081951",
+      "bytes": 2009503
+    },
+    {
+      "source_basename": "08_Storage_Analyzer.png",
+      "archived_as": "05_REFERENCES/SERVICE_VISUALS/08_Storage_Analyzer.png",
+      "sha256_of_original": "cfcefa6554f7364b2c582b55b746bb6f0deb67378fdccf91bbc9a37eb66f4d72",
+      "sha256_of_archived": "cfcefa6554f7364b2c582b55b746bb6f0deb67378fdccf91bbc9a37eb66f4d72",
+      "bytes": 2010709
+    },
+    {
+      "source_basename": "09_Battery_Saver.png",
+      "archived_as": "05_REFERENCES/SERVICE_VISUALS/09_Battery_Saver.png",
+      "sha256_of_original": "6466f7dea95f52ef0c84b11de97cdde58ee9f19ed787b0f16804a85ca75dc665",
+      "sha256_of_archived": "6466f7dea95f52ef0c84b11de97cdde58ee9f19ed787b0f16804a85ca75dc665",
+      "bytes": 1967752
+    },
+    {
+      "source_basename": "10_AI_Optimization.png",
+      "archived_as": "05_REFERENCES/SERVICE_VISUALS/10_AI_Optimization.png",
+      "sha256_of_original": "7d9843ba9c67873ba561f10a6cf50a99344326154b1588fa2b2cea922a9db208",
+      "sha256_of_archived": "7d9843ba9c67873ba561f10a6cf50a99344326154b1588fa2b2cea922a9db208",
+      "bytes": 1995875
+    }
+  ]
+}

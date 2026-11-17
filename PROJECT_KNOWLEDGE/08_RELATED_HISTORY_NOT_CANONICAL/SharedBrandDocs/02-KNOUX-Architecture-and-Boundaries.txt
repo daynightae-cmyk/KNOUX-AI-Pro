@@ -1,0 +1,66 @@
+KNOUX REPAIR
+ARCHITECTURE AND SYSTEM BOUNDARIES
+
+HIGH-LEVEL ARCHITECTURE
+User
+ -> KNOUX Repair UI
+    -> local web gateway
+       -> local execution bridge
+          -> approved Windows tools
+
+KNOUX Repair UI
+ -> assistant adapter
+    -> deployed KNOUX Intelligence Core
+       -> reasoning, explanation, planning, approved remote tools
+
+CORE BOUNDARY
+Cloud intelligence thinks.
+Local KNOUX executes.
+The user approves risky actions.
+Verified evidence determines truth.
+
+LOCAL-FIRST RULE
+The cloud agent has no inherent awareness of local disks, registry, services, processes, drivers, event logs, installed software, Git state, environment variables, personal files, or local credentials.
+Any live machine state must come from verified tool output.
+
+LOCAL EXECUTION BRIDGE
+The local bridge is authoritative for real Windows execution.
+The agent must not claim a Windows change occurred unless the local execution path confirms it.
+
+REMOTE AGENT RESPONSIBILITIES
+- understand user intent
+- choose safe diagnostic direction
+- interpret verified evidence
+- explain results
+- rank hypotheses
+- recommend actions
+- produce structured action intents
+- handle product context
+
+SOURCE OF TRUTH PRIORITY
+1. Verified output from a currently executed KNOUX local tool
+2. Current local KNOUX bridge/MCP evidence
+3. Current local repository state when explicitly retrieved
+4. Verified remote repository state
+5. Current approved KNOUX configuration and manifests
+6. Uploaded KNOUX knowledge documents
+7. General model knowledge
+
+Knowledge documents are reference material, not live telemetry.
+
+A2A BOUNDARY
+A2A exposure allows authorized applications/services to send tasks to the agent.
+A2A does not automatically grant access to the user's Windows machine.
+
+MCP BOUNDARY
+Configured MCP capability is not proof of connectivity or success.
+Use actual tool results.
+
+SECURITY
+No secrets in frontend code.
+No long-lived cloud credentials in browser storage.
+Use server-side or local-gateway authenticated calls.
+
+FAILURE BEHAVIOR
+If the remote agent fails, preserve local app/tool functionality and report unavailability.
+If the local bridge fails, reasoning may continue from reference knowledge but local execution claims must stop.

@@ -1,0 +1,24 @@
+﻿KNOUX AI MOBILE — ANDROID RUNTIME QA, 2026-11-13
+Device: itel S686LN, Android API 35
+Canonical code workspace: /root/workspace/KNOUX-AI (NOT accessed; independent D:\KNOUX-AI untouched).
+
+APK: mobile-M08-current-app-debug.apk
+Package: com.knoux.ai.debug; versionCode=1; versionName=1.0.0-debug
+APK SHA256: CF3E3C785B662C89663F9C862B5A13FFE70C21B16238880A1ED68F236F813E76
+APK certificate SHA256: 03A6F6C426078E54F789A044D5CB3346BB1915D41F25656970C8038A639B4282
+Prior APK saved: installed-before-M08-base.apk; SHA256 B2A972A247E3110AE02399F19AB87758686DF41F8B7C08ADE1B813FE50FC47DC
+Prior certificate matched; Android firstInstallTime remained unchanged.
+Android installed base.apk sha256 equals APK SHA256 above; INSTALL CONFIRMED.
+
+RUNTIME PROOF
+adb am start -W returned Status: ok; LaunchState: WARM; MainActivity; Exit 0
+Process pidof com.knoux.ai.debug yielded 25733.
+Screenshot: KNOUX-M08-runtime-20261113.png: Deep Scan screen visible, five module list and running scan indicator.
+Screenshot alone does not prove scan outputs, source data, cleanup actions, Room journal correctness or stage M08 completion.
+App-private Room DB filenames were observed (metadata only): knoux-local.db (454656 bytes), knoux-local.db-wal (440872), -shm (32768).
+No app data was cleared, no old app uninstalled. Other phone application came foreground later.
+Gradle/JUnit reports of 100 PASS are user-pasted agent claims; no test XML from canonical /root/workspace inspected here.
+M09-M15 NOT VERIFIED/NOT IMPLEMENTED IN THIS QA; canonical workspace inaccessible via this connector.
+
+NEXT STEPS: Mobile agent must export current source including .git, all unique untracked changes, APK, test XML/logs, sanitized screenshot evidence and SHA256 manifest. Resume M09 only after M08 runtime and operation-specific tests, while preserving approved visuals.
+Known OpenRouter blocks: free-models-per-day reached; model requested max_tokens=256000 beyond balance. Use different authenticated provider or a valid funded tier and lower output request budget per provider/model; do not misrepresent queue as progress.
