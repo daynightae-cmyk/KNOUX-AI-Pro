@@ -121,14 +121,16 @@ val V2ProRedDeep = Color(0xFF8B0018)
  * Pro Identity — complete brand change when Pro activates
  * ------------------------------------------------------------------ */
 
-// Pro-exclusive palette (gold/amber theme)
-val ProDeep = Color(0xFF1A1005)
-val ProDeep2 = Color(0xFF2A1705)
-val ProPanel = Color(0xFF3D280A)
-val ProPanel2 = Color(0xFF2A1705)
-val ProGlassTop = Color(0xFF5C3D0F)
-val ProGlassBottom = Color(0xFF2A1705)
-val ProBorder = Color(0xFFFFC857)
+// Pro identity: the original violet-neon world stays the operational surface;
+// gold/bronze is reserved for Pro accents (crown, entitlement, subscription card)
+// and a warm horizon in the background — never a flat brown wash over every card.
+val ProDeep = Color(0xFF0A0522)
+val ProDeep2 = Color(0xFF150A34)
+val ProPanel = Color(0xFF241238)
+val ProPanel2 = Color(0xFF1A0C30)
+val ProGlassTop = Color(0xFF3A2258)
+val ProGlassBottom = Color(0xFF140A2C)
+val ProBorder = Color(0xFFA86BFF)
 val ProViolet = Color(0xFFFFB043)
 val ProPink = Color(0xFFFF8A6B)
 val ProCyan = Color(0xFFFFD37B)
@@ -136,8 +138,8 @@ val ProBlue = Color(0xFFFF9F3A)
 val ProGreen = Color(0xFF37F3B4)
 val ProRed = Color(0xFFFF5677)
 val ProAmber = Color(0xFFFFC857)
-val ProSoft = Color(0xFFFFE7AA)
-val ProMuted = Color(0xFFD4B870)
+val ProSoft = Color(0xFFCBB8E8)
+val ProMuted = Color(0xFF9A8CC0)
 val ProGold = Color(0xFFFFD37B)
 val ProGoldBright = Color(0xFFFFE9B0)
 
@@ -179,7 +181,10 @@ data class ProTheme(
             isPro = true,
             deep = ProDeep, deep2 = ProDeep2, panel = ProPanel, panel2 = ProPanel2,
             glassTop = ProGlassTop, glassBottom = ProGlassBottom, border = ProBorder,
-            violet = ProViolet, pink = ProPink, cyan = ProCyan, blue = ProBlue,
+            // Operational language stays Electric Blue / Cyan even in Pro; the
+            // golden-brown world lives in the surfaces and the gold accent slots,
+            // never in CTAs, progress, selection or focus (design DNA).
+            violet = V2Violet, pink = V2Pink, cyan = V2Cyan, blue = V2Blue,
             green = ProGreen, red = ProRed, amber = ProAmber, soft = ProSoft, muted = ProMuted,
             gold = ProGold, goldBright = ProGoldBright,
         )
@@ -1470,15 +1475,6 @@ fun V2DeerHeader(
         ),
         label = "deerFloat",
     )
-    val breath by transition.animateFloat(
-        initialValue = .985f,
-        targetValue = if (motion) 1.012f else .985f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(5200, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "deerBreath",
-    )
     Box(modifier, contentAlignment = Alignment.TopCenter) {
         // Golden crown when Pro is active
         if (proTheme.isPro) {
@@ -1495,8 +1491,7 @@ fun V2DeerHeader(
                 .fillMaxWidth()
                 .graphicsLayer {
                     translationY = float.dp.toPx()
-                    scaleX = if (mirrored) -breath else breath
-                    scaleY = breath
+                    scaleX = if (mirrored) -1f else 1f
                 },
             contentScale = ContentScale.Fit,
         )

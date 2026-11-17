@@ -62,6 +62,7 @@ import com.knoux.ai.ui.components.BrandSymbol
 import com.knoux.ai.ui.components.BrandWordmark
 import com.knoux.ai.ui.components.HeaderHalo
 import com.knoux.ai.ui.components.rememberMotionEnabled
+import com.knoux.ai.ui.screens.LoginLaurel
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -97,22 +98,26 @@ internal fun OnboardingEcosystemPage() {
             }
         }
         Spacer(Modifier.height(18.dp))
-        Text(
-            buildAnnotatedString {
-                append("منظومة ذكية ")
-                withStyle(SpanStyle(color = Color(0xFFF396F7))) { append("واحدة.") }
-            },
-            color = Color.White,
-            fontFamily = V2Font,
-            fontSize = 25.sp,
-            lineHeight = 32.sp,
-            fontWeight = FontWeight.Black,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
-        )
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+            LoginLaurel(mirror = false)
+            Text(
+                buildAnnotatedString {
+                    append("منظومة ذكية ")
+                    withStyle(SpanStyle(color = Color(0xFFF396F7))) { append("واحدة.") }
+                },
+                color = Color.White,
+                fontFamily = V2Font,
+                fontSize = 22.sp,
+                lineHeight = 30.sp,
+                fontWeight = FontWeight.Black,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.weight(1f),
+            )
+            LoginLaurel(mirror = true)
+        }
         Spacer(Modifier.height(5.dp))
         KText(
-            "10 خدمات ذكية، منصة واحدة متكاملة.",
+            "10 أقسام ذكية، تجربة واحدة مترابطة.",
             size = 13.sp,
             color = V2Soft,
             align = TextAlign.Center,
@@ -244,7 +249,10 @@ private fun EcosystemTile(service: EcosystemService, modifier: Modifier = Modifi
         verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Icon(service.icon, null, tint = service.accent, modifier = Modifier.size(23.dp))
+        Box(Modifier.size(23.dp), contentAlignment = Alignment.Center) {
+            HeaderHalo(Modifier.matchParentSize(), color = service.accent)
+            Icon(service.icon, null, tint = service.accent, modifier = Modifier.size(19.dp))
+        }
         KText(service.name, size = 9.4.sp, lineHeight = 12.sp, align = TextAlign.Center, weight = FontWeight.Bold, color = Color.White)
     }
 }

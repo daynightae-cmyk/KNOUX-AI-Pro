@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -104,18 +103,7 @@ fun V2HomeScreen(
             .fillMaxSize()
             .windowInsetsPadding(WindowInsets.statusBars)
     ) {
-        V2DeerHeader(
-            Modifier
-                .align(Alignment.TopStart)
-                .absoluteOffset(x = 2.dp, y = 33.dp)
-                .size(width = 170.dp, height = 267.dp)
-                .graphicsLayer {
-                    transformOrigin = androidx.compose.ui.graphics.TransformOrigin(1f, 0f)
-                    scaleX = 1.16f
-                    scaleY = 1.16f
-                    alpha = .92f
-                }
-        )
+        V2HeaderMascot(Modifier.align(Alignment.TopStart))
 
         Column(Modifier.fillMaxSize()) {
             V2TopBar(
@@ -133,7 +121,7 @@ fun V2HomeScreen(
                 item {
                     Spacer(Modifier.height(2.dp))
                     Row(
-                        Modifier.fillMaxWidth(),
+                        Modifier.fillMaxWidth().padding(start = 86.dp),
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.Bottom,
                     ) {
@@ -156,11 +144,12 @@ fun V2HomeScreen(
                         )
                     }
                     KText(
-                        "ذكاء كامل لجهازك .. أداء أعلى .. حماية أعمق",
+                        "ذكاء لجهازك · أداء أعلى · حماية أعمق",
                         size = 11.5.sp,
                         color = V2Soft,
                         align = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth().padding(top = 1.dp),
+                        maxLines = 1,
+                        modifier = Modifier.fillMaxWidth().padding(start = 86.dp, top = 1.dp),
                     )
                     Spacer(Modifier.height(9.dp))
                 }

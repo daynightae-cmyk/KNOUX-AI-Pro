@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -35,6 +36,7 @@ import androidx.compose.material.icons.rounded.Email
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Fingerprint
+import androidx.compose.material.icons.rounded.PersonAdd
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Key
 import androidx.compose.material.icons.rounded.Person
@@ -87,6 +89,7 @@ import com.knoux.ai.auth.KnouxAuthException
 import com.knoux.ai.ui.auth.AuthMethodButton
 import com.knoux.ai.ui.auth.AuthVisualState
 import com.knoux.ai.ui.auth.FingerprintOrb
+import com.knoux.ai.ui.v2.CrownGold
 import com.knoux.ai.ui.components.rememberMotionEnabled
 import com.knoux.ai.ui.theme.ProArcticCyan
 import com.knoux.ai.ui.theme.ProTextSecondary
@@ -95,6 +98,9 @@ import com.knoux.ai.ui.theme.ProBlue
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import androidx.compose.ui.semantics.Role
+
+private val ProEditionGoldLogin = Color(0xFFFFCF68)
 
 private enum class AuthSection { Main, EmailLogin, EmailSignup, OTP, Recovery }
 
@@ -279,53 +285,73 @@ fun WelcomeScreen(
         }
 
         if (isFingerprintEntry) {
-            Column(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp)
-                    .loginGlass()
-                    .padding(horizontal = 16.dp, vertical = 11.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(7.dp),
-            ) {
-                Text("تسجيل الدخول إلى", color = ProTextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                LoginEditionTitle()
-                GoogleButton(scope, inProgress, googleConfigured, controller, activity, hero = true) { result ->
-                    inProgress = result.first
-                    message = result.second
-                    if (result.third) onSignedIn()
+            Box(Modifier.fillMaxWidth().padding(horizontal = 14.dp)) {
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(top = 15.dp)
+                        .loginGlass()
+                        .padding(horizontal = 16.dp, vertical = 13.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(7.dp),
+                ) {
+                    Text("تسجيل الدخول إلى", color = ProTextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    LoginEditionTitle()
+                    GoogleButton(scope, inProgress, googleConfigured, controller, activity, hero = true) { result ->
+                        inProgress = result.first
+                        message = result.second
+                        if (result.third) onSignedIn()
+                    }
+                    PasskeyButton(scope, inProgress, controller, activity, hero = true) { result ->
+                        inProgress = result.first
+                        message = result.second
+                        if (result.third) onSignedIn()
+                    }
+                    LoginOrDivider()
+                    NeonLoginButton(
+                        label = "البريد الإلكتروني / رمز التحقق",
+                        icon = Icons.Rounded.Email,
+                        subtitle = "استخدم بريدك أو رمزًا لمرة واحدة",
+                        enabled = !inProgress,
+                        onClick = { section = AuthSection.EmailLogin; message = null },
+                    )
+                    Box(contentAlignment = Alignment.Center) {
+                        FingerprintOrb(
+                            state = state,
+                            onClick = ::unlockWithBiometric,
+                            size = 64.dp,
+                            enabled = !inProgress,
+                            accessibilityLabel = "تسجيل الدخول بالبصمة",
+                            showStateBadge = false,
+                        )
+                        FingerprintBrackets(Modifier.size(86.dp))
+                    }
+                    Text("تسجيل الدخول بالبصمة", color = ProTextPrimary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
                 }
-                PasskeyButton(scope, inProgress, controller, activity, hero = true) { result ->
-                    inProgress = result.first
-                    message = result.second
-                    if (result.third) onSignedIn()
+                Box(Modifier.align(Alignment.TopCenter).offset(y = (-2).dp)) {
+                    CrownGold(size = 30.dp)
                 }
-                NeonLoginButton(
-                    label = "البريد الإلكتروني / رمز التحقق",
-                    icon = Icons.Rounded.Email,
-                    subtitle = "استخدم بريدك أو رمزًا لمرة واحدة",
-                    enabled = !inProgress,
-                    onClick = { section = AuthSection.EmailLogin; message = null },
-                )
-                FingerprintOrb(
-                    state = state,
-                    onClick = ::unlockWithBiometric,
-                    size = 64.dp,
-                    enabled = !inProgress,
-                    accessibilityLabel = "تسجيل الدخول بالبصمة",
-                    showStateBadge = false,
-                )
-                Text("تسجيل الدخول بالبصمة", color = ProTextPrimary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
             }
+            Spacer(Modifier.height(12.dp))
             Row(
-                Modifier.fillMaxWidth().padding(horizontal = 18.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(9.dp),
             ) {
-                TextButton("إنشاء حساب جديد", enabled = !inProgress) {
-                    section = AuthSection.EmailSignup
-                    message = null
+                Text("ليس لديك حساب؟", color = ProTextSecondary, fontSize = 13.sp)
+                Row(
+                    Modifier
+                        .clip(RoundedCornerShape(50))
+                        .border(1.2.dp, ProEditionGoldLogin, RoundedCornerShape(50))
+                        .clickable(enabled = !inProgress, role = Role.Button) {
+                            section = AuthSection.EmailSignup; message = null
+                        }
+                        .padding(horizontal = 14.dp, vertical = 7.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                ) {
+                    Icon(Icons.Rounded.PersonAdd, null, tint = ProEditionGoldLogin, modifier = Modifier.size(16.dp))
+                    Text("إنشاء حساب جديد", color = ProEditionGoldLogin, fontSize = 13.sp, fontWeight = FontWeight.Bold)
                 }
-                TextButton("المتابعة كضيف", enabled = !inProgress, onClick = onContinueAsGuest)
             }
+            TextButton("المتابعة كضيف", enabled = !inProgress, onClick = onContinueAsGuest)
         } else {
             Column(
                 Modifier

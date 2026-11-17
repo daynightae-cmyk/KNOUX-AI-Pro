@@ -29,12 +29,15 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -117,9 +120,78 @@ internal fun LoginBrand() {
 @Composable
 internal fun LoginEditionTitle() {
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-        Row(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("KNOUX AI", color = ProTextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Black, fontStyle = FontStyle.Italic)
-            Text("Pro", color = ProEditionGold, fontSize = 22.sp, fontWeight = FontWeight.Black, fontStyle = FontStyle.Italic)
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(7.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            LoginLaurel(mirror = false)
+            Row(horizontalArrangement = Arrangement.spacedBy(5.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("KNOUX AI", color = ProTextPrimary, fontSize = 22.sp, fontWeight = FontWeight.Black, fontStyle = FontStyle.Italic)
+                Text("Pro", color = ProEditionGold, fontSize = 22.sp, fontWeight = FontWeight.Black, fontStyle = FontStyle.Italic)
+            }
+            LoginLaurel(mirror = true)
+        }
+    }
+}
+
+/** Gold laurel branch flanking the edition title, as in the master login reference. */
+@Composable
+internal fun LoginLaurel(mirror: Boolean, modifier: Modifier = Modifier) {
+    Canvas(modifier.size(width = 17.dp, height = 34.dp)) {
+        val w = size.width
+        val h = size.height
+        val dir = if (mirror) -1f else 1f
+        val cx = if (mirror) w * .82f else w * .18f
+        val stem = Path().apply {
+            moveTo(cx, h * .96f)
+            quadraticBezierTo(cx + dir * w * .55f, h * .55f, cx + dir * w * .18f, h * .06f)
+        }
+        drawPath(stem, ProEditionGold.copy(alpha = .9f), style = Stroke(1.3.dp.toPx()))
+        repeat(6) { i ->
+            val t = (i + .6f) / 6.6f
+            val y = h * (.94f - t * .86f)
+            val x = cx + dir * w * (.30f * kotlin.math.sin(t * Math.PI.toFloat() * .9f))
+            val leaf = Size(w * .40f, h * .10f)
+            drawOval(
+                ProEditionGold.copy(alpha = .95f - i * .06f),
+                topLeft = Offset(if (mirror) x - leaf.width else x, y - leaf.height / 2),
+                size = leaf,
+            )
+        }
+    }
+}
+
+/** The gold "أو" separator between passkey and email entry, per the reference. */
+@Composable
+internal fun LoginOrDivider(modifier: Modifier = Modifier) {
+    Row(
+        modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 1.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Box(Modifier.weight(1f).height(1.dp).background(Brush.horizontalGradient(listOf(Color.Transparent, ProEditionGold.copy(alpha = .8f)))))
+        Text("أو", color = ProEditionGold, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+        Box(Modifier.weight(1f).height(1.dp).background(Brush.horizontalGradient(listOf(ProEditionGold.copy(alpha = .8f), Color.Transparent))))
+    }
+}
+
+/** Four corner brackets framing the fingerprint orb, as in the reference. */
+@Composable
+internal fun FingerprintBrackets(modifier: Modifier = Modifier) {
+    Canvas(modifier) {
+        val len = size.minDimension * .20f
+        val stroke = 2.dp.toPx()
+        val gold = ProEditionGold.copy(alpha = .85f)
+        val corners = listOf(
+            Offset(0f, 0f) to listOf(Offset(len, 0f), Offset(0f, len)),
+            Offset(size.width, 0f) to listOf(Offset(-len, 0f), Offset(0f, len)),
+            Offset(0f, size.height) to listOf(Offset(len, 0f), Offset(0f, -len)),
+            Offset(size.width, size.height) to listOf(Offset(-len, 0f), Offset(0f, -len)),
+        )
+        for ((origin, legs) in corners) {
+            for (leg in legs) {
+                drawLine(gold, origin, Offset(origin.x + leg.x, origin.y + leg.y), strokeWidth = stroke)
+            }
         }
     }
 }
@@ -127,7 +199,33 @@ internal fun LoginEditionTitle() {
 @Composable
 internal fun LoginCosmicScene(height: Dp, reveal: Float, overlapHeader: Boolean = false) {
     Box(Modifier.fillMaxWidth().height(height), contentAlignment = Alignment.Center) {
-        Canvas(Modifier.fillMaxSize().clipToBounds()) {
+        Canvas(
+            Modifier.fillMaxSize().clipToBounds()
+                .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+                .drawWithContent {
+                    drawContent()
+                    // Melt the scene's top/bottom edges into the app background so
+                    // the cosmic hero reads as one continuous nebula, not a panel.
+                    drawRect(
+                        Brush.verticalGradient(
+                            0f to Color.Transparent,
+                            .12f to Color.Black,
+                            .88f to Color.Black,
+                            1f to Color.Transparent,
+                        ),
+                        blendMode = BlendMode.DstIn,
+                    )
+                    drawRect(
+                        Brush.horizontalGradient(
+                            0f to Color.Transparent,
+                            .06f to Color.Black,
+                            .94f to Color.Black,
+                            1f to Color.Transparent,
+                        ),
+                        blendMode = BlendMode.DstIn,
+                    )
+                },
+        ) {
             val planetCenter = Offset(size.width * .5f, size.height * .72f)
             val planetRadius = size.width * .43f
             drawCircle(
@@ -142,8 +240,9 @@ internal fun LoginCosmicScene(height: Dp, reveal: Float, overlapHeader: Boolean 
                 center = planetCenter,
             )
             drawCircle(
-                Brush.radialGradient(listOf(Color(0x33532AFF), Color.Transparent), center = center, radius = size.width * .56f),
-                radius = size.width * .56f,
+                Brush.radialGradient(listOf(Color(0x33532AFF), Color.Transparent), center = planetCenter, radius = size.width * .50f),
+                radius = size.width * .50f,
+                center = planetCenter,
             )
             repeat(38) { i ->
                 val point = Offset(size.width * ((i * 37 + 7) % 101) / 101f, size.height * ((i * 23 + 11) % 89) / 101f)
