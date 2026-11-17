@@ -390,16 +390,9 @@ private fun stageIcon(stage: DeepScanStage) = when (stage) {
 
 @Composable
 private fun ScanResultsCard(facts: DeviceFacts, complete: Boolean, measured: Int) {
-    // Stage index in DeepScanStage; a row is shown as "not read" when the scan
-    // stopped before reaching its stage. Never print a zero that was not read.
-    val storageRead = measured >= DeepScanStage.STORAGE.ordinal + 1
-    val appsRead = measured >= DeepScanStage.APPS.ordinal + 1
-    val privacyRead = measured >= DeepScanStage.PRIVACY.ordinal + 1
-    val cacheRead = measured >= DeepScanStage.CACHE.ordinal + 1
-    val mediaRead = measured >= DeepScanStage.MEDIA.ordinal + 1
-    val media = facts.media
-    val reclaimable = media.duplicateGroups.sumOf { it.reclaimableBytes }
-    val storagePercent = (facts.storage.usedFraction * 100).toInt()
+    // Stage index in DeepScanStage; a value is shown as "not read" when the
+    // scan stopped before reaching its stage. Never print a zero that was not
+    // read. The tile grid below is shared with the other service pages.
     V2GlassCard(
         Modifier.fillMaxWidth(),
         padding = 12.dp,
@@ -432,56 +425,19 @@ private fun ScanResultsCard(facts: DeviceFacts, complete: Boolean, measured: Int
                 )
             }
             Spacer(Modifier.height(10.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
-                ResultRow(
-                    Icons.Rounded.Storage,
-                    "التخزين",
-                    if (storageRead) "${formatBytes(facts.storage.freeBytes)} متاحة" else "لم تُقرأ بعد",
-                    if (storageRead) "$storagePercent%" else "—",
-                    V2Cyan,
-                    measured = storageRead,
-                )
-                ResultRow(
-                    Icons.Rounded.Layers,
-                    "التطبيقات",
-                    if (appsRead) "${formatCount(facts.installedCount)} مثبتًا" else "لم تُقرأ بعد",
-                    if (appsRead) formatCount(facts.userAppCount) else "—",
-                    V2Violet,
-                    measured = appsRead,
-                )
-                ResultRow(
-                    Icons.Rounded.Shield,
-                    "الخصوصية",
-                    if (privacyRead) "${formatCount(facts.sensitiveAppCount)} تطبيقًا حساسًا" else "لم تُقرأ بعد",
-                    if (privacyRead) formatCount(facts.privacyGroups.sumOf { it.grantedCount }) else "—",
-                    V2Amber,
-                    measured = privacyRead,
-                )
-                ResultRow(
-                    Icons.Rounded.Description,
-                    "ملفات مكررة",
-                    when {
-                        !mediaRead -> "لم تُقرأ بعد"
-                        !media.permissionGranted -> "صلاحية غير ممنوحة"
-                        else -> formatBytes(reclaimable)
-                    },
-                    when {
-                        !mediaRead -> "—"
-                        media.permissionGranted -> "${media.duplicateGroups.size}"
-                        else -> "!"
-                    },
-                    V2Pink,
-                    measured = mediaRead,
-                )
-                ResultRow(
-                    Icons.Rounded.CleaningServices,
-                    "كاش KNOUX",
-                    if (cacheRead) "${formatCount(facts.ownCacheFiles)} ملفًا" else "لم تُقرأ بعد",
-                    if (cacheRead) formatBytes(facts.ownCacheBytes) else "—",
-                    V2Blue,
-                    measured = cacheRead,
-                )
-            }
+            DeepScanResultTiles(
+                facts = facts,
+                measuredStages = measured,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(5.dp))
+            KText(
+                if (complete) "كل الأرقام أعلاه مقروءة من وحدات الفحص الست."
+                else "تظهر قيم الوحدات المقروءة فقط؛ الباقي بلا أرقام.",
+                size = 6.8.sp,
+                lineHeight = 9.5.sp,
+                color = V2Muted,
+            )
             if (!complete) {
                 Spacer(Modifier.height(8.dp))
                 KText(

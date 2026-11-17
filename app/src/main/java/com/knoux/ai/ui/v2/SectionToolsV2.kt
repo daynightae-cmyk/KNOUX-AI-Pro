@@ -370,21 +370,18 @@ fun V2SectionToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
                         )
                     }
                 }
+                item {
+                    ServiceVisualDeck(
+                        section = def.section,
+                        facts = facts,
+                        accent = def.accent,
+                        accent2 = SectionTools.accent2For(def.section),
+                        history = history,
+                    )
+                }
                 if (loaded && !missingMedia && rows.isNotEmpty()) {
                     item { V2SectionLabel("قراءة هذا الهاتف", trailing = if (facts.computedAt > 0L) "مباشر" else "جاري") }
-                    item {
-                        V2GlassCard(
-                            Modifier.fillMaxWidth(),
-                            padding = 12.dp,
-                            radius = 20.dp,
-                            glow = def.accent,
-                            borderAlpha = .32f,
-                        ) {
-                            Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                                rows.forEach { row -> ToolRowView(row) }
-                            }
-                        }
-                    }
+                    item { ServiceRowTileGrid(rows, Modifier.fillMaxWidth()) }
                 }
                 if (!loaded) {
                     item {
@@ -506,32 +503,6 @@ fun V2SectionToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp),
             )
         }
-    }
-}
-
-/* ----------------------------- rows ----------------------------- */
-
-@Composable
-private fun ToolRowView(row: ToolRow) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Icon(row.icon, null, tint = row.accent, modifier = Modifier.size(17.dp))
-        Spacer(Modifier.width(7.dp))
-        KText(
-            row.label,
-            size = 8.6.sp,
-            color = V2Soft,
-            modifier = Modifier.weight(1f),
-            textDirection = TextDirection.Rtl,
-        )
-        KText(
-            row.value,
-            size = 9.sp,
-            weight = FontWeight.Bold,
-            color = row.accent,
-            align = TextAlign.End,
-            maxLines = 2,
-            textDirection = TextDirection.Rtl,
-        )
     }
 }
 
@@ -817,10 +788,8 @@ private fun androidx.compose.foundation.lazy.LazyListScope.toolsList(
                 item { V2SectionLabel("الملفات", trailing = "${formatCount(files.size)}") }
                 files.take(12).forEach { file ->
                     item {
-                        ToolFileRow(
-                            title = file.name,
-                            subtitle = file.bucket ?: if (file.isVideo) "فيديو" else "صورة",
-                            size = formatBytes(file.sizeBytes),
+                        ServiceFileCard(
+                            file = file,
                             accent = if (file.isVideo) V2Pink else V2Violet,
                         )
                     }
@@ -845,10 +814,8 @@ private fun androidx.compose.foundation.lazy.LazyListScope.toolsList(
                 item { V2SectionLabel("المجموعات", trailing = "${groups.size}") }
                 groups.take(10).forEach { group ->
                     item {
-                        ToolFileRow(
-                            title = group.name,
-                            subtitle = "${group.count} نسخة · ${formatBytes(group.sizeBytes)} لكل ملف",
-                            size = formatBytes(group.reclaimableBytes),
+                        ServiceGroupCard(
+                            group = group,
                             accent = if (group.isVideo) V2Pink else V2Violet,
                         )
                     }
@@ -908,10 +875,8 @@ private fun androidx.compose.foundation.lazy.LazyListScope.toolsList(
                 item { V2SectionLabel("مجموعات الأذونات", trailing = "${facts.privacyGroups.size}") }
                 facts.privacyGroups.forEach { group ->
                     item {
-                        ToolPermissionRow(
-                            label = group.label,
-                            apps = group.appCount,
-                            granted = group.grantedCount,
+                        ServicePermissionCard(
+                            group = group,
                             accent = def.accent,
                         )
                     }
@@ -936,47 +901,17 @@ private fun androidx.compose.foundation.lazy.LazyListScope.toolsList(
                 }
             } else {
                 item { V2SectionLabel("السجل", trailing = "${visible.size}/24") }
+                val maxCache = visible.maxOfOrNull { it.cacheBytes }?.coerceAtLeast(1L) ?: 1L
                 visible.take(14).forEach { entry ->
                     item {
-                        V2GlassCard(
-                            Modifier.fillMaxWidth(),
-                            padding = 10.dp,
-                            radius = 16.dp,
-                            glow = V2Green,
-                            borderAlpha = .24f,
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                V2IconTile(Icons.Rounded.Refresh, V2Green, size = 33.dp, iconSize = 16.dp)
-                                Spacer(Modifier.width(8.dp))
-                                Column(Modifier.weight(1f)) {
-                                    KText(formatScanTime(entry.timestamp), size = 9.2.sp, weight = FontWeight.Bold)
-                                    KText(
-                                        "${formatCount(entry.appsScanned)} تطبيق · ${formatBytes(entry.storageUsedBytes)} مستخدم",
-                                        size = 7.2.sp,
-                                        color = V2Soft,
-                                    )
-                                }
-                                KText(formatBytes(entry.cacheBytes), size = 8.4.sp, weight = FontWeight.Bold, color = V2Pink)
-                            }
-                        }
+                        ServiceHistoryEntryCard(
+                            entry = entry,
+                            maxCache = maxCache,
+                            accent = V2Green,
+                        )
                     }
                 }
             }
-        }
-    }
-}
-
-@Composable
-private fun ToolFileRow(title: String, subtitle: String, size: String, accent: Color) {
-    V2GlassCard(Modifier.fillMaxWidth(), padding = 10.dp, radius = 16.dp, glow = accent, borderAlpha = .25f) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            V2IconTile(Icons.Rounded.Search, accent, size = 33.dp, iconSize = 16.dp)
-            Spacer(Modifier.width(8.dp))
-            Column(Modifier.weight(1f)) {
-                KText(title, size = 8.8.sp, weight = FontWeight.SemiBold, maxLines = 1)
-                KText(subtitle, size = 7.sp, color = V2Soft, maxLines = 1)
-            }
-            KText(size, size = 8.4.sp, weight = FontWeight.Bold, color = accent)
         }
     }
 }
@@ -1041,21 +976,6 @@ private fun AppAction(icon: ImageVector, tint: Color, onClick: () -> Unit) {
         contentAlignment = Alignment.Center,
     ) {
         Icon(icon, null, tint = tint, modifier = Modifier.size(16.dp))
-    }
-}
-
-@Composable
-private fun ToolPermissionRow(label: String, apps: Int, granted: Int, accent: Color) {
-    V2GlassCard(Modifier.fillMaxWidth(), padding = 10.dp, radius = 16.dp, glow = accent, borderAlpha = .24f) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            V2IconTile(Icons.Rounded.Settings, accent, size = 33.dp, iconSize = 16.dp)
-            Spacer(Modifier.width(8.dp))
-            Column(Modifier.weight(1f)) {
-                KText(label, size = 8.8.sp, weight = FontWeight.Bold, maxLines = 1)
-                KText("$granted ممنوحة من $apps تطبيقًا", size = 7.sp, color = V2Soft)
-            }
-            KText("$apps", size = 9.sp, weight = FontWeight.Bold, color = accent)
-        }
     }
 }
 
@@ -1840,7 +1760,7 @@ private fun SectionHomeTile(item: ServiceSubItem, modifier: Modifier = Modifier,
  * Per-section readings — every value comes from DeviceFacts
  * ------------------------------------------------------------------ */
 
-private data class SectionLine(
+internal data class SectionLine(
     val icon: ImageVector,
     val label: String,
     val value: String,
@@ -1848,7 +1768,7 @@ private data class SectionLine(
     val accent: Color,
 )
 
-private data class SectionSide(
+internal data class SectionSide(
     val title: String,
     val subtitle: String,
     val icon: ImageVector,
@@ -1856,14 +1776,14 @@ private data class SectionSide(
     val route: String,
 )
 
-private data class SectionStat(
+internal data class SectionStat(
     val icon: ImageVector,
     val value: String,
     val label: String,
     val accent: Color,
 )
 
-private data class SectionIdentity(
+internal data class SectionIdentity(
     val gaugeLabel: String,
     val gaugePercent: Int,
     val lines: List<SectionLine>,
@@ -1879,7 +1799,7 @@ private fun ratio(part: Long, whole: Long): Float =
 private fun ratioInt(part: Int, whole: Int): Float =
     if (whole <= 0) 0f else (part.toFloat() / whole.toFloat()).coerceIn(0f, 1f)
 
-private fun sectionIdentity(key: String, facts: DeviceFacts): SectionIdentity {
+internal fun sectionIdentity(key: String, facts: DeviceFacts): SectionIdentity {
     val storage = facts.storage
     val battery = facts.battery
     val media = facts.media
@@ -1898,8 +1818,13 @@ private fun sectionIdentity(key: String, facts: DeviceFacts): SectionIdentity {
 
     return when (key) {
         "duplicates" -> SectionIdentity(
-            gaugeLabel = "قابل للاستعادة",
-            gaugePercent = (ratio(reclaimable, mediaBytes) * 100).toInt(),
+            gaugeLabel = "نسخ زائدة",
+            gaugePercent = (
+                ratioInt(
+                    (media.duplicateCandidates - media.duplicateGroups.size).coerceAtLeast(0),
+                    media.duplicateCandidates,
+                ) * 100
+                ).toInt(),
             lines = listOf(
                 SectionLine(Icons.Rounded.ContentCopy, "مجموعات التكرار", mediaValue("${media.duplicateGroups.size} مجموعة"), ratioInt(media.duplicateGroups.size, 50), V2Cyan),
                 SectionLine(Icons.Rounded.Image, "صور", mediaValue(formatCount(media.images)), ratioInt(media.images, mediaTotal.coerceAtLeast(1)), V2Violet),

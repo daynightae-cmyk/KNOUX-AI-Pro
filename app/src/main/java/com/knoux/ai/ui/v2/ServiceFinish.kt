@@ -478,10 +478,11 @@ private fun LegacyServiceBanner(
 }
 
 /**
- * 17 Nov owner direction: the service pages now open on the same neon hero
- * as the fixed Deep Scan header — big official stag, service instrument,
- * nebula stage — but with a natural, moderate height that respects the
- * service's content display. Each service gets its own specific instrument.
+ * 17 Nov owner direction, second pass: the service pages use the compact
+ * Home-style header now. The stag floats behind the identity block and the
+ * service instrument is a small glass window, so the measured results get
+ * the screen instead of a poster-sized cover. Each service keeps its own
+ * instrument and accent colours.
  */
 @Composable
 fun ServiceBanner(
@@ -492,10 +493,9 @@ fun ServiceBanner(
     metric: String? = null,
 ) {
     BoxWithConstraints(modifier.fillMaxWidth()) {
-        val compact = maxWidth < 340.dp
-        // Natural height: ~70% of width, clamped to a comfortable range
-        // that leaves room for content below. Not too large, not too small.
-        val heroHeight = (maxWidth * .70f).coerceIn(240.dp, 300.dp)
+        val window = androidx.compose.ui.platform.LocalConfiguration.current
+        val compact = maxWidth < 340.dp || window.screenHeightDp < 560
+        val headerHeight = serviceHeaderHeight(maxWidth, compact)
         ServiceHero(
             spec = spec,
             status = status,
@@ -504,7 +504,7 @@ fun ServiceBanner(
             compact = compact,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(heroHeight),
+                .height(headerHeight),
             scene = { sceneModifier -> ServiceArtScene(spec, sceneModifier) },
         )
     }

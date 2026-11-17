@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -85,85 +86,48 @@ import kotlin.math.min
 import kotlin.math.sin
 
 /* ------------------------------------------------------------------ *
- * KNOUX AI Pro — service hero
+ * KNOUX AI Pro — compact service header
  *
- * Owner direction (17 Nov): the old small glass header and the tiny stag
- * are gone. Every service now opens on a full-bleed night stage: the
- * official neon stag stands on the right, the service instrument floats
- * on the left, both on a glowing floor under a nebula + aurora sky.
- *
- * The cover is fixed above the results. It is the only element carrying
- * the service identity, so the stag, title and instrument stay in place
- * while the operator reviews a long list.
+ * Owner direction (17 Nov, second pass): the intro Home screen is the
+ * reference. Every service opens on a short header now — the official
+ * stag floats behind the identity block, the service instrument sits in
+ * a small glass window, and the measured status ribbon stays readable.
+ * The results get the screen back.
  * ------------------------------------------------------------------ */
 
 /**
- * Height of the scrollable service hero. The whole service page now scrolls
- * like the Home screen, so the hero can be genuinely large instead of being
- * squeezed into the leftover viewport. On a 360dp phone it is 374dp; on a
- * 412dp phone it is ~427dp. The results and tools flow underneath it.
+ * Height of the compact service header. On a 360dp phone it is 176dp, so the
+ * header never behaves like a landing page. Landscape uses a shorter lane so
+ * the results list still has usable room.
  */
-internal fun serviceHeroHeight(maxWidth: Dp): Dp =
-    (maxWidth * 1.04f).coerceIn(340.dp, 430.dp)
+internal fun serviceHeaderHeight(maxWidth: Dp, compact: Boolean): Dp =
+    if (compact) 120.dp else (maxWidth * .49f).coerceIn(166.dp, 196.dp)
 
 /**
- * How much of a service hero the reader keeps on screen once the page scrolls.
- *
- * Board 00 asks for one permanent header per service: the top bar stays, the
- * hero never scrolls entirely away, only its inside moves. So the hero folds
- * from its full height down to a compact bar — the stag, the wordmark and the
- * sonar stay visible at a readable scale — and the fold is driven by the list
- * scroll offset, not by a timer.
- *
- * [full] is the hero height at rest, [compactHeight] the folded height, and
- * [remaining] the part of the hero still visible above the content. The
- * progress below is the 0..1 fold factor reversed: 0 fully open, 1 fully
- * folded. Never NaN, never negative.
+ * The stag owns the header height, with a width cap so the text keeps a safe
+ * lane. It is deliberately larger than the old 44dp badge: the owner asked for
+ * the stag to sit behind the header, not beside the title as a decoration.
  */
-internal fun serviceHeroFold(full: Dp, compactHeight: Dp, scrollOffsetPx: Float, density: Float): Float {
-    if (!scrollOffsetPx.isFinite() || density <= 0f) return 0f
-    val travelPx = (full - compactHeight).value * density
-    if (travelPx <= 0f) return 1f
-    return (scrollOffsetPx / travelPx).coerceIn(0f, 1f)
-}
+internal fun serviceStagSize(headerHeight: Dp, maxWidth: Dp): Dp =
+    minOf(headerHeight * .98f, maxWidth * .52f).coerceIn(104.dp, 194.dp)
 
-/** Hero height after folding: full height at rest, compact bar once folded. */
-internal fun foldedHeroHeight(full: Dp, compactHeight: Dp, fold: Float): Dp =
-    (full.value + (compactHeight.value - full.value) * fold.coerceIn(0f, 1f)).dp
-
-/**
- * The folded header keeps the service identity legible: at rest the hero shows
- * the full stage; while the reader scrolls, the stag and the instrument scale
- * with the fold but never disappear.
- */
-internal fun heroStageScale(fold: Float): Float =
-    (1f - .72f * fold.coerceIn(0f, 1f)).coerceIn(.28f, 1f)
-
-/**
- * Height of the stage lane (stag + instrument) inside the header. Open, it takes
- * the room left after the title block; folded, it keeps a fixed lane so the stag
- * and the radar still have their own space instead of being squeezed into a
- * 12dp strip behind the title. [narrow] covers the compact phones.
- */
-internal fun serviceStageHeight(compact: Boolean, available: Dp): Dp {
-    val floor = if (compact) 96.dp else 112.dp
-    return available.coerceAtLeast(0.dp).coerceAtMost(420.dp).coerceAtLeast(floor)
-}
-
-
-/** Title size that keeps every service name on one line without shrinking the hero. */
+/** Title size that keeps every service name readable inside the short header. */
 internal fun serviceTitleSize(titleLength: Int): Float = when {
-    titleLength <= 14 -> 28f
-    titleLength <= 21 -> 25f
-    titleLength <= 27 -> 22.5f
-    else -> 20.5f
+    titleLength <= 14 -> 27f
+    titleLength <= 21 -> 24f
+    titleLength <= 27 -> 21.5f
+    else -> 19.5f
 }
 
+/** Title size for the shorter landscape lane. */
+internal fun compactServiceTitleSize(titleLength: Int): Float =
+    serviceTitleSize(titleLength) - 2.5f
+
 /**
- * The shared service page. It follows the Home screen: one scrollable
- * LazyColumn under the app top bar, opening with a full-bleed hero and then
- * the measured results, cards and tool grid. Only the primary action stays
- * pinned so a running scan can always be cancelled.
+ * The shared service page. The compact header is fixed above the results; the
+ * list beneath it scrolls, so the stag and the live status never disappear.
+ * Only the primary action stays pinned so a running scan can always be
+ * cancelled.
  */
 @Composable
 fun FixedServiceScreen(
@@ -179,35 +143,11 @@ fun FixedServiceScreen(
 ) {
     BoxWithConstraints(modifier.fillMaxSize()) {
         val compact = maxHeight < 560.dp || maxWidth < 340.dp
-        val heroHeight = serviceHeroHeight(maxWidth)
-        val settledHeight = (heroHeight * .55f).coerceAtLeast(170.dp)
-        val density = LocalDensity.current
-        val motion = rememberMotionEnabled()
-
-        // Board 00 — "header ثابت أثناء التمرير". The header is not an item of
-        // the list: the list starts underneath it and the header folds from its
-        // full height down to a compact bar as the reader scrolls. Whatever the
-        // scroll position, the stag, the wordmark and the instrument stay on
-        // screen, and nothing above the list moves the content.
-        val scrollOffsetPx = listState.firstVisibleItemScrollOffset.toFloat()
-        val foldTarget = serviceHeroFold(heroHeight, settledHeight, scrollOffsetPx, density.density)
-        val fold by animateFloatAsState(
-            targetValue = foldTarget,
-            animationSpec = if (motion) tween(220) else snap(),
-            label = "serviceHeaderFold",
-        )
-        val visibleHeader = foldedHeroHeight(heroHeight, settledHeight, fold)
-        // The stage rises inside the header while it folds; the title, the
-        // wordmark and the live status line stay where they are, so the header
-        // never turns into an empty panel. The travel stops well before the top
-        // edge (-34dp) so the stag and the radar are never clipped away.
-        val stageTravel = ((heroHeight - settledHeight) * .55f - 34.dp).coerceAtLeast(0.dp)
-        val stageScroll = (stageTravel * fold).coerceIn(0.dp, heroHeight - visibleHeader)
-
+        val headerHeight = serviceHeaderHeight(maxWidth, compact)
         Column(
             Modifier
                 .fillMaxSize()
-                .testTag("service_header_fold_${"%.2f".format(fold)}"),
+                .testTag("service_header_fixed"),
         ) {
             ServiceHero(
                 spec = spec,
@@ -215,11 +155,9 @@ fun FixedServiceScreen(
                 statusColor = statusColor,
                 metric = metric,
                 compact = compact,
-                fold = fold,
-                stageScroll = stageScroll,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(visibleHeader)
+                    .height(headerHeight)
                     .testTag("service_fixed_cover"),
                 scene = scene,
             )
@@ -251,8 +189,10 @@ fun FixedServiceScreen(
 }
 
 /**
- * The full service hero used both as the fixed header (Deep Scan) and as the
- * scrolling banner on the other service pages.
+ * The compact service header used by every service page and by the fixed Deep
+ * Scan screen. The stag floats behind the identity block; the service
+ * instrument sits in a small glass window; the measured status ribbon is the
+ * only fixed strip and it never lies about a running scan.
  */
 @Composable
 fun ServiceHero(
@@ -262,8 +202,6 @@ fun ServiceHero(
     metric: String?,
     modifier: Modifier = Modifier,
     compact: Boolean = false,
-    fold: Float = 0f,
-    stageScroll: Dp = 0.dp,
     scene: @Composable (Modifier) -> Unit,
 ) {
     val motion = rememberMotionEnabled()
@@ -271,23 +209,36 @@ fun ServiceHero(
     LaunchedEffect(Unit) { entered = true }
     val revealAlpha by animateFloatAsState(
         targetValue = if (entered || !motion) 1f else 0f,
-        animationSpec = if (motion) tween(320) else snap(),
-        label = "serviceHeroAlpha",
+        animationSpec = if (motion) tween(380) else snap(),
+        label = "serviceHeaderAlpha",
     )
     val revealRise by animateFloatAsState(
-        targetValue = if (entered || !motion) 0f else 14f,
-        animationSpec = if (motion) tween(320) else snap(),
-        label = "serviceHeroRise",
+        targetValue = if (entered || !motion) 0f else 12f,
+        animationSpec = if (motion) tween(380) else snap(),
+        label = "serviceHeaderRise",
     )
-    val titleSize = (serviceTitleSize(spec.title.length) - if (compact) 2.5f else 0f).sp
-    val folded = fold.coerceIn(0f, 1f)
-    val wordmarkAlpha by animateFloatAsState(
-        targetValue = 1f - folded,
-        animationSpec = if (motion) tween(220) else snap(),
-        label = "serviceHeaderWordmark",
+    val transition = rememberInfiniteTransition(label = "serviceHeaderStage")
+    val float by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = if (motion) -5f else 0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(5200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "serviceStagFloat",
     )
+    val breath by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = if (motion) 1f else 0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(4300, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "serviceStagBreath",
+    )
+    val titleSize = (if (compact) compactServiceTitleSize(spec.title.length) else serviceTitleSize(spec.title.length)).sp
 
-    Box(
+    BoxWithConstraints(
         modifier
             .clip(
                 RoundedCornerShape(
@@ -306,8 +257,69 @@ fun ServiceHero(
                     )
                 )
             )
-            .drawBehind { HeroSky(spec) },
+            .drawBehind { CompactHeroSky(spec) }
+            .clipToBounds(),
     ) {
+        val stagSize = serviceStagSize(maxHeight, maxWidth)
+        val glowScale = 1.04f + breath * .035f
+
+        // The halo travels with the stag, so the mascot reads as one object
+        // instead of a cut-out pasted on the sky.
+        Box(
+            Modifier
+                .align(Alignment.BottomEnd)
+                .offset(x = 12.dp, y = 6.dp)
+                .size(stagSize * 1.25f)
+                .graphicsLayer {
+                    scaleX = glowScale
+                    scaleY = glowScale
+                    alpha = .70f + breath * .16f
+                }
+                .background(
+                    Brush.radialGradient(
+                        listOf(
+                            spec.accent2.copy(alpha = .34f),
+                            spec.accent.copy(alpha = .18f),
+                            Color.Transparent,
+                        ),
+                    ),
+                    CircleShape,
+                ),
+        )
+        Image(
+            painter = painterResource(R.drawable.knoux_stag_official),
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .offset(x = 10.dp, y = 8.dp)
+                .size(stagSize)
+                .graphicsLayer {
+                    translationY = float.dp.toPx()
+                    rotationZ = -1.2f + breath * .7f
+                    scaleX = .995f + breath * .012f
+                    scaleY = .995f + breath * .012f
+                    alpha = .96f
+                }
+                .testTag("service_cover_stag"),
+            contentScale = ContentScale.Fit,
+        )
+
+        // Text keeps the left lane bright while the stag stays visible on the
+        // right. The gradient is intentionally soft; the stag is a background
+        // layer, not a cropped card.
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.horizontalGradient(
+                        0f to V2Deep.copy(alpha = .90f),
+                        .42f to V2Deep.copy(alpha = .62f),
+                        .70f to V2Deep.copy(alpha = .16f),
+                        1f to Color.Transparent,
+                    )
+                ),
+        )
+
         Column(
             Modifier
                 .fillMaxSize()
@@ -315,138 +327,147 @@ fun ServiceHero(
                     alpha = revealAlpha
                     translationY = revealRise.dp.toPx()
                 }
-                .padding(horizontal = if (compact) 12.dp else 16.dp),
+                .padding(horizontal = if (compact) 12.dp else 14.dp)
+                .padding(top = if (compact) 8.dp else 10.dp, bottom = if (compact) 7.dp else 9.dp),
         ) {
-            Spacer(Modifier.height(if (compact) 9.dp else 12.dp))
-            // Wordmark row — the first thing board 00 shows inside the header.
-            // It fades out while the header folds, so the stag and the service
-            // instrument keep the room that the title used to take.
             Row(
-                Modifier
-                    .fillMaxWidth()
-                    .graphicsLayer { alpha = wordmarkAlpha }
-                    .testTag("service_cover_wordmark"),
-                horizontalArrangement = Arrangement.Center,
+                Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                // Small service instrument window. The same composable that
+                // used to fill the old hero is now a badge, so Deep Scan keeps
+                // its live radar without stealing the results area.
                 Box(
                     Modifier
-                        .size(width = 16.dp, height = 1.dp)
-                        .background(
-                            Brush.horizontalGradient(
-                                listOf(Color.Transparent, spec.accent2.copy(alpha = .85f))
-                            )
+                        .size(if (compact) 42.dp else 54.dp)
+                        .clip(RoundedCornerShape(if (compact) 13.dp else 16.dp))
+                        .background(Color.Black.copy(alpha = .30f))
+                        .border(
+                            1.dp,
+                            spec.accent.copy(alpha = .52f),
+                            RoundedCornerShape(if (compact) 13.dp else 16.dp),
                         ),
-                )
-                Spacer(Modifier.width(7.dp))
-                KText(
-                    "${spec.order} · ${spec.english}",
-                    size = if (compact) 6.8.sp else 7.6.sp,
-                    weight = FontWeight.Bold,
-                    color = spec.accent2,
-                    letterSpacing = 2.2.sp,
-                    maxLines = 1,
-                )
-                Spacer(Modifier.width(7.dp))
-                Box(
-                    Modifier
-                        .size(width = 16.dp, height = 1.dp)
-                        .background(
-                            Brush.horizontalGradient(
-                                listOf(spec.accent2.copy(alpha = .85f), Color.Transparent)
-                            )
-                        ),
-                )
+                    contentAlignment = Alignment.Center,
+                ) {
+                    scene(Modifier.fillMaxSize().padding(if (compact) 3.dp else 4.dp))
+                    Box(
+                        Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(3.dp)
+                            .size(if (compact) 13.dp else 15.dp)
+                            .clip(RoundedCornerShape(5.dp))
+                            .background(V2Deep.copy(alpha = .94f))
+                            .border(1.dp, spec.accent.copy(alpha = .66f), RoundedCornerShape(5.dp)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            spec.glyph,
+                            contentDescription = null,
+                            tint = spec.accent,
+                            modifier = Modifier.size(if (compact) 8.dp else 9.dp),
+                        )
+                    }
+                }
+                Spacer(Modifier.width(9.dp))
+                Column(Modifier.weight(1f)) {
+                    KText(
+                        "${spec.order} · ${spec.english}",
+                        size = if (compact) 6.6.sp else 7.4.sp,
+                        weight = FontWeight.Bold,
+                        color = spec.accent2,
+                        letterSpacing = 1.8.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Spacer(Modifier.height(1.dp))
+                    KText(
+                        if (spec.pro) "KNOUX AI · PRO" else "KNOUX AI",
+                        size = if (compact) 5.8.sp else 6.4.sp,
+                        weight = FontWeight.SemiBold,
+                        color = V2Muted,
+                        letterSpacing = 1.4.sp,
+                        maxLines = 1,
+                    )
+                }
+                if (spec.pro) {
+                    Box(
+                        Modifier
+                            .clip(RoundedCornerShape(50))
+                            .background(V2GoldText.copy(alpha = .16f))
+                            .border(1.dp, V2GoldText.copy(alpha = .50f), RoundedCornerShape(50))
+                            .padding(horizontal = 7.dp, vertical = 3.dp),
+                    ) {
+                        KText("PRO", size = 6.6.sp, weight = FontWeight.Black, color = V2GoldText)
+                    }
+                }
             }
-            Spacer(Modifier.height(if (compact) 2.dp else 3.dp))
-            KText(
-                spec.title,
-                size = titleSize,
-                weight = FontWeight.Black,
-                color = Color.White,
-                lineHeight = (titleSize.value * 1.16f).sp,
-                align = TextAlign.Center,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .semantics { heading() }
-                    .testTag("service_cover_title"),
-            )
-            // The folded bar stays light: the title remains, the tagline and the
-            // sub-line give their space back to the stage.
-            if (folded < .98f) {
-                Spacer(Modifier.height(2.dp))
+
+            Spacer(Modifier.weight(1f))
+
+            Column(
+                Modifier
+                    .fillMaxWidth(if (compact) .86f else .68f)
+                    .testTag("service_cover_title_block"),
+            ) {
                 KText(
-                    spec.tagline,
-                    size = if (compact) 10.sp else 11.5.sp,
-                    lineHeight = if (compact) 13.sp else 15.sp,
-                    color = V2Soft,
-                    align = TextAlign.Center,
-                    maxLines = 2,
+                    spec.title,
+                    size = titleSize,
+                    weight = FontWeight.Black,
+                    color = Color.White,
+                    lineHeight = (titleSize.value * 1.12f).sp,
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .graphicsLayer { alpha = 1f - folded }
-                        .padding(horizontal = 6.dp),
+                        .semantics { heading() }
+                        .testTag("service_cover_title"),
                 )
+                if (!compact) {
+                    Spacer(Modifier.height(2.dp))
+                    KText(
+                        spec.tagline,
+                        size = 9.sp,
+                        lineHeight = 12.sp,
+                        color = V2Soft.copy(alpha = .94f),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(end = 4.dp),
+                    )
+                }
             }
-            Spacer(Modifier.height(if (compact) 2.dp else 4.dp))
-            BoxWithConstraints(
-                Modifier
-                    .fillMaxWidth()
-                    .weight(1f),
-            ) {
-                // Folded bar: the stage keeps a small but readable lane of its
-                // own between the title and the live status line.
-                val stageHeight = serviceStageHeight(compact, maxHeight)
-                val stageScale = heroStageScale(folded)
-                HeroStage(
-                    spec = spec,
-                    compact = compact,
-                    motion = motion,
-                    stageScale = stageScale,
-                    scene = scene,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(stageHeight)
-                        .graphicsLayer { translationY = -stageScroll.toPx() }
-                        .clipToBounds(),
-                )
-            }
-            HeroStatusStrip(
+
+            Spacer(Modifier.height(if (compact) 4.dp else 6.dp))
+            HeroStatusRibbon(
                 status = status,
                 statusColor = statusColor,
                 metric = metric,
                 compact = compact,
-                collapsed = folded > .6f,
             )
         }
     }
 }
 
 /**
- * Cosmic night sky — deep space nebula with electric aurora ribbons,
- * crystalline star field, and glowing mountain silhouettes.
- * This is the full-bleed backdrop for the service hero: the stag stands
- * on the right peak, the instrument floats on the left, both under a
- * living sky that pulses with the service's accent colors.
+ * Short cosmic sky for the compact header. It keeps the Home/Deep Scan
+ * identity — nebula, aurora, star field, mountain ridge — but at a header
+ * scale where it reads as a live backdrop instead of a poster.
  */
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.HeroSky(spec: KnouxServiceSpec) {
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.CompactHeroSky(spec: KnouxServiceSpec) {
     val w = size.width
     val h = size.height
     val accent = spec.accent
     val accent2 = spec.accent2
     val gold = Color(0xFFFFD700)
 
-    // 1) Deep space base — layered radial nebulae
     drawRect(
         brush = Brush.verticalGradient(
             listOf(
                 Color(0xFF050210),
                 Color(0xFF0D0424),
                 Color(0xFF1A0638),
-                Color(0xFF0F0320),
+                Color(0xFF0C0322),
             ),
             startY = 0f,
             endY = h,
@@ -454,701 +475,210 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.HeroSky(spec: Knoux
         size = Size(w, h),
     )
 
-    // 2) Primary nebula cores — large soft glows in service colors
     drawCircle(
         brush = Brush.radialGradient(
-            listOf(
-                accent.copy(alpha = .28f),
-                accent.copy(alpha = .18f),
-                accent.copy(alpha = .06f),
-                Color.Transparent,
-            ),
-            center = Offset(w * .15f, h * .35f),
-            radius = w * .75f,
+            listOf(accent.copy(alpha = .26f), accent.copy(alpha = .08f), Color.Transparent),
+            center = Offset(w * .18f, h * .35f),
+            radius = w * .62f,
         ),
-        radius = w * .75f,
-        center = Offset(w * .15f, h * .35f),
+        radius = w * .62f,
+        center = Offset(w * .18f, h * .35f),
     )
-
     drawCircle(
         brush = Brush.radialGradient(
-            listOf(
-                accent2.copy(alpha = .24f),
-                accent2.copy(alpha = .14f),
-                accent2.copy(alpha = .04f),
-                Color.Transparent,
-            ),
-            center = Offset(w * .85f, h * .25f),
-            radius = w * .65f,
+            listOf(accent2.copy(alpha = .24f), accent2.copy(alpha = .07f), Color.Transparent),
+            center = Offset(w * .86f, h * .28f),
+            radius = w * .56f,
         ),
-        radius = w * .65f,
-        center = Offset(w * .85f, h * .25f),
+        radius = w * .56f,
+        center = Offset(w * .86f, h * .28f),
     )
-
-    // 3) Gold accent nebula (PRO identity) — top center crown glow
     drawCircle(
         brush = Brush.radialGradient(
-            listOf(
-                gold.copy(alpha = .18f),
-                gold.copy(alpha = .08f),
-                Color.Transparent,
-            ),
-            center = Offset(w * .5f, h * .15f),
-            radius = w * .55f,
+            listOf(gold.copy(alpha = .12f), Color.Transparent),
+            center = Offset(w * .52f, h * .08f),
+            radius = w * .40f,
         ),
-        radius = w * .55f,
-        center = Offset(w * .5f, h * .15f),
+        radius = w * .40f,
+        center = Offset(w * .52f, h * .08f),
     )
 
-    // 4) Electric aurora ribbons — sweeping energy trails
-    val aurora1 = Path().apply {
-        moveTo(-w * .2f, h * .65f)
-        cubicTo(w * .15f, h * .25f, w * .45f, h * .85f, w * .7f, h * .55f)
-        cubicTo(w * .9f, h * .35f, w * 1.1f, h * .7f, w * 1.3f, h * .45f)
+    // Soft aurora ribbon.
+    val aurora = Path().apply {
+        moveTo(-w * .1f, h * .62f)
+        cubicTo(w * .18f, h * .30f, w * .46f, h * .86f, w * .72f, h * .54f)
+        cubicTo(w * .90f, h * .34f, w * 1.05f, h * .64f, w * 1.2f, h * .44f)
     }
     drawPath(
-        aurora1,
+        aurora,
         brush = Brush.linearGradient(
             listOf(
                 Color.Transparent,
-                accent.copy(alpha = .35f),
-                accent2.copy(alpha = .45f),
-                gold.copy(alpha = .25f),
-                accent2.copy(alpha = .35f),
+                accent.copy(alpha = .30f),
+                accent2.copy(alpha = .38f),
+                gold.copy(alpha = .20f),
                 Color.Transparent,
             ),
-            start = Offset(0f, h * .65f),
-            end = Offset(w, h * .45f),
+            start = Offset(0f, h * .62f),
+            end = Offset(w, h * .44f),
         ),
-        style = Stroke(width = w * .18f, cap = StrokeCap.Round),
+        style = Stroke(width = h * .24f, cap = StrokeCap.Round),
     )
     drawPath(
-        aurora1,
+        aurora,
         brush = Brush.linearGradient(
             listOf(
                 Color.Transparent,
-                Color.White.copy(alpha = .6f),
-                accent.copy(alpha = .8f),
-                Color.White.copy(alpha = .4f),
+                Color.White.copy(alpha = .32f),
+                accent.copy(alpha = .48f),
                 Color.Transparent,
             ),
-            start = Offset(0f, h * .65f),
-            end = Offset(w, h * .45f),
         ),
-        style = Stroke(width = w * .025f, cap = StrokeCap.Round),
+        style = Stroke(width = 1.2.dp.toPx(), cap = StrokeCap.Round),
     )
 
-    val aurora2 = Path().apply {
-        moveTo(-w * .1f, h * .85f)
-        cubicTo(w * .2f, h * .55f, w * .55f, h * .95f, w * .8f, h * .65f)
-        cubicTo(w * 1.0f, h * .45f, w * 1.2f, h * .8f, w * 1.4f, h * .55f)
-    }
-    drawPath(
-        aurora2,
-        brush = Brush.linearGradient(
-            listOf(
-                Color.Transparent,
-                accent2.copy(alpha = .28f),
-                accent.copy(alpha = .35f),
-                Color.Transparent,
-            ),
-            start = Offset(0f, h * .85f),
-            end = Offset(w, h * .55f),
-        ),
-        style = Stroke(width = w * .14f, cap = StrokeCap.Round),
-    )
-
-    // 5) Crystalline star field — deterministic, multi-layer depth
-    data class StarLayer(val count: Int, val baseAlpha: Float, val sizeMul: Float, val yMul: Float)
-    val starLayers = listOf(
-        StarLayer(40, 0.9f, 1.4f, 0.75f),  // Bright foreground stars
-        StarLayer(60, 0.55f, 1.0f, 0.85f), // Mid stars
-        StarLayer(80, 0.3f, 0.7f, 0.95f)   // Distant stars
-    )
-    for ((idx, layer) in starLayers.withIndex()) {
-        val count = layer.count
-        val baseAlpha = layer.baseAlpha
-        val sizeMul = layer.sizeMul
-        val yMul = layer.yMul
-        for (i in 0 until count) {
-            val x = ((i * 97 + 13 + idx * 31) % 101) / 101f
-            val y = ((i * 61 + 19 + idx * 17) % 97) / 97f
-            val r = (.4f + ((i * 37 + idx * 11) % 8) / 8f * 1.2f) * sizeMul
-            val twinkle = ((i * 13 + idx * 7) % 5) / 5f * 0.4f
-            drawCircle(
-                color = Color.White.copy(alpha = (baseAlpha + twinkle).coerceAtMost(1f)),
-                radius = r.dp.toPx(),
-                center = Offset(x * w, y * h * yMul),
-            )
-            // Star cross glints on brightest layer
-            if (idx == 0 && i % 7 == 0) {
-                val glintLen = (r * 2.5f).dp.toPx()
-                drawLine(
-                    color = Color.White.copy(alpha = .7f),
-                    start = Offset(x * w - glintLen, y * h * yMul),
-                    end = Offset(x * w + glintLen, y * h * yMul),
-                    strokeWidth = 0.5.dp.toPx(),
-                )
-                drawLine(
-                    color = Color.White.copy(alpha = .7f),
-                    start = Offset(x * w, y * h * yMul - glintLen),
-                    end = Offset(x * w, y * h * yMul + glintLen),
-                    strokeWidth = 0.5.dp.toPx(),
-                )
-            }
-        }
+    // Deterministic stars — small enough not to compete with the title.
+    for (i in 0 until 34) {
+        val x = ((i * 67 + 11) % 101) / 101f
+        val y = ((i * 43 + 7) % 97) / 97f
+        val r = (.35f + ((i * 19) % 7) / 7f * .8f).dp.toPx()
+        val alpha = .22f + ((i * 13) % 5) / 5f * .40f
+        drawCircle(Color.White.copy(alpha = alpha), r, Offset(x * w, y * h))
     }
 
-    // 6) Glowing mountain ridge — silhouetted peaks with neon rim light
+    // Mountain ridge, matching the reference silhouette.
     val ridge = Path().apply {
         moveTo(0f, h)
-        lineTo(0f, h * .78f)
-        lineTo(w * .08f, h * .62f)
-        lineTo(w * .18f, h * .75f)
-        lineTo(w * .32f, h * .55f)
-        lineTo(w * .44f, h * .72f)
-        lineTo(w * .58f, h * .58f)
-        lineTo(w * .7f, h * .76f)
-        lineTo(w * .85f, h * .52f)
-        lineTo(w * .95f, h * .7f)
-        lineTo(w, h * .65f)
+        lineTo(0f, h * .82f)
+        lineTo(w * .10f, h * .66f)
+        lineTo(w * .23f, h * .80f)
+        lineTo(w * .38f, h * .60f)
+        lineTo(w * .52f, h * .78f)
+        lineTo(w * .66f, h * .63f)
+        lineTo(w * .80f, h * .80f)
+        lineTo(w * .92f, h * .67f)
+        lineTo(w, h * .74f)
         lineTo(w, h)
         close()
     }
-    // Mountain base fill
     drawPath(
         ridge,
         brush = Brush.verticalGradient(
-            listOf(
-                Color(0xFF1A0A3A).copy(alpha = .95f),
-                Color(0xFF0A0318).copy(alpha = .98f),
-            ),
-            startY = h * .5f,
+            listOf(Color(0xFF1B0A3C).copy(alpha = .90f), Color(0xFF080214).copy(alpha = .98f)),
+            startY = h * .55f,
             endY = h,
         ),
     )
-    // Neon rim light on ridge peaks
-    val rimPath = Path().apply {
-        moveTo(0f, h * .78f)
-        lineTo(w * .08f, h * .62f)
-        lineTo(w * .18f, h * .75f)
-        lineTo(w * .32f, h * .55f)
-        lineTo(w * .44f, h * .72f)
-        lineTo(w * .58f, h * .58f)
-        lineTo(w * .7f, h * .76f)
-        lineTo(w * .85f, h * .52f)
-        lineTo(w * .95f, h * .7f)
-        lineTo(w, h * .65f)
+    val rim = Path().apply {
+        moveTo(0f, h * .82f)
+        lineTo(w * .10f, h * .66f)
+        lineTo(w * .23f, h * .80f)
+        lineTo(w * .38f, h * .60f)
+        lineTo(w * .52f, h * .78f)
+        lineTo(w * .66f, h * .63f)
+        lineTo(w * .80f, h * .80f)
+        lineTo(w * .92f, h * .67f)
+        lineTo(w, h * .74f)
     }
     drawPath(
-        rimPath,
+        rim,
         brush = Brush.linearGradient(
-            listOf(
-                accent.copy(alpha = .6f),
-                accent2.copy(alpha = .7f),
-                gold.copy(alpha = .5f),
-                accent2.copy(alpha = .6f),
-                accent.copy(alpha = .5f),
-            ),
+            listOf(accent.copy(alpha = .55f), accent2.copy(alpha = .62f), gold.copy(alpha = .42f), accent2.copy(alpha = .48f)),
         ),
-        style = Stroke(width = 2.5.dp.toPx(), cap = StrokeCap.Round),
-    )
-    // Inner glow line
-    drawPath(
-        rimPath,
-        color = Color.White.copy(alpha = .35f),
-        style = Stroke(width = 0.8.dp.toPx(), cap = StrokeCap.Round),
+        style = Stroke(width = 1.4.dp.toPx(), cap = StrokeCap.Round),
     )
 
-    // 7) Energy scan lines — subtle horizontal beams across the sky
-    for (i in 0 until 4) {
-        val y = h * (0.18f + i * 0.18f)
-        val alpha = 0.04f + (i % 2) * 0.03f
-        drawRect(
-            brush = Brush.horizontalGradient(
-                listOf(
-                    Color.Transparent,
-                    accent.copy(alpha = alpha),
-                    accent2.copy(alpha = alpha * 1.5f),
-                    Color.Transparent,
-                ),
-            ),
-            topLeft = Offset(0f, y),
-            size = Size(w, 1.5.dp.toPx()),
-        )
-    }
-
-    // 8) Top edge highlight — joins hero to status bar
-    drawRect(
-        brush = Brush.verticalGradient(
-            listOf(
-                Color.White.copy(alpha = .12f),
-                accent.copy(alpha = .06f),
-                Color.Transparent,
-            ),
-            startY = 0f,
-            endY = h * .08f,
-        ),
-        size = Size(w, h * .08f),
-    )
-
-    // 9) Bottom floor glow preview — hints at the stage floor
-    val floorY = h * .88f
+    // Floor glow under the stag.
     drawOval(
         brush = Brush.radialGradient(
-            listOf(
-                accent.copy(alpha = .22f),
-                accent2.copy(alpha = .12f),
-                Color.Transparent,
-            ),
-            center = Offset(w * .5f, floorY),
-            radius = w * .55f,
+            listOf(accent2.copy(alpha = .26f), accent.copy(alpha = .10f), Color.Transparent),
+            center = Offset(w * .82f, h * .94f),
+            radius = w * .38f,
         ),
-        topLeft = Offset(w * .05f, floorY - h * .08f),
-        size = Size(w * .9f, h * .18f),
+        topLeft = Offset(w * .48f, h * .82f),
+        size = Size(w * .52f, h * .18f),
+    )
+
+    drawRect(
+        brush = Brush.verticalGradient(
+            listOf(Color.White.copy(alpha = .10f), Color.Transparent),
+            startY = 0f,
+            endY = h * .09f,
+        ),
+        size = Size(w, h * .09f),
     )
 }
 
 @Composable
-private fun HeroStage(
-    spec: KnouxServiceSpec,
-    compact: Boolean,
-    motion: Boolean,
-    scene: @Composable (Modifier) -> Unit,
-    modifier: Modifier = Modifier,
-    stageScale: Float = 1f,
-) {
-    val transition = rememberInfiniteTransition(label = "heroStage")
-    val float by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = if (motion) -6f else 0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(5200, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "heroStagFloat",
-    )
-    // Pulse glow for the stag's energy field
-    val pulse by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = if (motion) 1f else 0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(3000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse,
-        ),
-        label = "heroStagPulse",
-    )
-    // Orbiting energy ring around stag
-    val orbit by transition.animateFloat(
-        initialValue = 0f,
-        targetValue = if (motion) 360f else 0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(20000, easing = LinearEasing),
-        ),
-        label = "heroStagOrbit",
-    )
-
-    BoxWithConstraints(modifier) {
-        val stageHeight = maxHeight
-        // Stag is now MASSIVE - takes up ~70% of stage height, prominent on right
-        val stagHeight = (stageHeight * .75f).coerceAtMost(320.dp).coerceAtLeast(200.dp)
-        // Instrument on left - substantial but not overwhelming
-        val instrument = (stageHeight * .55f)
-            .coerceAtMost(maxWidth * .42f)
-            .coerceAtMost(200.dp)
-            .coerceAtLeast(120.dp)
-        val scale = stageScale.coerceIn(.25f, 1f)
-        val accent = spec.accent
-        val accent2 = spec.accent2
-        val gold = Color(0xFFFFD700)
-        // Width/height for layout calculations (available in BoxWithConstraints scope)
-        val w = maxWidth.value.toFloat()
-        val h = maxHeight.value.toFloat()
-        val floorY = h * .92f
-        val stagX = w * .78f
-        val stagY = h * .42f
-        val instrumentX = w * .18f
-
-        Canvas(Modifier.fillMaxSize()) {
-
-            // ===== FLOOR: Deep glowing platform with concentric neon rings =====
-            // Base floor glow - large radial
-            drawOval(
-                brush = Brush.radialGradient(
-                    listOf(
-                        accent.copy(alpha = .45f),
-                        accent2.copy(alpha = .25f),
-                        gold.copy(alpha = .12f),
-                        Color.Transparent,
-                    ),
-                    center = Offset(w * .5f, floorY),
-                    radius = w * .65f,
-                ),
-                topLeft = Offset(w * .02f, floorY - h * .12f),
-                size = Size(w * .96f, h * .22f),
-            )
-
-            // Concentric neon rings on floor - animated pulse
-            for (i in 0 until 5) {
-                val ringPulse = (pulse * 0.3f + i * 0.2f) % 1f
-                val ringAlpha = (0.5f - ringPulse * 0.35f).coerceIn(0.08f, 0.5f)
-                val ringInset = w * (.04f + i * .045f)
-                val ringColor = when (i % 3) {
-                    0 -> accent
-                    1 -> accent2
-                    else -> gold
-                }
-                drawOval(
-                    color = ringColor.copy(alpha = ringAlpha),
-                    topLeft = Offset(ringInset, floorY - h * (.015f + i * .006f)),
-                    size = Size(w - ringInset * 2f, h * (.045f + i * .01f)),
-                    style = Stroke(width = (1.8f + pulse * 1.2f).dp.toPx(), cap = StrokeCap.Round),
-                )
-            }
-
-            // Inner bright core ring
-            drawOval(
-                color = Color.White.copy(alpha = .25f + pulse * .15f),
-                topLeft = Offset(w * .12f, floorY - h * .025f),
-                size = Size(w * .76f, h * .06f),
-                style = Stroke(width = 1.2.dp.toPx(), cap = StrokeCap.Round),
-            )
-
-            // ===== LEFT SIDE: Energy beam rising under instrument =====
-            drawRect(
-                brush = Brush.verticalGradient(
-                    listOf(
-                        Color.Transparent,
-                        accent.copy(alpha = .18f + pulse * .1f),
-                        accent2.copy(alpha = .12f + pulse * .08f),
-                        Color.Transparent,
-                    ),
-                ),
-                topLeft = Offset(instrumentX - w * .08f, h * .08f),
-                size = Size(w * .16f, h * .82f),
-            )
-
-            // Particle sparkles rising in beam
-            if (motion) {
-                for (i in 0 until 12) {
-                    val sparkY = h * (.15f + (i * 7.3f % 100) / 100f * .7f + (pulse * 0.3f) % 1f * .1f)
-                    val sparkX = instrumentX + (w * .06f * cos((i * 31 + pulse * 100) * PI / 180)).toFloat()
-                    val sparkAlpha = (.3f + (i * 17 % 10) / 10f * .5f) * (1f - (sparkY - h * .15f) / (h * .7f))
-                    drawCircle(
-                        color = Color.White.copy(alpha = sparkAlpha),
-                        radius = (1.2f + (i % 3) * 0.8f).dp.toPx(),
-                        center = Offset(sparkX, sparkY),
-                    )
-                }
-            }
-
-            // ===== RIGHT SIDE: Stag's energy halo & orbiting ring =====
-
-            // Large pulsing halo behind stag
-            drawCircle(
-                brush = Brush.radialGradient(
-                    listOf(
-                        accent2.copy(alpha = .35f + pulse * .15f),
-                        accent.copy(alpha = .22f + pulse * .1f),
-                        gold.copy(alpha = .1f + pulse * .05f),
-                        Color.Transparent,
-                    ),
-                    center = Offset(stagX, stagY),
-                    radius = w * .42f,
-                ),
-                radius = w * .42f,
-                center = Offset(stagX, stagY),
-            )
-
-            // Secondary tighter halo
-            drawCircle(
-                brush = Brush.radialGradient(
-                    listOf(
-                        Color.White.copy(alpha = .18f + pulse * .1f),
-                        accent2.copy(alpha = .12f),
-                        Color.Transparent,
-                    ),
-                    center = Offset(stagX, stagY),
-                    radius = w * .28f,
-                ),
-                radius = w * .28f,
-                center = Offset(stagX, stagY),
-            )
-
-            // Orbiting energy ring around stag position
-            val orbitRadius = w * .22f
-            val orbitAngle = orbit * PI / 180f
-            val orbitX = stagX + (orbitRadius * cos(orbitAngle)).toFloat()
-            val orbitY = stagY + (orbitRadius * sin(orbitAngle)).toFloat()
-            drawCircle(
-                color = Color.White.copy(alpha = .6f),
-                radius = 3.dp.toPx(),
-                center = Offset(orbitX, orbitY),
-            )
-            // Orbit trail
-            drawCircle(
-                color = accent.copy(alpha = .25f),
-                radius = orbitRadius,
-                center = Offset(stagX, stagY),
-                style = Stroke(width = 1.5.dp.toPx(), cap = StrokeCap.Round),
-            )
-
-            // Energy crosshair at stag center
-            val crossLen = (w * .15f).dp.toPx()
-            drawLine(
-                color = accent.copy(alpha = .4f),
-                start = Offset(stagX - crossLen, stagY),
-                end = Offset(stagX + crossLen, stagY),
-                strokeWidth = 1.5.dp.toPx(),
-                cap = StrokeCap.Round,
-            )
-            drawLine(
-                color = accent2.copy(alpha = .4f),
-                start = Offset(stagX, stagY - crossLen),
-                end = Offset(stagX, stagY + crossLen),
-                strokeWidth = 1.5.dp.toPx(),
-                cap = StrokeCap.Round,
-            )
-
-            // ===== CONTACT SHADOWS =====
-            // Stag shadow
-            drawOval(
-                color = Color.Black.copy(alpha = .5f),
-                topLeft = Offset(stagX - w * .18f, floorY - h * .03f),
-                size = Size(w * .36f, h * .06f),
-            )
-            // Instrument shadow
-            drawOval(
-                color = Color.Black.copy(alpha = .35f),
-                topLeft = Offset(instrumentX - w * .08f, floorY - h * .025f),
-                size = Size(w * .16f, h * .05f),
-            )
-
-            // ===== SCAN LINES across stage =====
-            for (i in 0 until 3) {
-                val y = h * (0.25f + i * 0.22f)
-                drawLine(
-                    color = accent.copy(alpha = .06f),
-                    start = Offset(w * .05f, y),
-                    end = Offset(w * .95f, y),
-                    strokeWidth = 0.5.dp.toPx(),
-                )
-            }
-        }
-
-        // ===== STAG: Massive, prominent, glowing =====
-        val stagEndPadding = (w * .02f).dp
-        val stagHeightScaled = (stagHeight.value * scale).dp
-        Box(
-            Modifier
-                .align(Alignment.BottomEnd)
-                .padding(end = stagEndPadding)
-                .height(stagHeightScaled)
-                .aspectRatio(1f)
-                .graphicsLayer {
-                    translationY = float.dp.toPx()
-                    translationX = (1f - scale) * 12.dp.toPx()
-                }
-                .testTag("service_cover_stag"),
-        ) {
-            // Stag with intense glow layers
-            Box(Modifier.fillMaxSize()) {
-                // Outer glow aura
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .graphicsLayer {
-                            // Pulsing scale for breathing effect
-                            val breathScale = 1f + pulse * 0.02f
-                            scaleX = breathScale
-                            scaleY = breathScale
-                        }
-                        .background(
-                            Brush.radialGradient(
-                                listOf(
-                                    accent2.copy(alpha = .25f + pulse * .15f),
-                                    accent.copy(alpha = .15f + pulse * .1f),
-                                    Color.Transparent,
-                                ),
-                                center = Offset.Unspecified,
-                                radius = 0.7f,
-                            )
-                        )
-                        .clip(CircleShape),
-                )
-                // Actual stag image
-                V2DeerHeader(Modifier.fillMaxSize(), animated = motion)
-            }
-        }
-
-        // ===== INSTRUMENT: Service scanner/radar on left =====
-        val instrumentStartPadding = (w * .03f).dp
-        val instrumentSizeScaled = (instrument.value * scale).dp
-        Box(
-            Modifier
-                .align(Alignment.BottomStart)
-                .padding(start = instrumentStartPadding, bottom = if (compact) 4.dp else 8.dp)
-                .size(instrumentSizeScaled)
-                .testTag("service_scene"),
-        ) {
-            Box(Modifier.fillMaxSize()) {
-                // Instrument base glow
-                Box(
-                    Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.radialGradient(
-                                listOf(
-                                    accent.copy(alpha = .2f + pulse * .1f),
-                                    accent2.copy(alpha = .12f),
-                                    Color.Transparent,
-                                ),
-                                center = Offset.Unspecified,
-                                radius = 0.8f,
-                            )
-                        )
-                        .clip(CircleShape)
-                        .graphicsLayer {
-                            // Subtle rotation hint
-                            rotationZ = (pulse * 2f - 1f) * 1.5f
-                        },
-                )
-                scene(Modifier.fillMaxSize().padding(8.dp))
-            }
-        }
-    }
-}
-
-@Composable
-private fun HeroStatusStrip(
+private fun HeroStatusRibbon(
     status: String,
     statusColor: Color,
     metric: String?,
     compact: Boolean,
-    collapsed: Boolean = false,
-    modifier: Modifier = Modifier,
 ) {
-    // The live status line is the one element that must never be folded away:
-    // while a scan runs, "جاري الفحص · 3 من 6" stays readable in the folded bar.
-    val live = collapsed
     val motion = rememberMotionEnabled()
-    val pulse by rememberInfiniteTransition(label = "statusPulse").animateFloat(
+    val pulse by rememberInfiniteTransition(label = "serviceStatusPulse").animateFloat(
         initialValue = 0f,
-        targetValue = if (motion && live) 1f else 0f,
+        targetValue = if (motion) 1f else 0f,
         animationSpec = infiniteRepeatable(
             animation = tween(1200, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse,
         ),
     )
-
-    Column(modifier.fillMaxWidth()) {
-        // Neon divider line
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(if (compact) 9.dp else 10.dp))
+            .background(Color.Black.copy(alpha = .40f))
+            .border(
+                1.dp,
+                statusColor.copy(alpha = .28f + pulse * .16f),
+                RoundedCornerShape(if (compact) 9.dp else 10.dp),
+            )
+            .padding(horizontal = if (compact) 8.dp else 10.dp, vertical = if (compact) 4.dp else 5.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Box(
             Modifier
-                .fillMaxWidth()
-                .height(1.5.dp)
-                .background(
-                    Brush.horizontalGradient(
-                        listOf(
-                            Color.Transparent,
-                            statusColor.copy(alpha = .6f + pulse * .3f),
-                            statusColor.copy(alpha = .8f + pulse * .2f),
-                            statusColor.copy(alpha = .6f + pulse * .3f),
-                            Color.Transparent,
-                        ),
-                    ),
-                ),
-        )
-        // Status bar with glassmorphism + neon border
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            Color.Black.copy(alpha = if (live) .55f else .4f),
-                            Color(0xFF0A0318).copy(alpha = if (live) .65f else .5f),
-                        ),
-                    ),
-                )
-                .border(
-                    1.dp,
-                    Brush.horizontalGradient(
-                        listOf(
-                            Color.Transparent,
-                            statusColor.copy(alpha = .7f + pulse * .3f),
-                            statusColor.copy(alpha = .9f + pulse * .1f),
-                            statusColor.copy(alpha = .7f + pulse * .3f),
-                            Color.Transparent,
-                        ),
-                    ),
-                    RoundedCornerShape(0.dp),
-                )
-                .padding(horizontal = if (compact) 12.dp else 16.dp, vertical = if (compact) 6.dp else 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            // Live indicator dot with pulse
-            Box(
-                Modifier
-                    .size(if (compact) 7.dp else 9.dp)
-                    .clip(CircleShape)
-                    .background(statusColor)
-                    .graphicsLayer {
-                        val s = 1f + pulse * 0.3f
-                        scaleX = s
-                        scaleY = s
-                        alpha = 0.7f + pulse * 0.3f
-                    },
-            )
-            Spacer(Modifier.width(8.dp))
-            KText(
-                status,
-                size = when {
-                    live -> 9.5.sp
-                    compact -> 8.sp
-                    else -> 8.8.sp
+                .size(if (compact) 6.dp else 7.dp)
+                .clip(CircleShape)
+                .background(statusColor)
+                .graphicsLayer {
+                    val s = 1f + pulse * .22f
+                    scaleX = s
+                    scaleY = s
+                    alpha = .78f + pulse * .22f
                 },
-                weight = FontWeight.Bold,
-                color = statusColor.copy(alpha = 1f),
+        )
+        Spacer(Modifier.width(7.dp))
+        KText(
+            status,
+            size = if (compact) 8.sp else 8.8.sp,
+            weight = FontWeight.Bold,
+            color = statusColor,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Spacer(Modifier.weight(1f))
+        Box(
+            Modifier
+                .padding(start = 8.dp)
+                .clip(RoundedCornerShape(50))
+                .background(statusColor.copy(alpha = .12f))
+                .padding(horizontal = 8.dp, vertical = 2.dp),
+        ) {
+            KText(
+                metric ?: "قراءة محلية",
+                size = if (compact) 6.8.sp else 7.4.sp,
+                weight = FontWeight.SemiBold,
+                color = statusColor.copy(alpha = .95f),
                 maxLines = 1,
-                letterSpacing = 0.3.sp,
+                overflow = TextOverflow.Ellipsis,
             )
-            Spacer(Modifier.weight(1f))
-            // Metric in neon accent color
-            Box(
-                Modifier
-                    .padding(horizontal = 10.dp, vertical = 3.dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(
-                                Color.Transparent,
-                                statusColor.copy(alpha = .18f),
-                                Color.Transparent,
-                            ),
-                        ),
-                    )
-                    .border(
-                        1.dp,
-                        statusColor.copy(alpha = .4f + pulse * .2f),
-                        RoundedCornerShape(8.dp),
-                    ),
-            ) {
-                KText(
-                    metric ?: "قراءة محلية",
-                    size = when {
-                        live -> 8.8.sp
-                        compact -> 7.5.sp
-                        else -> 8.2.sp
-                    },
-                    weight = FontWeight.SemiBold,
-                    color = statusColor.copy(alpha = .95f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
         }
     }
 }
+
 
 /* ------------------------------------------------------------------ *
  * Service instrument scene

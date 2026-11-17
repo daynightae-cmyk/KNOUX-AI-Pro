@@ -237,6 +237,15 @@ fun V2CleanToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
                         metric = metric,
                     )
                 }
+                item {
+                    ServiceVisualDeck(
+                        section = "smartclean",
+                        facts = facts,
+                        accent = V2Cyan,
+                        accent2 = V2Pink,
+                        history = history,
+                    )
+                }
                 when (tool.route) {
                     "clean-scope" -> scopeItems(facts, navigate)
                     "clean-scan" -> scanItems(facts, navigate)
@@ -415,10 +424,8 @@ private fun androidx.compose.foundation.lazy.LazyListScope.previewItems(facts: D
     } else {
         facts.media.largestFiles.take(10).forEach { file ->
             item {
-                CleanFileRow(
-                    title = file.name,
-                    subtitle = file.bucket ?: if (file.isVideo) "فيديو" else "صورة",
-                    size = formatBytes(file.sizeBytes),
+                ServiceFileCard(
+                    file = file,
                     accent = if (file.isVideo) V2Pink else V2Violet,
                 )
             }
@@ -471,17 +478,10 @@ private fun androidx.compose.foundation.lazy.LazyListScope.selectionItems(facts:
     } else {
         facts.media.duplicateGroups.take(6).forEach { group ->
             item {
-                V2GlassCard(Modifier.fillMaxWidth(), padding = 10.dp, radius = 16.dp, glow = V2Violet, borderAlpha = .26f) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        V2IconTile(if (group.isVideo) Icons.Rounded.Layers else Icons.Rounded.Image, V2Violet, size = 34.dp, iconSize = 17.dp)
-                        Spacer(Modifier.width(8.dp))
-                        Column(Modifier.weight(1f)) {
-                            KText(group.name, size = 9.2.sp, weight = FontWeight.Bold, maxLines = 1)
-                            KText("${group.count} نسخة · ${formatBytes(group.sizeBytes)} لكل ملف", size = 7.2.sp, color = V2Soft)
-                        }
-                        KText(formatBytes(group.reclaimableBytes), size = 8.4.sp, weight = FontWeight.Bold, color = V2Pink)
-                    }
-                }
+                ServiceGroupCard(
+                    group = group,
+                    accent = V2Violet,
+                )
             }
         }
     }
@@ -627,10 +627,8 @@ private fun androidx.compose.foundation.lazy.LazyListScope.largeItems(
         }
         else -> facts.media.largestFiles.take(8).forEach { file ->
             item {
-                CleanFileRow(
-                    title = file.name,
-                    subtitle = file.bucket ?: if (file.isVideo) "فيديو" else "صورة",
-                    size = formatBytes(file.sizeBytes),
+                ServiceFileCard(
+                    file = file,
                     accent = if (file.isVideo) V2Pink else V2Violet,
                 )
             }

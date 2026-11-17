@@ -930,7 +930,7 @@ private fun RealDuplicateGroupCard(
                     val isKeeper = index == 0
                     val itemSelected = selected.contains(uri)
                     Box(Modifier.weight(1f).height(72.dp)) {
-                        MediaThumb(
+                        V2MediaThumb(
                             uri = uri,
                             isVideo = group.isVideo,
                             accent = accent,
@@ -978,7 +978,7 @@ private fun RealDuplicateGroupCard(
 }
 
 @Composable
-private fun MediaThumb(
+internal fun V2MediaThumb(
     uri: String,
     isVideo: Boolean,
     accent: Color,

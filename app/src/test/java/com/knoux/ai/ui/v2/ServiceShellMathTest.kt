@@ -8,40 +8,52 @@ import org.junit.Test
 class ServiceShellMathTest {
 
     @Test
-    fun heroHeight_givesRealRoomAt360dp() {
-        // On a 360dp phone the hero is 374dp, leaving ~286dp for results + CTA.
-        val height = serviceHeroHeight(maxWidth = 360.dp)
-        assertTrue("360dp hero must be ~374dp, was $height", height in 370.dp..379.dp)
-        assertTrue("360dp hero must leave room for results, was $height", 660.dp - height >= 250.dp)
+    fun headerHeight_staysCompactAt360dp() {
+        // On a 360dp phone the Home-style header is 176dp; results get the rest.
+        val height = serviceHeaderHeight(maxWidth = 360.dp, compact = false)
+        assertTrue("360dp header must be ~176dp, was $height", height in 166.dp..196.dp)
+        assertTrue("360dp header must leave the results screen, was $height", 800.dp - height >= 600.dp)
     }
 
     @Test
-    fun heroHeight_keepsResultsReachableAt320dp() {
-        val height = serviceHeroHeight(maxWidth = 320.dp)
-        assertTrue("320dp hero clamps to minimum 340dp, was $height", height >= 340.dp)
-        assertTrue("320dp window keeps a usable list", 520.dp - height >= 150.dp)
+    fun headerHeight_keepsResultsReachableAt320dp() {
+        val height = serviceHeaderHeight(maxWidth = 320.dp, compact = false)
+        assertTrue("320dp header clamps to the 166dp minimum, was $height", height >= 166.dp)
+        assertTrue("320dp window keeps a usable list", 640.dp - height >= 450.dp)
     }
 
     @Test
-    fun heroHeight_scalesUpOnWidePhones() {
-        val height = serviceHeroHeight(maxWidth = 412.dp)
-        assertTrue("412dp hero must be ~428dp, was $height", height in 420.dp..430.dp)
-        assertTrue("412dp hero must never exceed 430dp, was $height", height <= 430.dp)
+    fun headerHeight_scalesUpOnWidePhones() {
+        val height = serviceHeaderHeight(maxWidth = 412.dp, compact = false)
+        assertTrue("412dp header must be 196dp, was $height", height in 190.dp..196.dp)
+        assertTrue("412dp header must never exceed 196dp, was $height", height <= 196.dp)
     }
 
     @Test
-    fun heroHeight_growsWithWidthAndClamps() {
-        val narrow = serviceHeroHeight(maxWidth = 320.dp) // 332.8 -> clamped to 340
-        val wide = serviceHeroHeight(maxWidth = 412.dp)   // 428.48
-        assertTrue("hero grows with width, narrow=$narrow wide=$wide", wide > narrow)
-        assertTrue("narrow width clamps to the 340dp minimum, was $narrow", narrow == 340.dp)
+    fun headerHeight_usesAShorterLandscapeLane() {
+        assertEquals(120.dp, serviceHeaderHeight(maxWidth = 720.dp, compact = true))
+        assertTrue(
+            "landscape header is shorter than portrait",
+            serviceHeaderHeight(maxWidth = 720.dp, compact = true) <
+                serviceHeaderHeight(maxWidth = 360.dp, compact = false),
+        )
     }
 
     @Test
-    fun titleSize_keepsLongServiceNamesOnTheHero() {
+    fun stag_scalesWithHeaderAndStaysInsideTheWidth() {
+        val header = serviceHeaderHeight(maxWidth = 360.dp, compact = false)
+        val stag = serviceStagSize(headerHeight = header, maxWidth = 360.dp)
+        assertTrue("stag must be large behind the header, was $stag", stag >= 150.dp)
+        assertTrue("stag must not exceed the header, was $stag", stag <= header)
+        assertTrue("stag must not cross half the width, was $stag", stag <= 360.dp * .55f)
+    }
+
+    @Test
+    fun titleSize_keepsLongServiceNamesInTheCompactHeader() {
         assertTrue(serviceTitleSize(12) >= 26f)
         assertTrue(serviceTitleSize(24) in 21f..24f)
-        assertTrue(serviceTitleSize(40) <= 21f)
+        assertTrue(serviceTitleSize(40) <= 20f)
+        assertTrue(compactServiceTitleSize(40) < serviceTitleSize(40))
     }
 
     @Test
