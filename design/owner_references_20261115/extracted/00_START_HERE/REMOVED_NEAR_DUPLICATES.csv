@@ -1,0 +1,11 @@
+removed_index,removed_original_filename,kept_index,kept_archive_path,reason
+1,file_00000000e0ec81f4b080220e01b8ebe1.jpg,0,03_HOME_DASHBOARD_VARIANTS/01_Home_Hero_Primary.png,visually near-identical SSIM > 0.99 after proportional resize; canonical preserved
+22,file_000000000a1c8211abb7d0d9f540251f.jpg,0,03_HOME_DASHBOARD_VARIANTS/01_Home_Hero_Primary.png,visually near-identical SSIM > 0.99 after proportional resize; canonical preserved
+23,file_000000000a6c8211bb556a6630ef3d23.jpg,0,03_HOME_DASHBOARD_VARIANTS/01_Home_Hero_Primary.png,visually near-identical SSIM > 0.99 after proportional resize; canonical preserved
+34,file_000000004dfc82118f177bca36ea0ec3.jpg,7,03_HOME_DASHBOARD_VARIANTS/07_Home_Deep_Scan_Hero.png,visually near-identical SSIM > 0.99 after proportional resize; canonical preserved
+44,file_0000000098108211b8e0e48978719e85.jpg,7,03_HOME_DASHBOARD_VARIANTS/07_Home_Deep_Scan_Hero.png,visually near-identical SSIM > 0.99 after proportional resize; canonical preserved
+43,file_000000007d748211abbc918dea81b0fa.jpg,39,04_FULL_SCREEN_SECTION_MOCKUPS/05_Deep_Scan.png,visually near-identical SSIM > 0.99 after proportional resize; canonical preserved
+45,file_00000000d8dc82118d3c8ed5ff232763.jpg,36,04_FULL_SCREEN_SECTION_MOCKUPS/02_AI_Optimization.png,visually near-identical SSIM > 0.99 after proportional resize; canonical preserved
+46,file_0000000084888211b42b501b79d41e1b.jpg,38,04_FULL_SCREEN_SECTION_MOCKUPS/04_App_Manager.png,visually near-identical SSIM > 0.99 after proportional resize; canonical preserved
+47,file_00000000d61082119cd2b851af46b0b8.jpg,35,04_FULL_SCREEN_SECTION_MOCKUPS/01_Reports_Insights.png,visually near-identical SSIM > 0.99 after proportional resize; canonical preserved
+48,file_00000000968c8211a01fdb82ffa025cf.jpg,37,04_FULL_SCREEN_SECTION_MOCKUPS/03_Battery_Saver.png,visually near-identical SSIM > 0.99 after proportional resize; canonical preserved
