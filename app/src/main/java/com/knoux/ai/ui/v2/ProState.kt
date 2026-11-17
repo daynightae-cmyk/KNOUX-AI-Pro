@@ -5,30 +5,29 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
+import com.knoux.ai.BuildConfig
 
 private const val PRO_PREFS = "knoux_pro_v1"
-private const val PRO_KEY = "pro_active"
+private const val PREVIEW_KEY = "pro_visual_preview"
 
-/**
- * Local Pro switch used by the preview build. There is no store, purchase or
- * licence check yet: the flag only changes the in-app presentation so the Pro
- * identity can be reviewed on a real device.
- */
+/** A debug-only visual preference for the Pro destination. */
 object KnouxProState {
-    var active by mutableStateOf(false)
+    var previewEnabled by mutableStateOf(false)
         private set
 
     fun load(context: Context) {
-        active = prefs(context).getBoolean(PRO_KEY, false)
+        previewEnabled = BuildConfig.DEBUG && prefs(context).getBoolean(PREVIEW_KEY, false)
     }
 
-    fun setActive(context: Context, value: Boolean) {
-        active = value
-        prefs(context).edit().putBoolean(PRO_KEY, value).apply()
+    fun setPreviewEnabled(context: Context, value: Boolean) {
+        if (!BuildConfig.DEBUG) return
+        previewEnabled = value
+        prefs(context).edit().putBoolean(PREVIEW_KEY, value).apply()
     }
 
     private fun prefs(context: Context) =
         context.applicationContext.getSharedPreferences(PRO_PREFS, Context.MODE_PRIVATE)
 }
 
+/** Reserved for a verified entitlement supplied by the host when billing is integrated. */
 val LocalProActive = staticCompositionLocalOf { false }

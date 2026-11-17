@@ -23,7 +23,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -44,7 +43,6 @@ import com.knoux.ai.ui.theme.KnouxTheme
 import com.knoux.ai.ui.screens.WelcomeScreen
 import com.knoux.ai.ui.v2.KnouxOnboarding
 import com.knoux.ai.ui.v2.KnouxProState
-import com.knoux.ai.ui.v2.LocalProActive
 import com.knoux.ai.ui.v2.LocalProTheme
 import com.knoux.ai.ui.v2.LocalServiceNavigate
 import com.knoux.ai.ui.v2.ProTheme
@@ -58,7 +56,13 @@ import com.knoux.ai.ui.v2.V2Background
 import com.knoux.ai.ui.v2.V2BatteryDiagnosticsScreen
 import com.knoux.ai.ui.v2.V2BatteryScreen
 import com.knoux.ai.ui.v2.V2BottomBar
+import com.knoux.ai.ui.v2.CleanTools
+import com.knoux.ai.ui.v2.SectionHub
+import com.knoux.ai.ui.v2.SectionTools
+import com.knoux.ai.ui.v2.V2SectionHubScreen
+import com.knoux.ai.ui.v2.V2SectionToolScreen
 import com.knoux.ai.ui.v2.V2CleanHubScreen
+import com.knoux.ai.ui.v2.V2CleanToolScreen
 import com.knoux.ai.ui.v2.V2DeepScanScreen
 import com.knoux.ai.ui.v2.V2DuplicateGroupScreen
 import com.knoux.ai.ui.v2.V2DuplicatesScreen
@@ -93,6 +97,9 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
         // Debug-only route injection so every screen can be inspected directly with adb.
         val debugRoute = if (BuildConfig.DEBUG) intent?.getStringExtra("route") else null
         if (BuildConfig.DEBUG) Log.i("KnouxRoute", "onCreate route=$debugRoute")
+        // Load the local Pro switch before the first composition so the very first
+        // frame already carries the saved identity (no purple flash, no missing badges).
+        KnouxProState.load(this)
         setContent {
             KnouxTheme {
                 KnouxApp(startRoute = debugRoute)
@@ -115,8 +122,6 @@ private enum class EntryStage { Splash, Onboarding, Auth, Shell }
 @Composable
 fun KnouxApp(startRoute: String? = null) {
     val context = LocalContext.current
-    LaunchedEffect(Unit) { KnouxProState.load(context) }
-    val proActive = KnouxProState.active
     val entryDebugRoute = startRoute?.takeIf { it == "onboarding" || it == "auth" }
     val shellStartRoute = startRoute?.takeUnless { it == "onboarding" || it == "auth" }
     val onboardingSeen = remember { hasSeenKnouxOnboarding(context) }
@@ -130,6 +135,7 @@ fun KnouxApp(startRoute: String? = null) {
             }
         )
     }
+    var signedIn by rememberSaveable { mutableStateOf(false) }
     var accountInfoVisible by remember { mutableStateOf(false) }
     val nav = rememberNavController()
     val backStackEntry by nav.currentBackStackEntryAsState()
@@ -151,8 +157,6 @@ fun KnouxApp(startRoute: String? = null) {
     }
 
     CompositionLocalProvider(
-        LocalProTheme provides if (proActive) ProTheme.Pro else ProTheme.Standard,
-        LocalProActive provides proActive,
         LocalServiceNavigate provides open,
     ) {
         Box(Modifier.fillMaxSize()) {
@@ -176,7 +180,14 @@ fun KnouxApp(startRoute: String? = null) {
                     }
                 )
                 EntryStage.Auth -> WelcomeScreen(
-                    onContinueAsGuest = { entryStage = EntryStage.Shell },
+                    onContinueAsGuest = {
+                        signedIn = false
+                        entryStage = EntryStage.Shell
+                    },
+                    onSignedIn = {
+                        signedIn = true
+                        entryStage = EntryStage.Shell
+                    },
                     onOpenAccountInfo = { accountInfoVisible = true },
                 )
                 EntryStage.Shell -> {
@@ -218,7 +229,7 @@ fun KnouxApp(startRoute: String? = null) {
     if (accountInfoVisible) {
         AlertDialog(
             onDismissRequest = { accountInfoVisible = false },
-            title = { Text("KNOUX ID") },
+            title = { Text(if (signedIn) "KNOUX ID · تم تسجيل الدخول" else "KNOUX ID") },
             text = {
                 Text(
                     "يمكنك الدخول بحساب Google أو Passkey أو البريد وكلمة المرور/رمز OTP، " +
@@ -294,7 +305,11 @@ private fun AppNavHost(
         }
 
         composable(ROUTE_PRO) {
-            V2ProScreen(onBack = goBack, onNavigate = open)
+            CompositionLocalProvider(
+                LocalProTheme provides if (KnouxProState.previewEnabled) ProTheme.Pro else ProTheme.Standard,
+            ) {
+                V2ProScreen(onBack = goBack, onNavigate = open)
+            }
         }
 
         composable("privacy") {
@@ -369,6 +384,36 @@ private fun AppNavHost(
                 onOpenDeepScan = { open("deepscan") },
                 onPro = { open(ROUTE_PRO) },
             )
+        }
+        // Smart Clean's ten internal services. Each route opens its own screen.
+        CleanTools.routes.forEach { cleanRoute ->
+            composable(cleanRoute) {
+                V2CleanToolScreen(
+                    route = cleanRoute,
+                    onBack = goBack,
+                    onPro = { open(ROUTE_PRO) },
+                )
+            }
+        }
+        // Ten section hubs: each opens the ten independently routed services.
+        SectionHub.routes.forEach { hubRoute ->
+            composable(hubRoute) {
+                V2SectionHubScreen(
+                    route = hubRoute,
+                    onBack = goBack,
+                    onPro = { open(ROUTE_PRO) },
+                )
+            }
+        }
+        // The remaining 90 internal services (9 sections × 10), each on its own route.
+        SectionTools.defs.map { it.route }.forEach { toolRoute ->
+            composable(toolRoute) {
+                V2SectionToolScreen(
+                    route = toolRoute,
+                    onBack = goBack,
+                    onPro = { open(ROUTE_PRO) },
+                )
+            }
         }
         composable(SETTINGS_ROUTE) {
             V2SettingsScreenV2(onBack = goBack)

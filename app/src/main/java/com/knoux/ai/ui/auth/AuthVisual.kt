@@ -58,7 +58,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.knoux.ai.ui.theme.ProWarning
 import com.knoux.ai.ui.theme.ProArcticCyan
-import com.knoux.ai.ui.theme.ProArcticCyan
 import com.knoux.ai.ui.theme.ProTextSecondary
 import com.knoux.ai.ui.theme.ProTextSecondary
 import com.knoux.ai.ui.theme.ProTextPrimary
@@ -91,6 +90,9 @@ fun FingerprintOrb(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     size: Dp = 232.dp,
+    enabled: Boolean = true,
+    accessibilityLabel: String = "Biometric unlock",
+    showStateBadge: Boolean = true,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
@@ -159,11 +161,12 @@ fun FingerprintOrb(
                 scaleX = pressScale * (if (motion) pulse else 1f)
                 scaleY = pressScale * (if (motion) pulse else 1f)
             }
-            .semantics { contentDescription = "Biometric unlock. ${state.name}" }
+            .semantics { contentDescription = accessibilityLabel }
             .clip(CircleShape)
             .clickable(
                 interactionSource = interaction,
                 indication = null,
+                enabled = enabled,
                 onClick = onClick,
             ),
         contentAlignment = Alignment.Center,
@@ -296,19 +299,20 @@ fun FingerprintOrb(
                 style = Stroke(width = 3.1.dp.toPx(), cap = StrokeCap.Round),
             )
 
-            // fine scanning beam
-            val beamY = center.y + scan * radius * 0.58f
-            drawRect(
-                brush = Brush.horizontalGradient(
-                    listOf(
-                        Color.Transparent,
-                        ProArcticCyan.copy(alpha = if (state == AuthVisualState.Scanning) 0.85f else 0.38f),
-                        Color.Transparent,
-                    )
-                ),
-                topLeft = Offset(center.x - radius * 0.62f, beamY - 1.6.dp.toPx()),
-                size = Size(radius * 1.24f, 3.2.dp.toPx()),
-            )
+            if (state == AuthVisualState.Scanning) {
+                val beamY = center.y + scan * radius * 0.58f
+                drawRect(
+                    brush = Brush.horizontalGradient(
+                        listOf(
+                            Color.Transparent,
+                            ProArcticCyan.copy(alpha = 0.85f),
+                            Color.Transparent,
+                        )
+                    ),
+                    topLeft = Offset(center.x - radius * 0.62f, beamY - 1.6.dp.toPx()),
+                    size = Size(radius * 1.24f, 3.2.dp.toPx()),
+                )
+            }
 
             // success shockwave
             if (state == AuthVisualState.Success) {
@@ -321,50 +325,51 @@ fun FingerprintOrb(
             }
         }
 
-        // state badge, anchored to the lower-right of the sphere
-        Box(
-            Modifier
-                .align(Alignment.BottomEnd)
-                .padding(end = 26.dp, bottom = 26.dp)
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(
-                    Brush.horizontalGradient(
-                        listOf(
-                            when (state) {
-                                AuthVisualState.Success -> Color(0xFF3DFFB0).copy(alpha = 0.30f)
-                                AuthVisualState.Unavailable -> ProWarning.copy(alpha = 0.30f)
-                                else -> ProArcticCyan.copy(alpha = 0.26f)
-                            },
-                            Color.Black.copy(alpha = 0.18f),
+        if (showStateBadge) {
+            Box(
+                Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 26.dp, bottom = 26.dp)
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(
+                                when (state) {
+                                    AuthVisualState.Success -> Color(0xFF3DFFB0).copy(alpha = 0.30f)
+                                    AuthVisualState.Unavailable -> ProWarning.copy(alpha = 0.30f)
+                                    else -> ProArcticCyan.copy(alpha = 0.26f)
+                                },
+                                Color.Black.copy(alpha = 0.18f),
+                            )
                         )
                     )
-                )
-                .border(
-                    1.5.dp,
-                    when (state) {
+                    .border(
+                        1.5.dp,
+                        when (state) {
+                            AuthVisualState.Success -> Color(0xFF3DFFB0)
+                            AuthVisualState.Unavailable -> ProWarning
+                            else -> ProArcticCyan.copy(alpha = 0.85f)
+                        },
+                        CircleShape,
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = when (state) {
+                        AuthVisualState.Success -> Icons.Rounded.CheckCircle
+                        AuthVisualState.Unavailable -> Icons.Rounded.WarningAmber
+                        else -> Icons.Rounded.Fingerprint
+                    },
+                    contentDescription = null,
+                    tint = when (state) {
                         AuthVisualState.Success -> Color(0xFF3DFFB0)
                         AuthVisualState.Unavailable -> ProWarning
-                        else -> ProArcticCyan.copy(alpha = 0.85f)
+                        else -> ProTextPrimary
                     },
-                    CircleShape,
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                imageVector = when (state) {
-                    AuthVisualState.Success -> Icons.Rounded.CheckCircle
-                    AuthVisualState.Unavailable -> Icons.Rounded.WarningAmber
-                    else -> Icons.Rounded.Fingerprint
-                },
-                contentDescription = null,
-                tint = when (state) {
-                    AuthVisualState.Success -> Color(0xFF3DFFB0)
-                    AuthVisualState.Unavailable -> ProWarning
-                    else -> ProTextPrimary
-                },
-                modifier = Modifier.size(20.dp),
-            )
+                    modifier = Modifier.size(20.dp),
+                )
+            }
         }
     }
 }

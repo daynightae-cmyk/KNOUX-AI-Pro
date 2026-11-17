@@ -1,7 +1,6 @@
 package com.knoux.ai.ui.v2
 
 import android.content.Context
-import com.knoux.ai.ui.v2.KnouxProState
 import com.knoux.ai.ui.v2.markKnouxOnboardingSeen
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -248,7 +247,7 @@ internal fun V2Toggle(checked: Boolean, onChange: (Boolean) -> Unit, accent: Col
 }
 
 @Composable
-private fun SegmentedBar(segments: List<Pair<Float, Color>>, height: Int = 9) {
+internal fun SegmentedBar(segments: List<Pair<Float, Color>>, height: Int = 9) {
     Row(
         Modifier
             .fillMaxWidth()
@@ -356,7 +355,7 @@ fun V2AppManagerScreen(
         }
         item {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                KText("التطبيقات المثبتة", size = 12.5.sp, weight = FontWeight.Bold)
+                KText("التطبيقات الظاهرة للتطبيق", size = 12.5.sp, weight = FontWeight.Bold)
                 Spacer(Modifier.weight(1f))
                 KText("مرتبة حسب الحجم", size = 8.sp, color = V2Muted)
             }
@@ -1265,7 +1264,7 @@ private fun buildLiveRecommendations(facts: DeviceFacts): List<LiveRecommendatio
             LiveRecommendation(
                 "duplicates",
                 "نسخ وسائط مكررة",
-                "مجموعات مطابقة بالحجم والنوع من MediaStore",
+                "مجموعات مطابقة ببصمة SHA-256 من MediaStore",
                 "${facts.media.duplicateGroups.size} مجموعة",
                 Icons.Rounded.Layers,
                 V2Violet,
@@ -1306,7 +1305,7 @@ private fun buildLiveRecommendations(facts: DeviceFacts): List<LiveRecommendatio
         if (facts.installedCount > 0) add(
             LiveRecommendation(
                 "apps",
-                "مراجعة التطبيقات المثبتة",
+                "مراجعة التطبيقات الظاهرة للتطبيق",
                 "الأحجام والأذونات من PackageManager",
                 "${formatCount(facts.installedCount)} تطبيق",
                 Icons.Rounded.Apps,
@@ -2390,7 +2389,7 @@ private fun ReportDetailRow(title: String, value: String, icon: ImageVector, acc
 @Composable
 private fun DeveloperPanel(onDismiss: () -> Unit) {
     val context = LocalContext.current
-    val proActive = LocalProActive.current
+    val previewEnabled = KnouxProState.previewEnabled
     Box(
         Modifier
             .fillMaxSize()
@@ -2427,18 +2426,20 @@ private fun DeveloperPanel(onDismiss: () -> Unit) {
                         .border(1.dp, V2Amber.withAlpha( .3f), RoundedCornerShape(16.dp))
                         .padding(16.dp),
                 ) {
-                    val proStatusText = if (proActive) "مفعّل ✓" else "معطل"
-                    val proStatusColor = if (proActive) V2Green else V2Amber
+                    val proStatusText = if (previewEnabled) "نشطة" else "متوقفة"
+                    val proStatusColor = if (previewEnabled) V2Cyan else V2Soft
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        DevRow("حالة Pro", proStatusText, proStatusColor)
+                        DevRow("معاينة Pro", proStatusText, proStatusColor)
                         DevRow("إصدار التطبيق", "1.0.0 (build 2)", V2Cyan)
                         DevRow("نموذج التصميم", "V2 (Arabic-first)", V2Violet)
                         DevRow("الخط", "KnouxArabic", V2Pink)
                         DividerLine()
-                        DevRow("تفعيل Pro محلي", "", V2Amber, action = {
-                            KnouxProState.setActive(context, !proActive)
-                            onDismiss()
-                        })
+                        if (com.knoux.ai.BuildConfig.DEBUG) {
+                            DevRow("تبديل معاينة Pro", "", V2Amber, action = {
+                                KnouxProState.setPreviewEnabled(context, !previewEnabled)
+                                onDismiss()
+                            })
+                        }
                         DevRow("إعادة تعيين Onboarding", "", V2Pink, action = {
                             markKnouxOnboardingSeen(context, false)
                             onDismiss()

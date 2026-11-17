@@ -28,6 +28,8 @@ import androidx.core.graphics.drawable.toBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.InputStream
+import java.security.MessageDigest
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -299,14 +301,87 @@ fun ownCacheBytes(context: Context): Pair<Long, Int> {
 }
 
 fun clearOwnCache(context: Context): Long {
-    val deep = ownCacheBytes(context).first
     val roots = listOfNotNull(context.cacheDir, context.codeCacheDir, context.externalCacheDir)
-    roots.distinctBy { it.absolutePath }.forEach { root ->
-        runCatching {
-            root.listFiles()?.forEach { child -> runCatching { child.deleteRecursively() } }
-        }
+    return roots.distinctBy { it.absolutePath }.sumOf { root ->
+        root.listFiles()?.sumOf(::deleteCachedEntry) ?: 0L
     }
-    return deep
+}
+
+internal fun deleteCachedEntry(entry: File): Long {
+    if (entry.isSymbolicLink()) {
+        entry.delete()
+        return 0L
+    }
+    if (entry.isDirectory) {
+        val removedBytes = entry.listFiles()?.sumOf(::deleteCachedEntry) ?: return 0L
+        entry.delete()
+        return removedBytes
+    }
+    val bytes = entry.length()
+    return if (entry.delete()) bytes else 0L
+}
+
+private const val MAX_HASH_FILE_BYTES = 32L * 1024 * 1024
+private const val MAX_HASH_SCAN_BYTES = 128L * 1024 * 1024
+private const val MAX_HASH_FILES = 256
+
+internal fun findExactMediaDuplicates(
+    items: List<MediaFileFacts>,
+    open: (MediaFileFacts) -> InputStream?,
+): List<MediaDuplicateGroup> {
+    val candidates = items.filter { it.sizeBytes in 1..MAX_HASH_FILE_BYTES }
+        .groupBy { it.sizeBytes to it.isVideo }
+        .values
+        .filter { it.size > 1 }
+        .sortedBy { it.first().sizeBytes }
+
+    var bytesRemaining = MAX_HASH_SCAN_BYTES
+    var filesRemaining = MAX_HASH_FILES
+    val buffer = ByteArray(64 * 1024)
+    val groups = mutableListOf<MediaDuplicateGroup>()
+
+    for (candidateGroup in candidates) {
+        val matches = mutableMapOf<List<Byte>, MutableList<MediaFileFacts>>()
+        for (item in candidateGroup) {
+            if (filesRemaining == 0 || item.sizeBytes > bytesRemaining) break
+            filesRemaining--
+            bytesRemaining -= item.sizeBytes
+            val hash = try {
+                open(item)?.use { sha256OfSize(it, item.sizeBytes, buffer) }
+            } catch (_: java.io.IOException) {
+                null
+            } catch (_: SecurityException) {
+                null
+            }
+            if (hash != null) matches.getOrPut(hash) { mutableListOf() }.add(item)
+        }
+        for (copies in matches.values.filter { it.size > 1 }) {
+            val keeper = copies.first()
+            groups.add(
+                MediaDuplicateGroup(
+                    name = keeper.name,
+                    sizeBytes = keeper.sizeBytes,
+                    count = copies.size,
+                    uris = copies.map { it.uriString },
+                    isVideo = keeper.isVideo,
+                ),
+            )
+        }
+        if (filesRemaining == 0 || bytesRemaining < candidateGroup.first().sizeBytes) break
+    }
+    return groups.sortedByDescending { it.reclaimableBytes }.take(12)
+}
+
+private fun sha256OfSize(input: InputStream, expectedBytes: Long, buffer: ByteArray): List<Byte>? {
+    val digest = MessageDigest.getInstance("SHA-256")
+    var remaining = expectedBytes
+    while (remaining > 0) {
+        val count = input.read(buffer, 0, minOf(remaining, buffer.size.toLong()).toInt())
+        if (count <= 0) return null
+        digest.update(buffer, 0, count)
+        remaining -= count
+    }
+    return if (input.read() == -1) digest.digest().toList() else null
 }
 
 private fun readMedia(context: Context): MediaFacts {
@@ -368,21 +443,9 @@ private fun readMedia(context: Context): MediaFacts {
     }
     val images = items.filter { !it.isVideo }
     val videos = items.filter { it.isVideo }
-    val grouped = items.filter { it.sizeBytes > 0 }
-        .groupBy { it.sizeBytes to it.isVideo }
-        .filter { it.value.size >= 2 }
-        .entries
-        .sortedByDescending { it.key.first * it.value.size }
-        .take(12)
-        .map { (key, value) ->
-            MediaDuplicateGroup(
-                name = value.first().name,
-                sizeBytes = key.first,
-                count = value.size,
-                uris = value.map { it.uriString },
-                isVideo = key.second,
-            )
-        }
+    val grouped = findExactMediaDuplicates(items) { item ->
+        context.contentResolver.openInputStream(Uri.parse(item.uriString))
+    }
     return MediaFacts(
         permissionGranted = true,
         images = images.size,
@@ -506,12 +569,49 @@ fun readDeviceFacts(context: Context): DeviceFacts {
     )
 }
 
+/**
+ * Process-wide snapshot of the last measured device facts.
+ *
+ * The 100 service screens all read the same phone. Re-scanning every package,
+ * permission and MediaStore row on every navigation made each card sit on
+ * zeros for several seconds - which reads as "the service is missing" on a
+ * low-end device. One measured snapshot is shared; a manual refresh always
+ * bypasses it, and a new snapshot is taken as soon as it is older than the
+ * freshness window.
+ */
+object DeviceFactsCache {
+    @Volatile
+    var latest: DeviceFacts? = null
+        private set
+
+    @Volatile
+    var loadedAt: Long = 0L
+        private set
+
+    fun publish(facts: DeviceFacts) {
+        latest = facts
+        loadedAt = System.currentTimeMillis()
+    }
+
+    fun isFresh(now: Long = System.currentTimeMillis()): Boolean =
+        latest != null && now - loadedAt < FRESH_WINDOW_MS
+
+    private const val FRESH_WINDOW_MS = 90_000L
+}
+
 @Composable
 fun rememberDeviceFacts(refreshKey: Int = 0): DeviceFacts {
     val context = LocalContext.current
-    var facts by remember { mutableStateOf(DeviceFacts()) }
+    var facts by remember { mutableStateOf(DeviceFactsCache.latest ?: DeviceFacts()) }
     LaunchedEffect(refreshKey) {
-        facts = withContext(Dispatchers.IO) { readDeviceFacts(context.applicationContext) }
+        val cached = DeviceFactsCache.latest
+        if (refreshKey == 0 && cached != null && DeviceFactsCache.isFresh()) {
+            facts = cached
+            return@LaunchedEffect
+        }
+        val loaded = withContext(Dispatchers.IO) { readDeviceFacts(context.applicationContext) }
+        DeviceFactsCache.publish(loaded)
+        facts = loaded
     }
     return facts
 }

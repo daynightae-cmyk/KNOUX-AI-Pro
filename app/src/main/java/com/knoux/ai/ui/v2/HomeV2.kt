@@ -75,19 +75,19 @@ private data class HomeServiceMini(
 )
 
 private val firstRow = listOf(
-    HomeServiceMini("الملفات\nالمكررة", "duplicates", R.drawable.knoux_home_icon_duplicate, V2Cyan),
-    HomeServiceMini("بقايا\nالتطبيقات", "residue", R.drawable.knoux_svc_residue, V2Pink),
-    HomeServiceMini("فحص\nالخصوصية", "privacy", R.drawable.knoux_home_icon_privacy, V2Violet),
-    HomeServiceMini("مدير\nالتطبيقات", "appmanager", R.drawable.knoux_svc_apps, V2Cyan),
-    HomeServiceMini("توفير\nالبطارية", "battery", R.drawable.knoux_home_icon_battery, V2Amber),
+    HomeServiceMini("الملفات\nالمكررة", "hub-duplicates", R.drawable.knoux_home_icon_duplicate, V2Cyan),
+    HomeServiceMini("بقيا\nالتطبيقات", "hub-residue", R.drawable.knoux_svc_residue, V2Pink),
+    HomeServiceMini("فحص\nالخصوصية", "hub-privacy", R.drawable.knoux_home_icon_privacy, V2Violet),
+    HomeServiceMini("مدير\nالتطبيقات", "hub-appmanager", R.drawable.knoux_svc_apps, V2Cyan),
+    HomeServiceMini("توفير\nالبطارية", "hub-battery", R.drawable.knoux_home_icon_battery, V2Amber),
 )
 
 private val secondRow = listOf(
-    HomeServiceMini("التنظيف\nالذكي", "smartclean", R.drawable.knoux_home_icon_clean, V2Violet),
-    HomeServiceMini("تحليل\nالتخزين", "storage", R.drawable.knoux_home_icon_storage, V2Cyan),
-    HomeServiceMini("الفحص\nالعميق", "deepscan", R.drawable.knoux_svc_deepscan, V2Pink),
-    HomeServiceMini("التقارير\nالذكية", "reports", 0, V2Violet, Icons.Rounded.BarChart),
-    HomeServiceMini("تحسين\nالأداء", "ai", R.drawable.knoux_home_icon_ai, V2Cyan),
+    HomeServiceMini("التنظيف\nالذكي", "hub-smartclean", R.drawable.knoux_home_icon_clean, V2Violet),
+    HomeServiceMini("تحليل\nالتخزين", "hub-storage", R.drawable.knoux_home_icon_storage, V2Cyan),
+    HomeServiceMini("الفحص\nالعميق", "hub-deepscan", R.drawable.knoux_svc_deepscan, V2Pink),
+    HomeServiceMini("التقارير\nالذكية", "hub-reports", 0, V2Violet, Icons.Rounded.BarChart),
+    HomeServiceMini("تحسين\nالأداء", "hub-ai", R.drawable.knoux_home_icon_ai, V2Cyan),
 )
 
 @Composable
@@ -164,10 +164,9 @@ fun V2HomeScreen(
                 item { Spacer(Modifier.height(10.dp)) }
                 item {
                     HomeScanCenterpiece(
-                        score = facts.healthEstimate,
-                        onScan = { onNavigate("deepscan") },
-                        onInsights = { onNavigate("ai") },
-                        onProtection = { onNavigate("privacy") },
+                        onScan = { onNavigate("hub-deepscan") },
+                        onInsights = { onNavigate("hub-ai") },
+                        onProtection = { onNavigate("hub-privacy") },
                     )
                 }
                 item { Spacer(Modifier.height(11.dp)) }
@@ -187,7 +186,7 @@ fun V2HomeScreen(
                             Modifier.weight(.9f),
                         )
                         StatDivider()
-                        HomeStat(Icons.Rounded.Apps, "${formatCount(facts.installedCount)}", "تطبيق مثبت", V2Pink, Modifier.weight(.85f))
+                        HomeStat(Icons.Rounded.Apps, "${formatCount(facts.installedCount)}", "تطبيق ظاهر", V2Pink, Modifier.weight(.85f))
                         StatDivider()
                         HomeStat(Icons.Rounded.CleaningServices, formatBytes(facts.ownCacheBytes), "كاش KNOUX", V2Cyan, Modifier.weight(.85f))
                         StatDivider()
@@ -273,7 +272,7 @@ private fun DeviceHealthCard(facts: DeviceFacts) {
 }
 
 @Composable
-private fun HealthLine(
+internal fun HealthLine(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
     value: String,
@@ -309,7 +308,6 @@ private fun HealthLine(
 
 @Composable
 private fun HomeScanCenterpiece(
-    score: Int,
     onScan: () -> Unit,
     onInsights: () -> Unit,
     onProtection: () -> Unit,
@@ -340,9 +338,9 @@ private fun HomeScanCenterpiece(
 
         SideActionCard(
             title = "توصيات ذكية",
-            subtitle = "+ AI Insights",
+            subtitle = "AI Insights",
             icon = Icons.Rounded.AutoAwesome,
-            accent = V2Amber,
+            accent = V2Cyan,
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .offset(x = 2.dp, y = 21.dp)
@@ -350,10 +348,10 @@ private fun HomeScanCenterpiece(
             onClick = onInsights,
         )
         SideActionCard(
-            title = "حماية فورية",
-            subtitle = "Real Protection",
+            title = "فحص الخصوصية",
+            subtitle = "Privacy Sweep",
             icon = Icons.Rounded.Shield,
-            accent = V2Amber,
+            accent = V2Blue,
             modifier = Modifier
                 .align(Alignment.CenterStart)
                 .offset(x = (-2).dp, y = 21.dp)
@@ -362,7 +360,6 @@ private fun HomeScanCenterpiece(
         )
 
         HomeScanOrb(
-            score = score,
             Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = 1.dp)
@@ -372,7 +369,7 @@ private fun HomeScanCenterpiece(
 }
 
 @Composable
-private fun HomeScanOrb(score: Int, modifier: Modifier = Modifier) {
+private fun HomeScanOrb(modifier: Modifier = Modifier) {
     Box(modifier.size(162.dp), contentAlignment = Alignment.Center) {
         Canvas(Modifier.fillMaxSize()) {
             drawCircle(
@@ -384,7 +381,7 @@ private fun HomeScanOrb(score: Int, modifier: Modifier = Modifier) {
             )
             drawArc(
                 brush = Brush.sweepGradient(
-                    listOf(V2Amber, V2Violet, V2Cyan, V2Pink, V2Amber),
+                    listOf(V2Blue, V2Violet, V2Cyan, V2Pink, V2Blue),
                     center,
                 ),
                 startAngle = -70f,
@@ -393,7 +390,7 @@ private fun HomeScanOrb(score: Int, modifier: Modifier = Modifier) {
                 style = Stroke(4.dp.toPx(), cap = StrokeCap.Round),
             )
             drawArc(
-                color = V2Amber.copy(alpha = .28f),
+                color = V2Blue.copy(alpha = .28f),
                 startAngle = 8f,
                 sweepAngle = 336f,
                 useCenter = false,
@@ -406,8 +403,8 @@ private fun HomeScanOrb(score: Int, modifier: Modifier = Modifier) {
                 useCenter = false,
                 style = Stroke(1.dp.toPx()),
             )
-            drawCircle(color = V2Amber.copy(alpha = .9f), radius = 3.dp.toPx(), center = Offset(size.width * .81f, size.height * .20f))
-            drawCircle(color = V2Amber.copy(alpha = .8f), radius = 2.3.dp.toPx(), center = Offset(size.width * .16f, size.height * .33f))
+            drawCircle(color = V2Cyan.copy(alpha = .9f), radius = 3.dp.toPx(), center = Offset(size.width * .81f, size.height * .20f))
+            drawCircle(color = V2Blue.copy(alpha = .8f), radius = 2.3.dp.toPx(), center = Offset(size.width * .16f, size.height * .33f))
         }
         Box(
             Modifier
@@ -418,7 +415,7 @@ private fun HomeScanOrb(score: Int, modifier: Modifier = Modifier) {
                         listOf(Color(0xFF25115C), Color(0xFF0F082B)),
                     )
                 )
-                .border(1.dp, V2Amber.copy(alpha = .46f), CircleShape),
+                .border(1.dp, V2Blue.copy(alpha = .56f), CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -438,7 +435,7 @@ private fun HomeScanOrb(score: Int, modifier: Modifier = Modifier) {
                         .border(1.dp, V2Cyan.copy(alpha = .28f), RoundedCornerShape(50))
                         .padding(horizontal = 9.dp, vertical = 2.dp)
                 ) {
-                    KText(if (score > 0) "$score% جاهز" else "قراءة الجهاز…", size = 7.5.sp, color = V2Cyan)
+                    KText("فتح قسم الفحص", size = 7.5.sp, color = V2Cyan)
                 }
             }
         }
@@ -446,7 +443,7 @@ private fun HomeScanOrb(score: Int, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun SideActionCard(
+internal fun SideActionCard(
     title: String,
     subtitle: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -531,7 +528,7 @@ private fun HomeServiceTile(service: HomeServiceMini, onClick: () -> Unit, modif
 }
 
 @Composable
-private fun V2NeonGlyph(icon: ImageVector, accent: Color, size: Dp = 46.dp) {
+internal fun V2NeonGlyph(icon: ImageVector, accent: Color, size: Dp = 46.dp) {
     Box(Modifier.size(size), contentAlignment = Alignment.Center) {
         Canvas(Modifier.fillMaxSize()) {
             drawCircle(
@@ -554,7 +551,7 @@ private fun V2NeonGlyph(icon: ImageVector, accent: Color, size: Dp = 46.dp) {
 }
 
 @Composable
-private fun ProBanner(onClick: () -> Unit) {
+internal fun ProBanner(onClick: () -> Unit) {
     val proTheme = LocalProTheme.current
     val shape = RoundedCornerShape(18.dp)
     Row(
@@ -615,7 +612,7 @@ private fun ProBanner(onClick: () -> Unit) {
 }
 
 @Composable
-private fun HomeStat(
+internal fun HomeStat(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     value: String,
     label: String,
@@ -633,7 +630,7 @@ private fun HomeStat(
 }
 
 @Composable
-private fun StatDivider() {
+internal fun StatDivider() {
     Box(
         Modifier
             .width(1.dp)

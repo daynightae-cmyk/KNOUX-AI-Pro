@@ -1,5 +1,6 @@
 package com.knoux.ai.ui.v2
 
+import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -18,6 +19,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -55,6 +57,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
@@ -99,6 +103,8 @@ data class ServiceSubItem(
     val icon: ImageVector,
     val accent: Color = V2Cyan,
     val state: ServiceState = ServiceState.READY,
+    val proOnly: Boolean = false,
+    @DrawableRes val art: Int? = null,
 )
 
 data class KnouxServiceSpec(
@@ -112,13 +118,28 @@ data class KnouxServiceSpec(
     val glyph: ImageVector,
     val chips: List<String>,
     val subItems: List<ServiceSubItem>,
-)
+    val pro: Boolean = false,
+) {
+    val hasProServices: Boolean get() = pro || subItems.any { it.proOnly }
+}
 
-private fun live(title: String, subtitle: String, route: String, icon: ImageVector, accent: Color) =
-    ServiceSubItem(title, subtitle, route, icon, accent, ServiceState.LIVE)
+private fun live(
+    title: String,
+    subtitle: String,
+    route: String,
+    icon: ImageVector,
+    accent: Color,
+    proOnly: Boolean = false,
+) = ServiceSubItem(title, subtitle, route, icon, accent, ServiceState.LIVE, proOnly)
 
-private fun preview(title: String, subtitle: String, route: String, icon: ImageVector, accent: Color) =
-    ServiceSubItem(title, subtitle, route, icon, accent, ServiceState.PREVIEW)
+private fun preview(
+    title: String,
+    subtitle: String,
+    route: String,
+    icon: ImageVector,
+    accent: Color,
+    proOnly: Boolean = false,
+) = ServiceSubItem(title, subtitle, route, icon, accent, ServiceState.PREVIEW, proOnly)
 
 object ServiceSpecs {
 
@@ -132,12 +153,7 @@ object ServiceSpecs {
         accent2 = V2Pink,
         glyph = Icons.Rounded.CleaningServices,
         chips = listOf("كاش KNOUX فقط", "تأكيد قبل الحذف"),
-        subItems = listOf(
-            live("الملفات الكبيرة", "أكبر الملفات على الجهاز", "large-files", Icons.Rounded.Storage, V2Amber),
-            preview("نسخ احتياطية قديمة", "مراجعة النسخ غير المستخدمة", "old-backups", Icons.Rounded.Backup, V2Violet),
-            preview("سجلات النظام", "قراءة سجلات التطبيقات", "system-logs", Icons.Rounded.Description, V2Cyan),
-            preview("تنظيف التنزيلات", "مراجعة مجلد التنزيلات", "download-cleanup", Icons.Rounded.Download, V2Pink),
-        ),
+        subItems = CleanTools.items,
     )
 
     val duplicates = KnouxServiceSpec(
@@ -145,16 +161,12 @@ object ServiceSpecs {
         order = "02",
         title = "الملفات المكررة",
         english = "DUPLICATE FINDER",
-        tagline = "مطابقة الصور والفيديو بالحجم والنوع من MediaStore",
+        tagline = "مطابقة الصور والفيديو ببصمة SHA-256",
         accent = V2Violet,
         accent2 = V2Cyan,
         glyph = Icons.Rounded.Layers,
         chips = listOf("MediaStore", "حذف عبر تأكيد Android"),
-        subItems = listOf(
-            live("مجموعات التكرار", "مراجعة النسخ المطابقة", "duplicates", Icons.Rounded.Layers, V2Violet),
-            preview("مراجعة مجموعة", "تفاصيل ملفات المجموعة", "duplicate-group", Icons.Rounded.Image, V2Pink),
-            preview("الملفات الكبيرة", "المساحة التي يستهلكها الوسائط", "large-files", Icons.Rounded.Storage, V2Amber),
-        ),
+        subItems = SectionTools.items("duplicates"),
     )
 
     val residue = KnouxServiceSpec(
@@ -167,12 +179,7 @@ object ServiceSpecs {
         accent2 = V2Violet,
         glyph = Icons.Rounded.Folder,
         chips = listOf("قراءة مباشرة", "حدود Scoped Storage"),
-        subItems = listOf(
-            live("كاش KNOUX", "ملفات مؤقتة قابلة للحذف", "residue", Icons.Rounded.Folder, V2Pink),
-            preview("مراجعة عنصر", "تفاصيل ملفات البقايا", "residue-item", Icons.Rounded.Description, V2Violet),
-            preview("تنظيف التنزيلات", "ملفات قديمة في التنزيلات", "download-cleanup", Icons.Rounded.Download, V2Cyan),
-            preview("سجلات النظام", "مصدر قراءة السجلات", "system-logs", Icons.Rounded.Description, V2Amber),
-        ),
+        subItems = SectionTools.items("residue"),
     )
 
     val privacy = KnouxServiceSpec(
@@ -185,12 +192,7 @@ object ServiceSpecs {
         accent2 = V2Violet,
         glyph = Icons.Rounded.Shield,
         chips = listOf("PackageManager", "إعدادات Android الرسمية"),
-        subItems = listOf(
-            live("مجالات الخصوصية", "الكاميرا والميكروفون والموقع", "privacy", Icons.Rounded.Shield, V2Amber),
-            preview("تحليل المخاطر", "شرح الأذونات عالية الخطورة", "privacy-risk", Icons.Rounded.WarningAmber, V2Red),
-            preview("إدارة الإشعارات", "التحكم في إشعارات التطبيقات", "notification-manager", Icons.Rounded.Notifications, V2Violet),
-            preview("فحص الأمان", "حالة الحماية على الجهاز", "security-scan", Icons.Rounded.Security, V2Pink),
-        ),
+        subItems = SectionTools.items("privacy"),
     )
 
     val deepScan = KnouxServiceSpec(
@@ -203,11 +205,7 @@ object ServiceSpecs {
         accent2 = V2Pink,
         glyph = Icons.Rounded.Radar,
         chips = listOf("قراءة لحظية", "سجل محلي"),
-        subItems = listOf(
-            live("ملخص الفحص", "نتائج الوحدات المكتملة", "deep-scan-summary", Icons.Rounded.Timeline, V2Cyan),
-            live("معلومات الجهاز", "إصدار Android والعتاد", "device-info", Icons.Rounded.Info, V2Violet),
-            preview("تقرير الأداء", "ملخص أسبوعي مرتبط بالسجل", "performance-report", Icons.Rounded.BarChart, V2Amber),
-        ),
+        subItems = SectionTools.items("deepscan"),
     )
 
     val reports = KnouxServiceSpec(
@@ -220,11 +218,7 @@ object ServiceSpecs {
         accent2 = V2Amber,
         glyph = Icons.Rounded.BarChart,
         chips = listOf("قراءة مباشرة", "بدون رفع سحابي"),
-        subItems = listOf(
-            preview("تقرير الأداء", "مؤشرات الأسبوع", "performance-report", Icons.Rounded.BarChart, V2Cyan),
-            preview("سجلات النظام", "قراءة السجلات المتاحة", "system-logs", Icons.Rounded.Description, V2Violet),
-            live("سجل الفحص", "عمليات الفحص المحفوظة محليًا", "deepscan", Icons.Rounded.Radar, V2Pink),
-        ),
+        subItems = SectionTools.items("reports"),
     )
 
     val appManager = KnouxServiceSpec(
@@ -237,12 +231,7 @@ object ServiceSpecs {
         accent2 = V2Cyan,
         glyph = Icons.Rounded.Apps,
         chips = listOf("PackageManager", "إعدادات النظام"),
-        subItems = listOf(
-            preview("كل التطبيقات", "قائمة التطبيقات وحزمها", "appmanager", Icons.Rounded.Apps, V2Violet),
-            preview("تفاصيل تطبيق", "الأذونات والإجراءات", "app-detail", Icons.Rounded.Info, V2Cyan),
-            preview("إدارة الإشعارات", "فتح إعدادات إشعارات التطبيق", "notification-manager", Icons.Rounded.Notifications, V2Amber),
-            preview("فحص الأمان", "فرص التحقق المتاحة", "security-scan", Icons.Rounded.Security, V2Pink),
-        ),
+        subItems = SectionTools.items("appmanager"),
     )
 
     val storage = KnouxServiceSpec(
@@ -255,12 +244,7 @@ object ServiceSpecs {
         accent2 = V2Blue,
         glyph = Icons.Rounded.Storage,
         chips = listOf("StatFs", "قراءة مباشرة"),
-        subItems = listOf(
-            live("تحليل التخزين", "الكلية والمستخدمة والمتاحة", "storage", Icons.Rounded.Storage, V2Cyan),
-            preview("تفصيل الفئات", "توزيع المساحة على الفئات", "storage-breakdown", Icons.Rounded.Layers, V2Violet),
-            preview("الملفات الكبيرة", "أكبر الملفات على الجهاز", "large-files", Icons.Rounded.Storage, V2Amber),
-            preview("مستكشف الملفات", "تصفح مجلدات التطبيق", "file-explorer", Icons.Rounded.Folder, V2Pink),
-        ),
+        subItems = SectionTools.items("storage"),
     )
 
     val battery = KnouxServiceSpec(
@@ -273,11 +257,7 @@ object ServiceSpecs {
         accent2 = V2Cyan,
         glyph = Icons.Rounded.BatteryFull,
         chips = listOf("BatteryManager", "لا تغيير تلقائي"),
-        subItems = listOf(
-            live("حالة البطارية", "المستوى والحرارة والشحن", "battery", Icons.Rounded.BatteryFull, V2Green),
-            live("تشخيص البطارية", "قراءة الحالة والإعدادات", "battery-diagnostics", Icons.Rounded.Bolt, V2Cyan),
-            live("معلومات الجهاز", "المواصفات وإصدار النظام", "device-info", Icons.Rounded.Info, V2Violet),
-        ),
+        subItems = SectionTools.items("battery"),
     )
 
     val ai = KnouxServiceSpec(
@@ -290,12 +270,7 @@ object ServiceSpecs {
         accent2 = V2Violet,
         glyph = Icons.Rounded.AutoAwesome,
         chips = listOf("توصيات محلية", "تنفيذ يدوي"),
-        subItems = listOf(
-            preview("التوصيات", "خطوات مرتبة حسب الأثر", "ai-recommendations", Icons.Rounded.AutoAwesome, V2Pink),
-            preview("تقرير الأداء", "قياس التطور", "performance-report", Icons.Rounded.BarChart, V2Cyan),
-            live("الفحص العميق", "إعادة قياس الجهاز", "deepscan", Icons.Rounded.Radar, V2Violet),
-            live("إدارة التطبيقات", "مراجعة التطبيقات الثقيلة", "appmanager", Icons.Rounded.Apps, V2Amber),
-        ),
+        subItems = SectionTools.items("ai"),
     )
 }
 
@@ -351,14 +326,16 @@ fun ServiceBanner(
         borderAlpha = .55f,
     ) {
         Box(Modifier.fillMaxWidth()) {
-            // Section mascot: fixed inside every section header, kept subtle.
-            V2DeerHeader(
+            Box(
                 Modifier
-                    .align(Alignment.CenterEnd)
-                    .width(96.dp)
-                    .height(118.dp)
-                    .alpha(.16f),
-                animated = true,
+                    .align(Alignment.TopCenter)
+                    .width(210.dp)
+                    .height(110.dp)
+                    .background(
+                        Brush.radialGradient(
+                            listOf(spec.accent.copy(alpha = .18f), Color.Transparent)
+                        )
+                    )
             )
             Column(Modifier.fillMaxWidth()) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -381,13 +358,19 @@ fun ServiceBanner(
                     }
                     if (proActive) {
                         Spacer(Modifier.width(5.dp))
-                        ProPill()
+                        if (spec.hasProServices) ProBadge() else ProPill()
                     }
                     Spacer(Modifier.weight(1f))
                     ServiceStatusChip(status, statusColor)
                 }
                 Spacer(Modifier.height(3.dp))
                 Box(Modifier.fillMaxWidth().height(100.dp), contentAlignment = Alignment.Center) {
+                    V2DeerHeader(
+                        Modifier
+                            .align(if (LocalLayoutDirection.current == LayoutDirection.Rtl) Alignment.TopStart else Alignment.TopEnd)
+                            .size(width = 78.dp, height = 76.dp),
+                        animated = false,
+                    )
                     Canvas(Modifier.size(106.dp)) {
                         val center = Offset(size.width / 2f, size.height / 2f)
                         val radius = size.minDimension / 2f
@@ -803,62 +786,66 @@ fun ServiceSubGrid(
     title: String = "أدوات الخدمة",
 ) {
     val navigate = LocalServiceNavigate.current
+    val proActive = LocalProActive.current
     Column(modifier.fillMaxWidth()) {
-        V2SectionLabel(title, trailing = "${spec.subItems.size} أدوات")
-        Spacer(Modifier.height(7.dp))
-        spec.subItems.chunked(2).forEach { row ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                row.forEach { item ->
-                    ServiceSubTile(item, Modifier.weight(1f)) { navigate(item.route) }
-                }
-                if (row.size == 1) Spacer(Modifier.weight(1f))
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            KText(title, size = 15.sp, weight = FontWeight.Bold)
+            Spacer(Modifier.weight(1f))
+            if (proActive && spec.hasProServices) {
+                ProBadge()
+                Spacer(Modifier.width(5.dp))
             }
-            Spacer(Modifier.height(7.dp))
+            KText("${spec.subItems.size} أدوات", size = 10.sp, color = V2Muted)
+        }
+        Spacer(Modifier.height(7.dp))
+        // Exactly the Home grid: ten services in two rows of five, 91.dp tall.
+        spec.subItems.chunked(5).forEach { row ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                row.forEach { item ->
+                    SectionServiceTile(item, Modifier.weight(1f)) { navigate(item.route) }
+                }
+                repeat(5 - row.size) { Spacer(Modifier.weight(1f)) }
+            }
+            Spacer(Modifier.height(6.dp))
         }
     }
 }
 
 @Composable
-private fun ServiceSubTile(item: ServiceSubItem, modifier: Modifier, onClick: () -> Unit) {
-    val stateColor = when (item.state) {
-        ServiceState.LIVE -> V2Green
-        ServiceState.PERMISSION -> V2Amber
-        ServiceState.RESTRICTED -> V2Amber
-        ServiceState.PREVIEW -> V2Muted
-        ServiceState.READY -> item.accent
-    }
-    val stateLabel = when (item.state) {
-        ServiceState.LIVE -> "مباشر"
-        ServiceState.PERMISSION -> "بعد المنح"
-        ServiceState.RESTRICTED -> "مقيد"
-        ServiceState.PREVIEW -> "معاينة"
-        ServiceState.READY -> "فتح"
-    }
-    // Same 91.dp rhythm as the Home service cards: a section tile must never
-    // read as a smaller, secondary object than the card the owner taps on Home.
+private fun SectionServiceTile(item: ServiceSubItem, modifier: Modifier, onClick: () -> Unit) {
+    val proActive = LocalProActive.current
     V2GlassCard(
         modifier = modifier
             .height(91.dp)
             .clickable(onClick = onClick),
-        padding = 9.dp,
+        padding = 5.dp,
         radius = 15.dp,
         glow = item.accent,
-        borderAlpha = .34f,
+        borderAlpha = .36f,
     ) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            V2IconTile(item.icon, item.accent, size = 34.dp, iconSize = 17.dp)
-            Spacer(Modifier.width(7.dp))
-            Column(Modifier.weight(1f)) {
-                KText(item.title, size = 9.4.sp, weight = FontWeight.Bold, maxLines = 1)
-                Spacer(Modifier.height(1.dp))
-                KText(item.subtitle, size = 6.8.sp, color = V2Soft, maxLines = 1)
-                Spacer(Modifier.height(3.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(3.5.dp).clip(androidx.compose.foundation.shape.CircleShape).background(stateColor))
-                    Spacer(Modifier.width(3.dp))
-                    KText(stateLabel, size = 6.7.sp, color = stateColor, maxLines = 1)
-                }
+        Column(
+            Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            if (item.art != null) {
+                V2RasterTile(image = item.art, size = 52.dp, accent = item.accent)
+            } else {
+                V2NeonGlyph(item.icon, item.accent, size = 50.dp)
             }
+            Spacer(Modifier.height(2.dp))
+            KText(
+                item.title,
+                size = 8.2.sp,
+                weight = FontWeight.SemiBold,
+                color = Color.White,
+                lineHeight = 10.5.sp,
+                align = TextAlign.Center,
+                maxLines = 2,
+            )
+        }
+        if (proActive && item.proOnly) {
+            ProBadge(Modifier.align(Alignment.TopEnd))
         }
     }
 }
