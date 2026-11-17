@@ -368,7 +368,12 @@ fun ServiceBanner(
                     V2DeerHeader(
                         Modifier
                             .align(if (LocalLayoutDirection.current == LayoutDirection.Rtl) Alignment.TopStart else Alignment.TopEnd)
-                            .size(width = 78.dp, height = 76.dp),
+                            .size(width = 78.dp, height = 76.dp)
+                            .graphicsLayer {
+                                transformOrigin = androidx.compose.ui.graphics.TransformOrigin(1f, 0f)
+                                scaleX = 1.24f
+                                scaleY = 1.24f
+                            },
                         animated = false,
                     )
                     Canvas(Modifier.size(106.dp)) {

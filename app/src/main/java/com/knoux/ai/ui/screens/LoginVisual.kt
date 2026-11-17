@@ -25,11 +25,15 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.zIndex
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -46,6 +50,7 @@ import androidx.compose.ui.unit.sp
 import com.knoux.ai.R
 import com.knoux.ai.ui.components.BrandSymbol
 import com.knoux.ai.ui.components.BrandWordmark
+import com.knoux.ai.ui.components.HeaderHalo
 import com.knoux.ai.ui.theme.ProArcticCyan
 import com.knoux.ai.ui.theme.ProTextPrimary
 import com.knoux.ai.ui.theme.ProTextSecondary
@@ -70,11 +75,14 @@ private val ValleyRidges = listOf(
 @Composable
 internal fun LoginBrand() {
     Column(
-        Modifier.fillMaxWidth().padding(top = 9.dp, bottom = 5.dp),
+        Modifier.fillMaxWidth().zIndex(1f).padding(top = 9.dp, bottom = 5.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-        BrandSymbol(size = 51.dp)
+        Box(Modifier.size(51.dp), contentAlignment = Alignment.Center) {
+            HeaderHalo(Modifier.matchParentSize(), color = NeonViolet)
+            BrandSymbol(size = 51.dp)
+        }
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 BrandWordmark(height = 26.dp)
@@ -95,7 +103,13 @@ internal fun LoginBrand() {
             color = ProTextPrimary,
             fontSize = 12.sp,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
+            modifier = Modifier
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(Color.Transparent, Color(0xEC07051C), Color(0xEC07051C), Color.Transparent),
+                    ),
+                )
+                .padding(horizontal = 18.dp, vertical = 2.dp),
         )
     }
 }
@@ -111,9 +125,9 @@ internal fun LoginEditionTitle() {
 }
 
 @Composable
-internal fun LoginCosmicScene(height: Dp, reveal: Float) {
+internal fun LoginCosmicScene(height: Dp, reveal: Float, overlapHeader: Boolean = false) {
     Box(Modifier.fillMaxWidth().height(height), contentAlignment = Alignment.Center) {
-        Canvas(Modifier.fillMaxSize()) {
+        Canvas(Modifier.fillMaxSize().clipToBounds()) {
             val planetCenter = Offset(size.width * .5f, size.height * .72f)
             val planetRadius = size.width * .43f
             drawCircle(
@@ -187,7 +201,15 @@ internal fun LoginCosmicScene(height: Dp, reveal: Float) {
             }
         }
         AuthStag(
-            modifier = Modifier.padding(end = 21.dp, bottom = 8.dp).fillMaxWidth(.93f).height(height * .91f),
+            modifier = Modifier
+                .padding(end = 21.dp, bottom = 8.dp)
+                .fillMaxWidth(.96f)
+                .height(height * if (overlapHeader) .91f else .83f)
+                .graphicsLayer {
+                    transformOrigin = TransformOrigin(.53f, if (overlapHeader) .87f else .50f)
+                    scaleX = 1.17f
+                    scaleY = 1.17f
+                },
             alpha = reveal,
         )
     }

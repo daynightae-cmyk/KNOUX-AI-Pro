@@ -109,7 +109,12 @@ fun V2HomeScreen(
                 .align(Alignment.TopStart)
                 .absoluteOffset(x = 2.dp, y = 33.dp)
                 .size(width = 170.dp, height = 267.dp)
-                .graphicsLayer { alpha = .96f }
+                .graphicsLayer {
+                    transformOrigin = androidx.compose.ui.graphics.TransformOrigin(1f, 0f)
+                    scaleX = 1.16f
+                    scaleY = 1.16f
+                    alpha = .92f
+                }
         )
 
         Column(Modifier.fillMaxSize()) {

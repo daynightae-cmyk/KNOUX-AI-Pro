@@ -228,7 +228,7 @@ fun WelcomeScreen(
         ) {
         LoginBrand()
         if (isFingerprintEntry) {
-            LoginCosmicScene(heroHeight, reveal)
+            LoginCosmicScene(heroHeight, reveal, overlapHeader = true)
         } else if (isVerification) {
             Box(Modifier.fillMaxWidth().height(118.dp), contentAlignment = Alignment.Center) {
                 VerificationShield()

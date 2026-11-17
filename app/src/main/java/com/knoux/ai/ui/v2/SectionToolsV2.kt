@@ -1051,7 +1051,12 @@ fun V2SectionHubScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
                 .align(Alignment.TopStart)
                 .absoluteOffset(x = 2.dp, y = 33.dp)
                 .size(width = 118.dp, height = 124.dp)
-                .graphicsLayer { alpha = .96f }
+                .graphicsLayer {
+                    transformOrigin = androidx.compose.ui.graphics.TransformOrigin(1f, 0f)
+                    scaleX = 1.30f
+                    scaleY = 1.30f
+                    alpha = .88f
+                }
         )
 
         Column(Modifier.fillMaxSize()) {
