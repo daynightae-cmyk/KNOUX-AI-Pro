@@ -95,6 +95,15 @@ internal fun OnboardingEcosystemPage() {
                     BrandSymbol(size = 36.dp)
                 }
                 BrandWordmark(height = 24.dp)
+                Box(
+                    Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(V2Amber.withAlpha(.12f))
+                        .border(1.dp, V2Amber.copy(alpha = .55f), RoundedCornerShape(50))
+                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                ) {
+                    KText("PRO", size = 7.sp, weight = FontWeight.Black, color = V2GoldText)
+                }
             }
         }
         Spacer(Modifier.height(18.dp))
