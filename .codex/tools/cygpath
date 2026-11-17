@@ -1,0 +1,14 @@
+#!/bin/sh
+# Minimal cygpath stand-in for the Gradle wrapper on this host:
+# K:/x -> /k/x, C:/x -> C:/x (drive-letter form is understood by java.exe).
+case "$1" in
+  -u|--unix)
+    p="$2"
+    case "$p" in
+      [A-Za-z]:*) drive=$(printf '%s' "$p" | cut -c1 | tr 'A-Z' 'a-z'); rest=$(printf '%s' "$p" | cut -c3-); printf '/%s%s\n' "$drive" "$rest" ;;
+      *) printf '%s\n' "$p" ;;
+    esac
+    ;;
+  -w|--windows) printf '%s\n' "$2" ;;
+  *) printf '%s\n' "$*" ;;
+esac

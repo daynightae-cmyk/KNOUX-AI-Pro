@@ -106,8 +106,9 @@ private val scanModules = listOf(
     ScanModule("البطارية", Icons.Rounded.BatteryFull, V2Green),
 )
 
+@Suppress("unused")
 @Composable
-fun V2DeepScanScreen(onBack: () -> Unit, onOpenSummary: () -> Unit, onPro: () -> Unit) {
+private fun LegacyDeepScanScreen(onBack: () -> Unit, onOpenSummary: () -> Unit, onPro: () -> Unit) {
     val context = LocalContext.current
     val (refresh, bump) = rememberRefreshCounter()
     val facts = rememberDeviceFacts(refresh)

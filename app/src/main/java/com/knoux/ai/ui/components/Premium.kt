@@ -1,5 +1,8 @@
 package com.knoux.ai.ui.components
 
+import android.database.ContentObserver
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.LinearEasing
@@ -38,8 +41,11 @@ import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -99,18 +105,49 @@ import kotlin.math.sin
 private val GlassTop = Color(0xFF241558)
 private val GlassBottom = Color(0xFF0D0828)
 
+/**
+ * Reduce Motion as the device reports it, live.
+ *
+ * The value used to be read once inside `remember`, so turning Reduce Motion on
+ * (or off) while the app was open left every animation running — the device QA
+ * showed exactly that. It is now observed: the ContentObserver fires whenever
+ * the animation scale changes, so the flag follows the system with or without a
+ * restart of the app.
+ */
 @Composable
 fun rememberMotionEnabled(): Boolean {
     val context = LocalContext.current
-    return remember(context) {
-        runCatching {
-            Settings.Global.getFloat(
-                context.contentResolver,
-                Settings.Global.ANIMATOR_DURATION_SCALE,
-                1f,
-            ) > 0.01f
-        }.getOrDefault(true)
+    var scale by remember(context) {
+        mutableFloatStateOf(
+            runCatching {
+                Settings.Global.getFloat(
+                    context.contentResolver,
+                    Settings.Global.ANIMATOR_DURATION_SCALE,
+                    1f,
+                )
+            }.getOrDefault(1f),
+        )
     }
+    DisposableEffect(context) {
+        val resolver = context.contentResolver
+        val uri = Settings.Global.getUriFor(Settings.Global.ANIMATOR_DURATION_SCALE)
+        val observer = object : ContentObserver(Handler(Looper.getMainLooper())) {
+            override fun onChange(selfChange: Boolean) {
+                scale = runCatching {
+                    Settings.Global.getFloat(
+                        resolver,
+                        Settings.Global.ANIMATOR_DURATION_SCALE,
+                        1f,
+                    )
+                }.getOrDefault(1f)
+            }
+        }
+        runCatching { resolver.registerContentObserver(uri, false, observer) }
+        onDispose {
+            runCatching { resolver.unregisterContentObserver(observer) }
+        }
+    }
+    return remember(scale) { scale > 0.01f }
 }
 
 @Composable

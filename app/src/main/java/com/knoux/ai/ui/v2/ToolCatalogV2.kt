@@ -84,7 +84,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 
 /* ------------------------------------------------------------------ *
- * Nine sections × ten services.
+ * Nine sections × fifteen services.
  *
  * Every value below is produced by a reader in DeviceReality at run time.
  * The catalog only describes which live facts belong to which service.
@@ -203,7 +203,7 @@ internal object SectionToolsCatalog {
                     tr(Icons.Rounded.Layers, "مجموعات مطابقة", formatCount(f.media.duplicateGroups.size), V2Violet),
                     tr(Icons.Rounded.Inventory, "نسخ مرشحة", formatCount(f.media.duplicateCandidates), V2Pink),
                     tr(Icons.Rounded.Savings, "مساحة قابلة للاسترجاع", formatBytes(f.media.duplicateGroups.sumOf { it.reclaimableBytes }), V2Green),
-                    tr(Icons.Rounded.Info, "قاعدة المطابقة", "نفس الحجم + نفس نوع الوسائط", V2Amber),
+                    tr(Icons.Rounded.Info, "قاعدة المطابقة", "محتوى مطابق · SHA-256", V2Amber),
                 )
             },
             note = "الفحص محدود إلى 256 ملفًا و128 MB إجمالًا، وبحد 32 MB للملف.",
@@ -1424,7 +1424,8 @@ internal object SectionToolsCatalog {
     )
 
     val all: List<SectionToolDef> =
-        duplicates + residue + privacy + deepScan + reports + appManager + storage + battery + ai
+        duplicates + residue + privacy + deepScan + reports + appManager + storage + battery + ai +
+            SectionToolsExpansion.defs
 }
 
 /* ------------------------------------------------------------------ *

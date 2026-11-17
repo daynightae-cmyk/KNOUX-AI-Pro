@@ -24,14 +24,18 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Apps
 import androidx.compose.material.icons.rounded.BarChart
+import androidx.compose.material.icons.rounded.Cached
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.CleaningServices
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.Folder
+import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Layers
+import androidx.compose.material.icons.rounded.PhotoLibrary
+import androidx.compose.material.icons.rounded.PieChart
 import androidx.compose.material.icons.rounded.Radar
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Settings
@@ -58,7 +62,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /* ------------------------------------------------------------------ *
- * Smart Clean — ten separately routed services
+ * Smart Clean - fifteen separately routed services
  *
  * Each route below is a real screen. Numbers come from DeviceFacts /
  * MediaStore / PackageManager or read as unavailable; no fixture lists.
@@ -131,6 +135,32 @@ internal object CleanTools {
             "clean-history", "01.10", "التحقق والسجل", "POST-CLEAN HISTORY",
             "سجل الفحوص المحفوظة على هذا الهاتف",
             Icons.Rounded.Timeline, V2Green, V2Cyan,
+            proOnly = true,
+        ),
+        CleanToolDef(
+            "clean-large", "01.11", "عدسة الملفات الكبيرة", "LARGE FILE LENS",
+            "أكبر الملفات المقروءة وفرزها قبل أي قرار",
+            Icons.Rounded.FolderOpen, V2Amber, V2Pink,
+        ),
+        CleanToolDef(
+            "clean-media-mix", "01.12", "مزيج الصور والفيديو", "MEDIA MIX",
+            "عدد وحجم الوسائط المقروءة من MediaStore",
+            Icons.Rounded.PhotoLibrary, V2Pink, V2Violet,
+        ),
+        CleanToolDef(
+            "clean-buckets", "01.13", "المجلدات الأثقل", "HEAVY BUCKETS",
+            "تجميع الملفات المقروءة حسب مجلد المصدر",
+            Icons.Rounded.Folder, V2Violet, V2Cyan,
+        ),
+        CleanToolDef(
+            "clean-free-plan", "01.14", "خطة المساحة الحرة", "FREE SPACE PLAN",
+            "ما يمكن استرجاعه وما يبقى محميًا",
+            Icons.Rounded.PieChart, V2Cyan, V2Green,
+        ),
+        CleanToolDef(
+            "clean-cache-audit", "01.15", "تدقيق كاش KNOUX", "KNOUX CACHE AUDIT",
+            "الحجم والملفات المؤقتة داخل مساحة التطبيق",
+            Icons.Rounded.Cached, V2Green, V2Amber,
             proOnly = true,
         ),
     )
@@ -218,6 +248,11 @@ fun V2CleanToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
                     "clean-impact" -> impactItems(facts, navigate)
                     "clean-confirm" -> confirmItems(facts, navigate)
                     "clean-history" -> historyItems(history, navigate)
+                    "clean-large" -> largeItems(facts, navigate)
+                    "clean-media-mix" -> mediaMixItems(facts, navigate)
+                    "clean-buckets" -> bucketItems(facts, navigate)
+                    "clean-free-plan" -> freePlanItems(facts, navigate)
+                    "clean-cache-audit" -> cacheAuditItems(facts, navigate)
                 }
                 item { PreviewNote("كل الأرقام أعلاه مقروءة من هذا الهاتف الآن. لا تُعرض قيم تقديرية بدلًا من القراءة الفعلية.") }
             }
@@ -564,6 +599,178 @@ private fun androidx.compose.foundation.lazy.LazyListScope.historyItems(history:
             action = "فتح تقرير الأداء",
             icon = Icons.Rounded.BarChart,
             onClick = { navigate("performance-report") },
+        )
+    }
+}
+
+/* ---------------------- expanded lenses ---------------------- */
+
+private fun androidx.compose.foundation.lazy.LazyListScope.largeItems(
+    facts: DeviceFacts,
+    navigate: (String) -> Unit,
+) {
+    item { V2SectionLabel("أكبر الملفات", trailing = if (facts.media.permissionGranted) "MediaStore" else "بعد المنح") }
+    when {
+        !facts.media.permissionGranted -> item {
+            ServiceCapabilityCard(
+                title = "صلاحية الوسائط مطلوبة",
+                body = "لن تُعرض قائمة الملفات قبل منح قراءة الصور والفيديو. لا تُستبدل القائمة بأرقام تجريبية.",
+                state = ServiceState.PERMISSION,
+            )
+        }
+        facts.media.largestFiles.isEmpty() -> item {
+            ServiceCapabilityCard(
+                title = "لا ملفات في النطاق",
+                body = "فُحصت المكتبة المصرح بها ولم يُعد MediaStore ملفات قابلة للعرض.",
+                state = ServiceState.LIVE,
+            )
+        }
+        else -> facts.media.largestFiles.take(8).forEach { file ->
+            item {
+                CleanFileRow(
+                    title = file.name,
+                    subtitle = file.bucket ?: if (file.isVideo) "فيديو" else "صورة",
+                    size = formatBytes(file.sizeBytes),
+                    accent = if (file.isVideo) V2Pink else V2Violet,
+                )
+            }
+        }
+    }
+    item {
+        CleanActionCard(
+            title = "المراجعة الكاملة",
+            body = "انتقل إلى شاشة الملفات المكررة لمراجعة كل المجموعات قبل أي حذف.",
+            action = "فتح الملفات المكررة",
+            icon = Icons.Rounded.Layers,
+            onClick = { navigate("duplicates") },
+        )
+    }
+}
+
+private fun androidx.compose.foundation.lazy.LazyListScope.mediaMixItems(
+    facts: DeviceFacts,
+    navigate: (String) -> Unit,
+) {
+    item { V2SectionLabel("مزيج الوسائط", trailing = if (facts.media.permissionGranted) "مباشر" else "بعد المنح") }
+    item {
+        V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 20.dp, glow = V2Pink, borderAlpha = .32f) {
+            Column {
+                val total = (facts.media.imagesBytes + facts.media.videosBytes).coerceAtLeast(1L)
+                SegmentedBar(
+                    listOf(
+                        (facts.media.imagesBytes.toFloat() / total).coerceIn(0f, 1f) to V2Pink,
+                        (facts.media.videosBytes.toFloat() / total).coerceIn(0f, 1f) to V2Violet,
+                    ),
+                    height = 11,
+                )
+                Spacer(Modifier.height(10.dp))
+                CleanFactRow(Icons.Rounded.Image, "صور", if (facts.media.permissionGranted) "${formatCount(facts.media.images)} · ${formatBytes(facts.media.imagesBytes)}" else "بعد المنح", V2Pink)
+                Spacer(Modifier.height(7.dp))
+                CleanFactRow(Icons.Rounded.Layers, "فيديو", if (facts.media.permissionGranted) "${formatCount(facts.media.videos)} · ${formatBytes(facts.media.videosBytes)}" else "بعد المنح", V2Violet)
+            }
+        }
+    }
+    item {
+        CleanActionCard(
+            title = "أين تذهب المساحة؟",
+            body = "شاشة التخزين توضح الحصص الفعلية وحدود القراءة.",
+            action = "فتح تحليل التخزين",
+            icon = Icons.Rounded.Storage,
+            onClick = { navigate("storage") },
+        )
+    }
+}
+
+private fun androidx.compose.foundation.lazy.LazyListScope.bucketItems(facts: DeviceFacts, navigate: (String) -> Unit) {
+    item { V2SectionLabel("المجلدات الأثقل", trailing = if (facts.media.permissionGranted) "من الملفات المقروءة" else "بعد المنح") }
+    if (!facts.media.permissionGranted || facts.media.largestFiles.isEmpty()) {
+        item {
+            ServiceCapabilityCard(
+                title = if (facts.media.permissionGranted) "لا مجلدات لعرضها" else "صلاحية الوسائط مطلوبة",
+                body = "لا تُبنى قائمة المجلدات إلا من الملفات التي أعادها MediaStore.",
+                state = if (facts.media.permissionGranted) ServiceState.LIVE else ServiceState.PERMISSION,
+            )
+        }
+    } else {
+        val buckets = facts.media.largestFiles
+            .groupBy { it.bucket?.takeIf(String::isNotBlank) ?: "مجلد غير مسمى" }
+            .mapValues { (_, files) -> files.sumOf { it.sizeBytes } }
+            .entries
+            .sortedByDescending { it.value }
+        buckets.take(6).forEach { (bucket, bytes) ->
+            item {
+                CleanFileRow(
+                    title = bucket,
+                    subtitle = "${formatCount(facts.media.largestFiles.count { (it.bucket ?: "مجلد غير مسمى") == bucket })} ملفًا مقروءًا",
+                    size = formatBytes(bytes),
+                    accent = V2Violet,
+                )
+            }
+        }
+    }
+    item {
+        CleanActionCard(
+            title = "تفاصيل أعلى الملفات",
+            body = "قائمة أكبر الملفات تكمل صورة المجلدات الأثقل.",
+            action = "فتح الملفات الكبيرة",
+            icon = Icons.Rounded.FolderOpen,
+            onClick = { navigate("clean-large") },
+        )
+    }
+}
+
+private fun androidx.compose.foundation.lazy.LazyListScope.freePlanItems(facts: DeviceFacts, navigate: (String) -> Unit) {
+    item { V2SectionLabel("خطة المساحة", trailing = "قراءة مباشرة") }
+    item {
+        V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 20.dp, glow = V2Cyan, borderAlpha = .32f) {
+            Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                CleanFactRow(Icons.Rounded.Storage, "المساحة الحرة", formatBytes(facts.storage.freeBytes), V2Green)
+                CleanFactRow(Icons.Rounded.PieChart, "المستخدم", "${(facts.storage.usedFraction * 100).toInt()}%", V2Cyan)
+                CleanFactRow(Icons.Rounded.Cached, "كاش KNOUX", formatBytes(facts.ownCacheBytes), V2Amber)
+                CleanFactRow(
+                    Icons.Rounded.Layers,
+                    "تكرار قابل للمراجعة",
+                    if (facts.media.permissionGranted) formatBytes(facts.media.duplicateGroups.sumOf { it.reclaimableBytes }) else "بعد المنح",
+                    V2Pink,
+                )
+            }
+        }
+    }
+    item {
+        CleanActionCard(
+            title = "لا حذف تلقائي",
+            body = "كل عنصر يُعرض هنا للمراجعة فقط؛ التنفيذ يحتاج تأكيدك في شاشة النظام.",
+            action = "فتح مركز التنظيف",
+            icon = Icons.Rounded.CleaningServices,
+            onClick = { navigate("smartclean") },
+        )
+    }
+}
+
+private fun androidx.compose.foundation.lazy.LazyListScope.cacheAuditItems(facts: DeviceFacts, navigate: (String) -> Unit) {
+    item { V2SectionLabel("كاش KNOUX", trailing = "داخل التطبيق") }
+    item {
+        V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 20.dp, glow = V2Green, borderAlpha = .34f) {
+            Column(verticalArrangement = Arrangement.spacedBy(9.dp)) {
+                CleanFactRow(Icons.Rounded.Cached, "حجم الكاش", formatBytes(facts.ownCacheBytes), V2Green)
+                CleanFactRow(Icons.Rounded.Description, "عدد الملفات", formatCount(facts.ownCacheFiles), V2Cyan)
+                CleanFactRow(
+                    Icons.Rounded.PieChart,
+                    "من التخزين المستخدم",
+                    if (facts.storage.usedBytes > 0L) "${(facts.ownCacheBytes * 100 / facts.storage.usedBytes)}%" else "—",
+                    V2Amber,
+                )
+                CleanFactRow(Icons.Rounded.Storage, "المساحة الحرة", formatBytes(facts.storage.freeBytes), V2Violet)
+            }
+        }
+    }
+    item {
+        CleanActionCard(
+            title = "نطاق القراءة",
+            body = "هذه الأرقام تخص KNOUX فقط، ولا تشمل كاش التطبيقات الأخرى.",
+            action = "فتح التنظيف الذكي",
+            icon = Icons.Rounded.CleaningServices,
+            onClick = { navigate("smartclean") },
         )
     }
 }

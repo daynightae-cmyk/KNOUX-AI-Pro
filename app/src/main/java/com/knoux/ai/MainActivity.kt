@@ -201,6 +201,10 @@ fun KnouxApp(startRoute: String? = null) {
                 EntryStage.Shell -> {
                 Scaffold(
                     containerColor = Color.Transparent,
+                    // Nothing hides the page's ending: the bottom bar already
+                    // pads itself past the navigation bar, and the scaffold must
+                    // not eat another navigation-bar inset, or the last card of
+                    // a service page loses ~44px of its height behind the bar.
                     contentWindowInsets = WindowInsets(0, 0, 0, 0),
                     bottomBar = {
                         if (route != SETTINGS_ROUTE) {
@@ -389,7 +393,7 @@ private fun AppNavHost(
                 onPro = { open(ROUTE_PRO) },
             )
         }
-        // Smart Clean's ten internal services. Each route opens its own screen.
+        // Smart Clean's fifteen internal services. Each route opens its own screen.
         CleanTools.routes.forEach { cleanRoute ->
             composable(cleanRoute) {
                 V2CleanToolScreen(
@@ -399,7 +403,7 @@ private fun AppNavHost(
                 )
             }
         }
-        // Ten section hubs: each opens the ten independently routed services.
+        // Ten section hubs: each opens its fifteen independently routed services.
         SectionHub.routes.forEach { hubRoute ->
             composable(hubRoute) {
                 V2SectionHubScreen(
@@ -409,7 +413,7 @@ private fun AppNavHost(
                 )
             }
         }
-        // The remaining 90 internal services (9 sections × 10), each on its own route.
+        // The remaining 135 internal services (9 sections × 15), each on its own route.
         SectionTools.defs.map { it.route }.forEach { toolRoute ->
             composable(toolRoute) {
                 V2SectionToolScreen(

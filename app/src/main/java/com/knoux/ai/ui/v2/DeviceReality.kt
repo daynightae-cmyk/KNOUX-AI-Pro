@@ -548,6 +548,22 @@ private fun hasUsageAccess(context: Context): Boolean = runCatching {
     mode == AppOpsManager.MODE_ALLOWED
 }.getOrDefault(false)
 
+/**
+ * Named entry points for the staged Deep Scan controller. Each one is the same
+ * reader used by [readDeviceFacts]; the controller calls them one stage at a
+ * time so the cover can show real progress and a cancel stops the pipeline.
+ */
+internal object DeviceReaders {
+    fun battery(context: Context): BatteryFacts = readBattery(context)
+    fun storage(): StorageFacts = readStorage()
+    fun installedApps(context: Context): List<InstalledAppFacts> = readInstalledApps(context)
+    fun privacyGroups(context: Context, apps: List<InstalledAppFacts>): List<AppPermissionGroup> =
+        readPrivacyGroups(context, apps)
+    fun ownCache(context: Context): Pair<Long, Int> = ownCacheBytes(context)
+    fun media(context: Context): MediaFacts = readMedia(context)
+    fun usageAccess(context: Context): Boolean = hasUsageAccess(context)
+}
+
 fun readDeviceFacts(context: Context): DeviceFacts {
     val battery = readBattery(context)
     val storage = readStorage()
@@ -572,7 +588,7 @@ fun readDeviceFacts(context: Context): DeviceFacts {
 /**
  * Process-wide snapshot of the last measured device facts.
  *
- * The 100 service screens all read the same phone. Re-scanning every package,
+ * The 150 service screens all read the same phone. Re-scanning every package,
  * permission and MediaStore row on every navigation made each card sit on
  * zeros for several seconds - which reads as "the service is missing" on a
  * low-end device. One measured snapshot is shared; a manual refresh always

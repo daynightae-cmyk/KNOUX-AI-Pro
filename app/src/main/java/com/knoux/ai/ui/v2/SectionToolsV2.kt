@@ -71,6 +71,7 @@ import androidx.compose.material.icons.rounded.Verified
 import androidx.compose.material.icons.rounded.Videocam
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material3.Icon
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -80,6 +81,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -98,6 +100,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.cos
+import kotlin.math.roundToInt
+import kotlin.math.sin
 
 /* ------------------------------------------------------------------ *
  * Section tool catalog — shared model
@@ -110,7 +115,10 @@ internal data class ToolRow(
     val accent: Color,
 )
 
-internal enum class ToolList { NONE, FILES, GROUPS, APPS, PERMISSIONS, HISTORY }
+internal enum class ToolList {
+    NONE, FILES, PHOTO_FILES, VIDEO_FILES, GROUPS, PHOTO_GROUPS, VIDEO_GROUPS,
+    APPS, PERMISSIONS, HISTORY,
+}
 
 internal enum class ToolBehavior {
     NONE, SEARCH_APPS, SEARCH_FILES, FILTER_APPS_SIZE, SIZE_FILTER_MEDIA,
@@ -143,7 +151,15 @@ internal data class SectionToolDef(
     val handoff: ToolHandoff = ToolHandoff.NONE,
     val actionRoute: String? = null,
     val actionLabel: String? = null,
-)
+    /** App scope pre-selected on service screens that open an app list. */
+    val initialAppFilter: Int = 0,
+) {
+    val requiresMedia: Boolean
+        get() = list == ToolList.FILES || list == ToolList.PHOTO_FILES ||
+            list == ToolList.VIDEO_FILES || list == ToolList.GROUPS ||
+            list == ToolList.PHOTO_GROUPS || list == ToolList.VIDEO_GROUPS ||
+            (section == "duplicates" && route != "dup-exclusions")
+}
 
 /* ------------------------------------------------------------------ *
  * Section card artwork — the same 3D raster language used by Home
@@ -243,7 +259,7 @@ internal object SectionTools {
         else -> V2Violet
     }
 
-    fun bannerSpec(def: SectionToolDef): KnouxServiceSpec = KnouxServiceSpec(
+    fun bannerSpec(def: SectionToolDef, availability: ToolContentState): KnouxServiceSpec = KnouxServiceSpec(
         key = def.route,
         order = def.order,
         title = def.title,
@@ -252,9 +268,20 @@ internal object SectionTools {
         accent = def.accent,
         accent2 = accent2For(def.section),
         glyph = def.icon,
-        chips = listOf("قراءة مباشرة", "بدون أرقام تجريبية"),
+        chips = listOf(
+            when (availability) {
+                ToolContentState.LOADING -> "لم تكتمل القراءة"
+                ToolContentState.PERMISSION_REQUIRED -> "لا نتائج قبل الإذن"
+                else -> "ضمن النطاق المتاح"
+            },
+            "لا حذف تلقائي",
+        ),
         subItems = emptyList(),
         pro = def.proOnly,
+        artwork = SectionArt.forIndex(
+            def.section,
+            defs.filter { it.section == def.section }.indexOf(def).coerceAtLeast(0),
+        ),
     )
 }
 
@@ -271,9 +298,19 @@ fun V2SectionToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
     val facts = rememberDeviceFacts(refresh)
     val history = remember(refresh) { readScanHistory(context) }
     val rows = def.rows(facts, history)
+    val loaded = facts.computedAt > 0L
+    val availability = toolContentState(
+        loaded = loaded,
+        permissionGranted = !def.requiresMedia || facts.media.permissionGranted,
+        sourceCount = 1,
+    )
+    val missingMedia = availability == ToolContentState.PERMISSION_REQUIRED
+    val relatedServices = SectionTools.defs
+        .filter { it.section == def.section && it.route != def.route }
+        .take(3)
 
     var query by remember { mutableStateOf("") }
-    var appFilter by remember { mutableIntStateOf(0) }
+    var appFilter by remember { mutableIntStateOf(def.initialAppFilter) }
     var sortMode by remember { mutableIntStateOf(0) }
     var rangeDays by remember { mutableIntStateOf(1) }
     var minMb by remember { mutableIntStateOf(50) }
@@ -295,10 +332,18 @@ fun V2SectionToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
             ) {
                 item {
                     ServiceBanner(
-                        spec = SectionTools.bannerSpec(def),
-                        status = if (facts.computedAt > 0L) "قراءة مباشرة" else "جاري القراءة",
-                        statusColor = if (facts.computedAt > 0L) V2Green else V2Amber,
-                        metric = def.metric(facts, history),
+                        spec = SectionTools.bannerSpec(def, availability),
+                        status = when {
+                            !loaded -> "جاري القراءة"
+                            missingMedia -> "صلاحية مطلوبة"
+                            else -> "قراءة مباشرة"
+                        },
+                        statusColor = if (loaded && !missingMedia) V2Green else V2Amber,
+                        metric = when {
+                            !loaded -> "بانتظار قراءة الجهاز"
+                            missingMedia -> "الوسائط غير متاحة"
+                            else -> def.metric(facts, history)
+                        },
                     )
                 }
                 if (def.behavior != ToolBehavior.NONE) {
@@ -325,7 +370,7 @@ fun V2SectionToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
                         )
                     }
                 }
-                if (rows.isNotEmpty()) {
+                if (loaded && !missingMedia && rows.isNotEmpty()) {
                     item { V2SectionLabel("قراءة هذا الهاتف", trailing = if (facts.computedAt > 0L) "مباشر" else "جاري") }
                     item {
                         V2GlassCard(
@@ -341,7 +386,27 @@ fun V2SectionToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
                         }
                     }
                 }
-                toolsList(
+                if (!loaded) {
+                    item {
+                        V2GlassCard(Modifier.fillMaxWidth(), padding = 16.dp, glow = def.accent) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                CircularProgressIndicator(Modifier.size(24.dp), color = def.accent, strokeWidth = 2.dp)
+                                Spacer(Modifier.width(12.dp))
+                                KText("جارٍ قراءة المصادر المتاحة…", size = 11.sp, color = V2Soft)
+                            }
+                        }
+                    }
+                } else if (missingMedia) {
+                    item {
+                        ServiceCapabilityCard(
+                            title = "صلاحية الوسائط مطلوبة",
+                            body = "لم تُقرأ مكتبة الصور والفيديو. افتح إعدادات التطبيق لمراجعة الأذونات، ثم ارجع وحدّث القراءة.",
+                            state = ServiceState.PERMISSION,
+                            actionLabel = "مراجعة أذونات التطبيق",
+                            onAction = { openAppInfo(context, context.packageName) },
+                        )
+                    }
+                } else toolsList(
                     def = def,
                     facts = facts,
                     history = history,
@@ -374,6 +439,63 @@ fun V2SectionToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
                             }
                         },
                     )
+                }
+                item {
+                    Row(
+                        Modifier.fillMaxWidth()
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(V2Green.withAlpha(.06f))
+                            .border(1.dp, V2Green.withAlpha(.22f), RoundedCornerShape(16.dp))
+                            .padding(10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Rounded.Verified, null, tint = V2Green, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(7.dp))
+                        Column {
+                            KText("مراجعة قبل التنفيذ", size = 8.6.sp, weight = FontWeight.Bold, color = V2Green)
+                            KText(
+                                "هذه الشاشة تقرأ وتوضح فقط. لا تغيير على النظام من دون تأكيد صريح منك.",
+                                size = 7.2.sp,
+                                lineHeight = 10.sp,
+                                color = V2Soft,
+                            )
+                        }
+                    }
+                }
+                item { V2SectionLabel("خدمات مرتبطة", trailing = "نفس القسم") }
+                item {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                        relatedServices.forEach { related ->
+                            V2GlassCard(
+                                Modifier
+                                    .weight(1f)
+                                    .height(72.dp)
+                                    .clickable { navigate(related.route) },
+                                padding = 7.dp,
+                                radius = 15.dp,
+                                glow = related.accent,
+                                borderAlpha = .34f,
+                            ) {
+                                Column(
+                                    Modifier.fillMaxSize(),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center,
+                                ) {
+                                    Icon(related.icon, null, tint = related.accent, modifier = Modifier.size(21.dp))
+                                    Spacer(Modifier.height(3.dp))
+                                    KText(
+                                        related.title,
+                                        size = 7.8.sp,
+                                        weight = FontWeight.SemiBold,
+                                        lineHeight = 10.sp,
+                                        align = TextAlign.Center,
+                                        maxLines = 2,
+                                    )
+                                }
+                            }
+                        }
+                        repeat(3 - relatedServices.size) { Spacer(Modifier.weight(1f)) }
+                    }
                 }
             }
             V2GradientButton(
@@ -657,8 +779,13 @@ private fun androidx.compose.foundation.lazy.LazyListScope.toolsList(
 ) {
     when (def.list) {
         ToolList.NONE -> Unit
-        ToolList.FILES -> {
-            val base = facts.media.largestFiles.filter { file ->
+        ToolList.FILES, ToolList.PHOTO_FILES, ToolList.VIDEO_FILES -> {
+            val scope = when (def.list) {
+                ToolList.PHOTO_FILES -> facts.media.largestFiles.filter { !it.isVideo }
+                ToolList.VIDEO_FILES -> facts.media.largestFiles.filter { it.isVideo }
+                else -> facts.media.largestFiles
+            }
+            val base = scope.filter { file ->
                 (query.isBlank() || file.name.contains(query, true)) &&
                     (def.behavior != ToolBehavior.SIZE_FILTER_MEDIA ||
                         file.sizeBytes >= minMb.toLong() * 1024L * 1024L)
@@ -668,16 +795,22 @@ private fun androidx.compose.foundation.lazy.LazyListScope.toolsList(
                 2 -> base.sortedByDescending { it.isVideo }
                 else -> base.sortedByDescending { it.sizeBytes }
             }
-            if (files.isEmpty()) {
+            val contentState = toolContentState(
+                loaded = facts.computedAt > 0L,
+                permissionGranted = facts.media.permissionGranted,
+                sourceCount = scope.size,
+                visibleCount = files.size,
+            )
+            if (contentState != ToolContentState.CONTENT) {
                 item {
                     ServiceCapabilityCard(
-                        title = if (facts.media.permissionGranted) "لا ملفات وسائط لعرضها" else "صلاحية الوسائط مطلوبة",
-                        body = if (facts.media.permissionGranted) {
-                            "فُحصت المكتبة المصرح بها ولم تُعد MediaStore أي ملفات قابلة للعرض."
+                        title = if (contentState == ToolContentState.FILTERED_EMPTY) "لا ملفات تطابق الفلتر" else "لا ملفات وسائط لعرضها",
+                        body = if (contentState == ToolContentState.FILTERED_EMPTY) {
+                            "قائمة الملفات تحتوي عناصر، لكن لا شيء يطابق البحث أو حد الحجم الحالي. غيّر الفلتر لعرضها."
                         } else {
-                            "امنح READ_EXTERNAL_STORAGE ثم حدّث القراءة لعرض ملفاتك الحقيقية."
+                            "لم يُعد المصدر ملفات في النطاق المقروء. هذا ليس تأكيدًا على خلو الجهاز كله."
                         },
-                        state = if (facts.media.permissionGranted) ServiceState.LIVE else ServiceState.PERMISSION,
+                        state = ServiceState.LIVE,
                     )
                 }
             } else {
@@ -694,18 +827,23 @@ private fun androidx.compose.foundation.lazy.LazyListScope.toolsList(
                 }
             }
         }
-        ToolList.GROUPS -> {
-            if (facts.media.duplicateGroups.isEmpty()) {
+        ToolList.GROUPS, ToolList.PHOTO_GROUPS, ToolList.VIDEO_GROUPS -> {
+            val groups = when (def.list) {
+                ToolList.PHOTO_GROUPS -> facts.media.duplicateGroups.filter { !it.isVideo }
+                ToolList.VIDEO_GROUPS -> facts.media.duplicateGroups.filter { it.isVideo }
+                else -> facts.media.duplicateGroups
+            }
+            if (groups.isEmpty()) {
                 item {
                     ServiceCapabilityCard(
-                        title = "لا مجموعات تكرار حالية",
-                        body = "لم تظهر نسخ متطابقة في نطاق الوسائط المقروءة.",
-                        state = ServiceState.LIVE,
+                        title = if (facts.media.permissionGranted) "لا مجموعات تكرار في هذا النوع" else "صلاحية الوسائط مطلوبة",
+                        body = "لم تظهر مجموعات ضمن نطاق المقارنة المحدود. لا يعني ذلك فحص كل الملفات أو خلو الجهاز كله من التكرار.",
+                        state = if (facts.media.permissionGranted) ServiceState.LIVE else ServiceState.PERMISSION,
                     )
                 }
             } else {
-                item { V2SectionLabel("المجموعات", trailing = "${facts.media.duplicateGroups.size}") }
-                facts.media.duplicateGroups.take(10).forEach { group ->
+                item { V2SectionLabel("المجموعات", trailing = "${groups.size}") }
+                groups.take(10).forEach { group ->
                     item {
                         ToolFileRow(
                             title = group.name,
@@ -945,7 +1083,7 @@ private fun ToolActionCard(
                 Icon(Icons.Rounded.Search, null, tint = def.accent, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(7.dp))
                 KText(
-                    "هذه الشاشة تعرض قراءة حقيقية فقط. لا يوجد زر ينفّذ تغييرًا على النظام من دون موافقتك.",
+                    "البيانات تعتمد على الأذونات المتاحة. لا تُجري هذه الشاشة تغييرًا على النظام من دون موافقتك.",
                     size = 7.6.sp,
                     lineHeight = 11.sp,
                     color = V2Soft,
@@ -955,36 +1093,38 @@ private fun ToolActionCard(
         return
     }
     V2GlassCard(Modifier.fillMaxWidth(), padding = 11.dp, radius = 18.dp, glow = def.accent, borderAlpha = .30f) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            V2IconTile(if (hasHandoff) Icons.Rounded.OpenInNew else Icons.Rounded.PlayArrow, def.accent, size = 36.dp, iconSize = 18.dp)
-            Spacer(Modifier.width(8.dp))
-            Column(Modifier.weight(1f)) {
-                KText(
-                    def.actionLabel ?: if (hasHandoff) "فتح إعدادات Android" else "متابعة في الشاشة المتخصصة",
-                    size = 9.sp,
-                    weight = FontWeight.Bold,
-                )
-                KText(
-                    if (hasHandoff) "التحويل يتم إلى شاشة النظام الرسمية، وليس تنفيذًا داخليًا."
-                    else "تفتح الشاشة التي تعرض هذه البيانات بتفصيل أوسع.",
-                    size = 7.sp,
-                    color = V2Soft,
-                )
+        Column(Modifier.fillMaxWidth()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                V2IconTile(if (hasHandoff) Icons.Rounded.OpenInNew else Icons.Rounded.PlayArrow, def.accent, size = 36.dp, iconSize = 18.dp)
+                Spacer(Modifier.width(8.dp))
+                Column(Modifier.weight(1f)) {
+                    KText(
+                        def.actionLabel ?: if (hasHandoff) "فتح إعدادات Android" else "متابعة في الشاشة المتخصصة",
+                        size = 9.sp,
+                        weight = FontWeight.Bold,
+                    )
+                    KText(
+                        if (hasHandoff) "التحويل يتم إلى شاشة النظام الرسمية، وليس تنفيذًا داخليًا."
+                        else "تفتح الشاشة التي تعرض هذه البيانات بتفصيل أوسع.",
+                        size = 7.sp,
+                        color = V2Soft,
+                    )
+                }
+                Box(
+                    Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(def.accent.withAlpha(.16f))
+                        .border(1.dp, def.accent.withAlpha(.45f), RoundedCornerShape(50))
+                        .clickable { if (hasRoute) onNavigate(def.actionRoute!!) else onHandoff() }
+                        .padding(horizontal = 10.dp, vertical = 5.dp)
+                ) {
+                    KText("فتح", size = 8.sp, weight = FontWeight.Black, color = def.accent)
+                }
             }
-            Box(
-                Modifier
-                    .clip(RoundedCornerShape(50))
-                    .background(def.accent.withAlpha(.16f))
-                    .border(1.dp, def.accent.withAlpha(.45f), RoundedCornerShape(50))
-                    .clickable { if (hasRoute) onNavigate(def.actionRoute!!) else onHandoff() }
-                    .padding(horizontal = 10.dp, vertical = 5.dp)
-            ) {
-                KText("فتح", size = 8.sp, weight = FontWeight.Black, color = def.accent)
+            if (hasHandoff && facts.media.duplicatesNote().isNotBlank()) {
+                Spacer(Modifier.height(5.dp))
+                KText(facts.media.duplicatesNote(), size = 7.sp, color = V2Muted)
             }
-        }
-        if (hasHandoff && facts.media.duplicatesNote().isNotBlank()) {
-            Spacer(Modifier.height(5.dp))
-            KText(facts.media.duplicatesNote(), size = 7.sp, color = V2Muted)
         }
     }
 }
@@ -993,7 +1133,7 @@ private fun MediaFacts.duplicatesNote(): String =
     if (!permissionGranted) "صلاحية الوسائط غير ممنوحة بعد." else ""
 
 /* ------------------------------------------------------------------ *
- * Section hubs — 10 sections × 10 independently routed services
+ * Section hubs — 10 sections × 15 independently routed services
  * ------------------------------------------------------------------ */
 
 internal object SectionHub {
@@ -1028,7 +1168,7 @@ internal object SectionHub {
 /**
  * A section hub is the Home screen, re-cut for one section: the same stag
  * header, the same title lockup, the same health panel, the same centerpiece
- * orb with two flanking action cards, the same 5+5 service rhythm, the same
+ * orb with two flanking action cards, the same rows-of-five service rhythm, the same
  * Pro banner and the same live stat strip — only the emblem, the services and
  * the readings change. Every number below is read from this device.
  */
@@ -1046,18 +1186,8 @@ fun V2SectionHubScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
             .fillMaxSize()
             .windowInsetsPadding(WindowInsets.statusBars)
     ) {
-        V2DeerHeader(
-            Modifier
-                .align(Alignment.TopStart)
-                .absoluteOffset(x = 2.dp, y = 33.dp)
-                .size(width = 118.dp, height = 124.dp)
-                .graphicsLayer {
-                    transformOrigin = androidx.compose.ui.graphics.TransformOrigin(1f, 0f)
-                    scaleX = 1.30f
-                    scaleY = 1.30f
-                    alpha = .88f
-                }
-        )
+        SectionAura(spec.accent, spec.accent2, Modifier.align(Alignment.TopStart))
+        V2HeaderMascot(Modifier.align(Alignment.TopStart))
 
         Column(Modifier.fillMaxSize()) {
             V2TopBar(
@@ -1073,8 +1203,10 @@ fun V2SectionHubScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
             ) {
                 item {
                     Spacer(Modifier.height(2.dp))
+                    // Reserve the mascot's side of the header instead of painting
+                    // long Arabic titles and descriptions underneath its artwork.
                     Row(
-                        Modifier.fillMaxWidth(),
+                        Modifier.fillMaxWidth().padding(start = 86.dp),
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.Bottom,
                     ) {
@@ -1104,22 +1236,22 @@ fun V2SectionHubScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
                         spec.english,
                         size = 9.sp,
                         weight = FontWeight.Bold,
-                        color = V2GoldText,
+                        color = spec.accent2,
                         align = TextAlign.Center,
                         letterSpacing = 1.4.sp,
-                        modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
+                        modifier = Modifier.fillMaxWidth().padding(start = 86.dp, top = 2.dp),
                     )
                     KText(
                         spec.tagline,
                         size = 11.sp,
                         color = V2Soft,
                         align = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth().padding(top = 2.dp),
+                        modifier = Modifier.fillMaxWidth().padding(start = 86.dp, top = 2.dp),
                     )
                     if (proActive && spec.hasProServices) {
                         Spacer(Modifier.height(5.dp))
                         Row(
-                            Modifier.fillMaxWidth(),
+                            Modifier.fillMaxWidth().padding(start = 86.dp),
                             horizontalArrangement = Arrangement.Center,
                         ) {
                             ProBadge(label = "قسم PRO")
@@ -1134,6 +1266,7 @@ fun V2SectionHubScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
                     SectionCenterpiece(
                         spec = spec,
                         status = identity.orbStatus,
+                        progress = identity.gaugePercent / 100f,
                         left = identity.left,
                         right = identity.right,
                         onOpen = { navigate(entry.primaryRoute) },
@@ -1197,7 +1330,7 @@ fun V2SectionHubScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
                         Icon(Icons.Rounded.Verified, null, tint = V2Green, modifier = Modifier.size(11.dp))
                         Spacer(Modifier.width(4.dp))
                         KText(
-                            "كل خدمة تفتح واجهتها المستقلة، وهذه الأرقام مقروءة من الجهاز الآن.",
+                            "كل خدمة تفتح واجهتها المستقلة. القراءات حسب المصادر والأذونات المتاحة.",
                             size = 7.2.sp,
                             color = V2Muted,
                         )
@@ -1238,10 +1371,42 @@ private fun SectionHealthPanel(spec: KnouxServiceSpec, identity: SectionIdentity
                     )
                     KText(identity.gaugeLabel, size = 8.sp, color = V2Soft, align = TextAlign.Center)
                     Spacer(Modifier.height(2.dp))
-                    Icon(Icons.Rounded.Verified, null, tint = V2Amber, modifier = Modifier.size(11.dp))
+                    Icon(Icons.Rounded.Verified, null, tint = V2Green, modifier = Modifier.size(11.dp))
                 }
             }
         }
+    }
+}
+
+/**
+ * A quiet section-tinted light wash. The shared KNOUX night sky stays, but every
+ * hub gets its own colour temperature instead of a mechanically identical copy.
+ */
+@Composable
+private fun SectionAura(accent: Color, accent2: Color, modifier: Modifier = Modifier) {
+    Canvas(modifier.fillMaxWidth().height(300.dp)) {
+        val warm = Offset(size.width * .84f, size.height * .16f)
+        val warmRadius = size.width * .62f
+        drawCircle(
+            brush = Brush.radialGradient(
+                listOf(accent.copy(alpha = .17f), accent2.copy(alpha = .05f), Color.Transparent),
+                center = warm,
+                radius = warmRadius,
+            ),
+            radius = warmRadius,
+            center = warm,
+        )
+        val cool = Offset(size.width * .10f, size.height * .46f)
+        val coolRadius = size.width * .48f
+        drawCircle(
+            brush = Brush.radialGradient(
+                listOf(accent2.copy(alpha = .12f), Color.Transparent),
+                center = cool,
+                radius = coolRadius,
+            ),
+            radius = coolRadius,
+            center = cool,
+        )
     }
 }
 
@@ -1249,6 +1414,7 @@ private fun SectionHealthPanel(spec: KnouxServiceSpec, identity: SectionIdentity
 private fun SectionCenterpiece(
     spec: KnouxServiceSpec,
     status: String,
+    progress: Float,
     left: SectionSide,
     right: SectionSide,
     onOpen: () -> Unit,
@@ -1279,7 +1445,7 @@ private fun SectionCenterpiece(
             title = right.title,
             subtitle = right.subtitle,
             icon = right.icon,
-            accent = right.accent,
+            accent = spec.accent2,
             modifier = Modifier
                 .align(Alignment.CenterEnd)
                 .offset(x = 2.dp, y = 21.dp)
@@ -1290,7 +1456,7 @@ private fun SectionCenterpiece(
             title = left.title,
             subtitle = left.subtitle,
             icon = left.icon,
-            accent = left.accent,
+            accent = spec.accent,
             modifier = Modifier
                 .align(Alignment.CenterStart)
                 .offset(x = (-2).dp, y = 21.dp)
@@ -1301,6 +1467,7 @@ private fun SectionCenterpiece(
         SectionOrb(
             spec = spec,
             status = status,
+            progress = progress,
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = 1.dp)
@@ -1310,20 +1477,41 @@ private fun SectionCenterpiece(
 }
 
 @Composable
-private fun SectionOrb(spec: KnouxServiceSpec, status: String, modifier: Modifier = Modifier) {
+private fun SectionOrb(
+    spec: KnouxServiceSpec,
+    status: String,
+    progress: Float,
+    modifier: Modifier = Modifier,
+) {
     Box(modifier.size(162.dp), contentAlignment = Alignment.Center) {
         Canvas(Modifier.fillMaxSize()) {
+            val centre = center
+            val radius = size.minDimension / 2f
+            val accent = spec.accent
+            val accent2 = spec.accent2
+            fun at(degrees: Float, r: Float): Offset {
+                val angle = Math.toRadians(degrees.toDouble())
+                return Offset(
+                    centre.x + (r * cos(angle)).toFloat(),
+                    centre.y + (r * sin(angle)).toFloat(),
+                )
+            }
+
             drawCircle(
                 brush = Brush.radialGradient(
-                    listOf(spec.accent.copy(alpha = .20f), Color.Transparent),
-                    radius = size.width * .52f,
+                    listOf(accent.copy(alpha = .22f), Color.Transparent),
+                    center = centre,
+                    radius = radius * 1.04f,
                 ),
-                radius = size.width * .52f,
+                radius = radius * 1.04f,
+                center = centre,
             )
+
+            // Shared premium ring, now in section colours: gold stays reserved for Pro.
             drawArc(
                 brush = Brush.sweepGradient(
-                    listOf(V2Amber, spec.accent, spec.accent2, V2Pink, V2Amber),
-                    center,
+                    listOf(accent, accent2, accent, accent2, accent),
+                    centre,
                 ),
                 startAngle = -70f,
                 sweepAngle = 305f,
@@ -1331,12 +1519,236 @@ private fun SectionOrb(spec: KnouxServiceSpec, status: String, modifier: Modifie
                 style = Stroke(4.dp.toPx(), cap = StrokeCap.Round),
             )
             drawArc(
-                color = V2Amber.copy(alpha = .28f),
+                color = accent.copy(alpha = .18f),
                 startAngle = 8f,
                 sweepAngle = 336f,
                 useCenter = false,
                 style = Stroke(9.dp.toPx(), cap = StrokeCap.Round),
             )
+
+            when (spec.key) {
+                "duplicates" -> {
+                    drawArc(
+                        color = accent2.copy(alpha = .34f),
+                        startAngle = -46f,
+                        sweepAngle = 268f,
+                        useCenter = false,
+                        style = Stroke(1.4.dp.toPx(), cap = StrokeCap.Round),
+                    )
+                    listOf(-152f, -28f).forEachIndexed { index, degrees ->
+                        val p = at(degrees, radius * .90f)
+                        val w = 11.dp.toPx()
+                        val h = 14.dp.toPx()
+                        drawRoundRect(
+                            color = (if (index == 0) accent else accent2).copy(alpha = .26f),
+                            topLeft = Offset(p.x - w / 2f + 3.dp.toPx(), p.y - h / 2f + 2.dp.toPx()),
+                            size = Size(w, h),
+                            cornerRadius = CornerRadius(3.dp.toPx()),
+                        )
+                        drawRoundRect(
+                            color = (if (index == 0) accent else accent2).copy(alpha = .58f),
+                            topLeft = Offset(p.x - w / 2f, p.y - h / 2f),
+                            size = Size(w, h),
+                            cornerRadius = CornerRadius(3.dp.toPx()),
+                            style = Stroke(1.dp.toPx()),
+                        )
+                    }
+                }
+                "residue" -> {
+                    for (index in 0 until 22) {
+                        drawArc(
+                            color = accent.copy(alpha = .34f),
+                            startAngle = index * (360f / 22f),
+                            sweepAngle = 7f,
+                            useCenter = false,
+                            style = Stroke(2.dp.toPx(), cap = StrokeCap.Round),
+                        )
+                    }
+                    listOf(-150f, -115f, -80f, -45f, -10f).forEachIndexed { index, degrees ->
+                        val p = at(degrees, radius * .91f)
+                        val cell = 5.5.dp.toPx()
+                        drawRoundRect(
+                            color = (if (index % 2 == 0) accent2 else accent).copy(alpha = .72f),
+                            topLeft = Offset(p.x - cell / 2f, p.y - cell / 2f),
+                            size = Size(cell, cell),
+                            cornerRadius = CornerRadius(1.5.dp.toPx()),
+                        )
+                    }
+                }
+                "privacy" -> {
+                    for (index in 0 until 10) {
+                        drawArc(
+                            color = (if (index % 2 == 0) accent else accent2).copy(alpha = .46f),
+                            startAngle = -88f + index * 36f,
+                            sweepAngle = 23f,
+                            useCenter = false,
+                            style = Stroke(4.5.dp.toPx(), cap = StrokeCap.Round),
+                        )
+                    }
+                    val tip = at(-90f, radius * .70f)
+                    drawLine(
+                        accent.copy(alpha = .55f),
+                        Offset(tip.x - 5.dp.toPx(), tip.y),
+                        Offset(tip.x, tip.y + 5.dp.toPx()),
+                        1.6.dp.toPx(),
+                        StrokeCap.Round,
+                    )
+                    drawLine(
+                        accent.copy(alpha = .55f),
+                        Offset(tip.x + 5.dp.toPx(), tip.y),
+                        Offset(tip.x, tip.y + 5.dp.toPx()),
+                        1.6.dp.toPx(),
+                        StrokeCap.Round,
+                    )
+                }
+                "deepscan" -> {
+                    for (index in 0 until 3) {
+                        drawCircle(
+                            color = accent.copy(alpha = .14f),
+                            radius = radius * (.58f + index * .11f),
+                            center = centre,
+                            style = Stroke(1.dp.toPx()),
+                        )
+                    }
+                    drawLine(
+                        accent.copy(alpha = .22f),
+                        Offset(centre.x, centre.y - radius * .94f),
+                        Offset(centre.x, centre.y - radius * .55f),
+                        1.dp.toPx(),
+                    )
+                    drawArc(
+                        brush = Brush.sweepGradient(
+                            listOf(Color.Transparent, accent.copy(alpha = .50f), Color.Transparent),
+                            centre,
+                        ),
+                        startAngle = -118f,
+                        sweepAngle = 52f,
+                        useCenter = false,
+                        style = Stroke(7.dp.toPx(), cap = StrokeCap.Round),
+                    )
+                    listOf(-72f, -34f, -140f).forEach { degrees ->
+                        drawCircle(
+                            color = accent2.copy(alpha = .85f),
+                            radius = 2.4.dp.toPx(),
+                            center = at(degrees, radius * .70f),
+                        )
+                    }
+                }
+                "reports" -> {
+                    val heights = listOf(.42f, .62f, .48f, .78f, .55f, .88f, .60f, .72f, .50f, .82f, .46f, .66f)
+                    heights.forEachIndexed { index, height ->
+                        val degrees = -158f + index * (136f / (heights.size - 1))
+                        drawLine(
+                            color = (if (index % 2 == 0) accent else accent2).copy(alpha = .55f),
+                            start = at(degrees, radius * .88f),
+                            end = at(degrees, radius * (.88f + .13f * height)),
+                            strokeWidth = 2.dp.toPx(),
+                            cap = StrokeCap.Round,
+                        )
+                    }
+                }
+                "appmanager" -> {
+                    for (index in 0 until 14) {
+                        val degrees = -168f + index * (156f / 13f)
+                        drawCircle(
+                            color = (if (index % 3 == 0) accent2 else accent).copy(alpha = .62f),
+                            radius = (if (index % 3 == 0) 2.6.dp else 1.8.dp).toPx(),
+                            center = at(degrees, radius * .92f),
+                        )
+                    }
+                    listOf(-150f, -30f).forEachIndexed { index, degrees ->
+                        val p = at(degrees, radius * .78f)
+                        val cell = 9.dp.toPx()
+                        drawRoundRect(
+                            color = (if (index == 0) accent else accent2).copy(alpha = .30f),
+                            topLeft = Offset(p.x - cell / 2f, p.y - cell / 2f),
+                            size = Size(cell, cell),
+                            cornerRadius = CornerRadius(2.dp.toPx()),
+                            style = Stroke(1.2.dp.toPx()),
+                        )
+                    }
+                }
+                "storage" -> {
+                    drawArc(
+                        color = accent.copy(alpha = .22f),
+                        startAngle = 135f,
+                        sweepAngle = 270f,
+                        useCenter = false,
+                        style = Stroke(6.dp.toPx(), cap = StrokeCap.Round),
+                    )
+                    drawArc(
+                        brush = Brush.sweepGradient(listOf(accent, accent2, accent), centre),
+                        startAngle = 135f,
+                        sweepAngle = 270f * progress.coerceIn(0f, 1f),
+                        useCenter = false,
+                        style = Stroke(6.dp.toPx(), cap = StrokeCap.Round),
+                    )
+                    for (index in 0 until 5) {
+                        drawCircle(
+                            color = accent2.copy(alpha = .55f),
+                            radius = 1.5.dp.toPx(),
+                            center = at(135f + index * 67.5f, radius * .84f),
+                        )
+                    }
+                }
+                "battery" -> {
+                    val filled = (progress.coerceIn(0f, 1f) * 12f).roundToInt()
+                    for (index in 0 until 12) {
+                        val degrees = -150f + index * (120f / 11f)
+                        drawLine(
+                            color = if (index < filled) accent else accent2.copy(alpha = .20f),
+                            start = at(degrees, radius * .88f),
+                            end = at(degrees, radius * .96f),
+                            strokeWidth = 2.4.dp.toPx(),
+                            cap = StrokeCap.Round,
+                        )
+                    }
+                    val top = at(-90f, radius * .90f)
+                    drawRoundRect(
+                        color = accent2.copy(alpha = .55f),
+                        topLeft = Offset(top.x - 4.dp.toPx(), top.y - 2.5.dp.toPx()),
+                        size = Size(8.dp.toPx(), 5.dp.toPx()),
+                        cornerRadius = CornerRadius(1.5.dp.toPx()),
+                        style = Stroke(1.dp.toPx()),
+                    )
+                }
+                "ai" -> {
+                    val nodes = listOf(-156f, -120f, -84f, -48f, -12f).map { it to at(it, radius * .89f) }
+                    nodes.zipWithNext().forEach { (a, b) ->
+                        drawLine(accent.copy(alpha = .32f), a.second, b.second, 1.2.dp.toPx())
+                    }
+                    nodes.forEachIndexed { index, (_, p) ->
+                        drawCircle(
+                            color = (if (index % 2 == 0) accent else accent2).copy(alpha = .78f),
+                            radius = (if (index == 2) 3.4.dp else 2.4.dp).toPx(),
+                            center = p,
+                        )
+                    }
+                    drawCircle(
+                        color = accent.copy(alpha = .30f),
+                        radius = radius * .80f,
+                        center = centre,
+                        style = Stroke(1.dp.toPx()),
+                    )
+                }
+                else -> {
+                    listOf(-138f, -108f, -78f, -48f, -18f).forEachIndexed { index, degrees ->
+                        drawCircle(
+                            color = (if (index % 2 == 0) accent2 else accent).copy(alpha = .72f),
+                            radius = (if (index == 2) 2.8.dp else 1.8.dp).toPx(),
+                            center = at(degrees, radius * .92f),
+                        )
+                    }
+                    drawArc(
+                        color = accent2.copy(alpha = .30f),
+                        startAngle = -150f,
+                        sweepAngle = 120f,
+                        useCenter = false,
+                        style = Stroke(1.dp.toPx(), cap = StrokeCap.Round),
+                    )
+                }
+            }
+
             drawArc(
                 color = Color.White.copy(alpha = .20f),
                 startAngle = 245f,
@@ -1344,15 +1756,13 @@ private fun SectionOrb(spec: KnouxServiceSpec, status: String, modifier: Modifie
                 useCenter = false,
                 style = Stroke(1.dp.toPx()),
             )
-            drawCircle(color = V2Amber.copy(alpha = .9f), radius = 3.dp.toPx(), center = Offset(size.width * .81f, size.height * .20f))
-            drawCircle(color = V2Amber.copy(alpha = .8f), radius = 2.3.dp.toPx(), center = Offset(size.width * .16f, size.height * .33f))
         }
         Box(
             Modifier
                 .size(136.dp)
                 .clip(CircleShape)
                 .background(Brush.radialGradient(listOf(Color(0xFF25115C), Color(0xFF0F082B))))
-                .border(1.dp, V2Amber.copy(alpha = .46f), CircleShape),
+                .border(1.dp, spec.accent.copy(alpha = .44f), CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -1379,7 +1789,7 @@ private fun SectionOrb(spec: KnouxServiceSpec, status: String, modifier: Modifie
     }
 }
 
-/** The Home tile rhythm, carried into every section: 91.dp, 15.dp radius, 5+5. */
+/** The Home tile rhythm, carried into every section: 91.dp, 15.dp radius, rows of five. */
 @Composable
 private fun SectionHomeTile(item: ServiceSubItem, modifier: Modifier = Modifier, onClick: () -> Unit) {
     val proActive = LocalProActive.current
@@ -1480,24 +1890,29 @@ private fun sectionIdentity(key: String, facts: DeviceFacts): SectionIdentity {
     val live = facts.computedAt > 0L
     val batteryValue = battery.levelPercent?.let { "$it%" } ?: "غير متاح"
     val mediaTotal = media.images + media.videos
+    fun mediaValue(value: String): String = when {
+        !live -> "جاري القراءة"
+        !media.permissionGranted -> "يحتاج إذن"
+        else -> value
+    }
 
     return when (key) {
         "duplicates" -> SectionIdentity(
             gaugeLabel = "قابل للاستعادة",
             gaugePercent = (ratio(reclaimable, mediaBytes) * 100).toInt(),
             lines = listOf(
-                SectionLine(Icons.Rounded.ContentCopy, "مجموعات التكرار", "${media.duplicateGroups.size} مجموعة", ratioInt(media.duplicateGroups.size, 50), V2Cyan),
-                SectionLine(Icons.Rounded.Image, "صور", formatCount(media.images), ratioInt(media.images, mediaTotal.coerceAtLeast(1)), V2Violet),
-                SectionLine(Icons.Rounded.Videocam, "فيديو", formatCount(media.videos), ratioInt(media.videos, mediaTotal.coerceAtLeast(1)), V2Pink),
+                SectionLine(Icons.Rounded.ContentCopy, "مجموعات التكرار", mediaValue("${media.duplicateGroups.size} مجموعة"), ratioInt(media.duplicateGroups.size, 50), V2Cyan),
+                SectionLine(Icons.Rounded.Image, "صور", mediaValue(formatCount(media.images)), ratioInt(media.images, mediaTotal.coerceAtLeast(1)), V2Violet),
+                SectionLine(Icons.Rounded.Videocam, "فيديو", mediaValue(formatCount(media.videos)), ratioInt(media.videos, mediaTotal.coerceAtLeast(1)), V2Pink),
             ),
-            left = SectionSide("تجميع النسخ", "Duplicate Groups", Icons.Rounded.ContentCopy, V2Amber, "dup-groups"),
-            right = SectionSide("تأكيد العملية", "Safe Confirm", Icons.Rounded.Verified, V2Amber, "dup-confirm"),
+            left = SectionSide("تجميع النسخ", "Duplicate Groups", Icons.Rounded.ContentCopy, V2Cyan, "dup-groups"),
+            right = SectionSide("تأكيد العملية", "Safe Confirm", Icons.Rounded.Verified, V2Cyan, "dup-confirm"),
             orbStatus = if (!media.permissionGranted) "صلاحية الوسائط غير ممنوحة" else "${media.duplicateCandidates} نسخة مرشحة",
             stats = listOf(
-                SectionStat(Icons.Rounded.ContentCopy, "${media.duplicateGroups.size}", "مجموعة تكرار", V2Cyan),
-                SectionStat(Icons.Rounded.FileCopy, "${media.duplicateCandidates}", "نسخة مرشحة", V2Pink),
-                SectionStat(Icons.Rounded.DeleteSweep, formatBytes(reclaimable), "قابل للاستعادة", V2Green),
-                SectionStat(Icons.Rounded.PermMedia, formatBytes(mediaBytes), "حجم الوسائط", V2Violet),
+                SectionStat(Icons.Rounded.ContentCopy, mediaValue("${media.duplicateGroups.size}"), "مجموعة تكرار", V2Cyan),
+                SectionStat(Icons.Rounded.FileCopy, mediaValue("${media.duplicateCandidates}"), "نسخة مرشحة", V2Pink),
+                SectionStat(Icons.Rounded.DeleteSweep, mediaValue(formatBytes(reclaimable)), "قابل للاستعادة", V2Green),
+                SectionStat(Icons.Rounded.PermMedia, mediaValue(formatBytes(mediaBytes)), "حجم الوسائط", V2Violet),
             ),
         )
         "residue" -> SectionIdentity(
@@ -1508,8 +1923,8 @@ private fun sectionIdentity(key: String, facts: DeviceFacts): SectionIdentity {
                 SectionLine(Icons.Rounded.Android, "تطبيقات النظام", formatCount(systemCount), ratioInt(systemCount, facts.installedCount), V2Violet),
                 SectionLine(Icons.Rounded.CleaningServices, "كاش KNOUX", formatBytes(facts.ownCacheBytes), ratio(facts.ownCacheBytes, storage.usedBytes), V2Pink),
             ),
-            left = SectionSide("فحص البقايا", "Residue Scan", Icons.Rounded.ManageSearch, V2Amber, "res-scan"),
-            right = SectionSide("استثناء الملفات", "Exclusions", Icons.Rounded.Shield, V2Amber, "res-exclusions"),
+            left = SectionSide("فحص البقايا", "Residue Scan", Icons.Rounded.ManageSearch, V2Cyan, "res-scan"),
+            right = SectionSide("استثناء الملفات", "Exclusions", Icons.Rounded.Shield, V2Cyan, "res-exclusions"),
             orbStatus = if (live) "${formatCount(facts.installedCount)} تطبيق مقروء" else "جاري القراءة",
             stats = listOf(
                 SectionStat(Icons.Rounded.Apps, formatCount(facts.installedCount), "تطبيق مثبت", V2Cyan),
@@ -1522,15 +1937,15 @@ private fun sectionIdentity(key: String, facts: DeviceFacts): SectionIdentity {
             gaugeLabel = "سلامة الأذونات",
             gaugePercent = 100 - (ratioInt(facts.sensitiveAppCount, facts.installedCount) * 100).toInt(),
             lines = listOf(
-                SectionLine(Icons.Rounded.Shield, "أذونات حساسة", "${formatCount(facts.sensitiveAppCount)} تطبيق", ratioInt(facts.sensitiveAppCount, facts.installedCount), V2Amber),
+                SectionLine(Icons.Rounded.Shield, "أذونات حساسة", "${formatCount(facts.sensitiveAppCount)} تطبيق", ratioInt(facts.sensitiveAppCount, facts.installedCount), V2Pink),
                 SectionLine(Icons.Rounded.Lock, "مجموعات الأذونات", "${facts.privacyGroups.size} مجموعة", ratioInt(facts.privacyGroups.size, 12), V2Violet),
                 SectionLine(Icons.Rounded.Visibility, "وصول الاستخدام", if (facts.usageAccessGranted) "ممنوح" else "غير ممنوح", if (facts.usageAccessGranted) 1f else 0f, V2Cyan),
             ),
-            left = SectionSide("مجموعات الأذونات", "Permission Groups", Icons.Rounded.Lock, V2Amber, "prv-permissions"),
-            right = SectionSide("تقييم التطبيقات", "App Risk", Icons.Rounded.Security, V2Amber, "prv-app-risk"),
+            left = SectionSide("مجموعات الأذونات", "Permission Groups", Icons.Rounded.Lock, V2Cyan, "prv-permissions"),
+            right = SectionSide("تقييم التطبيقات", "App Risk", Icons.Rounded.Security, V2Cyan, "prv-app-risk"),
             orbStatus = if (live) "${formatCount(facts.sensitiveAppCount)} تطبيق حساس" else "جاري القراءة",
             stats = listOf(
-                SectionStat(Icons.Rounded.Shield, formatCount(facts.sensitiveAppCount), "تطبيق حساس", V2Amber),
+                SectionStat(Icons.Rounded.Shield, formatCount(facts.sensitiveAppCount), "تطبيق حساس", V2Violet),
                 SectionStat(Icons.Rounded.Lock, "${facts.privacyGroups.size}", "مجموعة أذونات", V2Violet),
                 SectionStat(Icons.Rounded.Visibility, if (facts.usageAccessGranted) "ممنوح" else "لا", "وصول الاستخدام", V2Cyan),
                 SectionStat(Icons.Rounded.Apps, formatCount(facts.installedCount), "تطبيق مثبت", V2Pink),
@@ -1542,10 +1957,10 @@ private fun sectionIdentity(key: String, facts: DeviceFacts): SectionIdentity {
             lines = listOf(
                 SectionLine(Icons.Rounded.Storage, "التخزين", "${formatBytes(storage.usedBytes)} / ${formatBytes(storage.totalBytes)}", storage.usedFraction, V2Cyan),
                 SectionLine(Icons.Rounded.Bolt, "البطارية", batteryValue, (battery.levelPercent ?: 0) / 100f, V2Green),
-                SectionLine(Icons.Rounded.Shield, "أذونات حساسة", "${formatCount(facts.sensitiveAppCount)} تطبيق", ratioInt(facts.sensitiveAppCount, facts.installedCount), V2Amber),
+                SectionLine(Icons.Rounded.Shield, "أذونات حساسة", "${formatCount(facts.sensitiveAppCount)} تطبيق", ratioInt(facts.sensitiveAppCount, facts.installedCount), V2Pink),
             ),
-            left = SectionSide("نطاق الفحص", "Scan Scope", Icons.Rounded.Tune, V2Amber, "dsn-scope"),
-            right = SectionSide("نتائج الفحص", "Findings", Icons.Rounded.FactCheck, V2Amber, "dsn-findings"),
+            left = SectionSide("نطاق الفحص", "Scan Scope", Icons.Rounded.Tune, V2Cyan, "dsn-scope"),
+            right = SectionSide("نتائج الفحص", "Findings", Icons.Rounded.FactCheck, V2Cyan, "dsn-findings"),
             orbStatus = if (facts.healthEstimate > 0) "${facts.healthEstimate}% جاهز" else "قراءة الجهاز…",
             stats = listOf(
                 SectionStat(Icons.Rounded.Bolt, batteryValue, "مستوى البطارية", V2Green),
@@ -1562,13 +1977,13 @@ private fun sectionIdentity(key: String, facts: DeviceFacts): SectionIdentity {
                 SectionLine(Icons.Rounded.Apps, "تطبيقات مثبتة", formatCount(facts.installedCount), if (live) 1f else 0f, V2Violet),
                 SectionLine(Icons.Rounded.Bolt, "البطارية", batteryValue, (battery.levelPercent ?: 0) / 100f, V2Green),
             ),
-            left = SectionSide("اتجاهات المساحة", "Storage Trends", Icons.Rounded.TrendingUp, V2Amber, "rpt-trends"),
-            right = SectionSide("سجل الفحوص", "Scan Log", Icons.Rounded.Timeline, V2Amber, "rpt-scans"),
+            left = SectionSide("اتجاهات المساحة", "Storage Trends", Icons.Rounded.TrendingUp, V2Cyan, "rpt-trends"),
+            right = SectionSide("سجل الفحوص", "Scan Log", Icons.Rounded.Timeline, V2Cyan, "rpt-scans"),
             orbStatus = if (live) "قراءة مباشرة · ${formatBytes(storage.freeBytes)} متاحة" else "جاري القراءة",
             stats = listOf(
                 SectionStat(Icons.Rounded.Storage, formatBytes(storage.usedBytes), "مساحة مستخدمة", V2Cyan),
                 SectionStat(Icons.Rounded.Apps, formatCount(facts.installedCount), "تطبيق مثبت", V2Pink),
-                SectionStat(Icons.Rounded.Shield, formatCount(facts.sensitiveAppCount), "تطبيق حساس", V2Amber),
+                SectionStat(Icons.Rounded.Shield, formatCount(facts.sensitiveAppCount), "تطبيق حساس", V2Violet),
                 SectionStat(Icons.Rounded.Bolt, batteryValue, "مستوى البطارية", V2Green),
             ),
         )
@@ -1580,14 +1995,14 @@ private fun sectionIdentity(key: String, facts: DeviceFacts): SectionIdentity {
                 SectionLine(Icons.Rounded.Android, "تطبيقات النظام", formatCount(systemCount), ratioInt(systemCount, facts.installedCount), V2Violet),
                 SectionLine(Icons.Rounded.ToggleOn, "مفعّلة", formatCount(enabledCount), ratioInt(enabledCount, facts.installedCount), V2Green),
             ),
-            left = SectionSide("قائمة التطبيقات", "Installed Apps", Icons.Rounded.Apps, V2Amber, "apm-installed"),
-            right = SectionSide("إزالة التطبيقات", "Uninstall", Icons.Rounded.DeleteOutline, V2Amber, "apm-uninstall"),
+            left = SectionSide("قائمة التطبيقات", "Installed Apps", Icons.Rounded.Apps, V2Cyan, "apm-installed"),
+            right = SectionSide("إزالة التطبيقات", "Uninstall", Icons.Rounded.DeleteOutline, V2Cyan, "apm-uninstall"),
             orbStatus = if (live) "${formatCount(facts.installedCount)} تطبيق" else "جاري القراءة",
             stats = listOf(
                 SectionStat(Icons.Rounded.Apps, formatCount(facts.installedCount), "تطبيق مثبت", V2Cyan),
                 SectionStat(Icons.Rounded.Person, formatCount(facts.userAppCount), "تطبيق مستخدم", V2Pink),
                 SectionStat(Icons.Rounded.Android, formatCount(systemCount), "تطبيق نظام", V2Violet),
-                SectionStat(Icons.Rounded.Shield, formatCount(facts.sensitiveAppCount), "تطبيق حساس", V2Amber),
+                SectionStat(Icons.Rounded.Shield, formatCount(facts.sensitiveAppCount), "تطبيق حساس", V2Violet),
             ),
         )
         "storage" -> SectionIdentity(
@@ -1596,16 +2011,16 @@ private fun sectionIdentity(key: String, facts: DeviceFacts): SectionIdentity {
             lines = listOf(
                 SectionLine(Icons.Rounded.Storage, "مستخدم / كلي", "${formatBytes(storage.usedBytes)} / ${formatBytes(storage.totalBytes)}", storage.usedFraction, V2Cyan),
                 SectionLine(Icons.Rounded.FolderOpen, "متاح", formatBytes(storage.freeBytes), 1f - storage.usedFraction, V2Green),
-                SectionLine(Icons.Rounded.PermMedia, "وسائط", formatBytes(mediaBytes), ratio(mediaBytes, storage.usedBytes), V2Pink),
+                SectionLine(Icons.Rounded.PermMedia, "وسائط", mediaValue(formatBytes(mediaBytes)), ratio(mediaBytes, storage.usedBytes), V2Pink),
             ),
-            left = SectionSide("توزيع الملفات", "Categories", Icons.Rounded.PieChart, V2Amber, "sto-categories"),
-            right = SectionSide("فرز حسب الحجم", "Sort by Size", Icons.Rounded.Sort, V2Amber, "sto-sorting"),
+            left = SectionSide("توزيع الملفات", "Categories", Icons.Rounded.PieChart, V2Cyan, "sto-categories"),
+            right = SectionSide("فرز حسب الحجم", "Sort by Size", Icons.Rounded.Sort, V2Cyan, "sto-sorting"),
             orbStatus = if (live) "${formatBytes(storage.freeBytes)} متاحة" else "جاري القراءة",
             stats = listOf(
                 SectionStat(Icons.Rounded.Storage, formatBytes(storage.totalBytes), "سعة التخزين", V2Cyan),
                 SectionStat(Icons.Rounded.DataUsage, formatBytes(storage.usedBytes), "مساحة مستخدمة", V2Pink),
                 SectionStat(Icons.Rounded.FolderOpen, formatBytes(storage.freeBytes), "مساحة متاحة", V2Green),
-                SectionStat(Icons.Rounded.PermMedia, formatBytes(mediaBytes), "حجم الوسائط", V2Violet),
+                SectionStat(Icons.Rounded.PermMedia, mediaValue(formatBytes(mediaBytes)), "حجم الوسائط", V2Violet),
             ),
         )
         "battery" -> SectionIdentity(
@@ -1613,15 +2028,15 @@ private fun sectionIdentity(key: String, facts: DeviceFacts): SectionIdentity {
             gaugePercent = battery.levelPercent ?: 0,
             lines = listOf(
                 SectionLine(Icons.Rounded.Bolt, "المستوى", batteryValue, (battery.levelPercent ?: 0) / 100f, V2Green),
-                SectionLine(Icons.Rounded.Thermostat, "الحرارة", battery.temperatureC?.let { "$it°" } ?: "غير متاح", ((battery.temperatureC ?: 0f) / 60f).coerceIn(0f, 1f), V2Amber),
+                SectionLine(Icons.Rounded.Thermostat, "الحرارة", battery.temperatureC?.let { "$it°" } ?: "غير متاح", ((battery.temperatureC ?: 0f) / 60f).coerceIn(0f, 1f), V2Pink),
                 SectionLine(Icons.Rounded.BatteryChargingFull, "الحالة", battery.statusLabel, if (battery.charging) 1f else .5f, V2Cyan),
             ),
-            left = SectionSide("قراءات البطارية", "Live Readings", Icons.Rounded.Speed, V2Amber, "bat-readings"),
-            right = SectionSide("مصادر الاستهلاك", "Power Sources", Icons.Rounded.ElectricalServices, V2Amber, "bat-source"),
+            left = SectionSide("قراءات البطارية", "Live Readings", Icons.Rounded.Speed, V2Cyan, "bat-readings"),
+            right = SectionSide("مصادر الاستهلاك", "Power Sources", Icons.Rounded.ElectricalServices, V2Cyan, "bat-source"),
             orbStatus = battery.levelPercent?.let { "$it% · ${battery.statusLabel}" } ?: "قراءة البطارية…",
             stats = listOf(
                 SectionStat(Icons.Rounded.Bolt, batteryValue, "مستوى البطارية", V2Green),
-                SectionStat(Icons.Rounded.Thermostat, battery.temperatureC?.let { "$it°" } ?: "—", "حرارة البطارية", V2Amber),
+                SectionStat(Icons.Rounded.Thermostat, battery.temperatureC?.let { "$it°" } ?: "—", "حرارة البطارية", V2Pink),
                 SectionStat(Icons.Rounded.ElectricalServices, battery.voltageMv?.let { "${it}mV" } ?: "—", "الجهد", V2Cyan),
                 SectionStat(Icons.Rounded.BatteryChargingFull, battery.healthLabel, "صحة البطارية", V2Violet),
             ),
@@ -1630,15 +2045,15 @@ private fun sectionIdentity(key: String, facts: DeviceFacts): SectionIdentity {
             gaugeLabel = "تقدير التحسين",
             gaugePercent = facts.healthEstimate,
             lines = listOf(
-                SectionLine(Icons.Rounded.AutoAwesome, "توصيات مبنية على القراءة", if (live) "جاهزة" else "قيد القراءة", if (live) 1f else 0f, V2Amber),
+                SectionLine(Icons.Rounded.AutoAwesome, "توصيات مبنية على القراءة", if (live) "جاهزة" else "قيد القراءة", if (live) 1f else 0f, V2Cyan),
                 SectionLine(Icons.Rounded.Storage, "ضغط التخزين", "${formatBytes(storage.usedBytes)} مستخدم", storage.usedFraction, V2Cyan),
                 SectionLine(Icons.Rounded.Bolt, "طاقة الجهاز", batteryValue, (battery.levelPercent ?: 0) / 100f, V2Green),
             ),
-            left = SectionSide("أسباب التوصيات", "Why this advice", Icons.Rounded.Psychology, V2Amber, "ai-reasons"),
-            right = SectionSide("تنفيذ بموافقة", "Approved Actions", Icons.Rounded.PlayCircle, V2Amber, "ai-execute"),
+            left = SectionSide("أسباب التوصيات", "Why this advice", Icons.Rounded.Psychology, V2Cyan, "ai-reasons"),
+            right = SectionSide("تنفيذ بموافقة", "Approved Actions", Icons.Rounded.PlayCircle, V2Cyan, "ai-execute"),
             orbStatus = if (facts.healthEstimate > 0) "${facts.healthEstimate}% جاهز" else "قراءة الجهاز…",
             stats = listOf(
-                SectionStat(Icons.Rounded.AutoAwesome, if (facts.healthEstimate > 0) "${facts.healthEstimate}%" else "—", "تقدير التحسين", V2Amber),
+                SectionStat(Icons.Rounded.AutoAwesome, if (facts.healthEstimate > 0) "${facts.healthEstimate}%" else "—", "تقدير التحسين", V2Cyan),
                 SectionStat(Icons.Rounded.Apps, formatCount(facts.installedCount), "تطبيق مثبت", V2Pink),
                 SectionStat(Icons.Rounded.Storage, formatBytes(storage.freeBytes), "مساحة متاحة", V2Cyan),
                 SectionStat(Icons.Rounded.Bolt, batteryValue, "مستوى البطارية", V2Green),
@@ -1650,11 +2065,15 @@ private fun sectionIdentity(key: String, facts: DeviceFacts): SectionIdentity {
             lines = listOf(
                 SectionLine(Icons.Rounded.CleaningServices, "كاش KNOUX", formatBytes(facts.ownCacheBytes), ratio(facts.ownCacheBytes, storage.usedBytes), V2Cyan),
                 SectionLine(Icons.Rounded.Description, "ملفات KNOUX المؤقتة", "${formatCount(facts.ownCacheFiles)} ملف", ratioInt(facts.ownCacheFiles, 1000), V2Violet),
-                SectionLine(Icons.Rounded.PermMedia, "وسائط للمراجعة", formatCount(mediaTotal), ratioInt(mediaTotal, 2000), V2Pink),
+                SectionLine(Icons.Rounded.PermMedia, "وسائط للمراجعة", mediaValue(formatCount(mediaTotal)), ratioInt(mediaTotal, 2000), V2Pink),
             ),
-            left = SectionSide("معاينة المرشحات", "Candidate Preview", Icons.Rounded.FilterAlt, V2Amber, "clean-preview"),
-            right = SectionSide("تأكيد الحذف", "Safe Delete", Icons.Rounded.Verified, V2Amber, "clean-confirm"),
-            orbStatus = if (live) "${formatBytes(storage.freeBytes)} متاحة · ${formatCount(facts.installedCount)} تطبيق" else "جاري القراءة",
+            left = SectionSide("معاينة المرشحات", "Candidate Preview", Icons.Rounded.FilterAlt, V2Cyan, "clean-preview"),
+            right = SectionSide("تأكيد الحذف", "Safe Delete", Icons.Rounded.Verified, V2Cyan, "clean-confirm"),
+            orbStatus = when {
+                !live -> "جاري القراءة"
+                !media.permissionGranted -> "جاهز · كاش ${formatBytes(facts.ownCacheBytes)}"
+                else -> "${formatCount(mediaTotal)} وسيط · كاش ${formatBytes(facts.ownCacheBytes)}"
+            },
             stats = listOf(
                 SectionStat(Icons.Rounded.Bolt, batteryValue, "مستوى البطارية", V2Green),
                 SectionStat(Icons.Rounded.Apps, formatCount(facts.installedCount), "تطبيق مثبت", V2Pink),

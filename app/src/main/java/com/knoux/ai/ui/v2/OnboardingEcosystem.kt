@@ -34,6 +34,7 @@ import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.MonitorHeart
 import androidx.compose.material.icons.rounded.Radar
 import androidx.compose.material.icons.rounded.Storage
+import androidx.compose.material.icons.rounded.Verified
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -134,6 +135,53 @@ internal fun OnboardingEcosystemPage() {
         )
         Spacer(Modifier.height(14.dp))
         EcosystemMap()
+        Spacer(Modifier.height(10.dp))
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(7.dp),
+        ) {
+            EcosystemRail("قراءة محلية", "من هذا الهاتف", Icons.Rounded.Storage, V2Cyan, Modifier.weight(1f))
+            EcosystemRail("قرار بيدك", "قبل التنفيذ", Icons.Rounded.Verified, V2Green, Modifier.weight(1f))
+            EcosystemRail("150 خدمة", "داخل 10 أقسام", Icons.Rounded.GridView, V2Violet, Modifier.weight(1f))
+        }
+        Spacer(Modifier.height(5.dp))
+        KText(
+            "كل قسم يفتح خدماته الخمس عشرة، وكل خدمة لها شاشة مستقلة.",
+            size = 8.6.sp,
+            color = V2Soft,
+            align = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+}
+
+@Composable
+private fun EcosystemRail(
+    label: String,
+    value: String,
+    icon: ImageVector,
+    accent: Color,
+    modifier: Modifier = Modifier,
+) {
+    V2GlassCard(
+        modifier = modifier.height(62.dp),
+        padding = 7.dp,
+        radius = 14.dp,
+        glow = accent,
+        borderAlpha = .30f,
+    ) {
+        Row(
+            Modifier.fillMaxSize(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            Icon(icon, null, tint = accent, modifier = Modifier.size(17.dp))
+            Spacer(Modifier.width(5.dp))
+            Column {
+                KText(value, size = 8.sp, weight = FontWeight.Bold, maxLines = 1)
+                KText(label, size = 6.8.sp, color = V2Soft, maxLines = 1)
+            }
+        }
     }
 }
 

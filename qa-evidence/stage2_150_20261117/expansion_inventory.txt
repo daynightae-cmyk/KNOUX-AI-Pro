@@ -1,0 +1,45 @@
+02.11 | duplicates | dup-photo-lens | عدسة تكرار الصور | PHOTO DUPLICATE LENS | كل مجموعات الصور المتطابقة في قراءة واحدة
+02.12 | duplicates | dup-video-lens | عدسة تكرار الفيديو | VIDEO DUPLICATE LENS | مجموعات الفيديو المتطابقة ومساحتها القابلة للاسترجاع
+02.13 | duplicates | dup-library-map | خريطة مكتبة التكرار | DUPLICATE LIBRARY MAP | توزيع النسخ المكررة بين الصور والفيديو
+02.14 | duplicates | dup-hash-audit | تدقيق بصمة المحتوى | CONTENT FINGERPRINT AUDIT | ماذا فحص SHA-256 فعليًا في آخر قراءة؟
+02.15 | duplicates | dup-reclaim-lens | عدسة المساحة القابلة للاسترجاع | RECLAIM LENS | أثر الحذف المتوقع على مساحة الهاتف
+03.11 | residue | res-cache-lens | عدسة كاش KNOUX | KNOUX CACHE LENS | الحجم الفعلي للملفات المؤقتة داخل مساحة التطبيق
+03.12 | residue | res-duplicate-residue | بقايا وسائط مكررة | DUPLICATE MEDIA RESIDUE | النسخ المكررة كبقايا قابلة للمراجعة قبل التنظيف
+03.13 | residue | res-source-audit | تدقيق مصادر البقايا | RESIDUE SOURCE AUDIT | ما المصادر التي قرأها KNOUX فعلًا؟
+03.14 | residue | res-storage-echo | أثر البقايا على التخزين | STORAGE ECHO | نسبة الكاش والنسخ المكررة من المساحة المشغولة
+03.15 | residue | res-safe-plan | خطة التنظيف الآمنة | SAFE CLEANUP PLAN | ما يمكن مراجعته الآن دون لمس ملفاتك الشخصية
+04.11 | privacy | prv-contacts-lens | عدسة جهات الاتصال | CONTACTS LENS | التطبيقات التي تعلن وصولها لجهات الاتصال
+04.12 | privacy | prv-notification-lens | عدسة الإشعارات | NOTIFICATION LENS | من يملك إذن إرسال الإشعارات على هذا الهاتف؟
+04.13 | privacy | prv-file-access | وصول التطبيقات للملفات | FILE ACCESS | أذونات قراءة التخزين والوسائط على الجهاز
+04.14 | privacy | prv-protection-score | درجة الحماية | PROTECTION SCORE | مؤشر محلي مبني على نسبة التطبيقات ذات الأذونات الحساسة
+04.15 | privacy | prv-sensitive-index | فهرس التطبيقات الحساسة | SENSITIVE APP INDEX | قائمة قابلة للبحث بالتطبيقات ذات الأذونات الحساسة
+05.11 | deepscan | dsn-preflight | فحص الجاهزية | PREFLIGHT CHECK | هل الظروف مناسبة لبدء فحص عميق الآن؟
+05.12 | deepscan | dsn-hash-budget | ميزانية فحص البصمات | HASH BUDGET | حدود القراءة التي يلتزم بها محرك المطابقة
+05.13 | deepscan | dsn-thermal-guard | حارس الحرارة | THERMAL GUARD | قراءة حرارة البطارية قبل وأثناء الفحص
+05.14 | deepscan | dsn-battery-guard | حارس الطاقة | POWER GUARD | مستوى البطارية ومصدر الطاقة قبل الفحص الطويل
+05.15 | deepscan | dsn-sessions | سجل جلسات الفحص | SCAN SESSIONS | كل قراءة محفوظة مع نطاق الفترة
+06.11 | reports | rpt-health-lens | عدسة صحة الجهاز | DEVICE HEALTH LENS | كل مؤشرات درجة الصحة في لوحة واحدة
+06.12 | reports | rpt-storage-trend | اتجاه التخزين | STORAGE TREND | مقارنة المساحة المستخدمة بين أول وآخر قراءة
+06.13 | reports | rpt-battery-trend | اتجاه البطارية | BATTERY TREND | مستوى البطارية عبر الجلسات المحفوظة
+06.14 | reports | rpt-session-compare | مقارنة الجلسات | SESSION COMPARE | ماذا تغير بين القراءة الأولى والأخيرة؟
+06.15 | reports | rpt-export-kit | حزمة مشاركة الملخص | SUMMARY EXPORT KIT | ما الذي يمكن أن يحتويه ملخص المشاركة؟
+07.11 | appmanager | apm-sensitive-index | مستكشف الأذونات | PERMISSION EXPLORER | تصفية التطبيقات حسب الأذونات الحساسة المعلنة
+07.12 | appmanager | apm-disabled | التطبيقات المعطلة | DISABLED APPS | التطبيقات الموجودة لكنها غير مفعّلة حاليًا
+07.13 | appmanager | apm-system | تطبيقات النظام | SYSTEM APPS | حزم النظام المثبتة على هذا الهاتف
+07.14 | appmanager | apm-user | تطبيقات المستخدم | USER APPS | التطبيقات التي ثبتها المستخدم على الجهاز
+07.15 | appmanager | apm-package-index | فهرس الحزم والإصدارات | PACKAGE INDEX | فهرس تقني لأسماء الحزم وإصداراتها
+08.11 | storage | sto-media-mix | مزيج الوسائط | MEDIA MIX | عدد وحجم الصور والفيديو في القراءة الحالية
+08.12 | storage | sto-largest-lens | عدسة أكبر الملفات | LARGEST FILE LENS | أكبر الملفات المقروءة وفرزها بالحجم
+08.13 | storage | sto-buckets | المجلدات الأثقل | HEAVY BUCKETS | تجميع الملفات المقروءة حسب المجلد
+08.14 | storage | sto-video-share | حصة الفيديو | VIDEO SHARE | كم يشغل الفيديو من مساحة الوسائط؟
+08.15 | storage | sto-image-share | حصة الصور | PHOTO SHARE | كم تشغل الصور من مساحة الوسائط؟
+09.11 | battery | bat-voltage-lens | عدسة الجهد | VOLTAGE LENS | قراءة الجهد الحالي للبطارية من النظام
+09.12 | battery | bat-health-lens | عدسة صحة البطارية | BATTERY HEALTH LENS | حالة الصحة والتقنية التي يعلنها النظام
+09.13 | battery | bat-power-source | مصدر الطاقة | POWER SOURCE | هل الجهاز على الشاحن؟ وما نوعه؟
+09.14 | battery | bat-thermal-lens | عدسة الحرارة | THERMAL LENS | الحرارة مقابل حد التنبيه المحلي
+09.15 | battery | bat-energy-tips | توصيات الطاقة | ENERGY TIPS | توصيات محلية حسب المستوى والحرارة
+10.11 | ai | ai-health-plan | خطة صحة الجهاز | DEVICE HEALTH PLAN | أولوية التحسين مبنية على درجة الجهاز الحالية
+10.12 | ai | ai-storage-plan | خطة المساحة | STORAGE PLAN | ما الذي يمكن أن يحرر مساحة على هذا الهاتف؟
+10.13 | ai | ai-privacy-plan | خطة الخصوصية | PRIVACY PLAN | أولويات مراجعة الأذونات الحساسة
+10.14 | ai | ai-scan-plan | خطة الفحص | SCAN PLAN | ما الذي سيقرأه الفحص وما حدوده؟
+10.15 | ai | ai-daily-brief | الملخص الذكي اليومي | DAILY BRIEF | أهم توصية وأسبابها في بطاقة واحدة

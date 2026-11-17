@@ -11,11 +11,13 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -75,10 +77,13 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.knoux.ai.R
+import com.knoux.ai.ui.components.rememberMotionEnabled
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -119,6 +124,7 @@ data class KnouxServiceSpec(
     val chips: List<String>,
     val subItems: List<ServiceSubItem>,
     val pro: Boolean = false,
+    @DrawableRes val artwork: Int? = null,
 ) {
     val hasProServices: Boolean get() = pro || subItems.any { it.proOnly }
 }
@@ -154,6 +160,7 @@ object ServiceSpecs {
         glyph = Icons.Rounded.CleaningServices,
         chips = listOf("كاش KNOUX فقط", "تأكيد قبل الحذف"),
         subItems = CleanTools.items,
+        artwork = R.drawable.knoux_clean_hero,
     )
 
     val duplicates = KnouxServiceSpec(
@@ -167,6 +174,7 @@ object ServiceSpecs {
         glyph = Icons.Rounded.Layers,
         chips = listOf("MediaStore", "حذف عبر تأكيد Android"),
         subItems = SectionTools.items("duplicates"),
+        artwork = R.drawable.knoux_svc_duplicates,
     )
 
     val residue = KnouxServiceSpec(
@@ -180,6 +188,7 @@ object ServiceSpecs {
         glyph = Icons.Rounded.Folder,
         chips = listOf("قراءة مباشرة", "حدود Scoped Storage"),
         subItems = SectionTools.items("residue"),
+        artwork = R.drawable.knoux_svc_residue,
     )
 
     val privacy = KnouxServiceSpec(
@@ -188,11 +197,12 @@ object ServiceSpecs {
         title = "الخصوصية الذكية",
         english = "PRIVACY SWEEP",
         tagline = "أذونات حساسة مقروءة من PackageManager على هذا الهاتف",
-        accent = V2Amber,
+        accent = V2Blue,
         accent2 = V2Violet,
         glyph = Icons.Rounded.Shield,
         chips = listOf("PackageManager", "إعدادات Android الرسمية"),
         subItems = SectionTools.items("privacy"),
+        artwork = R.drawable.knoux_svc_privacy,
     )
 
     val deepScan = KnouxServiceSpec(
@@ -206,6 +216,7 @@ object ServiceSpecs {
         glyph = Icons.Rounded.Radar,
         chips = listOf("قراءة لحظية", "سجل محلي"),
         subItems = SectionTools.items("deepscan"),
+        artwork = R.drawable.knoux_svc_deepscan,
     )
 
     val reports = KnouxServiceSpec(
@@ -215,7 +226,7 @@ object ServiceSpecs {
         english = "REPORTS & INSIGHTS",
         tagline = "ملخص صحة الجهاز وتطوره من قراءات هذا الهاتف",
         accent = V2Cyan,
-        accent2 = V2Amber,
+        accent2 = V2Violet,
         glyph = Icons.Rounded.BarChart,
         chips = listOf("قراءة مباشرة", "بدون رفع سحابي"),
         subItems = SectionTools.items("reports"),
@@ -232,6 +243,7 @@ object ServiceSpecs {
         glyph = Icons.Rounded.Apps,
         chips = listOf("PackageManager", "إعدادات النظام"),
         subItems = SectionTools.items("appmanager"),
+        artwork = R.drawable.knoux_svc_apps,
     )
 
     val storage = KnouxServiceSpec(
@@ -245,6 +257,7 @@ object ServiceSpecs {
         glyph = Icons.Rounded.Storage,
         chips = listOf("StatFs", "قراءة مباشرة"),
         subItems = SectionTools.items("storage"),
+        artwork = R.drawable.knoux_svc_storage,
     )
 
     val battery = KnouxServiceSpec(
@@ -258,6 +271,7 @@ object ServiceSpecs {
         glyph = Icons.Rounded.BatteryFull,
         chips = listOf("BatteryManager", "لا تغيير تلقائي"),
         subItems = SectionTools.items("battery"),
+        artwork = R.drawable.knoux_svc_battery,
     )
 
     val ai = KnouxServiceSpec(
@@ -271,6 +285,7 @@ object ServiceSpecs {
         glyph = Icons.Rounded.AutoAwesome,
         chips = listOf("توصيات محلية", "تنفيذ يدوي"),
         subItems = SectionTools.items("ai"),
+        artwork = R.drawable.knoux_svc_ai,
     )
 }
 
@@ -279,7 +294,7 @@ object ServiceSpecs {
  * ------------------------------------------------------------------ */
 
 @Composable
-fun ServiceBanner(
+private fun LegacyServiceBanner(
     spec: KnouxServiceSpec,
     status: String,
     statusColor: Color,
@@ -287,20 +302,21 @@ fun ServiceBanner(
     metric: String? = null,
 ) {
     val proActive = LocalProActive.current
+    val motion = rememberMotionEnabled()
     var entered by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { entered = true }
     val iconScale by animateFloatAsState(
-        targetValue = if (entered) 1f else .58f,
+        targetValue = if (entered || !motion) 1f else .58f,
         animationSpec = spring(dampingRatio = .52f, stiffness = 210f),
         label = "sectionIconScale",
     )
     val iconAlpha by animateFloatAsState(
-        targetValue = if (entered) 1f else 0f,
+        targetValue = if (entered || !motion) 1f else 0f,
         animationSpec = tween(520),
         label = "sectionIconAlpha",
     )
     val iconTilt by animateFloatAsState(
-        targetValue = if (entered) 0f else -14f,
+        targetValue = if (entered || !motion) 0f else -14f,
         animationSpec = spring(dampingRatio = .55f, stiffness = 180f),
         label = "sectionIconTilt",
     )
@@ -374,13 +390,13 @@ fun ServiceBanner(
                                 scaleX = 1.24f
                                 scaleY = 1.24f
                             },
-                        animated = false,
+                        animated = motion,
                     )
                     Canvas(Modifier.size(106.dp)) {
                         val center = Offset(size.width / 2f, size.height / 2f)
                         val radius = size.minDimension / 2f
                         drawCircle(
-                            color = spec.accent.copy(alpha = .10f + .20f * pulse),
+                            color = spec.accent.copy(alpha = if (motion) .10f + .20f * pulse else .20f),
                             radius = radius,
                             center = center,
                             style = Stroke(1.4.dp.toPx()),
@@ -391,7 +407,7 @@ fun ServiceBanner(
                             center = center,
                             style = Stroke(.9.dp.toPx()),
                         )
-                        val angle = Math.toRadians(orbit.toDouble())
+                        val angle = Math.toRadians(if (motion) orbit.toDouble() else 0.0)
                         drawCircle(
                             color = Color.White.copy(alpha = .85f),
                             radius = 2.1.dp.toPx(),
@@ -461,6 +477,39 @@ fun ServiceBanner(
     }
 }
 
+/**
+ * 17 Nov owner direction: the service pages now open on the same neon hero
+ * as the fixed Deep Scan header — big official stag, service instrument,
+ * nebula stage — but with a natural, moderate height that respects the
+ * service's content display. Each service gets its own specific instrument.
+ */
+@Composable
+fun ServiceBanner(
+    spec: KnouxServiceSpec,
+    status: String,
+    statusColor: Color,
+    modifier: Modifier = Modifier,
+    metric: String? = null,
+) {
+    BoxWithConstraints(modifier.fillMaxWidth()) {
+        val compact = maxWidth < 340.dp
+        // Natural height: ~70% of width, clamped to a comfortable range
+        // that leaves room for content below. Not too large, not too small.
+        val heroHeight = (maxWidth * .70f).coerceIn(240.dp, 300.dp)
+        ServiceHero(
+            spec = spec,
+            status = status,
+            statusColor = statusColor,
+            metric = metric,
+            compact = compact,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(heroHeight),
+            scene = { sceneModifier -> ServiceArtScene(spec, sceneModifier) },
+        )
+    }
+}
+
 @Composable
 private fun ServiceStatusChip(text: String, accent: Color) {
     Row(
@@ -496,6 +545,26 @@ private fun ServiceGlassChip(text: String) {
 
 @Composable
 fun ServiceArt(spec: KnouxServiceSpec, modifier: Modifier = Modifier) {
+    val artwork = spec.artwork
+    if (artwork != null) {
+        Box(modifier, contentAlignment = Alignment.Center) {
+            Image(
+                painter = painterResource(artwork),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize().padding(7.dp),
+            )
+            Box(
+                Modifier.align(Alignment.BottomEnd).size(25.dp)
+                    .clip(RoundedCornerShape(9.dp))
+                    .background(V2Deep.copy(alpha = .92f))
+                    .border(1.dp, spec.accent.copy(alpha = .70f), RoundedCornerShape(9.dp)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(spec.glyph, null, tint = spec.accent, modifier = Modifier.size(15.dp))
+            }
+        }
+        return
+    }
     Canvas(modifier) {
         val w = size.width
         val h = size.height
@@ -803,7 +872,7 @@ fun ServiceSubGrid(
             KText("${spec.subItems.size} أدوات", size = 10.sp, color = V2Muted)
         }
         Spacer(Modifier.height(7.dp))
-        // Exactly the Home grid: ten services in two rows of five, 91.dp tall.
+        // Exactly the Home grid rhythm: five services per row, 91.dp tall.
         spec.subItems.chunked(5).forEach { row ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 row.forEach { item ->
@@ -896,7 +965,7 @@ fun ServiceCapabilityCard(
             Spacer(Modifier.width(8.dp))
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    KText(title, size = 9.6.sp, weight = FontWeight.Bold)
+                    KText(title, size = 9.6.sp, weight = FontWeight.Bold, modifier = Modifier.weight(1f))
                     Spacer(Modifier.width(5.dp))
                     Box(
                         Modifier
@@ -909,18 +978,18 @@ fun ServiceCapabilityCard(
                 }
                 Spacer(Modifier.height(2.dp))
                 KText(body, size = 7.6.sp, lineHeight = 11.sp, color = V2Soft)
-            }
-            if (actionLabel != null && onAction != null) {
-                Spacer(Modifier.width(5.dp))
-                Box(
-                    Modifier
-                        .clip(RoundedCornerShape(9.dp))
-                        .background(accent.withAlpha(.16f))
-                        .border(1.dp, accent.withAlpha(.38f), RoundedCornerShape(9.dp))
-                        .clickable(onClick = onAction)
-                        .padding(horizontal = 7.dp, vertical = 5.dp)
-                ) {
-                    KText(actionLabel, size = 7.sp, weight = FontWeight.Bold, color = accent)
+                if (actionLabel != null && onAction != null) {
+                    Spacer(Modifier.height(8.dp))
+                    Box(
+                        Modifier
+                            .clip(RoundedCornerShape(9.dp))
+                            .background(accent.withAlpha(.16f))
+                            .border(1.dp, accent.withAlpha(.38f), RoundedCornerShape(9.dp))
+                            .clickable(onClick = onAction)
+                            .padding(horizontal = 12.dp, vertical = 9.dp)
+                    ) {
+                        KText(actionLabel, size = 9.sp, weight = FontWeight.Bold, color = accent)
+                    }
                 }
             }
         }

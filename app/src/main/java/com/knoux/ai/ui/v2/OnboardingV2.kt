@@ -452,7 +452,7 @@ private fun OnboardingChip(icon: ImageVector, text: String) {
 /* ------------------------------------------------------------------ *
  * Lower-page onboarding content.
  *
- * These blocks describe the real product structure (10 sections, 100
+ * These blocks describe the real product structure (10 sections, 150
  * navigable service cards) and its review-before-execute path. They do not
  * display device measurements, scan results or entitlement claims.
  * ------------------------------------------------------------------ */
@@ -512,7 +512,7 @@ private fun OnboardingStatBand() {
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         OnboardingStatTile("10", "أقسام ذكية", V2Cyan, Modifier.weight(1f))
-        OnboardingStatTile("100", "خدمة قابلة للفتح", V2Violet, Modifier.weight(1f))
+        OnboardingStatTile("150", "خدمة قابلة للفتح", V2Violet, Modifier.weight(1f))
         OnboardingStatTile("عربي", "واجهة أولًا", V2Pink, Modifier.weight(1f))
     }
 }

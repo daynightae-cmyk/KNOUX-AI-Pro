@@ -78,7 +78,7 @@ private val firstRow = listOf(
     HomeServiceMini("بقيا\nالتطبيقات", "hub-residue", R.drawable.knoux_svc_residue, V2Pink),
     HomeServiceMini("فحص\nالخصوصية", "hub-privacy", R.drawable.knoux_home_icon_privacy, V2Violet),
     HomeServiceMini("مدير\nالتطبيقات", "hub-appmanager", R.drawable.knoux_svc_apps, V2Cyan),
-    HomeServiceMini("توفير\nالبطارية", "hub-battery", R.drawable.knoux_home_icon_battery, V2Amber),
+    HomeServiceMini("توفير\nالبطارية", "hub-battery", R.drawable.knoux_home_icon_battery, V2Green),
 )
 
 private val secondRow = listOf(
@@ -244,7 +244,7 @@ private fun DeviceHealthCard(facts: DeviceFacts) {
                     "أذونات حساسة",
                     "${formatCount(facts.sensitiveAppCount)} تطبيق",
                     if (facts.installedCount > 0) facts.sensitiveAppCount.toFloat() / facts.installedCount else 0f,
-                    V2Amber,
+                    V2Blue,
                 )
             }
             Spacer(Modifier.width(10.dp))
@@ -258,7 +258,7 @@ private fun DeviceHealthCard(facts: DeviceFacts) {
                     KText(if (score > 0) "$score%" else "—", size = 26.sp, weight = FontWeight.Black)
                     KText("تقدير الجهاز", size = 8.sp, color = V2Soft)
                     Spacer(Modifier.height(2.dp))
-                    Icon(Icons.Rounded.Verified, null, tint = V2Amber, modifier = Modifier.size(11.dp))
+                    Icon(Icons.Rounded.Verified, null, tint = V2Green, modifier = Modifier.size(11.dp))
                 }
             }
         }
