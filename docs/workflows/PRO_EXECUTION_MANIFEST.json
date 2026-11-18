@@ -4,8 +4,8 @@
   "branch": "master",
   "origin": "https://github.com/daynightae-cmyk/KNOUX-AI-Pro.git",
   "updated": "2026-11-18T18:06+0400",
-  "local_sha": "47ebc981457915ff36437e70a6739b53cdcd8b67",
-  "remote_master_sha": "47ebc981457915ff36437e70a6739b53cdcd8b67",
+  "local_sha": "04a9f7784cc374abea3a7b9bbb6bc60f4e092248",
+  "remote_master_sha": "04a9f7784cc374abea3a7b9bbb6bc60f4e092248",
   "synced": true,
   "dirty": 0,
   "untracked": 0,
@@ -25,8 +25,8 @@
     "G10_safe_cleanup": "DEFERRED (dry-run only, 0 bytes reclaimed)",
     "G11_next": "PENDING (ledgers appended; next service M03 app_residue)"
   },
-  "current_service": "M03 app_residue — residue_own_cache (PRO) UNIT_VERIFIED at source/unit level (Room journal added); remaining residue PRO screens NOT_IMPLEMENTED; core residue rows NOT_ASSESSED; device E2E blocked",
-  "next_service": "M04 privacy_sweep — continue at source/unit level; device E2E remains blocked until owner decision on package-ID migration",
+  "current_service": "M04 privacy_sweep — C01-C09 UNIT_VERIFIED at source/unit level (re-query + Room privacy notes); C10 NOT_IMPLEMENTED; prv_realtime/prv_tracker BLOCKED_PLATFORM; prv_vault/prv_history NOT_IMPLEMENTED; prv_report BLOCKED (experimental screen); device E2E blocked",
+  "next_service": "M05 app_manager — continue at source/unit level; device E2E remains blocked until owner decision on package-ID migration",
   "blockers": [
     "BLOCKED_DEVICE: Standard appId com.knoux.ai installed on authorized SM-A025F (R9ZR20HWHQY); owner decision required before migration to com.knoux.ai.pro or any device install"
   ],

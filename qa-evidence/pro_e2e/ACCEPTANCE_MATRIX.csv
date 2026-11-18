@@ -1,4 +1,4 @@
-﻿service_id,stage,id,kind,label,implementation_state,unit_tests,android_tests,device_requery,room_evidence,negative_cases,rtl_visual,commit_sha,remote_sha,CI,blocker
+service_id,stage,id,kind,label,implementation_state,unit_tests,android_tests,device_requery,room_evidence,negative_cases,rtl_visual,commit_sha,remote_sha,CI,blocker
 storage_analyzer,M01,STORAGE_ANALYZER_C01,CORE,اختيار وحدة التخزين أو مجلد مصرح به,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,,,,AppId collision: com.knoux.ai (Standard) installed on SM-A025F R9ZR20HWHQY; owner-approved package-ID migration required before device install
 storage_analyzer,M01,STORAGE_ANALYZER_C02,CORE,قراءة المساحة الكلية والمتاحة من النظام,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,,,,AppId collision: com.knoux.ai (Standard) installed on SM-A025F R9ZR20HWHQY; owner-approved package-ID migration required before device install
 storage_analyzer,M01,STORAGE_ANALYZER_C03,CORE,حصر الملفات المرئية فقط ضمن الإذن,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,,,,AppId collision: com.knoux.ai (Standard) installed on SM-A025F R9ZR20HWHQY; owner-approved package-ID migration required before device install
@@ -44,36 +44,21 @@ app_residue,M03,residue_saf_profiles,PRO,ملفات SAF محفوظة,NOT_IMPLEME
 app_residue,M03,residue_safe_trash,PRO,سلة آمنة,NOT_IMPLEMENTED,,,NOT_RUN,,,,47ebc981457915ff36437e70a6739b53cdcd8b67,47ebc981457915ff36437e70a6739b53cdcd8b67,,شاشة residue لسه غير مبنية؛ الجهاز محجوز بسبب تصادم الحزمة
 app_residue,M03,residue_history,PRO,تاريخ البقايا,NOT_IMPLEMENTED,,,NOT_RUN,,,,47ebc981457915ff36437e70a6739b53cdcd8b67,47ebc981457915ff36437e70a6739b53cdcd8b67,,شاشة residue لسه غير مبنية؛ الجهاز محجوز بسبب تصادم الحزمة
 app_residue,M03,residue_own_cache,PRO,كاش KNOUX نفسه,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,47ebc981457915ff36437e70a6739b53cdcd8b67,47ebc981457915ff36437e70a6739b53cdcd8b67,,تصادم الحزمة com.knoux.ai مع Standard المثبت على SM-A025F؛ قرار المالك مطلوب قبل التثبيت على الجهاز
-app_residue,M03,APP_RESIDUE_C01,CORE,اختيار نطاق كاش التطبيق نفسه أو مجلدات مصرح بها,NOT_ASSESSED,,,,,,,,,,
-app_residue,M03,APP_RESIDUE_C02,CORE,فحص شجرة المجلدات المسموح بها,NOT_ASSESSED,,,,,,,,,,
-app_residue,M03,APP_RESIDUE_C03,CORE,إظهار المصدر ونسبة الثقة في نسبة البقايا,NOT_ASSESSED,,,,,,,,,,
-app_residue,M03,APP_RESIDUE_C04,CORE,فصل الملفات المؤكدة عن غير المؤكدة,NOT_ASSESSED,,,,,,,,,,
-app_residue,M03,APP_RESIDUE_C05,CORE,تصفية حسب العمر والنوع والحجم,NOT_ASSESSED,,,,,,,,,,
-app_residue,M03,APP_RESIDUE_C06,CORE,معاينة المجلدات والملفات والبصمات,NOT_ASSESSED,,,,,,,,,,
-app_residue,M03,APP_RESIDUE_C07,CORE,حماية العناصر المستثناة واختيار جزئي,NOT_ASSESSED,,,,,,,,,,
-app_residue,M03,APP_RESIDUE_C08,CORE,مراجعة التقدير والمخاطر قبل إزالة المحدد,NOT_ASSESSED,,,,,,,,,,
-app_residue,M03,APP_RESIDUE_C09,CORE,تنفيذ حذف/Trash في النطاق المصرح به فقط,NOT_ASSESSED,,,,,,,,,,
-app_residue,M03,APP_RESIDUE_C10,CORE,إعادة فحص الحالة وحفظ سجل المحاولات والنتيجة,NOT_ASSESSED,,,,,,,,,,
-app_residue,M03,residue_own_cache,PRO,residue_own_cache,NOT_ASSESSED,,,,,,,,,,
-app_residue,M03,residue_accessible_candidates,PRO,residue_accessible_candidates,NOT_ASSESSED,,,,,,,,,,
-app_residue,M03,residue_saf_profiles,PRO,residue_saf_profiles,NOT_ASSESSED,,,,,,,,,,
-app_residue,M03,residue_safe_trash,PRO,residue_safe_trash,NOT_ASSESSED,,,,,,,,,,
-app_residue,M03,residue_history,PRO,residue_history,NOT_ASSESSED,,,,,,,,,,
-privacy_sweep,M04,PRIVACY_SWEEP_C01,CORE,اختيار تطبيقات مرئية أو فئات صلاحيات للفحص,NOT_ASSESSED,,,,,,,,,,
-privacy_sweep,M04,PRIVACY_SWEEP_C02,CORE,عرض بيانات صلاحيات التطبيقات الفعلية,NOT_ASSESSED,,,,,,,,,,
-privacy_sweep,M04,PRIVACY_SWEEP_C03,CORE,تقييم مخاطر مبني على أدلة قابلة للتفسير,NOT_ASSESSED,,,,,,,,,,
-privacy_sweep,M04,PRIVACY_SWEEP_C04,CORE,إظهار حالات عدم الظهور أو نقص الإذن,NOT_ASSESSED,,,,,,,,,,
-privacy_sweep,M04,PRIVACY_SWEEP_C05,CORE,عرض تفاصيل كل خطر ومصدره,NOT_ASSESSED,,,,,,,,,,
-privacy_sweep,M04,PRIVACY_SWEEP_C06,CORE,فرز حسب فئة التطبيق أو نوع الصلاحية,NOT_ASSESSED,,,,,,,,,,
-privacy_sweep,M04,PRIVACY_SWEEP_C07,CORE,فتح إعدادات الخصوصية والتطبيق الأصلية,NOT_ASSESSED,,,,,,,,,,
-privacy_sweep,M04,PRIVACY_SWEEP_C08,CORE,التحقق من تغيّر الإذن بعد العودة من النظام,NOT_ASSESSED,,,,,,,,,,
-privacy_sweep,M04,PRIVACY_SWEEP_C09,CORE,حفظ سجل ملاحظات الخصوصية فقط,NOT_ASSESSED,,,,,,,,,,
-privacy_sweep,M04,PRIVACY_SWEEP_C10,CORE,تصدير تقرير منزوع البيانات الحساسة بموافقة المستخدم,NOT_ASSESSED,,,,,,,,,,
-privacy_sweep,M04,prv_realtime,PRO,prv_realtime,NOT_ASSESSED,,,,,,,,,,
-privacy_sweep,M04,prv_vault,PRO,prv_vault,NOT_ASSESSED,,,,,,,,,,
-privacy_sweep,M04,prv_tracker,PRO,prv_tracker,NOT_ASSESSED,,,,,,,,,,
-privacy_sweep,M04,prv_report,PRO,prv_report,NOT_ASSESSED,,,,,,,,,,
-privacy_sweep,M04,prv_history,PRO,prv_history,NOT_ASSESSED,,,,,,,,,,
+privacy_sweep,M04,PRIVACY_SWEEP_C01,CORE,اختيار تطبيقات مرئية أو فئات صلاحيات للفحص,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,,شاشة الخصوصية تقرأ الصلاحيات من PackageManager فعليًا؛ الجهاز محجوز بسبب تصادم الحزمة com.knoux.ai مع Standard المثبت على الجهاز
+privacy_sweep,M04,PRIVACY_SWEEP_C02,CORE,عرض بيانات صلاحيات التطبيقات الفعلية,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,,نفس الجهاز محجوز بسبب تصادم الحزمة
+privacy_sweep,M04,PRIVACY_SWEEP_C03,CORE,تقييم مخاطر مبني على أدلة قابلة للتفسير,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,,نفس الجهاز محجوز بسبب تصادم الحزمة
+privacy_sweep,M04,PRIVACY_SWEEP_C04,CORE,إظهار حالات عدم الظهور أو نقص الإذن,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,,نفس الجهاز محجوز بسبب تصادم الحزمة
+privacy_sweep,M04,PRIVACY_SWEEP_C05,CORE,عرض تفاصيل كل خطر ومصدره,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,,نفس الجهاز محجوز بسبب تصادم الحزمة
+privacy_sweep,M04,PRIVACY_SWEEP_C06,CORE,فرز حسب فئة التطبيق أو نوع الصلاحية,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,,نفس الجهاز محجوز بسبب تصادم الحزمة
+privacy_sweep,M04,PRIVACY_SWEEP_C07,CORE,فتح إعدادات الخصوصية والتطبيق الأصلية,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,,نفس الجهاز محجوز بسبب تصادم الحزمة
+privacy_sweep,M04,PRIVACY_SWEEP_C08,CORE,التحقق من تغيّر الإذن بعد العودة من النظام,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,,زر إعادة قراءة الصلاحيات مضاف؛ الجهاز محجوز بسبب تصادم الحزمة
+privacy_sweep,M04,PRIVACY_SWEEP_C09,CORE,حفظ سجل ملاحظات الخصوصية فقط,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,,ملاحظة الخصوصية تُسجل في Room (PermissionEventEntity)؛ الجهاز محجوز بسبب تصادم الحزمة
+privacy_sweep,M04,PRIVACY_SWEEP_C10,CORE,تصدير تقرير منزوع البيانات الحساسة بموافقة المستخدم,NOT_IMPLEMENTED,,,NOT_RUN,,,,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,,لا شاشة تصدير تقرير خصوصية بعد؛ الجهاز محجوز بسبب تصادم الحزمة
+privacy_sweep,M04,prv_realtime,PRO,مراقبة لحظية,BLOCKED_PLATFORM,,,NOT_RUN,,,,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,,مراقبة لحظية للكاميرا/الميكروفون تحتاج أذونات نظام خاصة — غير متاحة لتطبيق عادي؛ الجهاز محجوز
+privacy_sweep,M04,prv_vault,PRO,خزنة الصلاحيات,NOT_IMPLEMENTED,,,NOT_RUN,,,,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,,خزنة مشفرة غير منفذة بعد — await M04 build؛ الجهاز محجوز
+privacy_sweep,M04,prv_tracker,PRO,تتبع التطبيقات,BLOCKED_PLATFORM,,,NOT_RUN,,,,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,,تتبع التطبيقات يحتاج VpnService أو وصول نظام — غير مدعوم لتطبيق عادي؛ الجهاز محجوز
+privacy_sweep,M04,prv_report,PRO,تقرير خصوصية,BLOCKED,,,NOT_RUN,,,,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,,شاشة تقرير الخصوصية تجريبية، لسه مربوطة ببيانات حقيقية — await M04 build؛ الجهاز محجوز
+privacy_sweep,M04,prv_history,PRO,تاريخ الخصوصية,NOT_IMPLEMENTED,,,NOT_RUN,,,,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,,سجل الخصوصية لسه غير مبني — await M04 build؛ الجهاز محجوز
 app_manager,M05,APP_MANAGER_C01,CORE,اكتشاف التطبيقات المرئية حسب سياسة Android,NOT_ASSESSED,,,,,,,,,,
 app_manager,M05,APP_MANAGER_C02,CORE,عرض اسم التطبيق والحزمة والإصدار,NOT_ASSESSED,,,,,,,,,,
 app_manager,M05,APP_MANAGER_C03,CORE,البحث والفرز والمجموعات,NOT_ASSESSED,,,,,,,,,,
