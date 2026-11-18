@@ -74,21 +74,21 @@ app_manager,M05,app_freeze,PRO,تجميد التطبيقات,BLOCKED_PLATFORM,,,
 app_manager,M05,app_backup,PRO,نسخ احتياطي للتطبيق,NOT_IMPLEMENTED,,,NOT_RUN,,,,4a8932f79fb03892acf8a71264e932d3cf5807a0,4a8932f79fb03892acf8a71264e932d3cf5807a0,,نسخ احتياطي لبيانات التطبيقات الأخرى لسه غير مدعوم — await M05 build؛ الجهاز محجوز
 app_manager,M05,app_usage,PRO,استخدام التطبيقات,NOT_IMPLEMENTED,,,NOT_RUN,,,,4a8932f79fb03892acf8a71264e932d3cf5807a0,4a8932f79fb03892acf8a71264e932d3cf5807a0,,وصول UsageStats يحتاج إذن خاص — await M05 build؛ الجهاز محجوز
 app_manager,M05,app_clone,PRO,استنساخ التطبيقات,BLOCKED_PLATFORM,,,NOT_RUN,,,,4a8932f79fb03892acf8a71264e932d3cf5807a0,4a8932f79fb03892acf8a71264e932d3cf5807a0,,استنساخ التطبيقات مش مدعوم رسميًا في Android؛ الجهاز محجوز
-battery_saver,M06,BATTERY_SAVER_C01,CORE,قراءة مستوى البطارية الفعلي وطريقة القياس,NOT_ASSESSED,,,,,,,,,,
-battery_saver,M06,BATTERY_SAVER_C02,CORE,قراءة الشحن والمصدر/الحالة,NOT_ASSESSED,,,,,,,,,,
-battery_saver,M06,BATTERY_SAVER_C03,CORE,قراءة حرارة البطارية عند إتاحتها,NOT_ASSESSED,,,,,,,,,,
-battery_saver,M06,BATTERY_SAVER_C04,CORE,قراءة Thermal Status إن كان مدعومًا,NOT_ASSESSED,,,,,,,,,,
-battery_saver,M06,BATTERY_SAVER_C05,CORE,إظهار نوع الإشارات الناقصة أو غير المتاحة,NOT_ASSESSED,,,,,,,,,,
-battery_saver,M06,BATTERY_SAVER_C06,CORE,سجل عينات البطارية في Room بموافقة مناسبة,NOT_ASSESSED,,,,,,,,,,
-battery_saver,M06,BATTERY_SAVER_C07,CORE,تحديد حدود تنبيه يختارها المستخدم,NOT_ASSESSED,,,,,,,,,,
-battery_saver,M06,BATTERY_SAVER_C08,CORE,فتح إعدادات توفير الطاقة الحقيقية,NOT_ASSESSED,,,,,,,,,,
-battery_saver,M06,BATTERY_SAVER_C09,CORE,إظهار توصيات مبنية على القراءات مع اختيار المستخدم,NOT_ASSESSED,,,,,,,,,,
-battery_saver,M06,BATTERY_SAVER_C10,CORE,مقارنة قياسات قبل/بعد الإعدادات دون ادعاء تسريع,NOT_ASSESSED,,,,,,,,,,
-battery_saver,M06,bat_thermal_timeline,PRO,bat_thermal_timeline,NOT_ASSESSED,,,,,,,,,,
-battery_saver,M06,bat_charge_profiles,PRO,bat_charge_profiles,NOT_ASSESSED,,,,,,,,,,
-battery_saver,M06,bat_usage_context,PRO,bat_usage_context,NOT_ASSESSED,,,,,,,,,,
-battery_saver,M06,bat_smart_alerts,PRO,bat_smart_alerts,NOT_ASSESSED,,,,,,,,,,
-battery_saver,M06,bat_recommendations,PRO,bat_recommendations,NOT_ASSESSED,,,,,,,,,,
+battery_saver,M06,BATTERY_SAVER_C01,CORE,قراءة مستوى البطارية الفعلي وطريقة القياس,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,,شاشة البطارية تقرأ من BatteryManager فعليًا وتسجل العينة في غرفة Room؛ الجهاز محجوز بسبب تصادم الحزمة com.knoux.ai مع Standard المثبت على الجهاز
+battery_saver,M06,BATTERY_SAVER_C02,CORE,قراءة الشحن والمصدر/الحالة,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,,نفس الجهاز محجوز بسبب تصادم الحزمة
+battery_saver,M06,BATTERY_SAVER_C03,CORE,قراءة حرارة البطارية عند إتاحتها,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,,نفس الجهاز محجوز بسبب تصادم الحزمة
+battery_saver,M06,BATTERY_SAVER_C04,CORE,قراءة Thermal Status إن كان مدعومًا,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,,نفس الجهاز محجوز بسبب تصادم الحزمة
+battery_saver,M06,BATTERY_SAVER_C05,CORE,إظهار نوع الإشارات الناقصة أو غير المتاحة,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,,نفس الجهاز محجوز بسبب تصادم الحزمة
+battery_saver,M06,BATTERY_SAVER_C06,CORE,سجل عينات البطارية في Room بموافقة مناسبة,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,,عينة بطارية تُسجل في غرفة Room عند كل قراءة؛ شاشة bat-readings تعرض التاريخ؛ الجهاز محجوز
+battery_saver,M06,BATTERY_SAVER_C07,CORE,تحديد حدود تنبيه يختارها المستخدم,NOT_IMPLEMENTED,,,NOT_RUN,,,,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,,حدود التنبيه لسه غير مبنية — await M06 build؛ الجهاز محجوز
+battery_saver,M06,BATTERY_SAVER_C08,CORE,فتح إعدادات توفير الطاقة الحقيقية,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,,زر فتح إعدادات البطارية مضاف؛ الجهاز محجوز
+battery_saver,M06,BATTERY_SAVER_C09,CORE,إظهار توصيات مبنية على القراءات مع اختيار المستخدم,NOT_IMPLEMENTED,,,NOT_RUN,,,,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,,توصيات البطارية لسه غير مبنية — await M06 build؛ الجهاز محجوز
+battery_saver,M06,BATTERY_SAVER_C10,CORE,مقارنة قياسات قبل/بعد الإعدادات دون ادعاء تسريع,NOT_IMPLEMENTED,,,NOT_RUN,,,,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,,مقارنة قبل/بعد لسه غير مبنية — await M06 build؛ الجهاز محجوز
+battery_saver,M06,bat_thermal_timeline,PRO,خط زمني للحرارة,NOT_IMPLEMENTED,,,NOT_RUN,,,,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,,خط زمني حراري لسه غير مبني — await M06 build؛ الجهاز محجوز
+battery_saver,M06,bat_charge_profiles,PRO,ملفات الشحن,NOT_IMPLEMENTED,,,NOT_RUN,,,,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,,ملفات الشحن لسه غير مبنية — await M06 build؛ الجهاز محجوز
+battery_saver,M06,bat_usage_context,PRO,سياق الاستخدام,BLOCKED_PLATFORM,,,NOT_RUN,,,,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,,وصول UsageStats يحتاج إذن نظام خاص — await user grant + M06 build؛ الجهاز محجوز
+battery_saver,M06,bat_smart_alerts,PRO,تنبيهات ذكية,NOT_IMPLEMENTED,,,NOT_RUN,,,,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,,تنبيهات ذكية لسه غير مبنية — await M06 build؛ الجهاز محجوز
+battery_saver,M06,bat_recommendations,PRO,توصيات البطارية,NOT_IMPLEMENTED,,,NOT_RUN,,,,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,,توصيات البطارية لسه غير مبنية — await M06 build؛ الجهاز محجوز
 deep_scan,M07,DEEP_SCAN_C01,CORE,اختيار نطاق الفحص وأنواعه,NOT_ASSESSED,,,,,,,,,,
 deep_scan,M07,DEEP_SCAN_C02,CORE,تقييم الإذن والنطاق قبل التشغيل,NOT_ASSESSED,,,,,,,,,,
 deep_scan,M07,DEEP_SCAN_C03,CORE,بدء فحص حقيقي متعدد الوحدات المسموحة,NOT_ASSESSED,,,,,,,,,,
