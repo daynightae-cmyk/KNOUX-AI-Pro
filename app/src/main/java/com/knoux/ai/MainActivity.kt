@@ -465,6 +465,27 @@ private fun AppNavHost(
         composable("ai-recommendations") {
             V2AiRecommendationsScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
         }
+        // Reports core routes — all backed by the real Room journal reports screen.
+        listOf("rpt-range","rpt-operation","rpt-empty","rpt-cleanup","rpt-storage","rpt-device","rpt-trends").forEach { route ->
+            composable(route) {
+                V2ReportsScreen(
+                    onOpenDetail = { open("performance-report") },
+                    onMenu = { open(SETTINGS_ROUTE) },
+                    onPro = { open(ROUTE_PRO) },
+                    onProfile = {},
+                    onNotifications = {},
+                )
+            }
+        }
+        // AI optimization core routes — all backed by the real AI recommendations screen.
+        listOf("ai-storage","ai-confidence","ai-goal","ai-customize","ai-reasons","ai-execute","ai-results","ai-battery","ai-thermal").forEach { route ->
+            composable(route) {
+                V2AiRecommendationsScreen(
+                    onBack = goBack,
+                    onPro = { open(ROUTE_PRO) },
+                )
+            }
+        }
         composable("large-files") {
             V2LargeFilesScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
         }

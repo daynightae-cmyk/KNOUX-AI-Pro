@@ -223,7 +223,7 @@ object ServiceCatalog150 {
         core("REPORTS_C09", "reports", 9, "تصدير CSV/PDF محلي بإذن المستخدم", "rpt-operation"),
         core("REPORTS_C10", "reports", 10, "جدولة ملخصات مصرح بها وتاريخ التسليم", "rpt-trends"),
         pro("rep_export", "reports", 1, "تصدير التقارير", null, "تصدير الملفات لسه غير مبني"),
-        pro("rep_history", "reports", 2, "تاريخ التقارير", "rpt-scans"),
+        pro("rep_history", "reports", 2, "تاريخ التقارير", null, "سجل التقارير لسه غير مبني — await M09 build"),
         pro("rep_ai_insights", "reports", 3, "رؤى الذكاء الاصطناعي", "ai-recommendations"),
         pro("rep_compare", "reports", 4, "مقارنة الفترات", "rpt-range"),
         pro("rep_schedule", "reports", 5, "جدولة التقارير", null, "الجدولة لسه غير موصولة بـ WorkManager"),
