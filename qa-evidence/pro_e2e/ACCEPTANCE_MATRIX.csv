@@ -59,21 +59,21 @@ privacy_sweep,M04,prv_vault,PRO,خزنة الصلاحيات,NOT_IMPLEMENTED,,,NO
 privacy_sweep,M04,prv_tracker,PRO,تتبع التطبيقات,BLOCKED_PLATFORM,,,NOT_RUN,,,,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,,تتبع التطبيقات يحتاج VpnService أو وصول نظام — غير مدعوم لتطبيق عادي؛ الجهاز محجوز
 privacy_sweep,M04,prv_report,PRO,تقرير خصوصية,BLOCKED,,,NOT_RUN,,,,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,,شاشة تقرير الخصوصية تجريبية، لسه مربوطة ببيانات حقيقية — await M04 build؛ الجهاز محجوز
 privacy_sweep,M04,prv_history,PRO,تاريخ الخصوصية,NOT_IMPLEMENTED,,,NOT_RUN,,,,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,04a9f7784cc374abea3a7b9bbb6bc60f4e092248,,سجل الخصوصية لسه غير مبني — await M04 build؛ الجهاز محجوز
-app_manager,M05,APP_MANAGER_C01,CORE,اكتشاف التطبيقات المرئية حسب سياسة Android,NOT_ASSESSED,,,,,,,,,,
-app_manager,M05,APP_MANAGER_C02,CORE,عرض اسم التطبيق والحزمة والإصدار,NOT_ASSESSED,,,,,,,,,,
-app_manager,M05,APP_MANAGER_C03,CORE,البحث والفرز والمجموعات,NOT_ASSESSED,,,,,,,,,,
-app_manager,M05,APP_MANAGER_C04,CORE,تصفية المستخدم والنظام ضمن نطاق الرؤية,NOT_ASSESSED,,,,,,,,,,
-app_manager,M05,APP_MANAGER_C05,CORE,عرض البيانات المسموحة للتخزين والاستخدام,NOT_ASSESSED,,,,,,,,,,
-app_manager,M05,APP_MANAGER_C06,CORE,فتح التطبيق أو صفحة معلوماته,NOT_ASSESSED,,,,,,,,,,
-app_manager,M05,APP_MANAGER_C07,CORE,فتح إدارة الصلاحيات والإشعارات للتطبيق,NOT_ASSESSED,,,,,,,,,,
-app_manager,M05,APP_MANAGER_C08,CORE,طلب إلغاء التثبيت عبر واجهة النظام لا صامتًا,NOT_ASSESSED,,,,,,,,,,
-app_manager,M05,APP_MANAGER_C09,CORE,مراجعة نتائج عمليات المستخدم وإعادة استعلام الحزمة,NOT_ASSESSED,,,,,,,,,,
-app_manager,M05,APP_MANAGER_C10,CORE,تاريخ استخدام الإجراءات وتوضيح المجريات غير المدعومة,NOT_ASSESSED,,,,,,,,,,
-app_manager,M05,app_batch,PRO,app_batch,NOT_ASSESSED,,,,,,,,,,
-app_manager,M05,app_freeze,PRO,app_freeze,NOT_ASSESSED,,,,,,,,,,
-app_manager,M05,app_backup,PRO,app_backup,NOT_ASSESSED,,,,,,,,,,
-app_manager,M05,app_usage,PRO,app_usage,NOT_ASSESSED,,,,,,,,,,
-app_manager,M05,app_clone,PRO,app_clone,NOT_ASSESSED,,,,,,,,,,
+app_manager,M05,APP_MANAGER_C01,CORE,اكتشاف التطبيقات المرئية حسب سياسة Android,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,4a8932f79fb03892acf8a71264e932d3cf5807a0,4a8932f79fb03892acf8a71264e932d3cf5807a0,,قائمة التطبيقات تُقرأ من PackageManager فعليًا؛ الجهاز محجوز بسبب تصادم الحزمة com.knoux.ai مع Standard المثبت على الجهاز
+app_manager,M05,APP_MANAGER_C02,CORE,عرض اسم التطبيق والحزمة والإصدار,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,4a8932f79fb03892acf8a71264e932d3cf5807a0,4a8932f79fb03892acf8a71264e932d3cf5807a0,,نفس الجهاز محجوز بسبب تصادم الحزمة
+app_manager,M05,APP_MANAGER_C03,CORE,البحث والفرز والمجموعات,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,4a8932f79fb03892acf8a71264e932d3cf5807a0,4a8932f79fb03892acf8a71264e932d3cf5807a0,,فرز حسب الحجم وفلاتر نظام/مستخدم مضافان؛ الجهاز محجوز
+app_manager,M05,APP_MANAGER_C04,CORE,تصفية المستخدم والنظام ضمن نطاق الرؤية,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,4a8932f79fb03892acf8a71264e932d3cf5807a0,4a8932f79fb03892acf8a71264e932d3cf5807a0,,نفس الجهاز محجوز بسبب تصادم الحزمة
+app_manager,M05,APP_MANAGER_C05,CORE,عرض البيانات المسموحة للتخزين والاستخدام,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,4a8932f79fb03892acf8a71264e932d3cf5807a0,4a8932f79fb03892acf8a71264e932d3cf5807a0,,حجم الحزمة يُshown عندما يوفره النظام (أو «غير متاح» بصدق)؛ الجهاز محجوز
+app_manager,M05,APP_MANAGER_C06,CORE,فتح التطبيق أو صفحة معلوماته,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,4a8932f79fb03892acf8a71264e932d3cf5807a0,4a8932f79fb03892acf8a71264e932d3cf5807a0,,زر فتح إعدادات التطبيقات وفتح صفحة المعلومات مضافان؛ الجهاز محجوز
+app_manager,M05,APP_MANAGER_C07,CORE,فتح إدارة الصلاحيات والإشعارات للتطبيق,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,4a8932f79fb03892acf8a71264e932d3cf5807a0,4a8932f79fb03892acf8a71264e932d3cf5807a0,,تحويل إلى إعدادات النظام مضاف؛ الجهاز محجوز
+app_manager,M05,APP_MANAGER_C08,CORE,طلب إلغاء التثبيت عبر واجهة النظام لا صامتًا,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,4a8932f79fb03892acf8a71264e932d3cf5807a0,4a8932f79fb03892acf8a71264e932d3cf5807a0,,إزالة التثبيت عبر Intent.ACTION_DELETE مع شاشة تأكيد النظام؛ الجهاز محجوز
+app_manager,M05,APP_MANAGER_C09,CORE,مراجعة نتائج عمليات المستخدم وإعادة استعلام الحزمة,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,4a8932f79fb03892acf8a71264e932d3cf5807a0,4a8932f79fb03892acf8a71264e932d3cf5807a0,,إعادة استعلام PackageManager بعد الإزالة ومسح في غرفة Room؛ الجهاز محجوز
+app_manager,M05,APP_MANAGER_C10,CORE,تاريخ استخدام الإجراءات وتوضيح المجريات غير المدعومة,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,4a8932f79fb03892acf8a71264e932d3cf5807a0,4a8932f79fb03892acf8a71264e932d3cf5807a0,,كل عملية تُسجل في غرفة Room مع حالة؛ الجهاز محجوز
+app_manager,M05,app_batch,PRO,إجراءات دفعة,NOT_IMPLEMENTED,,,NOT_RUN,,,,4a8932f79fb03892acf8a71264e932d3cf5807a0,4a8932f79fb03892acf8a71264e932d3cf5807a0,,معالجة الدفعات لسه غير مبنية — await M05 build؛ الجهاز محجوز
+app_manager,M05,app_freeze,PRO,تجميد التطبيقات,BLOCKED_PLATFORM,,,NOT_RUN,,,,4a8932f79fb03892acf8a71264e932d3cf5807a0,4a8932f79fb03892acf8a71264e932d3cf5807a0,,التجميد يحتاج Device Owner أو Root — غير متاح لتطبيق عادي؛ الجهاز محجوز
+app_manager,M05,app_backup,PRO,نسخ احتياطي للتطبيق,NOT_IMPLEMENTED,,,NOT_RUN,,,,4a8932f79fb03892acf8a71264e932d3cf5807a0,4a8932f79fb03892acf8a71264e932d3cf5807a0,,نسخ احتياطي لبيانات التطبيقات الأخرى لسه غير مدعوم — await M05 build؛ الجهاز محجوز
+app_manager,M05,app_usage,PRO,استخدام التطبيقات,NOT_IMPLEMENTED,,,NOT_RUN,,,,4a8932f79fb03892acf8a71264e932d3cf5807a0,4a8932f79fb03892acf8a71264e932d3cf5807a0,,وصول UsageStats يحتاج إذن خاص — await M05 build؛ الجهاز محجوز
+app_manager,M05,app_clone,PRO,استنساخ التطبيقات,BLOCKED_PLATFORM,,,NOT_RUN,,,,4a8932f79fb03892acf8a71264e932d3cf5807a0,4a8932f79fb03892acf8a71264e932d3cf5807a0,,استنساخ التطبيقات مش مدعوم رسميًا في Android؛ الجهاز محجوز
 battery_saver,M06,BATTERY_SAVER_C01,CORE,قراءة مستوى البطارية الفعلي وطريقة القياس,NOT_ASSESSED,,,,,,,,,,
 battery_saver,M06,BATTERY_SAVER_C02,CORE,قراءة الشحن والمصدر/الحالة,NOT_ASSESSED,,,,,,,,,,
 battery_saver,M06,BATTERY_SAVER_C03,CORE,قراءة حرارة البطارية عند إتاحتها,NOT_ASSESSED,,,,,,,,,,
