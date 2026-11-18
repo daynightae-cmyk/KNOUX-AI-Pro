@@ -89,21 +89,21 @@ battery_saver,M06,bat_charge_profiles,PRO,ملفات الشحن,NOT_IMPLEMENTED,
 battery_saver,M06,bat_usage_context,PRO,سياق الاستخدام,BLOCKED_PLATFORM,,,NOT_RUN,,,,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,,وصول UsageStats يحتاج إذن نظام خاص — await user grant + M06 build؛ الجهاز محجوز
 battery_saver,M06,bat_smart_alerts,PRO,تنبيهات ذكية,NOT_IMPLEMENTED,,,NOT_RUN,,,,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,,تنبيهات ذكية لسه غير مبنية — await M06 build؛ الجهاز محجوز
 battery_saver,M06,bat_recommendations,PRO,توصيات البطارية,NOT_IMPLEMENTED,,,NOT_RUN,,,,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a,,توصيات البطارية لسه غير مبنية — await M06 build؛ الجهاز محجوز
-deep_scan,M07,DEEP_SCAN_C01,CORE,اختيار نطاق الفحص وأنواعه,NOT_ASSESSED,,,,,,,,,,
-deep_scan,M07,DEEP_SCAN_C02,CORE,تقييم الإذن والنطاق قبل التشغيل,NOT_ASSESSED,,,,,,,,,,
-deep_scan,M07,DEEP_SCAN_C03,CORE,بدء فحص حقيقي متعدد الوحدات المسموحة,NOT_ASSESSED,,,,,,,,,,
-deep_scan,M07,DEEP_SCAN_C04,CORE,عرض تقدم بالملفات/البايتات المفحوصة,NOT_ASSESSED,,,,,,,,,,
-deep_scan,M07,DEEP_SCAN_C05,CORE,إيقاف وإلغاء العمل في نقاط آمنة,NOT_ASSESSED,,,,,,,,,,
-deep_scan,M07,DEEP_SCAN_C06,CORE,إظهار نتائج جزئية ووقت أخذ العينات,NOT_ASSESSED,,,,,,,,,,
-deep_scan,M07,DEEP_SCAN_C07,CORE,تصنيف النتائج حسب النوع والأولوية والدليل,NOT_ASSESSED,,,,,,,,,,
-deep_scan,M07,DEEP_SCAN_C08,CORE,فتح تفاصيل النتيجة وتحديد العلاج اليدوي,NOT_ASSESSED,,,,,,,,,,
-deep_scan,M07,DEEP_SCAN_C09,CORE,تنفيذ علاج آخر خدمة موثوقة بمراجعة/موافقة,NOT_ASSESSED,,,,,,,,,,
-deep_scan,M07,DEEP_SCAN_C10,CORE,إعادة استعلام وعرض ملخص النتائج والسجل,NOT_ASSESSED,,,,,,,,,,
-deep_scan,M07,scan_malware,PRO,scan_malware,NOT_ASSESSED,,,,,,,,,,
-deep_scan,M07,scan_hidden,PRO,scan_hidden,NOT_ASSESSED,,,,,,,,,,
-deep_scan,M07,scan_schedule,PRO,scan_schedule,NOT_ASSESSED,,,,,,,,,,
-deep_scan,M07,scan_custom,PRO,scan_custom,NOT_ASSESSED,,,,,,,,,,
-deep_scan,M07,scan_forensic,PRO,scan_forensic,NOT_ASSESSED,,,,,,,,,,
+deep_scan,M07,DEEP_SCAN_C01,CORE,اختيار نطاق الفحص وأنواعه,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,ed35460c0c282f982ebd9a2f91925129a93feb1e,ed35460c0c282f982ebd9a2f91925129a93feb1e,,شاشة الفحص العميق تعرض ستة قراءات متتابعة وتبدأ بعد ضغط المستخدم؛ الجهاز محجوز بسبب تصادم الحزمة com.knoux.ai مع Standard المثبت على الجهاز
+deep_scan,M07,DEEP_SCAN_C02,CORE,تقييم الإذن والنطاق قبل التشغيل,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,ed35460c0c282f982ebd9a2f91925129a93feb1e,ed35460c0c282f982ebd9a2f91925129a93feb1e,,فحص إذن MediaStore قبل البدء وبطاقة إذن مطلوب عند الرفض؛ الجهاز محجوز
+deep_scan,M07,DEEP_SCAN_C03,CORE,بدء فحص حقيقي متعدد الوحدات المسموحة,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,ed35460c0c282f982ebd9a2f91925129a93feb1e,ed35460c0c282f982ebd9a2f91925129a93feb1e,,ست مراحل حقيقية (بطارية، تخزين، تطبيقات، خصوصية، كاش، وسائط) تُقرأ من DeviceReaders؛ الجهاز محجوز
+deep_scan,M07,DEEP_SCAN_C04,CORE,عرض تقدم بالملفات/البايتات المفحوصة,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,ed35460c0c282f982ebd9a2f91925129a93feb1e,ed35460c0c282f982ebd9a2f91925129a93feb1e,,مقياس التقدم يعرض X من 6 والمرحلة الحالية الفعلي؛ الجهاز محجوز
+deep_scan,M07,DEEP_SCAN_C05,CORE,إيقاف وإلغاء العمل في نقاط آمنة,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,ed35460c0c282f982ebd9a2f91925129a93feb1e,ed35460c0c282f982ebd9a2f91925129a93feb1e,,إلغاء حقيقي عبر Job.cancel() مع حالة Cancelled؛ الجهاز محجوز
+deep_scan,M07,DEEP_SCAN_C06,CORE,إظهار نتائج جزئية ووقت أخذ العينات,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,ed35460c0c282f982ebd9a2f91925129a93feb1e,ed35460c0c282f982ebd9a2f91925129a93feb1e,,نتائج جزئية عند الإلغاء مع computedAt عند الاكتمال؛ الجهاز محجوز
+deep_scan,M07,DEEP_SCAN_C07,CORE,تصنيف النتائج حسب النوع والأولوية والدليل,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,ed35460c0c282f982ebd9a2f91925129a93feb1e,ed35460c0c282f982ebd9a2f91925129a93feb1e,,تصنيف النتائج حسب مرحلة الفحص مع حقائق مقروءة؛ الجهاز محجوز
+deep_scan,M07,DEEP_SCAN_C08,CORE,فتح تفاصيل النتيجة وتحديد العلاج اليدوي,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,ed35460c0c282f982ebd9a2f91925129a93feb1e,ed35460c0c282f982ebd9a2f91925129a93feb1e,,زر فتح ملخص الجلسة إلى deep-scan-summary؛ الجهاز محجوز
+deep_scan,M07,DEEP_SCAN_C09,CORE,تنفيذ علاج آخر خدمة موثوقة بمراجعة/موافقة,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,ed35460c0c282f982ebd9a2f91925129a93feb1e,ed35460c0c282f982ebd9a2f91925129a93feb1e,,العلاج يُحيل إلى شاشة الخدمة المعنية بعد مراجعة المستخدم؛ الجهاز محجوز
+deep_scan,M07,DEEP_SCAN_C10,CORE,إعادة استعلام وعرض ملخص النتائج والسجل,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,ed35460c0c282f982ebd9a2f91925129a93feb1e,ed35460c0c282f982ebd9a2f91925129a93feb1e,,سجل الفحص يُحفظ في غرفة Room ويعاد استعراضه؛ الجهاز محجوز
+deep_scan,M07,scan_malware,PRO,فحص برمجيات خبيثة,BLOCKED_PLATFORM,,,NOT_RUN,,,,ed35460c0c282f982ebd9a2f91925129a93feb1e,ed35460c0c282f982ebd9a2f91925129a93feb1e,,لا محرك توقيعات خبيث معتمد — غير متاح لتطبيق عادي؛ الجهاز محجوز
+deep_scan,M07,scan_hidden,PRO,ملفات مخفية,NOT_IMPLEMENTED,,,NOT_RUN,,,,ed35460c0c282f982ebd9a2f91925129a93feb1e,ed35460c0c282f982ebd9a2f91925129a93feb1e,,اكتشاف الملفات المخفية لسه غير مكتمل — await M07 build؛ الجهاز محجوز
+deep_scan,M07,scan_schedule,PRO,جدولة الفحص,NOT_IMPLEMENTED,,,NOT_RUN,,,,ed35460c0c282f982ebd9a2f91925129a93feb1e,ed35460c0c282f982ebd9a2f91925129a93feb1e,,جدولة الفحص عبر WorkManager لسه غير موصولة — await M07 build؛ الجهاز محجوز
+deep_scan,M07,scan_custom,PRO,فحص مخصص,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,ed35460c0c282f982ebd9a2f91925129a93feb1e,ed35460c0c282f982ebd9a2f91925129a93feb1e,,فحص مخصص مربوط بـ dsn-scope؛ الجهاز محجوز
+deep_scan,M07,scan_forensic,PRO,فحص جنائي,BLOCKED_PLATFORM,,,NOT_RUN,,,,ed35460c0c282f982ebd9a2f91925129a93feb1e,ed35460c0c282f982ebd9a2f91925129a93feb1e,,فحص جنائي يحتاج حقوق نظام — غير متاح لتطبيق عادي؛ الجهاز محجوز
 smart_clean,M08,SMART_CLEAN_C01,CORE,اختيار نطاق تنظيف محدد,NOT_ASSESSED,,,,,,,,,,
 smart_clean,M08,SMART_CLEAN_C02,CORE,فحص ملفات قابلة للوصول والتنظيف فعلًا,NOT_ASSESSED,,,,,,,,,,
 smart_clean,M08,SMART_CLEAN_C03,CORE,تصنيف المرشحات حسب النوع,NOT_ASSESSED,,,,,,,,,,

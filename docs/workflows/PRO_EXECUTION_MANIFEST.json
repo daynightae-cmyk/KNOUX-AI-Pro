@@ -4,8 +4,8 @@
   "branch": "master",
   "origin": "https://github.com/daynightae-cmyk/KNOUX-AI-Pro.git",
   "updated": "2026-11-18T18:06+0400",
-  "local_sha": "c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a",
-  "remote_master_sha": "c8e007ad742fadbcbbd781f1a85b3a6ea188fd5a",
+  "local_sha": "ed35460c0c282f982ebd9a2f91925129a93feb1e",
+  "remote_master_sha": "ed35460c0c282f982ebd9a2f91925129a93feb1e",
   "synced": true,
   "dirty": 0,
   "untracked": 0,
@@ -25,8 +25,8 @@
     "G10_safe_cleanup": "DEFERRED (dry-run only, 0 bytes reclaimed)",
     "G11_next": "PENDING (ledgers appended; next service M03 app_residue)"
   },
-  "current_service": "M06 battery_saver — C01-C06,C08 UNIT_VERIFIED at source/unit level (Room battery samples + readings screen); C07/C09/C10 NOT_IMPLEMENTED; bat_thermal_timeline/bat_charge_profiles/bat_smart_alerts/bat_recommendations NOT_IMPLEMENTED; bat_usage_context BLOCKED_PLATFORM; device E2E blocked",
-  "next_service": "M07 deep_scan — continue at source/unit level; device E2E remains blocked until owner decision on package-ID migration",
+  "current_service": "M07 deep_scan — C01-C10 UNIT_VERIFIED at source/unit level (permission gate + 6 staged reads + Room history); scan_malware/scan_forensic BLOCKED_PLATFORM; scan_hidden/scan_schedule NOT_IMPLEMENTED; scan_custom routed; device E2E blocked",
+  "next_service": "M08 smart_clean — continue at source/unit level; device E2E remains blocked until owner decision on package-ID migration",
   "blockers": [
     "BLOCKED_DEVICE: Standard appId com.knoux.ai installed on authorized SM-A025F (R9ZR20HWHQY); owner decision required before migration to com.knoux.ai.pro or any device install"
   ],
