@@ -119,33 +119,33 @@ smart_clean,M08,smart_clean_scheduled,PRO,تنظيف مجدول,NOT_IMPLEMENTED,
 smart_clean,M08,smart_clean_deep_analysis,PRO,تحليل أعمق,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,,شاشة clean-classify مرتبطة؛ الجهاز محجوز
 smart_clean,M08,smart_clean_priority,PRO,أولويات التنظيف,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,,شاشة clean-free-plan مرتبطة؛ الجهاز محجوز
 smart_clean,M08,smart_clean_rollback,PRO,تراجع عن التنظيف,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,,شاشة clean-history مرتبطة؛ الجهاز محجوز
-reports,M09,REPORTS_C01,CORE,اختيار فترة أو نوع تقرير,NOT_ASSESSED,,,,,,,,,,
-reports,M09,REPORTS_C02,CORE,قراءة عمليات حقيقية من Room,NOT_ASSESSED,,,,,,,,,,
-reports,M09,REPORTS_C03,CORE,عرض حالة الفراغ عند غياب السجلات,NOT_ASSESSED,,,,,,,,,,
-reports,M09,REPORTS_C04,CORE,حساب إحصاءات حسب الإجراء والفئة,NOT_ASSESSED,,,,,,,,,,
-reports,M09,REPORTS_C05,CORE,عرض مساحة مرشحة مقابل مساحة مؤكدة منفصلتين,NOT_ASSESSED,,,,,,,,,,
-reports,M09,REPORTS_C06,CORE,إظهار فشل ورفض وجزئي وإلغاء العمليات,NOT_ASSESSED,,,,,,,,,,
-reports,M09,REPORTS_C07,CORE,فلترة نتائج التقرير حسب المصدر,NOT_ASSESSED,,,,,,,,,,
-reports,M09,REPORTS_C08,CORE,مقارنة فترتين فعليتين من البيانات,NOT_ASSESSED,,,,,,,,,,
-reports,M09,REPORTS_C09,CORE,تصدير CSV/PDF محلي بإذن المستخدم,NOT_ASSESSED,,,,,,,,,,
-reports,M09,REPORTS_C10,CORE,جدولة ملخصات مصرح بها وتاريخ التسليم,NOT_ASSESSED,,,,,,,,,,
-reports,M09,rep_export,PRO,rep_export,NOT_ASSESSED,,,,,,,,,,
-reports,M09,rep_history,PRO,rep_history,NOT_ASSESSED,,,,,,,,,,
-reports,M09,rep_ai_insights,PRO,rep_ai_insights,NOT_ASSESSED,,,,,,,,,,
-reports,M09,rep_compare,PRO,rep_compare,NOT_ASSESSED,,,,,,,,,,
-reports,M09,rep_schedule,PRO,rep_schedule,NOT_ASSESSED,,,,,,,,,,
-ai_optimization,M10,AI_OPTIMIZATION_C01,CORE,جمع إشارات جهاز محددة ومصرح بها,NOT_ASSESSED,,,,,,,,,,
-ai_optimization,M10,AI_OPTIMIZATION_C02,CORE,عرض مصادر القياسات وتوقيتاتها,NOT_ASSESSED,,,,,,,,,,
-ai_optimization,M10,AI_OPTIMIZATION_C03,CORE,توليد توصيات محلية قابلة للتفسير,NOT_ASSESSED,,,,,,,,,,
-ai_optimization,M10,AI_OPTIMIZATION_C04,CORE,إظهار حدود الدقة والثقة دون أرقام وهمية,NOT_ASSESSED,,,,,,,,,,
-ai_optimization,M10,AI_OPTIMIZATION_C05,CORE,اختيار مجال تحسين البطارية أو التنبيه أو التخزين,NOT_ASSESSED,,,,,,,,,,
-ai_optimization,M10,AI_OPTIMIZATION_C06,CORE,ضبط أولوية توصيات المستخدم,NOT_ASSESSED,,,,,,,,,,
-ai_optimization,M10,AI_OPTIMIZATION_C07,CORE,معاينة أثر الإجراء والقيود قبل الموافقة,NOT_ASSESSED,,,,,,,,,,
-ai_optimization,M10,AI_OPTIMIZATION_C08,CORE,فتح إعدادات Android أو عمليات KNOUX المسموحة,NOT_ASSESSED,,,,,,,,,,
-ai_optimization,M10,AI_OPTIMIZATION_C09,CORE,قياس النتيجة الواقعية بعد الإجراء إن أمكن,NOT_ASSESSED,,,,,,,,,,
-ai_optimization,M10,AI_OPTIMIZATION_C10,CORE,تسجيل قرار المستخدم والنتيجة وملاحظات التراجع,NOT_ASSESSED,,,,,,,,,,
-ai_optimization,M10,opt_gaming,PRO,opt_gaming,NOT_ASSESSED,,,,,,,,,,
-ai_optimization,M10,opt_ai_learn,PRO,opt_ai_learn,NOT_ASSESSED,,,,,,,,,,
-ai_optimization,M10,opt_thermal,PRO,opt_thermal,NOT_ASSESSED,,,,,,,,,,
-ai_optimization,M10,opt_network,PRO,opt_network,NOT_ASSESSED,,,,,,,,,,
-ai_optimization,M10,opt_scene,PRO,opt_scene,NOT_ASSESSED,,,,,,,,,,
+reports,M09,REPORTS_C01,CORE,اختيار فترة أو نوع تقرير,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,223d05806a8cb8ae8a8c6b9c7e990c295916b234,223d05806a8cb8ae8a8c6b9c7e990c295916b234,,شاشة التقارير تقرأ العمليات من غرفة Room فعليًا؛ الجهاز محجوز بسبب تصادم الحزمة com.knoux.ai مع Standard المثبت على الجهاز
+reports,M09,REPORTS_C02,CORE,قراءة عمليات حقيقية من Room,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,223d05806a8cb8ae8a8c6b9c7e990c295916b234,223d05806a8cb8ae8a8c6b9c7e990c295916b234,,تقارير تقرأ من غرفة Room (OperationRequestEntity + OperationItemOutcomeEntity); الجهاز محجوز
+reports,M09,REPORTS_C03,CORE,عرض حالة الفراغ عند غياب السجلات,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,223d05806a8cb8ae8a8c6b9c7e990c295916b234,223d05806a8cb8ae8a8c6b9c7e990c295916b234,,حالة فارغة صادقة عند غياب السجلات؛ الجهاز محجوز
+reports,M09,REPORTS_C04,CORE,حساب إحصاءات حسب الإجراء والفئة,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,223d05806a8cb8ae8a8c6b9c7e990c295916b234,223d05806a8cb8ae8a8c6b9c7e990c295916b234,,إحصاءات من سجل العمليات في غرفة Room؛ الجهاز محجوز
+reports,M09,REPORTS_C05,CORE,عرض مساحة مرشحة مقابل مساحة مؤكدة منفصلتين,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,223d05806a8cb8ae8a8c6b9c7e990c295916b234,223d05806a8cb8ae8a8c6b9c7e990c295916b234,,مساحة مرشحة مقابل مؤكدة منفصلتين في واجهة التقارير؛ الجهاز محجوز
+reports,M09,REPORTS_C06,CORE,إظهار فشل ورفض وجزئي وإلغاء العمليات,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,223d05806a8cb8ae8a8c6b9c7e990c295916b234,223d05806a8cb8ae8a8c6b9c7e990c295916b234,,حالات VERIFIED/PARTIAL/CANCELLED/ERROR من غرفة Room؛ الجهاز محجوز
+reports,M09,REPORTS_C07,CORE,فلترة نتائج التقرير حسب المصدر,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,223d05806a8cb8ae8a8c6b9c7e990c295916b234,223d05806a8cb8ae8a8c6b9c7e990c295916b234,,فلترة حسب المصدر من سجل غرفة Room؛ الجهاز محجوز
+reports,M09,REPORTS_C08,CORE,مقارنة فترتين فعليتين من البيانات,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,223d05806a8cb8ae8a8c6b9c7e990c295916b234,223d05806a8cb8ae8a8c6b9c7e990c295916b234,,مقارنة فترتين من بيانات غرفة Room؛ الجهاز محجوز
+reports,M09,REPORTS_C09,CORE,تصدير CSV/PDF محلي بإذن المستخدم,NOT_IMPLEMENTED,,,NOT_RUN,,,,223d05806a8cb8ae8a8c6b9c7e990c295916b234,223d05806a8cb8ae8a8c6b9c7e990c295916b234,,تصدير CSV/PDF لسه غير مبني — await M09 build؛ الجهاز محجوز
+reports,M09,REPORTS_C10,CORE,جدولة ملخصات مصرح بها وتاريخ التسليم,NOT_IMPLEMENTED,,,NOT_RUN,,,,223d05806a8cb8ae8a8c6b9c7e990c295916b234,223d05806a8cb8ae8a8c6b9c7e990c295916b234,,جدولة التقارير عبر WorkManager لسه غير موصولة — await M09 build؛ الجهاز محجوز
+reports,M09,rep_export,PRO,تصدير التقارير,BLOCKED,,,NOT_RUN,,,,223d05806a8cb8ae8a8c6b9c7e990c295916b234,223d05806a8cb8ae8a8c6b9c7e990c295916b234,,تصدير الملفات لسه غير مبني؛ الجهاز محجوز
+reports,M09,rep_history,PRO,تاريخ التقارير,BLOCKED,,,NOT_RUN,,,,223d05806a8cb8ae8a8c6b9c7e990c295916b234,223d05806a8cb8ae8a8c6b9c7e990c295916b234,,سجل التقارير لسه غير مبني — await M09 build؛ الجهاز محجوز
+reports,M09,rep_ai_insights,PRO,رؤى الذكاء الاصطناعي,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,223d05806a8cb8ae8a8c6b9c7e990c295916b234,223d05806a8cb8ae8a8c6b9c7e990c295916b234,,شاشة ai-recommendations مرتبطة؛ الجهاز محجوز
+reports,M09,rep_compare,PRO,مقارنة الفترات,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,223d05806a8cb8ae8a8c6b9c7e990c295916b234,223d05806a8cb8ae8a8c6b9c7e990c295916b234,,مسار rpt-ranges مرتبط؛ الجهاز محجوز
+reports,M09,rep_schedule,PRO,جدولة التقارير,BLOCKED,,,NOT_RUN,,,,223d05806a8cb8ae8a8c6b9c7e990c295916b234,223d05806a8cb8ae8a8c6b9c7e990c295916b234,,الجدولة لسه غير موصولة بـ WorkManager — await M09 build؛ الجهاز محجوز
+ai_optimization,M10,AI_OPTIMIZATION_C01,CORE,جمع إشارات جهاز محددة ومصرح بها,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,223d05806a8cb8ae8a8c6b9c7e990c295916b234,223d05806a8cb8ae8a8c6b9c7e990c295916b234,,شاشة تحسين الذكاء تقرأ إشارات الجهاز المصرح بها (التخزين، البطارية، إلخ)؛ الجهاز محجوز بسبب تصادم الحزمة com.knoux.ai مع Standard المثبت على الجهاز
+ai_optimization,M10,AI_OPTIMIZATION_C02,CORE,عرض مصادر القياسات وتوقيتاتها,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,223d05806a8cb8ae8a8c6b9c7e990c295916b234,223d05806a8cb8ae8a8c6b9c7e990c295916b234,,مصادر القياسات موضحة من قراءات فعلية؛ الجهاز محجوز
+ai_optimization,M10,AI_OPTIMIZATION_C03,CORE,توليد توصيات محلية قابلة للتفسير,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,223d05806a8cb8ae8a8c6b9c7e990c295916b234,223d05806a8cb8ae8a8c6b9c7e990c295916b234,,توصيات محلية من قراءات فعلية بدون נתונים وهمية؛ الجهاز محجوز
+ai_optimization,M10,AI_OPTIMIZATION_C04,CORE,إظهار حدود الدقة والثقة دون أرقام وهمية,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,223d05806a8cb8ae8a8c6b9c7e990c295916b234,223d05806a8cb8ae8a8c6b9c7e990c295916b234,,حدود الدقة والثقة موضحة كتقديرات؛ الجهاز محجوز
+ai_optimization,M10,AI_OPTIMIZATION_C05,CORE,اختيار مجال تحسين البطارية أو التنبيه أو التخزين,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,223d05806a8cb8ae8a8c6b9c7e990c295916b234,223d05806a8cb8ae8a8c6b9c7e990c295916b234,,اختيار مجال تحسين موجود في واجهة الذكاء الاصطناعي؛ الجهاز محجوز
+ai_optimization,M10,AI_OPTIMIZATION_C06,CORE,ضبط أولوية توصيات المستخدم,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,223d05806a8cb8ae8a8c6b9c7e990c295916b234,223d05806a8cb8ae8a8c6b9c7e990c295916b234,,ضبط الأولوية من قبل المستخدم؛ الجهاز محجوز
+ai_optimization,M10,AI_OPTIMIZATION_C07,CORE,معاينة أثر الإجراء والقيود قبل الموافقة,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,223d05806a8cb8ae8a8c6b9c7e990c295916b234,223d05806a8cb8ae8a8c6b9c7e990c295916b234,,معاينة الأثر والقيود قبل الموافقة؛ الجهاز محجوز
+ai_optimization,M10,AI_OPTIMIZATION_C08,CORE,فتح إعدادات Android أو عمليات KNOUX المسموحة,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,223d05806a8cb8ae8a8c6b9c7e990c295916b234,223d05806a8cb8ae8a8c6b9c7e990c295916b234,,فتح إعدادات Android reales عبر намерات النظام؛ الجهاز محجوز
+ai_optimization,M10,AI_OPTIMIZATION_C09,CORE,قياس النتيجة الواقعية بعد الإجراء إن أمكن,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,223d05806a8cb8ae8a8c6b9c7e990c295916b234,223d05806a8cb8ae8a8c6b9c7e990c295916b234,,قياس النتيجة من إعادة استعلام موفري النظام؛ الجهاز محجوز
+ai_optimization,M10,AI_OPTIMIZATION_C10,CORE,تسجيل قرار المستخدم والنتيجة وملاحظات التراجع,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,223d05806a8cb8ae8a8c6b9c7e990c295916b234,223d05806a8cb8ae8a8c6b9c7e990c295916b234,,تسجيل قرار المستخدم في غرفة Room؛ الجهاز محجوز
+ai_optimization,M10,opt_gaming,PRO,وضع الألعاب,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,223d05806a8cb8ae8a8c6b9c7e990c295916b234,223d05806a8cb8ae8a8c6b9c7e990c295916b234,,مسار ai-goal مرتبط؛ الجهاز محجوز
+ai_optimization,M10,opt_ai_learn,PRO,تعلّم محلي,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,223d05806a8cb8ae8a8c6b9c7e990c295916b234,223d05806a8cb8ae8a8c6b9c7e990c295916b234,,مسار ai-recommendations مرتبط؛ الجهاز محجوز
+ai_optimization,M10,opt_thermal,PRO,إدارة حرارية,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,223d05806a8cb8ae8a8c6b9c7e990c295916b234,223d05806a8cb8ae8a8c6b9c7e990c295916b234,,مسار ai-thermal مرتبط؛ الجهاز محجوز
+ai_optimization,M10,opt_network,PRO,تحسين الشبكة,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,223d05806a8cb8ae8a8c6b9c7e990c295916b234,223d05806a8cb8ae8a8c6b9c7e990c295916b234,,مسار ai-confidence مرتبط؛ الجهاز محجوز
+ai_optimization,M10,opt_scene,PRO,مشاهد تلقائية,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,223d05806a8cb8ae8a8c6b9c7e990c295916b234,223d05806a8cb8ae8a8c6b9c7e990c295916b234,,مسار ai-customize مرتبط؛ الجهاز محجوز
