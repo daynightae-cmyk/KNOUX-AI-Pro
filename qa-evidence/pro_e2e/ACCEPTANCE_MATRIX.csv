@@ -104,21 +104,21 @@ deep_scan,M07,scan_hidden,PRO,ملفات مخفية,NOT_IMPLEMENTED,,,NOT_RUN,,,
 deep_scan,M07,scan_schedule,PRO,جدولة الفحص,NOT_IMPLEMENTED,,,NOT_RUN,,,,ed35460c0c282f982ebd9a2f91925129a93feb1e,ed35460c0c282f982ebd9a2f91925129a93feb1e,,جدولة الفحص عبر WorkManager لسه غير موصولة — await M07 build؛ الجهاز محجوز
 deep_scan,M07,scan_custom,PRO,فحص مخصص,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,ed35460c0c282f982ebd9a2f91925129a93feb1e,ed35460c0c282f982ebd9a2f91925129a93feb1e,,فحص مخصص مربوط بـ dsn-scope؛ الجهاز محجوز
 deep_scan,M07,scan_forensic,PRO,فحص جنائي,BLOCKED_PLATFORM,,,NOT_RUN,,,,ed35460c0c282f982ebd9a2f91925129a93feb1e,ed35460c0c282f982ebd9a2f91925129a93feb1e,,فحص جنائي يحتاج حقوق نظام — غير متاح لتطبيق عادي؛ الجهاز محجوز
-smart_clean,M08,SMART_CLEAN_C01,CORE,اختيار نطاق تنظيف محدد,NOT_ASSESSED,,,,,,,,,,
-smart_clean,M08,SMART_CLEAN_C02,CORE,فحص ملفات قابلة للوصول والتنظيف فعلًا,NOT_ASSESSED,,,,,,,,,,
-smart_clean,M08,SMART_CLEAN_C03,CORE,تصنيف المرشحات حسب النوع,NOT_ASSESSED,,,,,,,,,,
-smart_clean,M08,SMART_CLEAN_C04,CORE,اختيار حدود الحجم والعمر,NOT_ASSESSED,,,,,,,,,,
-smart_clean,M08,SMART_CLEAN_C05,CORE,معاينة الملفات المرشحة,NOT_ASSESSED,,,,,,,,,,
-smart_clean,M08,SMART_CLEAN_C06,CORE,حماية الملفات والاستثناءات,NOT_ASSESSED,,,,,,,,,,
-smart_clean,M08,SMART_CLEAN_C07,CORE,التحديد الفردي والجماعي الآمن,NOT_ASSESSED,,,,,,,,,,
-smart_clean,M08,SMART_CLEAN_C08,CORE,مراجعة المساحة المحتملة ومخاطر الإجراء,NOT_ASSESSED,,,,,,,,,,
-smart_clean,M08,SMART_CLEAN_C09,CORE,تأكيد نقل للسلة أو حذف بحسب دعم Android,NOT_ASSESSED,,,,,,,,,,
-smart_clean,M08,SMART_CLEAN_C10,CORE,إعادة استعلام فعلية وتسجيل النتائج والاستعادة الممكنة,NOT_ASSESSED,,,,,,,,,,
-smart_clean,M08,smart_clean_unlimited,PRO,smart_clean_unlimited,NOT_ASSESSED,,,,,,,,,,
-smart_clean,M08,smart_clean_scheduled,PRO,smart_clean_scheduled,NOT_ASSESSED,,,,,,,,,,
-smart_clean,M08,smart_clean_deep_analysis,PRO,smart_clean_deep_analysis,NOT_ASSESSED,,,,,,,,,,
-smart_clean,M08,smart_clean_priority,PRO,smart_clean_priority,NOT_ASSESSED,,,,,,,,,,
-smart_clean,M08,smart_clean_rollback,PRO,smart_clean_rollback,NOT_ASSESSED,,,,,,,,,,
+smart_clean,M08,SMART_CLEAN_C01,CORE,اختيار نطاق تنظيف محدد,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,,شاشة clean-scope تقرأ التخزين والكاش والتطبيقات والوسائط من StatFs/MediaStore فعليًا؛ الجهاز محجوز بسبب تصادم الحزمة com.knoux.ai مع Standard المثبت على الجهاز
+smart_clean,M08,SMART_CLEAN_C02,CORE,فحص ملفات قابلة للوصول والتنظيف فعلًا,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,,شاشة clean-scan تُظهر نتيجة الفحص الفعلي من DeviceFacts؛ الجهاز محجوز
+smart_clean,M08,SMART_CLEAN_C03,CORE,تصنيف المرشحات حسب النوع,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,,شاشة clean-classify تصنف حسب النوع من قراءة فعلية؛ الجهاز محجوز
+smart_clean,M08,SMART_CLEAN_C04,CORE,اختيار حدود الحجم والعمر,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,,شاشة clean-filters تفلتر حسب الحد الأدنى للحجم من الملفات المقروءة؛ الجهاز محجوز
+smart_clean,M08,SMART_CLEAN_C05,CORE,معاينة الملفات المرشحة,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,,شاشة clean-preview تُظهر أكبر الملفات من MediaStore بعد المنح؛ الجهاز محجوز
+smart_clean,M08,SMART_CLEAN_C06,CORE,حماية الملفات والاستثناءات,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,,شاشة clean-protected توضح حماية Android للملفات الخاصة بتطبيقات أخرى؛ الجهاز محجوز
+smart_clean,M08,SMART_CLEAN_C07,CORE,التحديد الفردي والجماعي الآمن,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,,شاشة clean-selection تُظهر مجموعات تكرار حقيقية من MediaStore؛ الجهاز محجوز
+smart_clean,M08,SMART_CLEAN_C08,CORE,مراجعة المساحة المحتملة ومخاطر الإجراء,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,,شاشة clean-impact تُظهر المساحة المستخدمة والمتاحة والقابلة للاسترجاع؛ الجهاز محجوز
+smart_clean,M08,SMART_CLEAN_C09,CORE,تأكيد نقل للسلة أو حذف بحسب دعم Android,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,,شاشة clean-confirm تُحيل إلى حوار MediaStore الرسمي عبر شاشة التكرار؛ الجهاز محجوز
+smart_clean,M08,SMART_CLEAN_C10,CORE,إعادة استعلام فعلية وتسجيل النتائج والاستعادة الممكنة,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,,شاشة clean-history تُظهر سجل القراءات من غرفة Room؛ الجهاز محجوز
+smart_clean,M08,smart_clean_unlimited,PRO,تنظيف كبير,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,,شاشة clean-large مرتبطة؛ الجهاز محجوز
+smart_clean,M08,smart_clean_scheduled,PRO,تنظيف مجدول,NOT_IMPLEMENTED,,,NOT_RUN,,,,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,,التنظيف المجدول عبر WorkManager لسه غير موصول بواجهة — await M08 build؛ الجهاز محجوز
+smart_clean,M08,smart_clean_deep_analysis,PRO,تحليل أعمق,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,,شاشة clean-classify مرتبطة؛ الجهاز محجوز
+smart_clean,M08,smart_clean_priority,PRO,أولويات التنظيف,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,,شاشة clean-free-plan مرتبطة؛ الجهاز محجوز
+smart_clean,M08,smart_clean_rollback,PRO,تراجع عن التنظيف,UNIT_VERIFIED,,,BLOCKED_DEVICE,,,,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,f8e433804fd28a4dab6178df923bbc0e4d4b6b43,,شاشة clean-history مرتبطة؛ الجهاز محجوز
 reports,M09,REPORTS_C01,CORE,اختيار فترة أو نوع تقرير,NOT_ASSESSED,,,,,,,,,,
 reports,M09,REPORTS_C02,CORE,قراءة عمليات حقيقية من Room,NOT_ASSESSED,,,,,,,,,,
 reports,M09,REPORTS_C03,CORE,عرض حالة الفراغ عند غياب السجلات,NOT_ASSESSED,,,,,,,,,,
