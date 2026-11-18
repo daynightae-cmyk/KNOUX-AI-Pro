@@ -1,0 +1,37 @@
+{
+  "project": "KNOUX AI Pro",
+  "workspace_windows": "K:\\KNOUX-AI-Pro",
+  "branch": "master",
+  "origin": "https://github.com/daynightae-cmyk/KNOUX-AI-Pro.git",
+  "updated": "2026-11-18T18:06+0400",
+  "local_sha": "32b9441fc5f4da1a376c11b9ce7180ea32de4cce",
+  "remote_master_sha": "32b9441fc5f4da1a376c11b9ce7180ea32de4cce",
+  "synced": true,
+  "dirty": 0,
+  "untracked": 0,
+  "active_writers": "none (single writer session)",
+  "device": "R9ZR20HWHQY SM-A025F API31 — attached but BLOCKED_DEVICE: package com.knoux.ai (Standard) installed; Pro declares same applicationId; no install or package-ID change without owner approval",
+  "gate_status": {
+    "G00_source_ownership": "VERIFIED",
+    "G01_capability_data": "PARTIAL (Room/MediaStore providers wired; device requery blocked)",
+    "G02_customer_flow": "IMPLEMENTED_UNVERIFIED (consent-gated UI flows in code)",
+    "G03_os_action": "IMPLEMENTED_UNVERIFIED (own-cache clear awaits device)",
+    "G04_requre_room": "UNIT_VERIFIED (Room journal entities/flows compile)",
+    "G05_tests": "UNIT_VERIFIED (35/35 PASS, 0 FAIL, 0 SKIP)",
+    "G06_device_e2e": "BLOCKED_DEVICE (appId collision with installed Standard app)",
+    "G07_visual_security": "NOT_RUN",
+    "G08_review": "NOT_RUN",
+    "G09_integrate": "LOCAL_COMMITTED + REMOTE_MASTER_VERIFIED (32b9441 FF-pushed)",
+    "G10_safe_cleanup": "DEFERRED (dry-run only, 0 bytes reclaimed)",
+    "G11_next": "PENDING (ledgers appended; next service M02)"
+  },
+  "current_service": "M01 storage_analyzer — UNIT_VERIFIED at source/unit level; device E2E blocked",
+  "next_service": "M02 duplicate_finder — continue at source/unit level; device E2E remains blocked until owner decision on package-ID migration",
+  "blockers": [
+    "BLOCKED_DEVICE: Standard appId com.knoux.ai installed on authorized SM-A025F; owner decision required before migration to com.knoux.ai.pro or any device install"
+  ],
+  "ledgers": [
+    "qa-evidence/pro_e2e/EXECUTION_LEDGER.md",
+    "qa-evidence/pro_e2e/ACCEPTANCE_MATRIX.csv"
+  ]
+}
