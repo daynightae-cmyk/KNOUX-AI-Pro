@@ -1,5 +1,6 @@
 package com.knoux.ai.ui.v2
 
+import android.app.Application
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -73,6 +74,7 @@ import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material3.Icon
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -100,6 +102,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.knoux.ai.database.AppDatabase
+import com.knoux.ai.database.KnouxRepository
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
@@ -295,7 +300,26 @@ fun V2SectionToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
     val context = LocalContext.current
     val navigate = LocalServiceNavigate.current
     val (refresh, bump) = rememberRefreshCounter()
-    val facts = rememberDeviceFacts(refresh)
+
+    val application = context.applicationContext as Application
+    val appDatabase = remember(application) { AppDatabase.getDatabase(application) }
+    val repository = remember(appDatabase) { KnouxRepository(appDatabase) }
+    val sectionViewModel: SectionServiceViewModel = viewModel(
+        key = "section-${def.route}",
+        initializer = {
+            SectionServiceViewModel(
+                application = application,
+                repository = repository,
+                sectionKey = def.section,
+                serviceName = def.title,
+                requiresMedia = def.requiresMedia,
+            )
+        },
+    )
+    LaunchedEffect(refresh) { sectionViewModel.scanSection(refresh) }
+
+    val sectionState = sectionViewModel.state
+    val facts = sectionState.facts
     val history = remember(refresh) { readScanHistory(context) }
     val rows = def.rows(facts, history)
     val loaded = facts.computedAt > 0L
@@ -345,6 +369,25 @@ fun V2SectionToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
                             else -> def.metric(facts, history)
                         },
                     )
+                }
+                if (sectionState.sessionsLogged > 0 || sectionState.isScanning) {
+                    item {
+                        ServiceAuditStrip(
+                            state = sectionState,
+                            accent = def.accent,
+                        )
+                    }
+                }
+                if (sectionState.scanError != null) {
+                    item {
+                        ServiceCapabilityCard(
+                            title = "تعذّر إكمال القراءة",
+                            body = sectionState.scanError,
+                            state = ServiceState.PERMISSION,
+                            actionLabel = "إعادة القراءة",
+                            onAction = { bump() },
+                        )
+                    }
                 }
                 if (def.behavior != ToolBehavior.NONE) {
                     item {
