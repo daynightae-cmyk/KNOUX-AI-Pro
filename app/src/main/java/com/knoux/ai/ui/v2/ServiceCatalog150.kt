@@ -184,11 +184,11 @@ object ServiceCatalog150 {
         core("DEEP_SCAN_C08", "deep_scan", 8, "فتح تفاصيل النتيجة وتحديد العلاج اليدوي", "dsn-evidence"),
         core("DEEP_SCAN_C09", "deep_scan", 9, "تنفيذ علاج آخر خدمة موثوقة بمراجعة/موافقة", "dsn-findings"),
         core("DEEP_SCAN_C10", "deep_scan", 10, "إعادة استعلام وعرض ملخص النتائج والسجل", "dsn-summary"),
-        pro("scan_malware", "deep_scan", 1, "فحص برمجيات خبيثة", "security-scan"),
-        pro("scan_hidden", "deep_scan", 2, "ملفات مخفية", "dsn-findings"),
-        pro("scan_schedule", "deep_scan", 3, "جدولة الفحص", null, "جدولة الفحص عبر WorkManager لسه غير موصولة بواجهة"),
+        pro("scan_malware", "deep_scan", 1, "فحص برمجيات خبيثة", null, "لا محرك توقيعات خبيث معتمد — غير متاح لتطبيق عادي؛ البديل الإحالة إلى إعدادات الأمان"),
+        pro("scan_hidden", "deep_scan", 2, "ملفات مخفية", null, "اكتشاف الملفات المخفية لسه غير مكتمل — await M07 build"),
+        pro("scan_schedule", "deep_scan", 3, "جدولة الفحص", null, "جدولة الفحص عبر WorkManager لسه غير موصولة بواجهة — await M07 build"),
         pro("scan_custom", "deep_scan", 4, "فحص مخصص", "dsn-scope"),
-        pro("scan_forensic", "deep_scan", 5, "فحص جنائي", "dsn-evidence"),
+        pro("scan_forensic", "deep_scan", 5, "فحص جنائي", null, "فحص جنائي يحتاج حقوق نظام — غير متاح لتطبيق عادي؛ البديل عرض بيانات تعريف الملفات المقروءة"),
     )
 
     // ---------------------------------------------------------------- M08

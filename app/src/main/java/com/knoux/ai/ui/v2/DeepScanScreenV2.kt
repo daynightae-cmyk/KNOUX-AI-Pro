@@ -66,6 +66,13 @@ fun V2DeepScanScreen(onBack: () -> Unit, onOpenSummary: () -> Unit, onPro: () ->
     val state = controller.state
     val listState = rememberLazyListState()
     var history by remember { mutableStateOf(readScanHistory(context)) }
+    val mediaPermission = if (android.os.Build.VERSION.SDK_INT >= 33) {
+        "android.permission.READ_MEDIA_IMAGES"
+    } else {
+        "android.permission.READ_EXTERNAL_STORAGE"
+    }
+    val mediaGranted = context.checkSelfPermission(mediaPermission) == android.content.pm.PackageManager.PERMISSION_GRANTED
+    var permissionDenied by remember { mutableStateOf(false) }
 
     LaunchedEffect(state) {
         if (state is DeepScanUiState.Completed) {
@@ -119,7 +126,14 @@ fun V2DeepScanScreen(onBack: () -> Unit, onOpenSummary: () -> Unit, onPro: () ->
                 action = {
                     DeepScanPrimaryAction(
                         state = state,
-                        onStart = { controller.start(context) },
+                        onStart = {
+                            if (!mediaGranted) {
+                                permissionDenied = true
+                            } else {
+                                permissionDenied = false
+                                controller.start(context)
+                            }
+                        },
                         onCancel = { controller.cancel() },
                     )
                 },
@@ -128,6 +142,31 @@ fun V2DeepScanScreen(onBack: () -> Unit, onOpenSummary: () -> Unit, onPro: () ->
                     is DeepScanUiState.Idle -> {
                         ScanReadyCard()
                         ScanModulesCard(completed = 0, active = null)
+                        if (permissionDenied && !mediaGranted) {
+                            V2GlassCard(
+                                Modifier.fillMaxWidth(),
+                                padding = 12.dp,
+                                radius = 16.dp,
+                                glow = V2Amber,
+                                borderAlpha = .30f,
+                            ) {
+                                Column {
+                                    KText(
+                                        "صلاحية الوسائط مطلوبة لبدء الفحص العميق",
+                                        size = 9.4.sp,
+                                        weight = FontWeight.Bold,
+                                        color = V2Amber,
+                                    )
+                                    Spacer(Modifier.height(4.dp))
+                                    KText(
+                                        "KNOUX يقرأ الوسائط المرئية المصرح بها فقط عبر MediaStore. " +
+                                            "امنح صلاحية الصور والفيديو من إعدادات النظام، ثم ابدأ الفحص.",
+                                        size = 7.4.sp,
+                                        color = V2Soft,
+                                    )
+                                }
+                            }
+                        }
                     }
                     is DeepScanUiState.Running -> {
                         ScanModulesCard(
