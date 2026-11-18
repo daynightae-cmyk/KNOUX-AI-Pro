@@ -204,7 +204,7 @@ object ServiceCatalog150 {
         core("SMART_CLEAN_C09", "smart_clean", 9, "تأكيد نقل للسلة أو حذف بحسب دعم Android", "clean-confirm"),
         core("SMART_CLEAN_C10", "smart_clean", 10, "إعادة استعلام فعلية وتسجيل النتائج والاستعادة الممكنة", "clean-history"),
         pro("smart_clean_unlimited", "smart_clean", 1, "تنظيف كبير", "clean-large"),
-        pro("smart_clean_scheduled", "smart_clean", 2, "تنظيف مجدول", null, "التنظيف المجدول لسه غير موصول بواجهة"),
+        pro("smart_clean_scheduled", "smart_clean", 2, "تنظيف مجدول", null, "التنظيف المجدول عبر WorkManager لسه غير موصول بواجهة — await M08 build"),
         pro("smart_clean_deep_analysis", "smart_clean", 3, "تحليل أعمق", "clean-classify"),
         pro("smart_clean_priority", "smart_clean", 4, "أولويات التنظيف", "clean-free-plan"),
         pro("smart_clean_rollback", "smart_clean", 5, "تراجع عن التنظيف", "clean-history"),
