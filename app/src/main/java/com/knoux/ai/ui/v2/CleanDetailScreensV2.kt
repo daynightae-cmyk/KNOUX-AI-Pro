@@ -86,6 +86,10 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import com.knoux.ai.database.AppDatabase
+import com.knoux.ai.database.KnouxRepository
+import com.knoux.ai.database.OperationItemOutcomeEntity
+import com.knoux.ai.database.OperationRequestEntity
 
 /* ------------------------------------------------------------------ *
  * Deep scan (real modules, real progress, local history)
@@ -589,10 +593,17 @@ fun V2DuplicatesScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -
     val (refresh, bump) = rememberRefreshCounter()
     val facts = rememberDeviceFacts(refresh)
     val media = facts.media
+    val groups = media.duplicateGroups
+    val sizeByUri = groups.flatMap { g -> g.uris.drop(1).map { it to g.sizeBytes } }.toMap()
     var filter by remember { mutableStateOf(0) }
     val selected = remember { mutableStateListOf<String>() }
     var deletedCount by remember { mutableStateOf<Int?>(null) }
     var actionError by remember { mutableStateOf<String?>(null) }
+    val database = remember(context) { AppDatabase.getDatabase(context.applicationContext) }
+    val repository = remember(database) { KnouxRepository(database) }
+    var deleteRequested by remember { mutableStateOf<List<String>?>(null) }
+    var pendingDelete by remember { mutableStateOf<Triple<String, List<String>, Long>?>(null) }
+    var deleteOutcome by remember { mutableStateOf<Triple<String, List<String>, Boolean>?>(null) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -601,17 +612,68 @@ fun V2DuplicatesScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -
     val deleteLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartIntentSenderForResult()
     ) { result ->
-        if (result.resultCode == android.app.Activity.RESULT_OK) {
-            deletedCount = selected.size
-            actionError = null
-            selected.clear()
-        } else {
-            actionError = "لم يؤكد Android الحذف؛ الملفات كما هي."
+        val (opId, uris, measuredBytes) = pendingDelete ?: return@rememberLauncherForActivityResult
+        pendingDelete = null
+        deleteOutcome = Triple(opId, uris, result.resultCode == android.app.Activity.RESULT_OK)
+    }
+
+    LaunchedEffect(deleteRequested) {
+        val uris = deleteRequested ?: return@LaunchedEffect
+        val request = mediaDeleteRequest(context, uris)
+        if (request == null) {
+            actionError = "حذف الوسائط عبر نافذة النظام يحتاج Android 11 أو أحدث."
+            deleteRequested = null
+            return@LaunchedEffect
         }
+        val measuredBytes = uris.sumOf { uri -> sizeByUri[uri] ?: 0L }
+        val opId = withContext(Dispatchers.IO) {
+            repository.createOperationRequest(
+                scanSessionId = "",
+                serviceId = "duplicate_finder",
+                requestedAction = "delete_duplicates",
+                selectionCount = uris.size,
+                keeperIds = null,
+                exclusionIds = null,
+                predictedEligibleBytes = measuredBytes,
+            )
+        }
+        withContext(Dispatchers.IO) { repository.recordConsent(opId, granted = true) }
+        pendingDelete = Triple(opId, uris, measuredBytes)
+        deleteLauncher.launch(IntentSenderRequest.Builder(request).build())
+        deleteRequested = null
+    }
+
+    LaunchedEffect(deleteOutcome) {
+        val (opId, uris, success) = deleteOutcome ?: return@LaunchedEffect
+        withContext(Dispatchers.IO) {
+            repository.recordConsent(opId, granted = success)
+            val outcomes = uris.map { uri ->
+                val gone = mediaUriGone(context, uri)
+                OperationItemOutcomeEntity(
+                    operationId = opId,
+                    itemId = uri,
+                    result = when {
+                        !success -> "CANCELLED"
+                        gone -> "SUCCESS"
+                        else -> "PARTIAL"
+                    },
+                    postQueryExists = !gone,
+                    measuredBytes = if (gone) sizeByUri[uri] ?: 0L else 0L,
+                    providerError = if (success && !gone) " MediaStore re-query: URI still readable" else null,
+                    completedAt = System.currentTimeMillis(),
+                )
+            }
+            repository.recordItemOutcomes(opId, outcomes)
+            val allGone = uris.all { mediaUriGone(context, it) }
+            repository.updateOperationStatus(opId, if (success && allGone) "VERIFIED" else "PARTIAL")
+        }
+        deletedCount = if (success) uris.size else null
+        actionError = if (success) null else "لم يؤكّد Android الحذف؛ الملفات كما هي."
+        deleteOutcome = null
+        selected.clear()
         bump()
     }
 
-    val groups = media.duplicateGroups
     val reclaimable = groups.sumOf { it.reclaimableBytes }
     val duplicateFiles = groups.sumOf { it.count }
     val libraryBytes = (media.imagesBytes + media.videosBytes).coerceAtLeast(0L)
@@ -750,11 +812,12 @@ fun V2DuplicatesScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -
                 selected.isNotEmpty() -> V2GradientButton(
                     "حذف المحدد (${formatCount(selected.size)})",
                     onClick = {
-                        val request = mediaDeleteRequest(context, selected.toList())
+                        val uris = selected.toList()
+                        val request = mediaDeleteRequest(context, uris)
                         if (request == null) {
                             actionError = "حذف الوسائط عبر نافذة النظام يحتاج Android 11 أو أحدث."
                         } else {
-                            deleteLauncher.launch(IntentSenderRequest.Builder(request).build())
+                            deleteRequested = uris
                         }
                     },
                     icon = Icons.Rounded.Delete,
@@ -1767,3 +1830,9 @@ private fun PrivacyPreviewNote() {
         )
     }
 }
+
+/** إعادة استعلام MediaStore بعد نية الحذف: URI غير مقروءة = تأكيد الحذف فعليًا. */
+private fun mediaUriGone(context: android.content.Context, uriString: String): Boolean =
+    runCatching {
+        context.contentResolver.openInputStream(android.net.Uri.parse(uriString))?.use { }
+    }.getOrDefault(false) == false
