@@ -13,6 +13,8 @@ import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.Update
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.flow.Flow
 
 // ============================================================================
@@ -137,6 +139,19 @@ data class StorageSnapshotEntity(
     val otherBytes: Long = 0L,
     val recordedAt: Long,
     val scope: String = "device",
+)
+
+@Entity(tableName = "battery_samples")
+data class BatterySampleEntity(
+    @PrimaryKey val id: String,
+    val levelPercent: Int?,
+    val status: String?,
+    val temperatureC: Float?,
+    val voltageMv: Int?,
+    val technology: String?,
+    val charging: Boolean = false,
+    val health: String?,
+    val recordedAt: Long,
 )
 
 @Entity(tableName = "permission_events")
@@ -321,6 +336,15 @@ interface PermissionEventDao {
 }
 
 @Dao
+interface BatterySampleDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(sample: BatterySampleEntity)
+
+    @Query("SELECT * FROM battery_samples ORDER BY recordedAt DESC LIMIT :limit")
+    fun getRecent(limit: Int): Flow<List<BatterySampleEntity>>
+}
+
+@Dao
 interface FeatureCapabilityDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(capability: FeatureCapabilityEntity)
@@ -352,8 +376,9 @@ interface FeatureCapabilityDao {
         StorageSnapshotEntity::class,
         PermissionEventEntity::class,
         FeatureCapabilityEntity::class,
+        BatterySampleEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -365,9 +390,30 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun storageSnapshotDao(): StorageSnapshotDao
     abstract fun permissionEventDao(): PermissionEventDao
     abstract fun featureCapabilityDao(): FeatureCapabilityDao
+    abstract fun batterySampleDao(): BatterySampleDao
 
     companion object {
         @Volatile private var INSTANCE: AppDatabase? = null
+
+        val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS battery_samples (
+                        id TEXT PRIMARY KEY NOT NULL,
+                        level_percent INTEGER,
+                        status TEXT,
+                        temperature_c REAL,
+                        voltage_mv INTEGER,
+                        technology TEXT,
+                        charging INTEGER NOT NULL DEFAULT 0,
+                        health TEXT,
+                        recorded_at INTEGER NOT NULL
+                    )
+                    """
+                )
+            }
+        }
 
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
@@ -375,7 +421,9 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "knoux_audit.db"
-                ).build()
+                )
+                    .addMigrations(MIGRATION_1_2)
+                    .build()
                 INSTANCE = instance
                 instance
             }
@@ -639,4 +687,26 @@ class KnouxRepository(private val database: AppDatabase) {
 
     fun recentPermissionEvents(limit: Int = 25): Flow<List<PermissionEventEntity>> =
         database.permissionEventDao().getRecent(limit)
+
+    suspend fun recordBatterySample(
+        id: String,
+        levelPercent: Int?,
+        status: String?,
+        temperatureC: Float?,
+        voltageMv: Int?,
+        technology: String?,
+        charging: Boolean,
+        health: String?,
+        recordedAt: Long,
+    ) {
+        database.batterySampleDao().insert(
+            BatterySampleEntity(
+                id, levelPercent, status, temperatureC, voltageMv, technology, charging, health,
+                recordedAt,
+            )
+        )
+    }
+
+    fun recentBatterySamples(limit: Int = 50): Flow<List<BatterySampleEntity>> =
+        database.batterySampleDao().getRecent(limit)
 }

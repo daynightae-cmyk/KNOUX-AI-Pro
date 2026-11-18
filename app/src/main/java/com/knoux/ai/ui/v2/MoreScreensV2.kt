@@ -90,6 +90,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -1169,7 +1170,37 @@ fun V2BatteryScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> U
     val (refresh, bump) = rememberRefreshCounter()
     val facts = rememberDeviceFacts(refresh)
     val battery = facts.battery
+    val database = remember(context) { AppDatabase.getDatabase(context.applicationContext) }
+    val repository = remember(database) { KnouxRepository(database) }
+    val scope = rememberCoroutineScope()
     val openUsagePermission: () -> Unit = { openUsageAccessSettings(context) }
+
+    LaunchedEffect(
+        refresh,
+        battery.levelPercent,
+        battery.statusLabel,
+        battery.temperatureC,
+        battery.voltageMv,
+        battery.technology,
+        battery.charging,
+        battery.healthLabel,
+    ) {
+        scope.launch {
+            withContext(Dispatchers.IO) {
+                repository.recordBatterySample(
+                    id = UUID.randomUUID().toString(),
+                    levelPercent = battery.levelPercent,
+                    status = battery.statusLabel,
+                    temperatureC = battery.temperatureC,
+                    voltageMv = battery.voltageMv,
+                    technology = battery.technology,
+                    charging = battery.charging,
+                    health = battery.healthLabel,
+                    recordedAt = System.currentTimeMillis(),
+                )
+            }
+        }
+    }
 
     InteriorScaffold(
         onBack = onBack,
@@ -1241,6 +1272,106 @@ fun V2BatteryScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> U
                 "كل القيم أعلاه من BatteryManager لحظة القراءة. الوقت المتبقي غير معروض " +
                     "لأن Android لا يوفره بشكل موثوق لكل الأجهزة."
             )
+        }
+    }
+}
+
+@Composable
+fun V2BatteryReadingsScreen(onBack: () -> Unit, onPro: () -> Unit) {
+    val context = LocalContext.current
+    val database = remember(context) { AppDatabase.getDatabase(context.applicationContext) }
+    val repository = remember(database) { KnouxRepository(database) }
+    val samples by repository.recentBatterySamples(50).collectAsState(initial = emptyList())
+
+    InteriorScaffold(
+        onBack = onBack,
+        onPro = onPro,
+    ) {
+        item {
+            ServiceBanner(
+                spec = ServiceSpecs.battery,
+                status = if (samples.isNotEmpty()) "${samples.size} عينة محفوظة" else "لا عينات بعد",
+                statusColor = if (samples.isNotEmpty()) V2Green else V2Amber,
+            )
+        }
+        item {
+            V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 20.dp, glow = V2Green, borderAlpha = .30f) {
+                Column {
+                    KText(
+                        "كل عينة تُسجل لحظة القراءة الفعلية من BatteryManager - لا تقديرات، لا أرقام وهمية.",
+                        size = 7.4.sp,
+                        color = V2Soft,
+                        lineHeight = 10.sp,
+                    )
+                }
+            }
+        }
+        if (samples.isEmpty()) {
+            item {
+                V2GlassCard(
+                    Modifier.fillMaxWidth(),
+                    padding = 12.dp,
+                    radius = 16.dp,
+                    glow = V2Green,
+                    borderAlpha = .30f,
+                ) {
+                    Column {
+                        KText(
+                            "لا عينات بطارية محفوظة بعد",
+                            size = 9.4.sp,
+                            weight = FontWeight.Bold,
+                            color = V2Cyan,
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        KText(
+                            "افتح شاشة البطارية لتسجيل أول قراءة فعلية من النظام.",
+                            size = 7.4.sp,
+                            color = V2Soft,
+                        )
+                    }
+                }
+            }
+        } else {
+            items(samples.size) { index ->
+                val s = samples[index]
+                V2GlassCard(
+                    Modifier.fillMaxWidth(),
+                    padding = 10.dp,
+                    radius = 14.dp,
+                    glow = V2Cyan,
+                    borderAlpha = .22f,
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            KText(
+                                "${s.levelPercent?.let { "$it%" } ?: "غير متاح"} · ${s.status ?: "—"}",
+                                size = 9.4.sp,
+                                weight = FontWeight.Bold,
+                                color = V2Cyan,
+                            )
+                            KText(
+                                "${s.health ?: "—"} · ${if (s.charging) "يشحن" else "لا يشحن"}",
+                                size = 6.8.sp,
+                                color = V2Muted,
+                            )
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            KText(
+                                s.temperatureC?.let { String.format(java.util.Locale.US, "%.1f°C", it) } ?: "—",
+                                size = 8.6.sp,
+                                weight = FontWeight.Bold,
+                                color = V2Amber,
+                            )
+                            KText(
+                                java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+                                    .format(java.util.Date(s.recordedAt)),
+                                size = 6.8.sp,
+                                color = V2Muted,
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }

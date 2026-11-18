@@ -165,11 +165,11 @@ object ServiceCatalog150 {
         core("BATTERY_SAVER_C08", "battery_saver", 8, "فتح إعدادات توفير الطاقة الحقيقية", "bat-saving"),
         core("BATTERY_SAVER_C09", "battery_saver", 9, "إظهار توصيات مبنية على القراءات مع اختيار المستخدم", "bat-summary"),
         core("BATTERY_SAVER_C10", "battery_saver", 10, "مقارنة قياسات قبل/بعد الإعدادات دون ادعاء تسريع", "bat-summary"),
-        pro("bat_thermal_timeline", "battery_saver", 1, "خط زمني للحرارة", "bat-temperature"),
-        pro("bat_charge_profiles", "battery_saver", 2, "ملفات الشحن", "bat-charge"),
-        pro("bat_usage_context", "battery_saver", 3, "سياق الاستخدام", "battery-diagnostics"),
-        pro("bat_smart_alerts", "battery_saver", 4, "تنبيهات ذكية", "bat-alerts"),
-        pro("bat_recommendations", "battery_saver", 5, "توصيات البطارية", "bat-summary"),
+        pro("bat_thermal_timeline", "battery_saver", 1, "خط زمني للحرارة", null, "خط زمني حراري لسه غير مبني — await M06 build"),
+        pro("bat_charge_profiles", "battery_saver", 2, "ملفات الشحن", null, "ملفات الشحن لسه غير مبنية — await M06 build"),
+        pro("bat_usage_context", "battery_saver", 3, "سياق الاستخدام", null, "وصول UsageStats يحتاج إذن نظام خاص — await user grant + M06 build"),
+        pro("bat_smart_alerts", "battery_saver", 4, "تنبيهات ذكية", null, "تنبيهات ذكية لسه غير مبنية — await M06 build"),
+        pro("bat_recommendations", "battery_saver", 5, "توصيات البطارية", null, "توصيات البطارية لسه غير مبنية — await M06 build"),
     )
 
     // ---------------------------------------------------------------- M07

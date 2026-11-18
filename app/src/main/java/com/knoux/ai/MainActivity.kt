@@ -55,6 +55,7 @@ import com.knoux.ai.ui.v2.V2AppDetailScreen
 import com.knoux.ai.ui.v2.V2AppManagerScreen
 import com.knoux.ai.ui.v2.V2Background
 import com.knoux.ai.ui.v2.V2BatteryDiagnosticsScreen
+import com.knoux.ai.ui.v2.V2BatteryReadingsScreen
 import com.knoux.ai.ui.v2.V2BatteryScreen
 import com.knoux.ai.ui.v2.V2BottomBar
 import com.knoux.ai.ui.v2.CleanTools
@@ -457,6 +458,9 @@ private fun AppNavHost(
         }
         composable("battery-diagnostics") {
             V2BatteryDiagnosticsScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
+        }
+        composable("bat-readings") {
+            V2BatteryReadingsScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
         }
         composable("ai-recommendations") {
             V2AiRecommendationsScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
