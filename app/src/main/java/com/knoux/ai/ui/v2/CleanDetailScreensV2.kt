@@ -64,6 +64,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -85,6 +86,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import com.knoux.ai.database.AppDatabase
 import com.knoux.ai.database.KnouxRepository
@@ -1135,6 +1137,9 @@ fun V2ResidueScreen(onBack: () -> Unit, onReview: () -> Unit, onPro: () -> Unit)
     val context = LocalContext.current
     val (refresh, bump) = rememberRefreshCounter()
     val facts = rememberDeviceFacts(refresh)
+    val database = remember(context) { AppDatabase.getDatabase(context.applicationContext) }
+    val repository = remember(database) { KnouxRepository(database) }
+    val scope = rememberCoroutineScope()
     var confirm by remember { mutableStateOf(false) }
     var lastFreed by remember { mutableStateOf<Long?>(null) }
     val cacheFiles = remember(refresh) { largestOwnCacheFiles(context) }
@@ -1158,8 +1163,41 @@ fun V2ResidueScreen(onBack: () -> Unit, onReview: () -> Unit, onPro: () -> Unit)
             confirmButton = {
                 androidx.compose.material3.TextButton(onClick = {
                     confirm = false
-                    lastFreed = clearOwnCache(context)
-                    bump()
+                    scope.launch {
+                        val (freed, verified) = withContext(Dispatchers.IO) {
+                            val before = ownCacheBytes(context).first
+                            val opId = repository.createOperationRequest(
+                                scanSessionId = "",
+                                serviceId = "app_residue",
+                                requestedAction = "clear_own_cache",
+                                selectionCount = 1,
+                                keeperIds = null,
+                                exclusionIds = null,
+                                predictedEligibleBytes = before,
+                            )
+                            withContext(Dispatchers.IO) { repository.recordConsent(opId, granted = true) }
+                            val freed = clearOwnCache(context)
+                            val after = ownCacheBytes(context).first
+                            val verified = after < before
+                            withContext(Dispatchers.IO) {
+                                repository.recordItemOutcomes(opId, listOf(
+                                    OperationItemOutcomeEntity(
+                                        operationId = opId,
+                                        itemId = "knoux_own_cache",
+                                        result = if (verified) "SUCCESS" else "NO_CHANGE",
+                                        postQueryExists = after > 0L,
+                                        measuredBytes = freed,
+                                        providerError = null,
+                                        completedAt = System.currentTimeMillis(),
+                                    )
+                                ))
+                                repository.updateOperationStatus(opId, if (verified) "VERIFIED" else "PARTIAL")
+                            }
+                            Pair(freed, verified)
+                        }
+                        lastFreed = freed
+                        bump()
+                    }
                 }) { androidx.compose.material3.Text("تنظيف الآن") }
             },
             dismissButton = {

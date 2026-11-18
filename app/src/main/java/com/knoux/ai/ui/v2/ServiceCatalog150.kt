@@ -109,10 +109,10 @@ object ServiceCatalog150 {
         core("APP_RESIDUE_C09", "app_residue", 9, "تنفيذ حذف/Trash في النطاق المصرح به فقط", "res-confirm"),
         core("APP_RESIDUE_C10", "app_residue", 10, "إعادة فحص الحالة وحفظ سجل المحاولات والنتيجة", "res-history"),
         pro("residue_own_cache", "app_residue", 1, "كاش KNOUX نفسه", "res-sources"),
-        pro("residue_accessible_candidates", "app_residue", 2, "مرشحات الوصول المصرح به", "res-candidates"),
-        pro("residue_saf_profiles", "app_residue", 3, "ملفات SAF محفوظة", "res-sources"),
-        pro("residue_safe_trash", "app_residue", 4, "سلة آمنة", "res-confirm"),
-        pro("residue_history", "app_residue", 5, "تاريخ البقايا", "res-history"),
+        pro("residue_accessible_candidates", "app_residue", 2, "مرشحات الوصول المصرح به", null, "الشاشة لسه غير مبنية — await M03 build"),
+        pro("residue_saf_profiles", "app_residue", 3, "ملفات SAF محفوظة", null, "إدارة ملفات SAF لسه غير مبنية — await M03 build"),
+        pro("residue_safe_trash", "app_residue", 4, "سلة آمنة", null, "سلة البقايا الآمنة لسه غير مبنية — await M03 build"),
+        pro("residue_history", "app_residue", 5, "تاريخ البقايا", null, "سجل البقايا لسه غير مبني — await M03 build"),
     )
 
     // ---------------------------------------------------------------- M04

@@ -348,6 +348,13 @@ private fun AppNavHost(
                 onPro = { open(ROUTE_PRO) },
             )
         }
+        composable("res-sources") {
+            V2ResidueScreen(
+                onBack = goBack,
+                onReview = { open("residue-item") },
+                onPro = { open(ROUTE_PRO) },
+            )
+        }
         composable("appmanager") {
             V2AppManagerScreen(
                 onBack = goBack,
