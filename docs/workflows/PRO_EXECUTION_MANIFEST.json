@@ -4,8 +4,8 @@
   "branch": "master",
   "origin": "https://github.com/daynightae-cmyk/KNOUX-AI-Pro.git",
   "updated": "2026-11-18T18:06+0400",
-  "local_sha": "66e906bcbd38e2efcc6d202554a9b54ac95bd6fe",
-  "remote_master_sha": "66e906bcbd38e2efcc6d202554a9b54ac95bd6fe",
+  "local_sha": "47ebc981457915ff36437e70a6739b53cdcd8b67",
+  "remote_master_sha": "47ebc981457915ff36437e70a6739b53cdcd8b67",
   "synced": true,
   "dirty": 0,
   "untracked": 0,
@@ -25,8 +25,8 @@
     "G10_safe_cleanup": "DEFERRED (dry-run only, 0 bytes reclaimed)",
     "G11_next": "PENDING (ledgers appended; next service M03 app_residue)"
   },
-  "current_service": "M02 duplicate_finder — UNIT_VERIFIED at source/unit level; fake demo screen removed; Room journal added; device E2E blocked",
-  "next_service": "M03 app_residue — continue at source/unit level; device E2E remains blocked until owner decision on package-ID migration",
+  "current_service": "M03 app_residue — residue_own_cache (PRO) UNIT_VERIFIED at source/unit level (Room journal added); remaining residue PRO screens NOT_IMPLEMENTED; core residue rows NOT_ASSESSED; device E2E blocked",
+  "next_service": "M04 privacy_sweep — continue at source/unit level; device E2E remains blocked until owner decision on package-ID migration",
   "blockers": [
     "BLOCKED_DEVICE: Standard appId com.knoux.ai installed on authorized SM-A025F (R9ZR20HWHQY); owner decision required before migration to com.knoux.ai.pro or any device install"
   ],
