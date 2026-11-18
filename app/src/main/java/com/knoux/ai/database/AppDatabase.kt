@@ -159,6 +159,15 @@ data class FeatureCapabilityEntity(
     val reason: String? = null,
 )
 
+/** Aggregated, measured outcome of one operation - never an estimate. */
+data class OperationOutcomeSummary(
+    val operationId: String,
+    val itemCount: Int,
+    val measuredBytes: Long,
+    val successCount: Int,
+    val noChangeCount: Int,
+)
+
 // ============================================================================
 // DAOs
 // ============================================================================
@@ -228,6 +237,12 @@ interface OperationRequestDao {
     @Query("SELECT * FROM operation_requests WHERE status = :status ORDER BY createdAt DESC")
     fun getByStatus(status: String): Flow<List<OperationRequestEntity>>
 
+    @Query("SELECT * FROM operation_requests ORDER BY createdAt DESC LIMIT :limit")
+    fun getRecent(limit: Int): Flow<List<OperationRequestEntity>>
+
+    @Query("SELECT * FROM operation_requests ORDER BY createdAt DESC")
+    fun getAll(): Flow<List<OperationRequestEntity>>
+
     @Query("UPDATE operation_requests SET status = :status WHERE id = :id")
     suspend fun updateStatus(id: String, status: String)
 
@@ -248,6 +263,19 @@ interface OperationItemOutcomeDao {
 
     @Query("SELECT * FROM operation_item_outcomes WHERE operationId = :operationId AND result = :result")
     fun getByOperationAndResult(operationId: String, result: String): Flow<List<OperationItemOutcomeEntity>>
+
+    @Query(
+        """
+        SELECT operationId AS operationId,
+               COUNT(*) AS itemCount,
+               SUM(COALESCE(measuredBytes, 0)) AS measuredBytes,
+               SUM(CASE WHEN result = 'SUCCESS' THEN 1 ELSE 0 END) AS successCount,
+               SUM(CASE WHEN result = 'NO_CHANGE' THEN 1 ELSE 0 END) AS noChangeCount
+        FROM operation_item_outcomes
+        GROUP BY operationId
+        """
+    )
+    fun summaries(): Flow<List<OperationOutcomeSummary>>
 }
 
 @Dao
@@ -582,4 +610,18 @@ class KnouxRepository(private val database: AppDatabase) {
 
     suspend fun countOperations(serviceId: String): Int =
         database.operationRequestDao().countByService(serviceId)
+
+    // ---------- Report flows ----------
+
+    fun recentOperations(limit: Int = 25): Flow<List<OperationRequestEntity>> =
+        database.operationRequestDao().getRecent(limit)
+
+    fun allOperations(): Flow<List<OperationRequestEntity>> =
+        database.operationRequestDao().getAll()
+
+    fun outcomeSummaries(): Flow<List<OperationOutcomeSummary>> =
+        database.operationItemOutcomeDao().summaries()
+
+    fun recentSessions(limit: Int = 25): Flow<List<ScanSessionEntity>> =
+        database.scanSessionDao().getRecent(limit)
 }

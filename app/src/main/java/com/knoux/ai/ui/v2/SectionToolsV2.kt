@@ -234,20 +234,52 @@ internal object SectionTools {
     val allRoutes: List<String>
         get() = CleanTools.routes + defs.map { it.route }
 
-    fun items(section: String): List<ServiceSubItem> = defs
-        .filter { it.section == section }
-        .mapIndexed { index, def ->
-            ServiceSubItem(
-                title = def.title,
-                subtitle = def.tagline,
-                route = def.route,
-                icon = def.icon,
-                accent = def.accent,
-                state = ServiceState.LIVE,
-                proOnly = def.proOnly,
-                art = SectionArt.forIndex(section, index),
-            )
-        }
+    fun items(section: String): List<ServiceSubItem> {
+        val core = defs
+            .filter { it.section == section }
+            .mapIndexed { index, def ->
+                ServiceSubItem(
+                    title = def.title,
+                    subtitle = def.tagline,
+                    route = def.route,
+                    icon = def.icon,
+                    accent = def.accent,
+                    state = ServiceState.LIVE,
+                    proOnly = def.proOnly,
+                    art = SectionArt.forIndex(section, index),
+                )
+            }
+        val pro = ServiceCatalog150.proItems(catalogFamily(section))
+            .filter { it.isRouted }
+            .mapIndexed { index, item ->
+                ServiceSubItem(
+                    title = item.titleAr,
+                    subtitle = "PRO · ${item.id}",
+                    route = item.route!!,
+                    icon = Icons.Rounded.Lock,
+                    accent = accent2For(section),
+                    state = ServiceState.PREVIEW,
+                    proOnly = true,
+                    art = SectionArt.forIndex(section, 10 + index),
+                )
+            }
+        return core + pro
+    }
+
+    /** Catalog family id for a UI section key. */
+    fun catalogFamily(section: String): String = when (section) {
+        "storage" -> "storage_analyzer"
+        "duplicates" -> "duplicate_finder"
+        "residue" -> "app_residue"
+        "privacy" -> "privacy_sweep"
+        "appmanager" -> "app_manager"
+        "battery" -> "battery_saver"
+        "deepscan" -> "deep_scan"
+        "smartclean" -> "smart_clean"
+        "reports" -> "reports"
+        "ai" -> "ai_optimization"
+        else -> section
+    }
 
     fun byRoute(route: String): SectionToolDef? = defs.firstOrNull { it.route == route }
 

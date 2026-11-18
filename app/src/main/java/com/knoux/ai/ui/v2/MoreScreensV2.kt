@@ -1,6 +1,11 @@
 package com.knoux.ai.ui.v2
 
+import android.app.Application
 import android.content.Context
+import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.knoux.ai.database.AppDatabase
+import com.knoux.ai.database.KnouxRepository
 import com.knoux.ai.ui.v2.markKnouxOnboardingSeen
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -827,7 +832,18 @@ private val storageCategories = listOf(
 fun V2StorageScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> Unit) {
     val context = LocalContext.current
     val (refresh, bump) = rememberRefreshCounter()
-    val facts = rememberDeviceFacts(refresh)
+
+    val application = context.applicationContext as Application
+    val storageDatabase = remember(application) { AppDatabase.getDatabase(application) }
+    val storageRepository = remember(storageDatabase) { KnouxRepository(storageDatabase) }
+    val storageViewModel: StorageAnalyzerViewModel = viewModel(
+        key = "storage-analyzer",
+        initializer = { StorageAnalyzerViewModel(application, storageRepository) },
+    )
+    LaunchedEffect(refresh) { storageViewModel.scanStorage(refresh) }
+
+    val storageState = storageViewModel.state
+    val facts = storageState.facts
     val storage = facts.storage
 
     InteriorScaffold(
@@ -846,6 +862,15 @@ fun V2StorageScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> U
             )
         }
         item { StorageHeroCard(storage, facts.ownCacheBytes, onRefresh = bump) }
+        item {
+            StorageCacheActionCard(
+                state = storageState,
+                onPrepare = { storageViewModel.prepareClearOwnCache() },
+                onConfirm = { storageViewModel.confirmClearOwnCache() },
+                onCancel = { storageViewModel.cancelClearOwnCache() },
+                onRescan = { bump() },
+            )
+        }
         item { V2SectionLabel("القراءة الفعلية", trailing = "من الجهاز") }
         item { RealStorageBreakdown(facts) }
         item { V2SectionLabel("أكبر الملفات", trailing = if (facts.media.permissionGranted) "MediaStore" else "بعد المنح") }

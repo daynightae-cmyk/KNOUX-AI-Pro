@@ -48,6 +48,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -57,6 +58,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import com.knoux.ai.database.AppDatabase
+import com.knoux.ai.database.KnouxRepository
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -506,6 +509,11 @@ fun V2ReportsScreen(
     val (refresh, bump) = rememberRefreshCounter()
     val facts = rememberDeviceFacts(refresh)
     val history = remember(refresh) { readScanHistory(context) }
+    val roomRepository = remember(context) {
+        KnouxRepository(AppDatabase.getDatabase(context.applicationContext))
+    }
+    val roomSessions = roomRepository.recentSessions(100)
+        .collectAsState(initial = emptyList()).value
 
     Box(
         Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)
@@ -527,11 +535,13 @@ fun V2ReportsScreen(
                         spec = ServiceSpecs.reports,
                         status = if (facts.computedAt > 0L) "قراءة مباشرة" else "جاري القراءة",
                         statusColor = if (facts.computedAt > 0L) V2Green else V2Amber,
-                        metric = "${history.size} فحص محفوظ",
+                        metric = "${formatCount(roomSessions.size)} جلسة في Room",
                     )
                 }
                 item { ReportScoreCard(facts) }
                 item { ReportSnapshotCard(facts, onRefresh = bump) }
+                item { ReportsRoomAuditCard() }
+                item { CatalogCoverageCard() }
                 item {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         ReportMiniStat(formatBytes(facts.storage.freeBytes), "مساحة متاحة", Icons.Rounded.Storage, V2Cyan, Modifier.weight(1f))
@@ -674,9 +684,14 @@ private fun ReportScoreCard(facts: DeviceFacts) {
                 )
                 Spacer(Modifier.height(7.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    KText("${(facts.storage.usedFraction * 100).toInt()}%", size = 15.sp, weight = FontWeight.Black, color = V2Cyan)
+                    KText(
+                        if (facts.computedAt > 0L) "${(facts.storage.usedFraction * 100).toInt()}%" else "…",
+                        size = 15.sp,
+                        weight = FontWeight.Black,
+                        color = V2Cyan,
+                    )
                     Spacer(Modifier.width(4.dp))
-                    KText("تخزين مستخدم", size = 8.sp, color = V2Muted)
+                    KText(if (facts.computedAt > 0L) "تخزين مستخدم" else "بانتظار القراءة", size = 8.sp, color = V2Muted)
                 }
             }
         }
@@ -685,6 +700,7 @@ private fun ReportScoreCard(facts: DeviceFacts) {
 
 @Composable
 private fun ReportSnapshotCard(facts: DeviceFacts, onRefresh: () -> Unit) {
+    val loaded = facts.computedAt > 0L
     V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 20.dp, glow = V2Violet, borderAlpha = .34f) {
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -698,17 +714,33 @@ private fun ReportSnapshotCard(facts: DeviceFacts, onRefresh: () -> Unit) {
                         .clickable(onClick = onRefresh)
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
-                    KText("تحديث", size = 7.2.sp, weight = FontWeight.Bold, color = V2Cyan)
+                    KText(if (loaded) "تحديث" else "جاري القراءة", size = 7.2.sp, weight = FontWeight.Bold, color = V2Cyan)
                 }
             }
             Spacer(Modifier.height(8.dp))
-            ReportSnapshotLine("التخزين", "${formatBytes(facts.storage.usedBytes)} / ${formatBytes(facts.storage.totalBytes)}", V2Cyan)
+            ReportSnapshotLine(
+                "التخزين",
+                if (loaded) "${formatBytes(facts.storage.usedBytes)} / ${formatBytes(facts.storage.totalBytes)}" else "…",
+                V2Cyan,
+            )
             Spacer(Modifier.height(6.dp))
-            ReportSnapshotLine("البطارية", facts.battery.levelPercent?.let { "$it% · ${facts.battery.statusLabel}" } ?: "غير متاح", V2Green)
+            ReportSnapshotLine(
+                "البطارية",
+                if (!loaded) "…" else facts.battery.levelPercent?.let { "$it% · ${facts.battery.statusLabel}" } ?: "غير متاح",
+                V2Green,
+            )
             Spacer(Modifier.height(6.dp))
-            ReportSnapshotLine("كاش KNOUX", "${formatBytes(facts.ownCacheBytes)} · ${formatCount(facts.ownCacheFiles)} ملف", V2Pink)
+            ReportSnapshotLine(
+                "كاش KNOUX",
+                if (loaded) "${formatBytes(facts.ownCacheBytes)} · ${formatCount(facts.ownCacheFiles)} ملف" else "…",
+                V2Pink,
+            )
             Spacer(Modifier.height(6.dp))
-            ReportSnapshotLine("الأذونات الحساسة", "${formatCount(facts.sensitiveAppCount)} تطبيق", V2Amber)
+            ReportSnapshotLine(
+                "الأذونات الحساسة",
+                if (loaded) "${formatCount(facts.sensitiveAppCount)} تطبيق" else "…",
+                V2Amber,
+            )
         }
     }
 }
