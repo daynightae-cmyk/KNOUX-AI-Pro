@@ -146,10 +146,10 @@ object ServiceCatalog150 {
         core("APP_MANAGER_C08", "app_manager", 8, "طلب إلغاء التثبيت عبر واجهة النظام لا صامتًا", "apm-uninstall"),
         core("APP_MANAGER_C09", "app_manager", 9, "مراجعة نتائج عمليات المستخدم وإعادة استعلام الحزمة", "apm-uninstall"),
         core("APP_MANAGER_C10", "app_manager", 10, "تاريخ استخدام الإجراءات وتوضيح المجريات غير المدعومة", "apm-sorting"),
-        pro("app_batch", "app_manager", 1, "إجراءات دفعة", "apm-installed"),
+        pro("app_batch", "app_manager", 1, "إجراءات دفعة", null, "معالجة الدفعات لسه غير مبنية — await M05 build"),
         pro("app_freeze", "app_manager", 2, "تجميد التطبيقات", null, "التجميد يحتاج Device Owner أو Root — غير متاح لتطبيق عادي"),
-        pro("app_backup", "app_manager", 3, "نسخ احتياطي للتطبيق", "apm-info"),
-        pro("app_usage", "app_manager", 4, "استخدام التطبيقات", "apm-filters"),
+        pro("app_backup", "app_manager", 3, "نسخ احتياطي للتطبيق", null, "نسخ احتياطي لبيانات التطبيقات الأخرى لسه غير مدعوم — await M05 build"),
+        pro("app_usage", "app_manager", 4, "استخدام التطبيقات", null, "وصول UsageStats يحتاج إذن خاص — await M05 build"),
         pro("app_clone", "app_manager", 5, "استنساخ التطبيقات", null, "استنساخ التطبيقات مش مدعوم رسميًا في Android"),
     )
 

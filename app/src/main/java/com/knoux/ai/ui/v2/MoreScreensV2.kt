@@ -2,10 +2,15 @@ package com.knoux.ai.ui.v2
 
 import android.app.Application
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.knoux.ai.database.AppDatabase
 import com.knoux.ai.database.KnouxRepository
+import com.knoux.ai.database.OperationItemOutcomeEntity
 import com.knoux.ai.ui.v2.markKnouxOnboardingSeen
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -85,6 +90,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.util.UUID
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -320,6 +330,55 @@ fun V2AppManagerScreen(
         )
     }
 
+    val database = remember(context) { AppDatabase.getDatabase(context.applicationContext) }
+    val repository = remember(database) { KnouxRepository(database) }
+    val scope = rememberCoroutineScope()
+    var appToUninstall by remember { mutableStateOf<String?>(null) }
+
+    val uninstallLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val pkg = appToUninstall ?: return@rememberLauncherForActivityResult
+        val code = result.resultCode
+        appToUninstall = null
+        scope.launch {
+            val opId = withContext(Dispatchers.IO) {
+                repository.createOperationRequest(
+                    scanSessionId = "",
+                    serviceId = "app_manager",
+                    requestedAction = "uninstall_app",
+                    selectionCount = 1,
+                    keeperIds = null,
+                    exclusionIds = null,
+                    predictedEligibleBytes = null,
+                )
+            }
+            withContext(Dispatchers.IO) { repository.recordConsent(opId, granted = code == android.app.Activity.RESULT_OK) }
+            val stillInstalled = withContext(Dispatchers.IO) {
+                runCatching { context.packageManager.getApplicationInfo(pkg, 0) != null }.getOrDefault(false)
+            }
+            withContext(Dispatchers.IO) {
+                repository.recordItemOutcomes(opId, listOf(
+                    OperationItemOutcomeEntity(
+                        operationId = opId,
+                        itemId = pkg,
+                        result = when {
+                            code != android.app.Activity.RESULT_OK -> "CANCELLED"
+                            stillInstalled -> "PARTIAL"
+                            else -> "SUCCESS"
+                        },
+                        postQueryExists = stillInstalled,
+                        measuredBytes = 0L,
+                        providerError = null,
+                        completedAt = System.currentTimeMillis(),
+                    )
+                ))
+                repository.updateOperationStatus(opId, if (code == android.app.Activity.RESULT_OK && !stillInstalled) "VERIFIED" else "PARTIAL")
+            }
+            bump()
+        }
+    }
+
     InteriorScaffold(
         onBack = onBack,
         onPro = onPro,
@@ -378,7 +437,18 @@ fun V2AppManagerScreen(
         }
         items(apps.size) { index ->
             val app = apps[index]
-            RealInstalledAppRow(app) { openAppInfo(context, app.packageName) }
+            RealInstalledAppRow(
+                app = app,
+                onClick = { openAppInfo(context, app.packageName) },
+                onUninstall = {
+                    if (!app.isSystem) {
+                        appToUninstall = app.packageName
+                        uninstallLauncher.launch(
+                            Intent(Intent.ACTION_DELETE).setData(Uri.parse("package:${app.packageName}"))
+                        )
+                    }
+                },
+            )
         }
         item { ServiceSubGrid(ServiceSpecs.appManager) }
         item {
@@ -412,8 +482,13 @@ private fun RealSummaryCell(value: String, label: String, accent: Color, modifie
 }
 
 @Composable
-private fun RealInstalledAppRow(app: InstalledAppFacts, onClick: () -> Unit) {
+private fun RealInstalledAppRow(
+    app: InstalledAppFacts,
+    onClick: () -> Unit,
+    onUninstall: (() -> Unit)? = null,
+) {
     val icon = rememberAppIcon(app.packageName)
+    val canUninstall = onUninstall != null && !app.isSystem
     V2GlassCard(
         Modifier.fillMaxWidth().clickable(onClick = onClick),
         padding = 9.dp,
@@ -457,6 +532,19 @@ private fun RealInstalledAppRow(app: InstalledAppFacts, onClick: () -> Unit) {
             Column(horizontalAlignment = Alignment.End) {
                 KText(app.appBytes?.let { formatBytes(it) } ?: "غير متاح", size = 8.8.sp, weight = FontWeight.Bold, color = V2Cyan)
                 KText(app.versionName ?: "—", size = 7.sp, color = V2Muted, maxLines = 1)
+                if (canUninstall) {
+                    Spacer(Modifier.height(4.dp))
+                    Box(
+                        Modifier
+                            .clickable(onClick = onUninstall)
+                            .padding(4.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(V2Red.withAlpha(.10f))
+                            .border(1.dp, V2Red.withAlpha(.45f), RoundedCornerShape(6.dp)),
+                    ) {
+                        Icon(Icons.Rounded.Delete, null, tint = V2Red, modifier = Modifier.size(14.dp))
+                    }
+                }
             }
         }
     }
