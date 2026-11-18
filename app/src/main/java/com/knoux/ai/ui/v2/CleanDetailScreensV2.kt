@@ -56,6 +56,7 @@ import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material.icons.rounded.Verified
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -88,6 +89,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.UUID
 import com.knoux.ai.database.AppDatabase
 import com.knoux.ai.database.KnouxRepository
 import com.knoux.ai.database.OperationItemOutcomeEntity
@@ -1539,8 +1541,13 @@ fun V2PrivacyScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> U
     val context = LocalContext.current
     val (refresh, bump) = rememberRefreshCounter()
     val facts = rememberDeviceFacts(refresh)
+    val database = remember(context) { AppDatabase.getDatabase(context.applicationContext) }
+    val repository = remember(database) { KnouxRepository(database) }
+    val scope = rememberCoroutineScope()
     val groups = facts.privacyGroups
     val declared = groups.sumOf { it.appCount }
+    var privacyNote by remember { mutableStateOf("") }
+    var noteSaved by remember { mutableStateOf(false) }
     val granted = groups.sumOf { it.grantedCount }
     val score = if (declared > 0) (100 - (granted * 100 / declared)).coerceIn(0, 100) else 100
     val sensitiveApps = remember(facts) {
@@ -1585,6 +1592,69 @@ fun V2PrivacyScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> U
                 item { V2SectionLabel("مجالات الخصوصية", trailing = "قراءة مباشرة") }
                 item { PrivacyDomainGrid(groups) { openAllAppSettings(context) } }
                 item { SensitiveAppsCard(sensitiveApps) { packageName -> openAppInfo(context, packageName) } }
+                item {
+                    V2GradientButton(
+                        "إعادة قراءة الصلاحيات",
+                        { bump() },
+                        icon = Icons.Rounded.Refresh,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp),
+                    )
+                }
+                item {
+                    V2GlassCard(
+                        Modifier.fillMaxWidth(),
+                        padding = 12.dp,
+                        radius = 16.dp,
+                        glow = V2Violet,
+                        borderAlpha = .30f,
+                    ) {
+                        Column {
+                            OutlinedTextField(
+                                value = privacyNote,
+                                onValueChange = { privacyNote = it },
+                                label = {
+                                    KText(
+                                        "ملاحظة خصوصية تُحفظ محليًا فقط",
+                                        size = 7.4.sp,
+                                        color = V2Soft,
+                                    )
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            Row(
+                                Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                V2GradientButton(
+                                    "حفظ الملاحظة",
+                                    {
+                                        if (!privacyNote.isBlank()) {
+                                            scope.launch {
+                                            withContext(Dispatchers.IO) {
+                                                repository.recordPermissionEvent(
+                                                    id = UUID.randomUUID().toString(),
+                                                    permission = "privacy_note",
+                                                    granted = true,
+                                                    eventAt = System.currentTimeMillis(),
+                                                    source = "user",
+                                                )
+                                            }
+                                            noteSaved = true
+                                            privacyNote = ""
+                                            bump()
+                                        }
+                                        }
+                                    },
+                                    modifier = Modifier.weight(1f),
+                                )
+                                if (noteSaved) {
+                                    KText("حُفظ في السجل المحلي", size = 7.4.sp, color = V2Green)
+                                }
+                            }
+                        }
+                    }
+                }
                 item { ServiceSubGrid(ServiceSpecs.privacy) }
                 item { PrivacyPreviewNote() }
             }

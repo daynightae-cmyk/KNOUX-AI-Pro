@@ -624,4 +624,19 @@ class KnouxRepository(private val database: AppDatabase) {
 
     fun recentSessions(limit: Int = 25): Flow<List<ScanSessionEntity>> =
         database.scanSessionDao().getRecent(limit)
+
+    suspend fun recordPermissionEvent(
+        id: String,
+        permission: String,
+        granted: Boolean,
+        eventAt: Long,
+        source: String,
+    ) {
+        database.permissionEventDao().insert(
+            PermissionEventEntity(id, permission, granted, eventAt, source)
+        )
+    }
+
+    fun recentPermissionEvents(limit: Int = 25): Flow<List<PermissionEventEntity>> =
+        database.permissionEventDao().getRecent(limit)
 }

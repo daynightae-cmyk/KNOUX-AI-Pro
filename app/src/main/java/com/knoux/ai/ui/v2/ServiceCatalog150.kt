@@ -127,11 +127,11 @@ object ServiceCatalog150 {
         core("PRIVACY_SWEEP_C08", "privacy_sweep", 8, "التحقق من تغيّر الإذن بعد العودة من النظام", "prv-results"),
         core("PRIVACY_SWEEP_C09", "privacy_sweep", 9, "حفظ سجل ملاحظات الخصوصية فقط", "prv-access"),
         core("PRIVACY_SWEEP_C10", "privacy_sweep", 10, "تصدير تقرير منزوع البيانات الحساسة بموافقة المستخدم", "prv-results"),
-        pro("prv_realtime", "privacy_sweep", 1, "مراقبة لحظية", "prv-overview"),
-        pro("prv_vault", "privacy_sweep", 2, "خزنة الصلاحيات", "prv-access"),
-        pro("prv_tracker", "privacy_sweep", 3, "تتبع التطبيقات", "prv-ranking"),
-        pro("prv_report", "privacy_sweep", 4, "تقرير خصوصية", "privacy-risk"),
-        pro("prv_history", "privacy_sweep", 5, "تاريخ الخصوصية", "prv-results"),
+        pro("prv_realtime", "privacy_sweep", 1, "مراقبة لحظية", null, "مراقبة لحظية للكاميرا/الميكروفون تحتاج أذونات نظام خاصة — غير متاحة لتطبيق عادي؛ البديل فتح إعدادات الأذونات"),
+        pro("prv_vault", "privacy_sweep", 2, "خزنة الصلاحيات", null, "خزنة مشفرة غير منفذة بعد — await M04 build"),
+        pro("prv_tracker", "privacy_sweep", 3, "تتبع التطبيقات", null, "تتبع التطبيقات يحتاج VpnService أو وصول نظام — غير مدعوم لتطبيق عادي؛ البديل عرض الصلاحيات المعلنة"),
+        pro("prv_report", "privacy_sweep", 4, "تقرير خصوصية", null, "شاشة تقرير الخصوصية لسه مربوطة ببيانات حقيقية — await M04 build"),
+        pro("prv_history", "privacy_sweep", 5, "تاريخ الخصوصية", null, "سجل الخصوصية لسه غير مبني — await M04 build"),
     )
 
     // ---------------------------------------------------------------- M05
