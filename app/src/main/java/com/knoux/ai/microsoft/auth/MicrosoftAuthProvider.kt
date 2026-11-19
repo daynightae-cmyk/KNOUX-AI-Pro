@@ -1,0 +1,277 @@
+package com.knoux.ai.microsoft.auth
+
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import androidx.activity.result.contract.ActivityResultContract
+import com.knoux.ai.cloud.model.CloudAccount
+import com.knoux.ai.cloud.model.CloudProvider
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+/**
+ * Microsoft OAuth 2.0 authentication provider using MSAL Android.
+ * Supports Outlook.com, Hotmail, Live, Microsoft 365, and School accounts.
+ * Uses Microsoft Graph v1.0 for all API access.
+ */
+class MicrosoftAuthProvider(
+    private val context: Context,
+    private val clientId: String,
+    private val tenantId: String = "common",
+    private val redirectUri: String,
+) {
+
+    private companion object {
+        const val GRAPH_BASE = "https://graph.microsoft.com/v1.0"
+    }
+
+    /** Scopes for Outlook email access. */
+    val mailScopes = listOf(
+        "Mail.Read",
+        "Mail.ReadWrite",
+        "User.Read",
+        "offline_access",
+    )
+
+    /** Scopes for OneDrive access. */
+    val driveScopes = listOf(
+        "Files.Read",
+        "Files.ReadWrite",
+        "User.Read",
+        "offline_access",
+    )
+
+    private var authCallback: ((MicrosoftAuthResult) -> Unit)? = null
+    private var state: String? = null
+    private var codeVerifier: String? = null
+
+    /**
+     * Start MSAL authorization code flow with PKCE.
+     */
+    fun authorize(
+        activity: Activity,
+        scopes: List<String>,
+        onResult: (MicrosoftAuthResult) -> Unit,
+    ) {
+        authCallback = onResult
+        state = generateState()
+        codeVerifier = generateCodeVerifier()
+
+        val scopeString = scopes.joinToString(" ")
+        val challenge = generateCodeChallenge(codeVerifier!!)
+
+        val authUrl = Uri.Builder()
+            .scheme("https")
+            .authority("login.microsoftonline.com")
+            .path("/$tenantId/oauth2/v2.0/authorize")
+            .appendQueryParameter("client_id", clientId)
+            .appendQueryParameter("redirect_uri", redirectUri)
+            .appendQueryParameter("response_type", "code")
+            .appendQueryParameter("scope", scopeString)
+            .appendQueryParameter("response_mode", "query")
+            .appendQueryParameter("state", state!!)
+            .appendQueryParameter("code_challenge", challenge)
+            .appendQueryParameter("code_challenge_method", "S256")
+            .appendQueryParameter("prompt", "consent")
+            .build()
+
+        val intent = Intent(Intent.ACTION_VIEW).apply {
+            setData(authUrl)
+            addFlags(Intent.FLAG_ACTIVITY_NO_HISTORY or Intent.FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET)
+        }
+
+        activity.startActivity(intent)
+    }
+
+    /** Handle the redirect from Microsoft OAuth. */
+    fun handleRedirect(intent: Intent?): Boolean {
+        val data = intent?.data ?: return false
+        val returnedCode = data.getQueryParameter("code")
+        val returnedState = data.getQueryParameter("state")
+        val error = data.getQueryParameter("error")
+
+        if (error != null) {
+            authCallback?.invoke(MicrosoftAuthResult.Error("Auth error: $error"))
+            return true
+        }
+
+        if (returnedState != state || returnedCode == null) {
+            authCallback?.invoke(MicrosoftAuthResult.Error("Invalid state or missing code"))
+            return true
+        }
+
+        CoroutineScope(Dispatchers.IO).launch {
+            withContext(Dispatchers.IO) {
+                try {
+                    val tokenResponse = exchangeCodeForTokens(returnedCode!!)
+                    authCallback?.invoke(MicrosoftAuthResult.Success(tokenResponse))
+                } catch (e: Exception) {
+                    authCallback?.invoke(MicrosoftAuthResult.Error(e.message ?: "Token exchange failed"))
+                }
+            }
+        }
+
+        return true
+    }
+
+    private suspend fun exchangeCodeForTokens(code: String): MicrosoftTokenResponse {
+        val tokenEndpoint = "https://login.microsoftonline.com/$tenantId/oauth2/v2.0/token"
+        val url = java.net.URL(tokenEndpoint)
+        val client = url.openConnection() as java.net.HttpURLConnection
+        client.requestMethod = "POST"
+        client.doOutput = true
+        client.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
+
+        val scopeString = (mailScopes + driveScopes).joinToString(" ")
+        val body = "client_id=$clientId" +
+            "&scope=${java.net.URLEncoder.encode(scopeString, "UTF-8")}" +
+            "&code=$code" +
+            "&redirect_uri=${java.net.URLEncoder.encode(redirectUri, "UTF-8")}" +
+            "&grant_type=authorization_code" +
+            "&code_verifier=${java.net.URLEncoder.encode(codeVerifier ?: "", "UTF-8")}"
+
+        client.outputStream.use { it.write(body.toByteArray()) }
+
+        val responseCode = client.responseCode
+        val responseStream = if (responseCode in 200..299) client.inputStream else client.errorStream
+        val responseBody = responseStream?.bufferedReader(java.nio.charset.StandardCharsets.UTF_8)?.use { it.readText() } ?: ""
+
+        client.disconnect()
+
+        if (responseCode !in 200..299) {
+            throw Exception("Token exchange failed (HTTP $responseCode): $responseBody")
+        }
+
+        return parseTokenResponse(responseBody)
+    }
+
+    private fun parseTokenResponse(json: String): MicrosoftTokenResponse {
+        val accessToken = extractField(json, "access_token")
+        val refreshToken = extractField(json, "refresh_token")
+        val expiresIn = extractField(json, "expires_in")?.toLongOrNull() ?: 3600L
+        val scope = extractField(json, "scope") ?: ""
+
+        return MicrosoftTokenResponse(
+            accessToken = accessToken ?: "",
+            refreshToken = refreshToken,
+            expiresInSeconds = expiresIn,
+            tokenType = extractField(json, "token_type") ?: "Bearer",
+            scope = scope,
+            obtainedAtMs = System.currentTimeMillis(),
+        )
+    }
+
+    private fun extractField(json: String, field: String): String? {
+        val regex = kotlin.text.Regex("\"$field\"\\s*:\\s*\"([^\"]*)\"")
+        return regex.find(json)?.groupValues?.getOrNull(1)
+    }
+
+    /** Revoke a refresh token. */
+    suspend fun revokeToken(token: String): Boolean {
+        return withContext(Dispatchers.IO) {
+            try {
+                val logoutUrl = "https://login.microsoftonline.com/$tenantId/oauth2/v2.0/logout"
+                val client = java.net.URL(logoutUrl).openConnection() as java.net.HttpURLConnection
+                client.requestMethod = "POST"
+                client.doOutput = true
+                client.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
+
+                val body = "refresh_token=$token"
+                client.outputStream.use { it.write(body.toByteArray()) }
+
+                val responseCode = client.responseCode
+                client.disconnect()
+                responseCode in 200..299
+            } catch (_: Exception) {
+                false
+            }
+        }
+    }
+
+    private fun generateState(): String {
+        val random = java.security.SecureRandom()
+        val bytes = ByteArray(16)
+        random.nextBytes(bytes)
+        return bytes.joinToString("") { "%02x".format(it) }
+    }
+
+    private fun generateCodeVerifier(): String {
+        val random = java.security.SecureRandom()
+        val bytes = ByteArray(32)
+        random.nextBytes(bytes)
+        return bytes.joinToString("") { "%02x".format(it) }
+    }
+
+    private fun generateCodeChallenge(verifier: String): String {
+        val digest = java.security.MessageDigest.getInstance("SHA-256")
+        val hash = digest.digest(verifier.toByteArray())
+        return java.util.Base64.getUrlEncoder()
+            .withoutPadding()
+            .encodeToString(hash)
+    }
+
+    data class MicrosoftAuthResult(
+        val success: Boolean = false,
+        val tokenResponse: MicrosoftTokenResponse? = null,
+        val error: String? = null,
+    ) {
+        companion object {
+            fun Success(token: MicrosoftTokenResponse) = MicrosoftAuthResult(success = true, tokenResponse = token)
+            fun Error(message: String) = MicrosoftAuthResult(success = false, error = message)
+        }
+    }
+
+    data class MicrosoftTokenResponse(
+        val accessToken: String,
+        val refreshToken: String?,
+        val expiresInSeconds: Long,
+        val tokenType: String,
+        val scope: String,
+        val obtainedAtMs: Long,
+    ) {
+        val isExpired: Boolean get() =
+            System.currentTimeMillis() > obtainedAtMs + (expiresInSeconds * 1000) - 60_000
+
+        val expiresAtMs: Long get() = obtainedAtMs + (expiresInSeconds * 1000)
+    }
+
+    /** Convert auth result to CloudAccount. */
+    fun accountFromResult(
+        email: String,
+        displayName: String?,
+        tokenResponse: MicrosoftTokenResponse,
+    ): CloudAccount {
+        return CloudAccount(
+            id = "microsoft_$email",
+            provider = CloudProvider.Outlook,
+            email = email,
+            displayName = displayName,
+            isConnected = true,
+            scopesGranted = tokenResponse.scope.split(" ").filter { it.isNotEmpty() },
+            tokenExpiresAt = tokenResponse.expiresAtMs,
+            connectedAt = System.currentTimeMillis(),
+        )
+    }
+}
+
+/**
+ * ActivityResultLauncher contract for Microsoft OAuth redirects.
+ */
+class MicrosoftAuthResultContract : ActivityResultContract<Unit, Intent?>() {
+    override fun createIntent(context: Context, input: Unit): Intent {
+        return Intent(context, MicrosoftAuthRedirectActivity::class.java)
+    }
+
+    override fun parseResult(resultCode: Int, intent: Intent?): Intent? = intent
+}
+
+class MicrosoftAuthRedirectActivity : Activity() {
+    override fun onCreate(savedInstanceState: android.os.Bundle?) {
+        super.onCreate(savedInstanceState)
+        setResult(Activity.RESULT_OK, intent)
+        finish()
+    }
+}

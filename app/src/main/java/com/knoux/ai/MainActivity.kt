@@ -108,6 +108,8 @@ import com.knoux.ai.developer.ui.AgentEngineScreen
 import com.knoux.ai.developer.ui.MobileDeveloperWorkspaceScreen
 import com.knoux.ai.developer.ui.AgentToolSystemScreen
 import com.knoux.ai.cloud.ui.UnifiedCloudCleanerScreen
+import com.knoux.ai.google.ui.GoogleStorageDashboardScreen
+import com.knoux.ai.microsoft.ui.MicrosoftStorageDashboardScreen
 
 class MainActivity : androidx.fragment.app.FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -582,6 +584,14 @@ private fun AppNavHost(
         }
         composable("cloud-cleaner") {
             UnifiedCloudCleanerScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
+        }
+        // EXT-03 Google Ecosystem routes.
+        composable("google-storage") {
+            GoogleStorageDashboardScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
+        }
+        // EXT-04 Microsoft Ecosystem routes.
+        composable("microsoft-storage") {
+            MicrosoftStorageDashboardScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
         }
     }
 }
