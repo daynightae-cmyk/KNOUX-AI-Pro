@@ -100,6 +100,9 @@ import com.knoux.ai.ui.v2.V2DeveloperToolsScreen
 import com.knoux.ai.ui.v2.V2GoogleServicesScreen
 import com.knoux.ai.ui.v2.V2AdvancedSecurityScreen
 import com.knoux.ai.ui.v2.V2BackupRestoreScreen
+import com.knoux.ai.developer.ui.DeveloperStudioScreen
+import com.knoux.ai.developer.ui.ProviderMarketplaceScreen
+import com.knoux.ai.developer.ui.ApiKeyVaultScreen
 
 class MainActivity : androidx.fragment.app.FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -549,6 +552,16 @@ private fun AppNavHost(
         }
         composable("backup-restore") {
             V2BackupRestoreScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
+        }
+        // Developer Studio (EXT-01) routes.
+        composable("developer-studio") {
+            DeveloperStudioScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
+        }
+        composable("dev-provider-marketplace") {
+            ProviderMarketplaceScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
+        }
+        composable("dev-api-key-vault") {
+            ApiKeyVaultScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
         }
     }
 }
