@@ -35,7 +35,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.knoux.ai.developer.model.AiProvider
 import com.knoux.ai.developer.model.ProviderConnectionState
-import com.knoux.ai.developer.model.displayName
 import com.knoux.ai.developer.provider.ProviderRegistryHolder
 import com.knoux.ai.ui.v2.KText
 import com.knoux.ai.ui.v2.V2Amber
@@ -192,7 +191,25 @@ private fun ProviderCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column {
-                    KText(provider.connectionState.displayName().v2Bidi(), size = 10.4.sp, weight = FontWeight.Bold, color = stateColor)
+                    KText(
+                        when (provider.connectionState) {
+                            ProviderConnectionState.Connected -> "متصل"
+                            ProviderConnectionState.Connecting -> "جاري الاتصال…"
+                            ProviderConnectionState.Authenticating -> "جاري المصادقة…"
+                            ProviderConnectionState.FetchingModels -> "جاري جلب النماذج…"
+                            ProviderConnectionState.InvalidApiKey -> "مفتاح API غير صالح"
+                            ProviderConnectionState.UnauthorizedModel -> "النموذج غير مصرح به"
+                            ProviderConnectionState.RateLimited -> "تجاوز الحد الأقصى للطلبات"
+                            ProviderConnectionState.InsufficientCredits -> "رصيد غير كافٍ"
+                            ProviderConnectionState.ProviderUnavailable -> "مزود غير متاح"
+                            ProviderConnectionState.Offline -> "غير متصل"
+                            ProviderConnectionState.DiscoveryUnsupported -> "الاكتشاف غير مدعوم"
+                            ProviderConnectionState.NotConfigured -> "غير مهيأ"
+                        }.v2Bidi(),
+                        size = 10.4.sp,
+                        weight = FontWeight.Bold,
+                        color = stateColor
+                    )
                     Spacer(Modifier.height(4.dp))
                     KText(
                         if (provider.isConfigured) "مكوّن" else "غير مكوّن",
