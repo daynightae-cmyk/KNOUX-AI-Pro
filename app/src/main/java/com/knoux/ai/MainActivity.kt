@@ -105,6 +105,7 @@ import com.knoux.ai.developer.ui.ProviderMarketplaceScreen
 import com.knoux.ai.developer.ui.ApiKeyVaultScreen
 import com.knoux.ai.developer.ui.ModelExplorerScreen
 import com.knoux.ai.developer.ui.AgentEngineScreen
+import com.knoux.ai.developer.ui.MobileDeveloperWorkspaceScreen
 
 class MainActivity : androidx.fragment.app.FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -570,6 +571,9 @@ private fun AppNavHost(
         }
         composable("dev-agent-engine") {
             AgentEngineScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
+        }
+        composable("dev-workspace") {
+            MobileDeveloperWorkspaceScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
         }
     }
 }
