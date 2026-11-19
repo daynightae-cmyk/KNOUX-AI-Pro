@@ -1,11 +1,18 @@
 package com.knoux.ai.auth
 
 import android.content.Context
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.concurrent.ConcurrentHashMap
+import com.knoux.ai.security.ProductionSecurity
+import com.knoux.ai.security.secureRequest
 
 /** No external session impersonation: every cloud sign-in is verified by Supabase Auth. */
 class KnouxAuthException(val code: String, message: String): Exception(message)
@@ -16,32 +23,90 @@ class KnouxAuthApi(context: Context, val config: KnouxAuthConfig) {
     internal fun tokenOrNull(): String? = store.read()?.accessToken
     internal fun hasSession(): Boolean=store.read()!=null
 
-    private suspend fun request(method:String, path:String, body:JSONObject?=null, bearer:String?=null):JSONObject =
-        withContext(Dispatchers.IO) {
-            require(path.startsWith('/') && !path.startsWith("//") && !path.contains(".."))
-            val address=config.baseAuthUrl+path
-            val url=URL(address)
-            require(url.protocol=="https" && url.host==URL(config.supabaseUrl).host)
-            val c=(url.openConnection() as HttpURLConnection).apply {
-                requestMethod=method;connectTimeout=15_000;readTimeout=20_000
-                instanceFollowRedirects=false
-                setRequestProperty("apikey",config.supabasePublishableKey)
-                setRequestProperty("Accept","application/json")
-                setRequestProperty("Content-Type","application/json")
-                if(bearer!=null) setRequestProperty("Authorization","Bearer $bearer")
-                if(body!=null){doOutput=true;outputStream.use{ it.write(body.toString().toByteArray(Charsets.UTF_8)) }}
+    /** Rate limiter: tracks last request time per endpoint to prevent abuse. */
+    private val lastRequestTime = ConcurrentHashMap<String, Long>()
+    private val requestMutex = Mutex()
+    private val MIN_REQUEST_INTERVAL_MS = 500L // 2 requests per second max per endpoint
+
+    /** Rate limit check: ensures we don't hammer the auth endpoint. */
+    private suspend fun rateLimitCheck(endpoint: String) {
+        requestMutex.withLock {
+            val now = System.currentTimeMillis()
+            val last = lastRequestTime[endpoint] ?: 0L
+            val elapsed = now - last
+            if (elapsed < MIN_REQUEST_INTERVAL_MS) {
+                lastRequestTime[endpoint] = now + (MIN_REQUEST_INTERVAL_MS - elapsed)
+            } else {
+                lastRequestTime[endpoint] = now
             }
-            try {
-                val status=c.responseCode
-                val stream=if(status in 200..299)c.inputStream else c.errorStream
-                val payload=stream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
-                val result=runCatching { JSONObject(payload) }.getOrElse { JSONObject() }
-                if(status !in 200..299) throw KnouxAuthException(
-                    result.optString("error_code",result.optString("code","http_$status")),
-                    // Avoid returning provider message with tokens/PII to logs.
-                    "Auth provider rejected the request (HTTP $status)")
-                result
-            } finally { c.disconnect() }
+        }
+        val now = System.currentTimeMillis()
+        val last = lastRequestTime[endpoint]
+        if (last != null && last > now) {
+            kotlinx.coroutines.delay(last - now)
+        }
+    }
+
+    /** Validate email input before sending to server. */
+    private fun validateEmail(email: String): String {
+        val trimmed = email.trim()
+        require(trimmed.isNotBlank()) { "Email is required" }
+        require(android.util.Patterns.EMAIL_ADDRESS.matcher(trimmed).matches()) { "Invalid email format" }
+        require(trimmed.length <= 254) { "Email too long" }
+        return trimmed
+    }
+
+    /** Validate password input. */
+    private fun validatePassword(password: String): String {
+        require(password.isNotBlank()) { "Password is required" }
+        require(password.length >= 8) { "Password must be at least 8 characters" }
+        require(password.length <= 128) { "Password too long" }
+        return password
+    }
+
+    /** Validate idempotency key. */
+    private fun validateIdempotencyKey(key: String?): String {
+        if (key.isNullOrBlank()) return ProductionSecurity.generateIdempotencyKey()
+        require(key.length <= 128) { "Idempotency key too long" }
+        return key
+    }
+
+    /** Fast local-only validity: encrypted token present and not yet expired. No network. */
+    internal suspend fun localSessionValid(): Boolean = withContext(Dispatchers.IO) {
+        val saved = store.read() ?: return@withContext false
+        System.currentTimeMillis() < saved.expiresAtMs - 60_000
+    }
+
+    private suspend fun request(method:String, path:String, body:JSONObject?=null, bearer:String?=null):JSONObject =
+        secureRequest(maxRetries = 3) {
+            rateLimitCheck(path)
+            ProductionSecurity.validateRequestPath(path)
+            ProductionSecurity.validateSupabaseUrl(config.baseAuthUrl)
+            withContext(Dispatchers.IO) {
+                val address=config.baseAuthUrl+path
+                val url=URL(address)
+                require(url.protocol=="https" && url.host==URL(config.supabaseUrl).host)
+                val c=(url.openConnection() as HttpURLConnection).apply {
+                    requestMethod=method;connectTimeout=15_000;readTimeout=20_000
+                    instanceFollowRedirects=false
+                    setRequestProperty("apikey",config.supabasePublishableKey)
+                    setRequestProperty("Accept","application/json")
+                    setRequestProperty("Content-Type","application/json")
+                    if(bearer!=null) setRequestProperty("Authorization","Bearer $bearer")
+                    if(body!=null){doOutput=true;outputStream.use{ it.write(body.toString().toByteArray(Charsets.UTF_8)) }}
+                }
+                try {
+                    val status=c.responseCode
+                    val stream=if(status in 200..299)c.inputStream else c.errorStream
+                    val payload=stream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
+                    val result=runCatching { JSONObject(payload) }.getOrElse { JSONObject() }
+                    if(status !in 200..299) throw KnouxAuthException(
+                        result.optString("error_code",result.optString("code","http_$status")),
+                        // Avoid returning provider message with tokens/PII to logs.
+                        "Auth provider rejected the request (HTTP $status)")
+                    result
+                } finally { c.disconnect() }
+            }
         }
     private fun acceptSession(obj:JSONObject):Boolean {
         val data=obj.optJSONObject("session")?:obj
@@ -57,21 +122,22 @@ class KnouxAuthApi(context: Context, val config: KnouxAuthConfig) {
         return try { currentUserVerified();true } catch(e:Exception){store.clear();throw e}
     }
     suspend fun signInWithPassword(email:String,password:String):Boolean = acceptAndVerify(request(
-        "POST","/token?grant_type=password",JSONObject().put("email",email.trim()).put("password",password)))
+        "POST","/token?grant_type=password",JSONObject().put("email",validateEmail(email)).put("password",validatePassword(password))))
     suspend fun signUp(email:String,password:String):Boolean = acceptAndVerify(request(
-        "POST","/signup",JSONObject().put("email",email.trim()).put("password",password)))
+        "POST","/signup",JSONObject().put("email",validateEmail(email)).put("password",validatePassword(password))))
     suspend fun sendEmailOtp(email:String,createUser:Boolean=false) {
-        request("POST","/otp",JSONObject().put("email",email.trim()).put("create_user",createUser))
+        request("POST","/otp",JSONObject().put("email",validateEmail(email)).put("create_user",createUser))
     }
     suspend fun verifyEmailOtp(email:String,otp:String,otpType:String="email"):Boolean {
-        require(otpType in setOf("email","signup","recovery"))
+        require(otpType in setOf("email","signup","recovery")) { "Invalid OTP type" }
+        require(otp.isNotBlank() && otp.length <= 10) { "Invalid OTP" }
         return acceptAndVerify(request("POST","/verify",JSONObject()
-            .put("email",email.trim()).put("token",otp.trim()).put("type",otpType)))
+            .put("email",validateEmail(email)).put("token",otp.trim()).put("type",otpType)))
     }
-    suspend fun requestPasswordReset(email:String) { request("POST","/recover",JSONObject().put("email",email.trim())) }
+    suspend fun requestPasswordReset(email:String) { request("POST","/recover",JSONObject().put("email",validateEmail(email))) }
     suspend fun updatePassword(password:String) {
         val t=verifiedToken() ?: throw KnouxAuthException("not_authenticated","Sign-in required")
-        request("PUT","/user",JSONObject().put("password",password),t)
+        request("PUT","/user",JSONObject().put("password",validatePassword(password)),t)
     }
     suspend fun signInWithGoogleIdToken(idToken:String,nonce:String?=null):Boolean = acceptAndVerify(request(
         "POST","/token?grant_type=id_token",JSONObject()

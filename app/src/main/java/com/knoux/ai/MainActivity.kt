@@ -98,6 +98,7 @@ import com.knoux.ai.ui.v2.V2NotificationManagerScreen
 import com.knoux.ai.ui.v2.V2ToolsHubScreen
 import com.knoux.ai.ui.v2.V2DeveloperToolsScreen
 import com.knoux.ai.ui.v2.V2GoogleServicesScreen
+import com.knoux.ai.security.ProductionSecurity
 import com.knoux.ai.ui.v2.V2AdvancedSecurityScreen
 import com.knoux.ai.ui.v2.V2BackupRestoreScreen
 import com.knoux.ai.developer.ui.DeveloperStudioScreen
@@ -114,6 +115,8 @@ import com.knoux.ai.microsoft.ui.MicrosoftStorageDashboardScreen
 class MainActivity : androidx.fragment.app.FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Initialize SSL pinning for Supabase host before any network requests.
+        ProductionSecurity.initializeSslPinning()
         enableEdgeToEdge()
         // Debug-only route injection so every screen can be inspected directly with adb.
         val debugRoute = if (BuildConfig.DEBUG) intent?.getStringExtra("route") else null
