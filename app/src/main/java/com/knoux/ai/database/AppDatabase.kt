@@ -12,6 +12,7 @@ import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.Transaction
 import androidx.room.Update
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
@@ -240,6 +241,32 @@ interface OperationRequestDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(request: OperationRequestEntity)
 
+    // Never REPLACE a parent: that could cascade-delete its existing journal rows.
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertLegacyParent(session: ScanSessionEntity)
+
+    @Transaction
+    suspend fun insertWithLegacyParent(request: OperationRequestEntity) {
+        val resolvedRequest = if (request.scanSessionId.isEmpty()) {
+            val parentId = java.util.UUID.randomUUID().toString()
+            insertLegacyParent(
+                ScanSessionEntity(
+                    id = parentId,
+                    serviceId = request.serviceId,
+                    serviceName = request.serviceId,
+                    startedAt = request.createdAt,
+                    endedAt = request.createdAt,
+                    // Journal provenance only; this does not claim a scan or permission.
+                    status = "LEGACY_OPERATION",
+                )
+            )
+            request.copy(scanSessionId = parentId)
+        } else {
+            request
+        }
+        insert(resolvedRequest)
+    }
+
     @Update
     suspend fun update(request: OperationRequestEntity)
 
@@ -399,16 +426,17 @@ abstract class AppDatabase : RoomDatabase() {
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL(
                     """
-                    CREATE TABLE IF NOT EXISTS battery_samples (
-                        id TEXT PRIMARY KEY NOT NULL,
-                        level_percent INTEGER,
-                        status TEXT,
-                        temperature_c REAL,
-                        voltage_mv INTEGER,
-                        technology TEXT,
-                        charging INTEGER NOT NULL DEFAULT 0,
-                        health TEXT,
-                        recorded_at INTEGER NOT NULL
+                    CREATE TABLE IF NOT EXISTS `battery_samples` (
+                        `id` TEXT NOT NULL,
+                        `levelPercent` INTEGER,
+                        `status` TEXT,
+                        `temperatureC` REAL,
+                        `voltageMv` INTEGER,
+                        `technology` TEXT,
+                        `charging` INTEGER NOT NULL,
+                        `health` TEXT,
+                        `recordedAt` INTEGER NOT NULL,
+                        PRIMARY KEY(`id`)
                     )
                     """
                 )
@@ -496,7 +524,7 @@ class KnouxRepository(private val database: AppDatabase) {
     ): String {
         val id = java.util.UUID.randomUUID().toString()
         val now = System.currentTimeMillis()
-        database.operationRequestDao().insert(
+        database.operationRequestDao().insertWithLegacyParent(
             OperationRequestEntity(
                 id = id,
                 scanSessionId = scanSessionId,
@@ -527,7 +555,7 @@ class KnouxRepository(private val database: AppDatabase) {
 
     suspend fun updateOperationStatus(operationId: String, status: String) {
         val existing = database.operationRequestDao().getById(operationId) ?: return
-        database.operationRequestDao().insert(
+        database.operationRequestDao().update(
             existing.copy(status = status)
         )
     }

@@ -27,6 +27,9 @@ import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import android.provider.DocumentsContract
+import android.provider.OpenableColumns
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -216,6 +219,68 @@ private fun InfoLine(label: String, value: String, accent: Color = V2Soft, onCli
 }
 
 @Composable
+private fun ScopedNotice(text: String, accent: Color = V2Cyan) {
+    V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 18.dp, glow = accent, borderAlpha = .28f) {
+        KText(text, size = 12.sp, lineHeight = 18.sp, color = V2Soft)
+    }
+}
+
+private data class ScopedDocument(
+    val uri: Uri,
+    val name: String,
+    val bytes: Long?,
+    val mime: String,
+    val isDirectory: Boolean = false,
+)
+
+private fun readSelectedDocument(context: Context, uri: Uri): ScopedDocument {
+    val cursor = context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE), null, null, null)
+        ?: error("موفر الملف لم يُعد بيانات")
+    return cursor.use {
+        check(it.moveToFirst()) { "الملف المختار لم يعد متاحاً" }
+        val nameColumn = it.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME)
+        val sizeColumn = it.getColumnIndexOrThrow(OpenableColumns.SIZE)
+        ScopedDocument(uri, it.getString(nameColumn) ?: uri.lastPathSegment.orEmpty(),
+            if (it.isNull(sizeColumn)) null else it.getLong(sizeColumn).takeIf { bytes -> bytes >= 0L },
+            context.contentResolver.getType(uri) ?: "نوع غير معلن")
+    }
+}
+
+private fun readScopedFolder(context: Context, tree: Uri, documentId: String): List<ScopedDocument> {
+    val children = DocumentsContract.buildChildDocumentsUriUsingTree(tree, documentId)
+    val projection = arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID, DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+        DocumentsContract.Document.COLUMN_SIZE, DocumentsContract.Document.COLUMN_MIME_TYPE)
+    val cursor = context.contentResolver.query(children, projection, null, null, null)
+        ?: error("موفر المجلد لم يُعد بيانات")
+    return cursor.use {
+        val result = mutableListOf<ScopedDocument>()
+        while (it.moveToNext() && result.size < 500) {
+            val mime = it.getString(3) ?: "نوع غير معلن"
+            result += ScopedDocument(DocumentsContract.buildDocumentUriUsingTree(tree, it.getString(0)),
+                it.getString(1) ?: "اسم غير معلن", if (it.isNull(2)) null else it.getLong(2).takeIf { bytes -> bytes >= 0L },
+                mime, mime == DocumentsContract.Document.MIME_TYPE_DIR)
+        }
+        result.sortedWith(compareByDescending<ScopedDocument> { entry -> entry.isDirectory }.thenBy { entry -> entry.name })
+    }
+}
+
+@Composable
+private fun ScopedDocumentRow(name: String, size: String, subtitle: String, directory: Boolean, onOpen: () -> Unit) {
+    V2GlassCard(Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable(onClick = onOpen),
+        padding = 12.dp, radius = 16.dp, glow = if (directory) V2Violet else V2Cyan) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(if (directory) Icons.Rounded.Folder else Icons.Rounded.OpenInNew, null, tint = V2Cyan, modifier = Modifier.size(24.dp))
+            Spacer(Modifier.width(10.dp))
+            Column(Modifier.weight(1f)) {
+                KText(name, size = 14.sp, weight = FontWeight.Bold)
+                KText(subtitle, size = 12.sp, color = V2Soft)
+                if (!directory) KText(size, size = 12.sp, color = V2Cyan)
+            }
+        }
+    }
+}
+
+@Composable
 private fun HairLine() {
     Box(
         Modifier
@@ -335,6 +400,7 @@ fun V2AppManagerScreen(
     val repository = remember(database) { KnouxRepository(database) }
     val scope = rememberCoroutineScope()
     var appToUninstall by remember { mutableStateOf<String?>(null) }
+    var uninstallMessage by remember { mutableStateOf<String?>(null) }
 
     val uninstallLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -343,40 +409,47 @@ fun V2AppManagerScreen(
         val code = result.resultCode
         appToUninstall = null
         scope.launch {
-            val opId = withContext(Dispatchers.IO) {
-                repository.createOperationRequest(
-                    scanSessionId = "",
-                    serviceId = "app_manager",
-                    requestedAction = "uninstall_app",
-                    selectionCount = 1,
-                    keeperIds = null,
-                    exclusionIds = null,
-                    predictedEligibleBytes = null,
-                )
-            }
-            withContext(Dispatchers.IO) { repository.recordConsent(opId, granted = code == android.app.Activity.RESULT_OK) }
-            val stillInstalled = withContext(Dispatchers.IO) {
-                runCatching { context.packageManager.getApplicationInfo(pkg, 0) != null }.getOrDefault(false)
-            }
-            withContext(Dispatchers.IO) {
-                repository.recordItemOutcomes(opId, listOf(
-                    OperationItemOutcomeEntity(
-                        operationId = opId,
-                        itemId = pkg,
-                        result = when {
-                            code != android.app.Activity.RESULT_OK -> "CANCELLED"
-                            stillInstalled -> "PARTIAL"
-                            else -> "SUCCESS"
-                        },
-                        postQueryExists = stillInstalled,
-                        measuredBytes = 0L,
-                        providerError = null,
-                        completedAt = System.currentTimeMillis(),
+            try {
+                val opId = withContext(Dispatchers.IO) {
+                    repository.createOperationRequest(
+                        scanSessionId = "",
+                        serviceId = "app_manager",
+                        requestedAction = "uninstall_app",
+                        selectionCount = 1,
+                        keeperIds = null,
+                        exclusionIds = null,
+                        predictedEligibleBytes = null,
                     )
-                ))
-                repository.updateOperationStatus(opId, if (code == android.app.Activity.RESULT_OK && !stillInstalled) "VERIFIED" else "PARTIAL")
+                }
+                val accepted = code == android.app.Activity.RESULT_OK
+                val presence = withContext(Dispatchers.IO) { queryPackagePresence(context, pkg) }
+                val status = uninstallStatus(accepted, presence.exists)
+                withContext(Dispatchers.IO) {
+                    repository.recordConsent(opId, granted = accepted)
+                    repository.recordItemOutcomes(opId, listOf(
+                        OperationItemOutcomeEntity(
+                            operationId = opId,
+                            itemId = pkg,
+                            result = if (status == "VERIFIED") "SUCCESS" else status,
+                            // Unknown cannot prove absence; providerError retains that distinction.
+                            postQueryExists = presence.exists != false,
+                            measuredBytes = null,
+                            providerError = presence.error,
+                            completedAt = System.currentTimeMillis(),
+                        )
+                    ))
+                    repository.updateOperationStatus(opId, status)
+                }
+                uninstallMessage = when (status) {
+                    "VERIFIED" -> "تمت إزالة الحزمة والتحقق من غيابها: $pkg"
+                    "CANCELLED" -> "أُلغي طلب الإزالة دون تأكيد نجاح"
+                    "ERROR" -> "تعذّر التحقق من الحزمة: ${presence.error}"
+                    else -> "لا تزال الحزمة مثبتة؛ لم يتم تأكيد الإزالة"
+                }
+                bump()
+            } catch (error: Exception) {
+                uninstallMessage = "تعذّر تسجيل نتيجة الإزالة: ${error.message}"
             }
-            bump()
         }
     }
 
@@ -401,6 +474,7 @@ fun V2AppManagerScreen(
             )
         }
         item { AppManagerRealSummary(facts) }
+        uninstallMessage?.let { message -> item { ScopedNotice(message, V2Amber) } }
         item {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 val labels = listOf(
@@ -443,10 +517,19 @@ fun V2AppManagerScreen(
                 onClick = { openAppInfo(context, app.packageName) },
                 onUninstall = {
                     if (!app.isSystem) {
-                        appToUninstall = app.packageName
-                        uninstallLauncher.launch(
-                            Intent(Intent.ACTION_DELETE).setData(Uri.parse("package:${app.packageName}"))
-                        )
+                        if (appToUninstall == null) {
+                            appToUninstall = app.packageName
+                            try {
+                                uninstallLauncher.launch(
+                                    Intent(Intent.ACTION_DELETE)
+                                        .setData(Uri.parse("package:${app.packageName}"))
+                                        .putExtra(Intent.EXTRA_RETURN_RESULT, true)
+                                )
+                            } catch (error: Exception) {
+                                appToUninstall = null
+                                uninstallMessage = "تعذّر فتح إزالة التطبيق: ${error.message}"
+                            }
+                        }
                     }
                 },
             )
@@ -677,141 +760,69 @@ private fun ManagedAppRow(
 
 @Composable
 fun V2AppDetailScreen(onBack: () -> Unit, onPro: () -> Unit) {
-    val app = managedAppsV2.first()
-    var autoStart by remember { mutableStateOf(false) }
-    var backgroundRestrict by remember { mutableStateOf(true) }
+    val context = LocalContext.current
+    val (refresh, bump) = rememberRefreshCounter()
+    val facts = rememberDeviceFacts(refresh)
+    var selectedPackage by remember { mutableStateOf<String?>(null) }
+    var actionError by remember { mutableStateOf<String?>(null) }
+    val app = facts.installedApps.firstOrNull { it.packageName == selectedPackage }
 
     InteriorScaffold(
         onBack = onBack,
         onPro = onPro,
         bottomBar = {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Box(Modifier.weight(.92f)) {
-                    V2GhostButton("مسح الكاش", onClick = {}, icon = Icons.Rounded.CleaningServices, height = 47.dp)
-                }
-                Box(Modifier.weight(1.08f)) {
-                    V2GradientButton("فتح التطبيق", onClick = {}, icon = Icons.Rounded.PlayArrow, height = 47.dp)
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (app != null) {
+                    V2GhostButton("معلومات التطبيق في Android", {
+                        actionError = showInstalledAppInfo(context, app.packageName)
+                    }, icon = Icons.Rounded.Settings, height = 48.dp)
+                    V2GradientButton("فتح التطبيق", {
+                        actionError = launchVisiblePackage(context, app.packageName)
+                    }, icon = Icons.Rounded.PlayArrow, height = 48.dp)
+                } else {
+                    V2GradientButton("تحديث قائمة التطبيقات", bump, icon = Icons.Rounded.Refresh, height = 48.dp)
                 }
             }
         },
     ) {
-        item {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                AppLogo(app.mark, size = 68.dp)
-                Spacer(Modifier.width(12.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        app.name,
-                        style = TextStyle(
-                            fontFamily = V2Font,
-                            fontWeight = FontWeight.Black,
-                            fontSize = 26.sp,
-                            color = Color.White,
-                        )
-                    )
-                    KText(app.packageName, size = 7.4.sp, color = V2Muted, maxLines = 1)
-                    Spacer(Modifier.height(4.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-                        SummaryPill("الإصدار 34.5.1", V2Cyan)
-                        SummaryPill("محدّث", V2Green)
+        item { PageHeading("تفاصيل تطبيق مثبت", "اختر حزمة ظاهرة من هذا الجهاز", Icons.Rounded.Apps, V2Cyan) }
+        actionError?.let { message -> item { ScopedNotice(message, V2Amber) } }
+        if (app != null) {
+            item {
+                V2GlassCard(Modifier.fillMaxWidth(), padding = 14.dp, radius = 20.dp, glow = V2Violet) {
+                    Column {
+                        KText(app.label, size = 22.sp, weight = FontWeight.Bold)
+                        KText(app.packageName, size = 12.sp, color = V2Soft)
+                        InfoLine("الإصدار", app.versionName ?: "غير معلن", V2Cyan)
+                        InfoLine("النوع", if (app.isSystem) "نظام" else "مستخدم", V2Violet)
+                        InfoLine("التمكين", if (app.isEnabled) "مفعّل" else "معطّل", V2Cyan)
+                        InfoLine("حجم الحزمة", app.appBytes?.let(::formatBytes) ?: "غير متاح", V2Soft)
+                        InfoLine("أذونات معلنة", formatCount(app.declaredPermissions.size), V2Amber)
                     }
                 }
             }
-        }
-        item {
-            V2GlassCard(
-                Modifier.fillMaxWidth(),
-                padding = 13.dp,
-                radius = 22.dp,
-                glow = V2Cyan,
-                borderAlpha = .52f,
-            ) {
-                Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        V2NeonRing(
-                            progress = .74f,
-                            size = 96.dp,
-                            stroke = 7.dp,
-                            colors = listOf(V2Cyan, V2Blue, V2Violet),
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                KText("842 MB", size = 17.sp, weight = FontWeight.Black)
-                                KText("حجم التطبيق", size = 6.8.sp, color = V2Soft)
-                            }
-                        }
-                        Spacer(Modifier.width(12.dp))
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            DetailLegend("التطبيق", "228 MB", V2Cyan)
-                            DetailLegend("البيانات", "486 MB", V2Violet)
-                            DetailLegend("الذاكرة المؤقتة", "128 MB", V2Pink)
-                        }
-                    }
-                    Spacer(Modifier.height(10.dp))
-                    SegmentedBar(listOf(.27f to V2Cyan, .58f to V2Violet, .15f to V2Pink))
-                    Spacer(Modifier.height(5.dp))
-                    KText("إجمالي الاستخدام 842 MB من مساحة الجهاز", size = 7.6.sp, color = V2Muted)
+            item { ScopedNotice("الكاش والبيانات الخاصة وإيقاف التطبيق وإدارة الخلفية تُدار في معلومات التطبيق الرسمية. فتح الإعدادات لا يعني تنفيذ مسح أو إيقاف.") }
+            app.sensitivePermissions.forEach { permission ->
+                item {
+                    ScopedNotice("إذن معلن: $permission\nالإعلان لا يثبت المنح أو الاستخدام؛ راجع الحالة في إعدادات Android.", V2Violet)
                 }
             }
-        }
-        item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                AppActionTile("تحديث", Icons.Rounded.Update, V2Green, Modifier.weight(1f))
-                AppActionTile("إيقاف", Icons.Rounded.PowerSettingsNew, V2Amber, Modifier.weight(1f))
-                AppActionTile("إلغاء التثبيت", Icons.Rounded.Delete, V2Red, Modifier.weight(1f))
+            item { V2GhostButton("اختيار تطبيق آخر", { selectedPackage = null; actionError = null }, height = 48.dp) }
+        } else {
+            item {
+                ScopedNotice(when {
+                    facts.computedAt == 0L -> "جاري قراءة PackageManager…"
+                    selectedPackage != null -> "لم تعد الحزمة المختارة ظاهرة. اختر تطبيقاً آخر أو حدّث القائمة."
+                    facts.installedApps.isEmpty() -> "لم تُعد قراءة PackageManager حزمًا ظاهرة. افتح إعدادات التطبيقات أو أعد القراءة."
+                    else -> "اضغط على تطبيق لعرض إصداره وأذوناته وخيارات فتحه."
+                })
             }
-        }
-        item { V2SectionLabel("إدارة الخلفية", trailing = "توفير الطاقة") }
-        item {
-            V2GlassCard(Modifier.fillMaxWidth(), padding = 11.dp, radius = 17.dp, glow = V2Amber, borderAlpha = .28f) {
-                Column {
-                    SettingToggleRow(
-                        icon = Icons.Rounded.Bolt,
-                        title = "تشغيل تلقائي",
-                        subtitle = "السماح بالتشغيل مع بدء الجهاز",
-                        checked = autoStart,
-                        accent = V2Amber,
-                        onChange = { autoStart = it },
-                    )
-                    HairLine()
-                    SettingToggleRow(
-                        icon = Icons.Rounded.BatteryFull,
-                        title = "تقييد الخلفية",
-                        subtitle = "إيقاف النشاط عند عدم الاستخدام",
-                        checked = backgroundRestrict,
-                        accent = V2Green,
-                        onChange = { backgroundRestrict = it },
-                    )
-                }
+            items(facts.installedApps.size) { index ->
+                val candidate = facts.installedApps[index]
+                RealInstalledAppRow(candidate, onClick = { selectedPackage = candidate.packageName; actionError = null })
             }
+            item { V2GhostButton("إعدادات جميع التطبيقات", { openAllAppSettings(context) }, height = 48.dp) }
         }
-        item { V2SectionLabel("الأذونات", trailing = "12 إذنًا") }
-        item {
-            V2GlassCard(Modifier.fillMaxWidth(), padding = 11.dp, radius = 18.dp, glow = V2Violet, borderAlpha = .30f) {
-                Column {
-                    PermissionRow("الكاميرا", "تُستخدم لتصوير الفيديو", Icons.Rounded.Visibility, "مسموح", V2Green)
-                    HairLine()
-                    PermissionRow("الميكروفون", "تُستخدم للتسجيل الصوتي", Icons.Rounded.Settings, "مسموح", V2Green)
-                    HairLine()
-                    PermissionRow("الموقع", "غير مستخدم حاليًا", Icons.Rounded.Security, "مرفوض", V2Red)
-                    HairLine()
-                    PermissionRow("الإشعارات", "تنبيهات التفاعل", Icons.Rounded.Notifications, "مسموح", V2Green)
-                }
-            }
-        }
-        item {
-            V2GlassCard(Modifier.fillMaxWidth(), padding = 11.dp, radius = 17.dp, glow = V2Cyan, borderAlpha = .24f) {
-                Column {
-                    InfoLine("تاريخ التثبيت", "12 أكتوبر 2026", Color.White)
-                    HairLine()
-                    InfoLine("آخر تحديث", "منذ 4 أيام", Color.White)
-                    HairLine()
-                    InfoLine("المصدر", "متجر Play", Color.White)
-                    HairLine()
-                    InfoLine("الحد الأدنى للإصدار", "Android 9", Color.White)
-                }
-            }
-        }
-        item { PreviewNote("قيم الحجم والاستخدام معاينة تصميمية حتى تُربط بقراءة الجهاز الفعلية.") }
     }
 }
 
@@ -1905,51 +1916,61 @@ private fun SettingNavRow(icon: ImageVector, title: String, value: String, accen
 
 @Composable
 fun V2ScanSummaryScreen(onBack: () -> Unit, onOpenSmartClean: () -> Unit, onPro: () -> Unit) {
-    InteriorScaffold(
-        onBack = onBack,
-        onPro = onPro,
-        bottomBar = {
-            V2GradientButton("بدء التنظيف الذكي", onOpenSmartClean, icon = Icons.Rounded.CleaningServices, trailingChevron = true)
-        },
-    ) {
-        item { PageHeading("ملخص الفحص العميق", "5 وحدات · اكتمل الفحص بنسبة 72%", Icons.Rounded.Radar, V2Cyan) }
+    val context = LocalContext.current
+    val (refresh, bump) = rememberRefreshCounter()
+    val facts = rememberDeviceFacts(refresh)
+    val database = remember(context) { AppDatabase.getDatabase(context.applicationContext) }
+    val repository = remember(database) { KnouxRepository(database) }
+    val sessions by remember(database) { database.scanSessionDao().getByService("deep_scan") }
+        .collectAsState(initial = emptyList())
+    val operations by remember(repository) { repository.recentOperations(25) }.collectAsState(initial = emptyList())
+    val outcomes by remember(repository) { repository.outcomeSummaries() }.collectAsState(initial = emptyList())
+    var history by remember { mutableStateOf(emptyList<ScanHistoryEntry>()) }
+    LaunchedEffect(refresh) { history = withContext(Dispatchers.IO) { readScanHistory(context) } }
+    val last = newestScan(history)
+    val session = sessions.maxByOrNull { it.startedAt }
+    val lastMeasuredOperation = operations.sortedByDescending { it.createdAt }.firstOrNull { operation ->
+        operation.status in listOf("VERIFIED", "PARTIAL") && outcomes.any { it.operationId == operation.id }
+    }
+    val measured = outcomes.firstOrNull { it.operationId == lastMeasuredOperation?.id }
+
+    InteriorScaffold(onBack, onPro, bottomBar = {
+        V2GradientButton("مراجعة تنظيف كاش KNOUX", onOpenSmartClean, icon = Icons.Rounded.CleaningServices, height = 48.dp)
+    }) {
+        item { PageHeading("ملخص الفحص العميق", "قراءات الجهاز وسجل محلي؛ لا نتائج تقديرية", Icons.Rounded.Radar, V2Cyan) }
         item {
-            V2GlassCard(Modifier.fillMaxWidth(), padding = 13.dp, radius = 22.dp, glow = V2Violet, borderAlpha = .52f) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    V2NeonRing(.72f, size = 104.dp, stroke = 8.dp, colors = listOf(V2Pink, V2Violet, V2Blue, V2Cyan)) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            KText("72%", size = 24.sp, weight = FontWeight.Black)
-                            KText("مكتمل", size = 7.6.sp, color = V2Soft)
-                        }
-                    }
-                    Spacer(Modifier.width(13.dp))
-                    Column(Modifier.weight(1f)) {
-                        KText("3.42 GB", size = 21.sp, weight = FontWeight.Black)
-                        KText("مساحة قابلة للاستعادة بعد المراجعة", size = 8.2.sp, color = V2Soft)
-                        Spacer(Modifier.height(6.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            SummaryPill("11 ملفًا مؤقتًا", V2Cyan)
-                            SummaryPill("3 مجموعات", V2Violet)
-                        }
+            ScopedNotice(when {
+                session != null -> "آخر جلسة Room: ${formatScanTime(session.startedAt)} · ${session.status}"
+                last != null -> "آخر قياس محفوظ محلياً: ${formatScanTime(last.timestamp)}\nلا توجد جلسة فحص عميق في Room؛ هذا سجل القياسات القديم فقط."
+                else -> "لا توجد جلسة فحص محفوظة. الأرقام أدناه قراءة الجهاز الحالية وليست نتائج فحص سابق."
+            }, V2Violet)
+        }
+        if (last != null) {
+            item { ScopedNotice("القياس المحفوظ: ${formatCount(last.appsScanned)} حزمة ظاهرة · كاش ${formatBytes(last.cacheBytes)} · بطارية ${last.batteryLevel?.let { "$it%" } ?: "غير مقروءة"}") }
+        }
+        item {
+            V2GlassCard(Modifier.fillMaxWidth(), padding = 14.dp, radius = 20.dp, glow = V2Cyan) {
+                Column {
+                    KText("قراءة الجهاز الحالية", size = 16.sp, weight = FontWeight.Bold)
+                    if (facts.computedAt == 0L) KText("جاري القراءة…", size = 12.sp, color = V2Soft)
+                    else {
+                        KText(formatScanTime(facts.computedAt), size = 12.sp, color = V2Soft)
+                        InfoLine("تخزين مستخدم", formatBytes(facts.storage.usedBytes), V2Cyan)
+                        InfoLine("حزم ظاهرة", formatCount(facts.installedCount), V2Violet)
+                        InfoLine("كاش KNOUX فقط", formatBytes(facts.ownCacheBytes), V2Cyan)
+                        InfoLine("بطارية", facts.battery.levelPercent?.let { "$it%" } ?: "غير مقروءة", V2Green)
+                        InfoLine("وسائط", if (facts.media.permissionGranted) "ضمن النطاق المصرح" else "تحتاج إذناً", V2Amber)
                     }
                 }
             }
         }
-        item { V2SectionLabel("الوحدات المفحوصة", trailing = "بيانات معاينة") }
-        item { SummaryModuleRow(Icons.Rounded.Storage, "التخزين", "182 GB مستخدمة · 72%", "2.6 GB", V2Cyan) }
-        item { SummaryModuleRow(Icons.Rounded.Apps, "التطبيقات", "54 تطبيقًا · 8 ثقيلة", "1.2 GB", V2Violet) }
-        item { SummaryModuleRow(Icons.Rounded.Shield, "الخصوصية", "43 تطبيقًا · 3 مخاطر مرتفعة", "5 ملاحظات", V2Pink) }
-        item { SummaryModuleRow(Icons.Rounded.Speed, "الأداء", "نقطة 94 · 4 توصيات", "+4 نقاط", V2Green) }
-        item { SummaryModuleRow(Icons.Rounded.BatteryFull, "البطارية", "صحة 93% · 34°", "14 س 20 د", V2Amber) }
         item {
-            V2GlassCard(Modifier.fillMaxWidth(), padding = 11.dp, radius = 17.dp, glow = V2Green, borderAlpha = .26f) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Rounded.Verified, null, tint = V2Green, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(7.dp))
-                    KText("لن يتم حذف أي ملف قبل عرضه وتأكيدك.", size = 8.2.sp, color = V2Soft)
-                }
-            }
+            ScopedNotice(if (measured == null) "لا توجد نتيجة تنظيف مقيسة في سجل العمليات. حجم الكاش أعلاه ليس مساحة محررة."
+            else "آخر عملية مسجلة (${lastMeasuredOperation?.serviceId}): ${lastMeasuredOperation?.status}\nبايتات الحذف المسجلة: ${formatBytes(measured.measuredBytes)} · ${formatScanTime(lastMeasuredOperation!!.createdAt)}\nهذه نتيجة العملية المسجلة، وليست نتيجة الفحص العميق.", V2Green)
         }
+        item { V2GhostButton("تحديث القراءات", bump, icon = Icons.Rounded.Refresh, height = 48.dp) }
+        item { V2GhostButton("إعدادات التخزين", { openStorageSettings(context) }, height = 48.dp) }
+        item { ScopedNotice("الفحص تشخيصي ولا يحذف ملفات. التنظيف يحتاج مراجعتك وتأكيدك؛ لا نسبة اكتمال أو مساحة محررة دون قياس.") }
     }
 }
 
@@ -1972,69 +1993,23 @@ private fun SummaryModuleRow(icon: ImageVector, title: String, subtitle: String,
  * Residue review
  * ------------------------------------------------------------------ */
 
-private data class ResidueFileV2(val path: String, val size: String, val files: Int, val accent: Color)
-
-private val residueFiles = listOf(
-    ResidueFileV2("Android/data/com.tiktok/cache", "1.42 GB", 214, V2Violet),
-    ResidueFileV2("Android/data/com.whatsapp/temp", "684 MB", 86, V2Pink),
-    ResidueFileV2("Download/apk_old", "356 MB", 12, V2Cyan),
-    ResidueFileV2("Android/logs", "78 MB", 41, V2Amber),
-    ResidueFileV2(".trash/old_backup", "310 MB", 9, V2Green),
-)
-
 @Composable
 fun V2ResidueReviewScreen(onBack: () -> Unit, onPro: () -> Unit) {
-    val selected = remember { mutableStateOf(setOf(0, 1, 2)) }
-    InteriorScaffold(
-        onBack = onBack,
-        onPro = onPro,
-        bottomBar = {
-            V2GradientButton(
-                "حذف ${selected.value.size} مجلدات محددة (2.46 GB)",
-                {},
-                icon = Icons.Rounded.Delete,
-                trailingChevron = true,
-            )
-        },
-    ) {
-        item { PageHeading("مراجعة البقايا", "افتح كل مجلد وراجع قبل الحذف", Icons.Rounded.Folder, V2Violet) }
-        item { V2SectionLabel("المجلدات المكتشفة", trailing = "2.84 GB") }
-        items(residueFiles.size) { index ->
-            val item = residueFiles[index]
-            val checked = selected.value.contains(index)
-            V2GlassCard(
-                Modifier.fillMaxWidth().clickable {
-                    selected.value = if (checked) selected.value - index else selected.value + index
-                },
-                padding = 10.dp,
-                radius = 16.dp,
-                glow = item.accent,
-                borderAlpha = if (checked) .50f else .18f,
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    V2IconTile(Icons.Rounded.Folder, item.accent, size = 35.dp, iconSize = 17.dp)
-                    Spacer(Modifier.width(9.dp))
-                    Column(Modifier.weight(1f)) {
-                        KText(item.path, size = 8.6.sp, weight = FontWeight.SemiBold, maxLines = 1)
-                        KText("${item.files} ملفًا · قابل للمراجعة", size = 7.2.sp, color = V2Muted)
-                    }
-                    KText(item.size, size = 9.4.sp, weight = FontWeight.Bold, color = item.accent)
-                    Spacer(Modifier.width(8.dp))
-                    V2Check(checked, item.accent)
-                }
-            }
-        }
+    val context = LocalContext.current
+    val (refresh, bump) = rememberRefreshCounter()
+    val facts = rememberDeviceFacts(refresh)
+    InteriorScaffold(onBack, onPro, bottomBar = {
+        V2GradientButton("إدارة التخزين في Android", { openStorageSettings(context) }, icon = Icons.Rounded.Storage, height = 48.dp)
+    }) {
+        item { PageHeading("مراجعة البقايا", "حدود Android ونطاق كاش KNOUX", Icons.Rounded.Folder, V2Violet) }
+        item { ScopedNotice("لا يتيح Android قراءة Android/data للتطبيقات الأخرى أو إثبات أن مجلداتها بقايا آمنة للحذف. لا توجد قائمة بقايا مكتشفة ولا إجراء حذف لهذه المجلدات.", V2Amber) }
         item {
-            V2GlassCard(Modifier.fillMaxWidth(), padding = 11.dp, radius = 17.dp, glow = V2Amber, borderAlpha = .30f) {
-                KText(
-                    "لا تحذف مجلدات التطبيقات النشطة. العناصر المحددة هنا بقايا من تطبيقات أُزيلت أو ملفات مؤقتة فقط.",
-                    size = 8.sp,
-                    lineHeight = 12.sp,
-                    color = V2Soft,
-                )
-            }
+            ScopedNotice(if (facts.computedAt == 0L) "جاري قياس كاش KNOUX…"
+            else "كاش KNOUX المقروء: ${formatBytes(facts.ownCacheBytes)} · ${formatCount(facts.ownCacheFiles)} ملفاً.\nهذا كاش التطبيق نفسه، وليس بقايا تطبيقات محذوفة.")
         }
-        item { PreviewNote("أحجام البقايا ومساراتها بيانات معاينة حتى تُربط بقراءة التخزين الفعلية.") }
+        item { V2GhostButton("معلومات KNOUX وإدارة الكاش", { openAppInfo(context, context.packageName) }, icon = Icons.Rounded.Settings, height = 48.dp) }
+        item { V2GhostButton("تحديث القياس", bump, icon = Icons.Rounded.Refresh, height = 48.dp) }
+        item { ScopedNotice("إدارة الكاش من شاشة النظام تحتاج قرارك هناك. فتحها لا يسجل نجاح حذف أو مساحة مستعادة.") }
     }
 }
 
@@ -2044,48 +2019,40 @@ fun V2ResidueReviewScreen(onBack: () -> Unit, onPro: () -> Unit) {
 
 @Composable
 fun V2PrivacyRiskScreen(onBack: () -> Unit, onPro: () -> Unit) {
-    InteriorScaffold(
-        onBack = onBack,
-        onPro = onPro,
-        bottomBar = {
-            V2GradientButton("فتح إعدادات الأذونات", {}, icon = Icons.Rounded.Security, trailingChevron = true)
-        },
-    ) {
-        item { PageHeading("تفاصيل مخاطر الخصوصية", "3 مخاطر مرتفعة تحتاج قرارك", Icons.Rounded.Shield, V2Pink) }
-        item {
-            V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 20.dp, glow = V2Pink, borderAlpha = .44f) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    V2NeonRing(.86f, size = 88.dp, stroke = 7.dp, colors = listOf(V2Pink, V2Violet, V2Cyan)) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            KText("86", size = 22.sp, weight = FontWeight.Black)
-                            KText("درجة الخصوصية", size = 6.8.sp, color = V2Soft)
+    val context = LocalContext.current
+    val (refresh, bump) = rememberRefreshCounter()
+    val facts = rememberDeviceFacts(refresh)
+    var actionError by remember { mutableStateOf<String?>(null) }
+    InteriorScaffold(onBack, onPro, bottomBar = {
+        V2GradientButton("إعدادات الخصوصية في Android", { openPrivacySettings(context) }, icon = Icons.Rounded.Security, height = 48.dp)
+    }) {
+        item { PageHeading("مراجعة الأذونات الحساسة", "PackageManager؛ لا كشف تسجيل أو تتبع", Icons.Rounded.Shield, V2Pink) }
+        item { ScopedNotice("الإذن المعلن أو الممنوح ليس دليلاً على تشغيل الكاميرا أو التسجيل أو التتبع. لا يملك KNOUX سجلاً لاستخدام الحساسات في الخلفية؛ راجع لوحة خصوصية Android.", V2Amber) }
+        actionError?.let { message -> item { ScopedNotice(message, V2Amber) } }
+        if (facts.computedAt == 0L) item { ScopedNotice("جاري قراءة الأذونات…") }
+        facts.privacyGroups.forEach { group ->
+            item {
+                ScopedNotice("${group.label}: ${formatCount(group.appCount)} حزمة تعلن الإذن؛ ${formatCount(group.grantedCount)} حزمة يظهر الإذن ممنوحاً لها ضمن الحزم الظاهرة.", V2Violet)
+            }
+            group.packages.forEach { pkg ->
+                val app = facts.installedApps.firstOrNull { it.packageName == pkg }
+                item {
+                    V2GlassCard(Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable {
+                        actionError = showInstalledAppInfo(context, pkg)
+                    }, padding = 12.dp, radius = 16.dp, glow = V2Cyan) {
+                        Column {
+                            KText(app?.label ?: pkg, size = 14.sp, weight = FontWeight.Bold)
+                            KText(pkg, size = 12.sp, color = V2Soft)
+                            KText(if (pkg in group.grantedPackages) "منح ظاهر للنظام · افتح لمراجعته" else "إذن معلن؛ لم يثبت المنح · افتح لمراجعته", size = 12.sp, color = V2Cyan)
                         }
                     }
-                    Spacer(Modifier.width(12.dp))
-                    Column(Modifier.weight(1f)) {
-                        KText("تحسين بسيط يرفع الدرجة", size = 10.sp, weight = FontWeight.Bold)
-                        KText("راجع الأذونات الثلاثة الأكثر خطورة أدناه.", size = 8.sp, color = V2Soft)
-                        Spacer(Modifier.height(5.dp))
-                        V2ProgressBar(.86f, height = 5.dp, colors = listOf(V2Amber, V2Pink))
-                    }
                 }
             }
         }
-        item { V2SectionLabel("أعلى المخاطر", trailing = "مرتبة حسب الخطورة") }
-        item { PrivacyRiskDetailRow(Icons.Rounded.Visibility, "الكاميرا", "3 تطبيقات تصل للكاميرا دائمًا", "مرتفع", V2Pink) }
-        item { PrivacyRiskDetailRow(Icons.Rounded.Settings, "الميكروفون", "5 تطبيقات تسجل في الخلفية", "مرتفع", V2Red) }
-        item { PrivacyRiskDetailRow(Icons.Rounded.Security, "الموقع الدقيق", "تطبيقان يتابعان الموقع", "متوسط", V2Amber) }
-        item { PrivacyRiskDetailRow(Icons.Rounded.Notifications, "الإشعارات", "8 تطبيقات ترسل تنبيهات", "منخفض", V2Green) }
-        item {
-            V2GlassCard(Modifier.fillMaxWidth(), padding = 11.dp, radius = 17.dp, glow = V2Green, borderAlpha = .26f) {
-                Column {
-                    KText("توصية KNOUX AI", size = 9.6.sp, weight = FontWeight.Bold, color = V2Green)
-                    Spacer(Modifier.height(3.dp))
-                    KText("اجعل إذن الكاميرا «أثناء الاستخدام فقط» للتطبيقات الثلاثة، وأوقف الميكروفون لتطبيقين لا يحتاجانه.", size = 8.sp, lineHeight = 12.sp, color = V2Soft)
-                }
-            }
+        if (facts.computedAt > 0L && facts.privacyGroups.all { it.appCount == 0 }) {
+            item { ScopedNotice("لا أذونات حساسة في الحزم الظاهرة. هذا لا يثبت خلو الجهاز من مخاطر الخصوصية.") }
         }
-        item { PreviewNote("قائمة الأذونات هذه معاينة تصميمية حتى تُربط ببيانات النظام.") }
+        item { V2GhostButton("تحديث بعد تغيير الأذونات", bump, icon = Icons.Rounded.Refresh, height = 48.dp) }
     }
 }
 
@@ -2369,42 +2336,53 @@ private fun FolderBreakdownRow(title: String, size: String, fraction: Float, acc
 
 @Composable
 fun V2BatteryDiagnosticsScreen(onBack: () -> Unit, onPro: () -> Unit) {
-    InteriorScaffold(onBack = onBack, onPro = onPro) {
-        item { PageHeading("تشخيص البطارية", "حالة الخلايا والاستهلاك", Icons.Rounded.Thermostat, V2Green) }
+    val context = LocalContext.current
+    val (refresh, bump) = rememberRefreshCounter()
+    val facts = rememberDeviceFacts(refresh)
+    var saving by remember { mutableStateOf<Boolean?>(null) }
+    val database = remember(context) { AppDatabase.getDatabase(context.applicationContext) }
+    val samples by remember(database) { database.batterySampleDao().getRecent(12) }.collectAsState(initial = emptyList())
+    LaunchedEffect(refresh) { saving = readPowerSaveMode(context) }
+    // Re-read the state when returning from Android's settings, not just on first composition.
+    val owner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(owner, context) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) {
+                saving = readPowerSaveMode(context)
+                bump()
+            }
+        }
+        owner.lifecycle.addObserver(observer)
+        onDispose { owner.lifecycle.removeObserver(observer) }
+    }
+    val battery = facts.battery
+    InteriorScaffold(onBack, onPro, bottomBar = {
+        V2GradientButton("إعدادات توفير الطاقة", { openBatterySaverSettings(context) }, icon = Icons.Rounded.BatteryFull, height = 48.dp)
+    }) {
+        item { PageHeading("تشخيص البطارية", "قراءات النظام الحالية وعينات Room", Icons.Rounded.Thermostat, V2Green) }
         item {
-            V2GlassCard(Modifier.fillMaxWidth(), padding = 13.dp, radius = 22.dp, glow = V2Green, borderAlpha = .48f) {
+            V2GlassCard(Modifier.fillMaxWidth(), padding = 14.dp, radius = 22.dp, glow = V2Green) {
                 Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        V2NeonRing(.93f, size = 96.dp, stroke = 7.dp, colors = listOf(V2Green, V2Cyan, V2Blue)) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                KText("93%", size = 23.sp, weight = FontWeight.Black)
-                                KText("صحة", size = 7.4.sp, color = V2Soft)
-                            }
-                        }
-                        Spacer(Modifier.width(12.dp))
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                            InfoLine("الحالة", "جيدة", V2Green)
-                            InfoLine("دورات الشحن", "284 دورة", Color.White)
-                            InfoLine("السعة التصميمية", "5000 mAh", Color.White)
-                            InfoLine("الحرارة", "34° مئوية", V2Amber)
-                        }
-                    }
-                    Spacer(Modifier.height(10.dp))
-                    MiniDrainChart()
-                    Spacer(Modifier.height(4.dp))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        listOf("12ص", "3م", "6م", "9م", "12م").forEach {
-                            KText(it, size = 6.8.sp, color = V2Muted)
-                        }
-                    }
+                    KText(battery.levelPercent?.let { "$it%" } ?: "المستوى غير مقروء", size = 24.sp, weight = FontWeight.Bold, color = V2Green)
+                    InfoLine("حالة الشحن", battery.statusLabel, V2Cyan)
+                    InfoLine("صحة النظام (وصف)", battery.healthLabel, V2Green)
+                    InfoLine("الحرارة الحالية", battery.temperatureC?.let { String.format(java.util.Locale.US, "%.1f°C", it) } ?: "غير مقروءة", V2Amber)
+                    InfoLine("الجهد", battery.voltageMv?.let { "$it mV" } ?: "غير مقروء", V2Cyan)
+                    InfoLine("التقنية", battery.technology ?: "غير معلنة", V2Violet)
+                    InfoLine("توفير الطاقة", powerSaveLabel(saving), V2Green)
                 }
             }
         }
-        item { V2SectionLabel("ملاحظات التشخيص", trailing = "آخر 24 ساعة") }
-        item { DiagnosticNote(Icons.Rounded.Check, "لا يوجد تدهور غير طبيعي", "السعة الحالية 91% من التصميمية.", V2Green) }
-        item { DiagnosticNote(Icons.Rounded.WarningAmber, "ارتفاع حرارة مؤقت", "حدث أثناء الشحن السريع لمدة 12 دقيقة.", V2Amber) }
-        item { DiagnosticNote(Icons.Rounded.Bolt, "الشحن السريع يعمل", "من 20% إلى 80% خلال 42 دقيقة.", V2Cyan) }
-        item { PreviewNote("بيانات البطارية معاينة تصميمية وليست قراءة من النظام.") }
+        item { ScopedNotice("نسبة صحة الخلايا والسعة التصميمية ودورات الشحن وزمن الشحن السريع غير مقاسة هنا. وصف صحة Android ليس نسبة سعة متبقية؛ لا نستنتج أحداث حرارة سابقة من القراءة الحالية.", V2Amber) }
+        item { KText("عينات البطارية المحفوظة في Room", size = 16.sp, weight = FontWeight.Bold) }
+        if (samples.isEmpty()) item { ScopedNotice("لا توجد عينات بطارية محفوظة. لا يوجد رسم زمني أو تشخيص آخر 24 ساعة دون قياسات.") }
+        samples.sortedByDescending { it.recordedAt }.forEach { sample ->
+            item {
+                ScopedNotice("${formatScanTime(sample.recordedAt)} · ${sample.levelPercent?.let { "$it%" } ?: "مستوى غير مقروء"} · ${sample.temperatureC?.let { String.format(java.util.Locale.US, "%.1f°C", it) } ?: "حرارة غير مقروءة"}", V2Violet)
+            }
+        }
+        item { V2GhostButton("تحديث القراءات", bump, icon = Icons.Rounded.Refresh, height = 48.dp) }
+        item { V2GhostButton("استهلاك البطارية في Android", { openBatterySettings(context) }, height = 48.dp) }
     }
 }
 
@@ -2742,69 +2720,40 @@ private fun DividerLine() {
  * Large Files
  * ------------------------------------------------------------------ */
 
-private data class LargeFileV2(val name: String, val size: String, val path: String, val icon: androidx.compose.ui.graphics.vector.ImageVector, val accent: Color)
-
-private val largeFiles = listOf(
-    LargeFileV2("فيديو 4K — رحلة الجبال.mp4", "2.4 GB", "DCIM/Camera", Icons.Rounded.Videocam, V2Pink),
-    LargeFileV2("أرشيف الصور — 2025.zip", "1.8 GB", "Download", Icons.Rounded.Archive, V2Violet),
-    LargeFileV2("نسخة احتياطية قديمة.ab", "1.2 GB", "Android/backup", Icons.Rounded.Backup, V2Amber),
-    LargeFileV2("فيلم طويل.mkv", "980 MB", "DCIM/Movies", Icons.Rounded.Videocam, V2Pink),
-    LargeFileV2("مستندات العمل.pdf", "450 MB", "Documents", Icons.Rounded.Description, V2Cyan),
-    LargeFileV2("لعبة كبيرة.apk", "1.1 GB", "Download", Icons.Rounded.Folder, V2Green),
-    LargeFileV2("تسجيل صوتي طويل.m4a", "320 MB", "Recordings", Icons.Rounded.Audiotrack, V2Blue),
-    LargeFileV2("مجموعة صور RAW", "850 MB", "DCIM/Camera", Icons.Rounded.PhotoLibrary, V2Violet),
-)
-
 @Composable
 fun V2LargeFilesScreen(onBack: () -> Unit, onPro: () -> Unit) {
-    var selected by remember { mutableStateOf(setOf<Int>()) }
-    InteriorScaffold(
-        onBack = onBack,
-        onPro = onPro,
-        bottomBar = {
-            V2GradientButton(
-                "حذف ${selected.size} ملفات محددة",
-                {},
-                icon = Icons.Rounded.Delete,
-                trailingChevron = true,
-            )
-        },
-    ) {
-        item { PageHeading("الملفات الكبيرة", "أكبر الملفات التي تستهلك مساحة", Icons.Rounded.Storage, V2Amber) }
-        item { V2SectionLabel("قائمة الملفات", trailing = "${largeFiles.size} ملف") }
-        items(largeFiles.size) { index ->
-            val item = largeFiles[index]
-            val checked = selected.contains(index)
-            V2GlassCard(
-                Modifier.fillMaxWidth().clickable {
-                    selected = if (checked) selected - index else selected + index
-                },
-                padding = 10.dp,
-                radius = 16.dp,
-                glow = item.accent,
-                borderAlpha = if (checked) .50f else .18f,
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        Modifier.size(38.dp).clip(RoundedCornerShape(10.dp))
-                            .background(item.accent.withAlpha(.12f))
-                            .border(1.dp, item.accent.withAlpha(.32f), RoundedCornerShape(10.dp)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(item.icon, null, tint = item.accent, modifier = Modifier.size(18.dp))
-                    }
-                    Spacer(Modifier.width(9.dp))
-                    Column(Modifier.weight(1f)) {
-                        KText(item.name, size = 9.4.sp, weight = FontWeight.SemiBold, maxLines = 1)
-                        KText(item.path, size = 7.2.sp, color = V2Muted, maxLines = 1)
-                    }
-                    KText(item.size, size = 9.4.sp, weight = FontWeight.Bold, color = item.accent)
-                    Spacer(Modifier.width(8.dp))
-                    V2Check(checked, item.accent, onToggle = { selected = if (checked) selected - index else selected + index })
+    val context = LocalContext.current
+    val (refresh, bump) = rememberRefreshCounter()
+    val facts = rememberDeviceFacts(refresh)
+    var message by remember { mutableStateOf<String?>(null) }
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
+        message = if (it.values.any { granted -> granted }) null else "لم يُمنح إذن الوسائط؛ تبقى قراءة التخزين متاحة ويمكن اختيار ملف من النظام."
+        bump()
+    }
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        message = if (uri == null) "أُلغي اختيار الملف؛ لم يتغير شيء" else viewGrantedDocument(context, uri)
+    }
+    InteriorScaffold(onBack, onPro, bottomBar = {
+        V2GradientButton("اختيار ملف وفتحه", { picker.launch(arrayOf("*/*")) }, icon = Icons.Rounded.OpenInNew, height = 48.dp)
+    }) {
+        item { PageHeading("الملفات الكبيرة", "أكبر وسائط في القراءة المتاحة فقط", Icons.Rounded.Storage, V2Amber) }
+        item { ScopedNotice("تعرض القائمة حتى 8 وسائط من فهرس الصور والفيديو المصرح به، وليست مسحاً لجميع الملفات. اضغط لفتح العارض الرسمي. الحذف العام غير مدعوم هنا؛ لا وعد باستعادة أو مساحة محررة.") }
+        message?.let { item { ScopedNotice(it, V2Amber) } }
+        if (facts.computedAt == 0L) item { ScopedNotice("جاري قراءة الوسائط…") }
+        if (!mediaReadPermissions().all { context.checkSelfPermission(it) == android.content.pm.PackageManager.PERMISSION_GRANTED }) {
+            item { V2GhostButton("طلب أذونات الصور والفيديو", { permissionLauncher.launch(mediaReadPermissions()) }, height = 48.dp) }
+        }
+        if (facts.computedAt > 0L && facts.media.largestFiles.isEmpty()) {
+            item { ScopedNotice(if (facts.media.permissionGranted) "لم تُعد القراءة ملفات قابلة للعرض؛ قد تكون المكتبة فارغة أو الاستعلام غير متاح. اختر ملفاً من النظام أو أعد القراءة." else "لا توجد وسائط مقروءة دون إذنك؛ يمكنك استخدام منتقي ملفات النظام.", V2Amber) }
+        }
+        facts.media.largestFiles.sortedByDescending { it.sizeBytes }.forEach { file ->
+            item {
+                ScopedDocumentRow(file.name, formatBytes(file.sizeBytes), file.bucket ?: if (file.isVideo) "فيديو" else "صورة", false) {
+                    message = viewGrantedDocument(context, Uri.parse(file.uriString))
                 }
             }
         }
-        item { PreviewNote("أحجام الملفات ومساراتها بيانات معاينة حتى تُربط بقراءة التخزين الفعلية.") }
+        item { V2GhostButton("تحديث القائمة", bump, icon = Icons.Rounded.Refresh, height = 48.dp) }
     }
 }
 
@@ -2953,69 +2902,44 @@ fun V2SystemLogsScreen(onBack: () -> Unit, onPro: () -> Unit) {
  * Download Cleanup
  * ------------------------------------------------------------------ */
 
-private data class DownloadFileV2(val name: String, val size: String, val type: String, val accent: Color)
-
-private val downloadFiles = listOf(
-    DownloadFileV2("مستند العمل.docx", "2.4 MB", "مستند", V2Cyan),
-    DownloadFileV2("صورة journey.jpg", "3.2 MB", "صورة", V2Pink),
-    DownloadFileV2("تطبيق الألعاب.apk", "45.6 MB", "تطبيق", V2Green),
-    DownloadFileV2("مقطع الرحلة.mp4", "120 MB", "فيديو", V2Violet),
-    DownloadFileV2("ملف Musik.mp3", "5.4 MB", "صوت", V2Amber),
-    DownloadFileV2("أرشيف bestanden.zip", "15.2 MB", "أرشيف", V2Blue),
-    DownloadFileV2("كتاب تعليمي.pdf", "8.9 MB", "مستند", V2Cyan),
-    DownloadFileV2("تطبيق التوصيل.apk", "32.1 MB", "تطبيق", V2Green),
-)
-
 @Composable
 fun V2DownloadCleanupScreen(onBack: () -> Unit, onPro: () -> Unit) {
-    var selected by remember { mutableStateOf(setOf<Int>()) }
-    InteriorScaffold(
-        onBack = onBack,
-        onPro = onPro,
-        bottomBar = {
-            V2GradientButton(
-                "حذف ${selected.size} ملفات من التنزيلات",
-                {},
-                icon = Icons.Rounded.Delete,
-                trailingChevron = true,
-            )
-        },
-    ) {
-        item { PageHeading("تنظيف التنزيلات", "مراجعة وحذف الملفات المحملة", Icons.Rounded.Download, V2Cyan) }
-        item { V2SectionLabel("ملفات التنزيل", trailing = "${downloadFiles.size} ملف") }
-        items(downloadFiles.size) { index ->
-            val item = downloadFiles[index]
-            val checked = selected.contains(index)
-            V2GlassCard(
-                Modifier.fillMaxWidth().clickable {
-                    selected = if (checked) selected - index else selected + index
-                },
-                padding = 10.dp,
-                radius = 16.dp,
-                glow = item.accent,
-                borderAlpha = if (checked) .50f else .18f,
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        Modifier.size(38.dp).clip(RoundedCornerShape(10.dp))
-                            .background(item.accent.withAlpha(.12f))
-                            .border(1.dp, item.accent.withAlpha(.32f), RoundedCornerShape(10.dp)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(Icons.Rounded.Folder, null, tint = item.accent, modifier = Modifier.size(18.dp))
-                    }
-                    Spacer(Modifier.width(9.dp))
-                    Column(Modifier.weight(1f)) {
-                        KText(item.name, size = 9.4.sp, weight = FontWeight.SemiBold, maxLines = 1)
-                        KText(item.type, size = 7.2.sp, color = V2Muted, maxLines = 1)
-                    }
-                    KText(item.size, size = 9.4.sp, weight = FontWeight.Bold, color = item.accent)
-                    Spacer(Modifier.width(8.dp))
-                    V2Check(checked, item.accent, onToggle = { selected = if (checked) selected - index else selected + index })
-                }
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var files by remember { mutableStateOf(emptyList<ScopedDocument>()) }
+    var message by remember { mutableStateOf<String?>(null) }
+    var loading by remember { mutableStateOf(false) }
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+        if (uris.isEmpty()) message = "أُلغي الاختيار؛ لم تُحذف ملفات"
+        else {
+            loading = true
+            scope.launch {
+                try {
+                    files = withContext(Dispatchers.IO) { uris.map { readSelectedDocument(context, it) } }
+                    message = "هذه الملفات التي اخترتها فقط؛ ليست قائمة كل التنزيلات."
+                } catch (error: Exception) {
+                    files = emptyList()
+                    message = "تعذّر قراءة الملفات المختارة: ${error.message}"
+                } finally { loading = false }
             }
         }
-        item { PreviewNote("يمكن استعادة الملفات المحذوفة من سلة المهملات خلال 30 يوماً.") }
+    }
+    InteriorScaffold(onBack, onPro, bottomBar = {
+        V2GradientButton("اختيار ملفات من التنزيلات", {
+            try { picker.launch(arrayOf("*/*")) }
+            catch (error: Exception) { message = "منتقي الملفات غير متاح: ${error.message}" }
+        }, icon = Icons.Rounded.Download, height = 48.dp)
+    }) {
+        item { PageHeading("مراجعة التنزيلات", "اختيار صريح عبر منتقي Android", Icons.Rounded.Download, V2Cyan) }
+        item { ScopedNotice("اختر ملفات من قسم التنزيلات في منتقي النظام، ثم افتحها في العارض. الحذف العام من KNOUX غير مدعوم هنا؛ لا سلة مهملات أو ضمان استعادة خلال 30 يوماً.", V2Amber) }
+        if (loading) item { ScopedNotice("جاري قراءة الملفات المختارة…") }
+        message?.let { item { ScopedNotice(it, V2Amber) } }
+        if (files.isEmpty() && !loading) item { ScopedNotice("لم تُقرأ ملفات بعد. اضغط اختيار ملفات لمنح وصول إلى الملفات التي تريد مراجعتها فقط.") }
+        files.forEach { file ->
+            item { ScopedDocumentRow(file.name, file.bytes?.let(::formatBytes) ?: "حجم غير معلن", file.mime, false) {
+                message = viewGrantedDocument(context, file.uri)
+            } }
+        }
     }
 }
 
@@ -3023,55 +2947,60 @@ fun V2DownloadCleanupScreen(onBack: () -> Unit, onPro: () -> Unit) {
  * File Explorer
  * ------------------------------------------------------------------ */
 
-private data class FolderItemV2(val name: String, val items: String, val accent: Color)
-
-private val folders = listOf(
-    FolderItemV2("Android", "124 عنصراً", V2Violet),
-    FolderItemV2("DCIM", "89 عنصراً", V2Pink),
-    FolderItemV2("Download", "67 عنصراً", V2Cyan),
-    FolderItemV2("WhatsApp", "45 عنصراً", V2Green),
-    FolderItemV2("Telegram", "38 عنصراً", V2Blue),
-    FolderItemV2("Documents", "23 عنصراً", V2Amber),
-    FolderItemV2("Music", "15 عنصراً", V2Pink),
-    FolderItemV2("Movies", "12 عنصراً", V2Violet),
-)
-
 @Composable
 fun V2FileExplorerScreen(onBack: () -> Unit, onPro: () -> Unit) {
-    InteriorScaffold(
-        onBack = onBack,
-        onPro = onPro,
-    ) {
-        item { PageHeading("مستكشف الملفات", "تصفح الملفات والمجلدات على جهازك", Icons.Rounded.Folder, V2Cyan) }
-        item { V2SectionLabel("المجلدات الرئيسية", trailing = "${folders.size} مجلد") }
-        items(folders.size) { index ->
-            val folder = folders[index]
-            V2GlassCard(
-                Modifier.fillMaxWidth().clickable { /* navigate into folder */ },
-                padding = 10.dp,
-                radius = 16.dp,
-                glow = folder.accent,
-                borderAlpha = .24f,
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        Modifier.size(38.dp).clip(RoundedCornerShape(10.dp))
-                            .background(folder.accent.withAlpha(.12f))
-                            .border(1.dp, folder.accent.withAlpha(.32f), RoundedCornerShape(10.dp)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(Icons.Rounded.Folder, null, tint = folder.accent, modifier = Modifier.size(18.dp))
-                    }
-                    Spacer(Modifier.width(9.dp))
-                    Column(Modifier.weight(1f)) {
-                        KText(folder.name, size = 9.6.sp, weight = FontWeight.SemiBold)
-                        KText(folder.items, size = 7.4.sp, color = V2Soft)
-                    }
-                    Icon(Icons.Rounded.ChevronLeft, null, tint = V2Soft, modifier = Modifier.size(15.dp))
-                }
+    val context = LocalContext.current
+    var tree by remember { mutableStateOf<Uri?>(null) }
+    var path by remember { mutableStateOf(emptyList<Pair<String, String>>()) }
+    var entries by remember { mutableStateOf(emptyList<ScopedDocument>()) }
+    var message by remember { mutableStateOf<String?>(null) }
+    var loading by remember { mutableStateOf(false) }
+    val (refresh, bump) = rememberRefreshCounter()
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri == null) message = "أُلغي اختيار المجلد؛ لم يتغير شيء"
+        else try {
+            tree = uri
+            path = listOf(DocumentsContract.getTreeDocumentId(uri) to "المجلد المختار")
+            message = null
+        } catch (error: Exception) { message = "تعذّر فتح المجلد: ${error.message}" }
+    }
+    LaunchedEffect(tree, path, refresh) {
+        val root = tree ?: return@LaunchedEffect
+        val id = path.lastOrNull()?.first ?: return@LaunchedEffect
+        loading = true
+        entries = emptyList()
+        try {
+            entries = withContext(Dispatchers.IO) { readScopedFolder(context, root, id) }
+            message = null
+        } catch (error: Exception) {
+            message = "تعذّر قراءة المجلد المصرح به: ${error.message}"
+        } finally { loading = false }
+    }
+    InteriorScaffold(onBack, onPro, bottomBar = {
+        V2GradientButton("اختيار مجلد من Android", {
+            try { picker.launch(null) }
+            catch (error: Exception) { message = "منتقي المجلدات غير متاح: ${error.message}" }
+        }, icon = Icons.Rounded.Folder, height = 48.dp)
+    }) {
+        item { PageHeading("مستكشف الملفات", "تصفح نطاق اخترته بنفسك عبر SAF", Icons.Rounded.Folder, V2Cyan) }
+        item { ScopedNotice("الوصول للمجلد المختار فقط خلال هذه الجلسة؛ لا صلاحية تخزين شاملة. قد يمنع Android اختيار جذر التخزين أو Download أو Android/data. لا حذف أو وعد استعادة هنا.", V2Amber) }
+        message?.let { item { ScopedNotice(it, V2Amber) } }
+        if (tree == null) item { ScopedNotice("اختر مجلداً لقراءة أسمائه الفعلية. لا توجد مجلدات أو أعداد مفترضة.") }
+        else {
+            item { ScopedNotice(path.joinToString(" / ") { it.second }) }
+            if (path.size > 1) item { V2GhostButton("المجلد الأب", { path = path.dropLast(1) }, height = 48.dp) }
+            if (loading) item { ScopedNotice("جاري القراءة…") }
+            else if (entries.isEmpty() && message == null) item { ScopedNotice("لم يُعد الموفر عناصر في هذا المجلد.") }
+            entries.forEach { entry ->
+                item { ScopedDocumentRow(entry.name, entry.bytes?.let(::formatBytes) ?: "غير معلن", entry.mime, entry.isDirectory) {
+                    if (entry.isDirectory) {
+                        path = path + (DocumentsContract.getDocumentId(entry.uri) to entry.name)
+                    } else message = viewGrantedDocument(context, entry.uri)
+                } }
             }
+            item { ScopedNotice("تُعرض حتى 500 نتيجة لكل مجلد؛ ليست أعداداً لكل الجهاز.") }
+            item { V2GhostButton("إعادة قراءة المجلد", bump, icon = Icons.Rounded.Refresh, height = 48.dp) }
         }
-        item { PreviewNote("تصفح الملفات يتطلب إذن الوصول إلى التخزين من النظام.") }
     }
 }
 

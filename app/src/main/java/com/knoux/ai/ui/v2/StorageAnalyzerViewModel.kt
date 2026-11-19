@@ -54,6 +54,7 @@ class StorageAnalyzerViewModel(
     private var lastTrigger: Int = Int.MIN_VALUE
 
     fun scanStorage(trigger: Int = 0) {
+        if (_state.gate == OperationGate.RUNNING || _state.gate == OperationGate.AWAITING_CONSENT) return
         if (trigger == lastTrigger && (_state.lastScanId != null || _state.isScanning)) return
         lastTrigger = trigger
         _state = _state.copy(isScanning = true, scanError = null)

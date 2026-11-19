@@ -66,7 +66,6 @@ import com.knoux.ai.ui.v2.V2SectionToolScreen
 import com.knoux.ai.ui.v2.V2CleanHubScreen
 import com.knoux.ai.ui.v2.V2CleanToolScreen
 import com.knoux.ai.ui.v2.V2DeepScanScreen
-import com.knoux.ai.ui.v2.V2DuplicateGroupScreen
 import com.knoux.ai.ui.v2.V2DuplicatesScreen
 import com.knoux.ai.ui.v2.V2HomeScreen
 import com.knoux.ai.ui.v2.V2PerformanceReportScreen
@@ -259,6 +258,11 @@ fun KnouxApp(startRoute: String? = null) {
     }
 }
 
+// These catalog routes use dedicated screens below, not the generic section screen.
+internal fun sectionToolNavigationRoutes(): List<String> =
+    SectionTools.defs.map { it.route }
+        .filterNot { it == "bat-readings" || it == "ai-recommendations" }
+
 @Composable
 private fun AppNavHost(
     nav: NavHostController,
@@ -349,13 +353,6 @@ private fun AppNavHost(
                 onPro = { open(ROUTE_PRO) },
             )
         }
-        composable("res-sources") {
-            V2ResidueScreen(
-                onBack = goBack,
-                onReview = { open("residue-item") },
-                onPro = { open(ROUTE_PRO) },
-            )
-        }
         composable("appmanager") {
             V2AppManagerScreen(
                 onBack = goBack,
@@ -421,8 +418,8 @@ private fun AppNavHost(
                 )
             }
         }
-        // The remaining 135 internal services (9 sections × 15), each on its own route.
-        SectionTools.defs.map { it.route }.forEach { toolRoute ->
+        // Nine sections × 15 services, excluding the dedicated screens below.
+        sectionToolNavigationRoutes().forEach { toolRoute ->
             composable(toolRoute) {
                 V2SectionToolScreen(
                     route = toolRoute,
@@ -438,7 +435,11 @@ private fun AppNavHost(
             V2PrivacyRiskScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
         }
         composable("duplicate-group") {
-            V2DuplicateGroupScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
+            V2DuplicatesScreen(
+                onBack = goBack,
+                onOpenDetail = {},
+                onPro = { open(ROUTE_PRO) },
+            )
         }
         composable("deep-scan-summary") {
             V2ScanSummaryScreen(
@@ -464,27 +465,6 @@ private fun AppNavHost(
         }
         composable("ai-recommendations") {
             V2AiRecommendationsScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
-        }
-        // Reports core routes — all backed by the real Room journal reports screen.
-        listOf("rpt-range","rpt-operation","rpt-empty","rpt-cleanup","rpt-storage","rpt-device","rpt-trends").forEach { route ->
-            composable(route) {
-                V2ReportsScreen(
-                    onOpenDetail = { open("performance-report") },
-                    onMenu = { open(SETTINGS_ROUTE) },
-                    onPro = { open(ROUTE_PRO) },
-                    onProfile = {},
-                    onNotifications = {},
-                )
-            }
-        }
-        // AI optimization core routes — all backed by the real AI recommendations screen.
-        listOf("ai-storage","ai-confidence","ai-goal","ai-customize","ai-reasons","ai-execute","ai-results","ai-battery","ai-thermal").forEach { route ->
-            composable(route) {
-                V2AiRecommendationsScreen(
-                    onBack = goBack,
-                    onPro = { open(ROUTE_PRO) },
-                )
-            }
         }
         composable("large-files") {
             V2LargeFilesScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })

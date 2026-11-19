@@ -329,6 +329,16 @@ internal object SectionTools {
 @Composable
 fun V2SectionToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
     val def = SectionTools.byRoute(route) ?: return
+    // Duplicate steps open the actual review/consent workflow rather than a
+    // read-only rendering of the Home quick-scan cache.
+    if (def.section == "duplicates") {
+        V2DuplicatesWorkspace(
+            onBack = onBack,
+            onPro = onPro,
+            initialMode = if (route == "dup-compare") DuplicateScanMode.VISUAL else DuplicateScanMode.EXACT,
+        )
+        return
+    }
     val context = LocalContext.current
     val navigate = LocalServiceNavigate.current
     val (refresh, bump) = rememberRefreshCounter()

@@ -105,7 +105,7 @@ private fun mediaSummary(f: DeviceFacts): String =
 private fun sensitiveApps(f: DeviceFacts): Int =
     f.installedApps.count { it.sensitivePermissions.isNotEmpty() }
 
-private fun lastScan(h: List<ScanHistoryEntry>): ScanHistoryEntry? = h.lastOrNull()
+private fun lastScan(h: List<ScanHistoryEntry>): ScanHistoryEntry? = newestScan(h)
 
 private fun d(
     section: String,
@@ -840,9 +840,9 @@ internal object SectionToolsCatalog {
             list = ToolList.HISTORY,
             rows = { _, h ->
                 listOf(
-                    tr(Icons.Rounded.TrendingUp, "أول كاش", h.firstOrNull()?.let { formatBytes(it.cacheBytes) } ?: "لا سجل", V2Cyan),
+                    tr(Icons.Rounded.TrendingUp, "أول كاش", oldestScan(h)?.let { formatBytes(it.cacheBytes) } ?: "لا سجل", V2Cyan),
                     tr(Icons.Rounded.Insights, "آخر كاش", lastScan(h)?.let { formatBytes(it.cacheBytes) } ?: "لا سجل", V2Pink),
-                    tr(Icons.Rounded.Storage, "تغير التخزين", if (h.size >= 2) formatBytes(lastScan(h)!!.storageUsedBytes - h.first().storageUsedBytes) else "يحتاج قياسين", V2Amber),
+                    tr(Icons.Rounded.Storage, "تغير التخزين", if (h.map { it.timestamp }.distinct().size >= 2) formatSignedBytes(lastScan(h)!!.storageUsedBytes - oldestScan(h)!!.storageUsedBytes) else "يحتاج قياسين", V2Amber),
                 )
             },
             note = "الرسم الحقيقي يحتاج قياسين على الأقل. حتى ذلك الحين نعرض الفروق لا رسمًا مخترعًا.",
@@ -1222,15 +1222,15 @@ internal object SectionToolsCatalog {
         d(
             "battery", "bat-saving", "09.6", "توفير الطاقة", "POWER SAVING STATE",
             "التحويل إلى شاشة توفير الطاقة الرسمية", Icons.Rounded.BatterySaver, V2Green,
-            handoff = ToolHandoff.BATTERY_SAVER, actionLabel = "فتح توفير الطاقة",
+            action = "battery-diagnostics", actionLabel = "قراءة وضع التوفير وإعداداته",
             rows = { f, _ ->
                 listOf(
-                    tr(Icons.Rounded.BatterySaver, "وضع التوفير", "يُدار من Android", V2Green),
+                    tr(Icons.Rounded.BatterySaver, "وضع التوفير", "قراءة مباشرة في شاشة التشخيص", V2Green),
                     tr(Icons.Rounded.BatteryFull, "المستوى", f.battery.levelPercent?.let { "$it%" } ?: "غير مقروء", V2Cyan),
                     tr(Icons.Rounded.Bolt, "الحالة", f.battery.statusLabel, V2Amber),
                 )
             },
-            note = "حالة وضع التوفير لا تُقرأ عبر API عام موثوق. نفتح الشاشة الرسمية بدل ادعاء الحالة.",
+            note = "تعرض شاشة التشخيص حالة PowerManager.isPowerSaveMode الفعلية وتفتح إعدادات توفير الطاقة. لا يغيّر KNOUX الوضع تلقائيًا.",
         ),
         d(
             "battery", "bat-readings", "09.7", "عرض قراءات البطارية", "READINGS & METRICS",
@@ -1407,15 +1407,17 @@ internal object SectionToolsCatalog {
             "الفرق بين أول وآخر قياس محفوظ", Icons.Rounded.Compare, V2Cyan,
             pro = true,
             rows = { _, h ->
-                val first = h.firstOrNull()
-                val last = h.lastOrNull()
-                if (first == null || last == null || h.size < 2) {
+                val first = oldestScan(h)
+                val last = newestScan(h)
+                if (first == null || last == null || first.timestamp == last.timestamp) {
                     listOf(tr(Icons.Rounded.Info, "تحتاج قياسين", "شغّل الفحص مرتين لرؤية الفرق", V2Soft))
                 } else {
                     listOf(
-                        tr(Icons.Rounded.Storage, "تغير التخزين", formatBytes(last.storageUsedBytes - first.storageUsedBytes), V2Cyan),
-                        tr(Icons.Rounded.CleaningServices, "تغير الكاش", formatBytes(last.cacheBytes - first.cacheBytes), V2Pink),
-                        tr(Icons.Rounded.BatteryFull, "تغير البطارية", "${(last.batteryLevel ?: 0) - (first.batteryLevel ?: 0)}%", V2Green),
+                        tr(Icons.Rounded.Storage, "قبل (الأقدم)", formatBytes(first.storageUsedBytes), V2Violet),
+                        tr(Icons.Rounded.Storage, "بعد (الأحدث)", formatBytes(last.storageUsedBytes), V2Cyan),
+                        tr(Icons.Rounded.Storage, "تغير التخزين", formatSignedBytes(last.storageUsedBytes - first.storageUsedBytes), V2Cyan),
+                        tr(Icons.Rounded.CleaningServices, "تغير الكاش", formatSignedBytes(last.cacheBytes - first.cacheBytes), V2Pink),
+                        tr(Icons.Rounded.BatteryFull, "تغير البطارية", formatBatteryDelta(first.batteryLevel, last.batteryLevel), V2Green),
                     )
                 }
             },

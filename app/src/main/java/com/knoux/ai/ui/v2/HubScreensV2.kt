@@ -44,10 +44,14 @@ import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Verified
+import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.TextButton
+import android.app.Application
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -871,9 +875,16 @@ private data class CleanCategory(val name: String, val sub: String, val size: St
 fun V2SmartCleanScreen(onBack: () -> Unit, onOpenDeepScan: () -> Unit, onPro: () -> Unit) {
     val context = LocalContext.current
     val (refresh, bump) = rememberRefreshCounter()
-    val facts = rememberDeviceFacts(refresh)
-    var confirm by remember { mutableStateOf(false) }
-    var lastFreed by remember { mutableStateOf<Long?>(null) }
+    val application = context.applicationContext as Application
+    val repository = remember(application) { KnouxRepository(AppDatabase.getDatabase(application)) }
+    val cleaner: StorageAnalyzerViewModel = viewModel(
+        key = "smart-clean-storage",
+        initializer = { StorageAnalyzerViewModel(application, repository) },
+    )
+    LaunchedEffect(refresh) { cleaner.scanStorage(refresh) }
+    val cleanState = cleaner.state
+    val facts = cleanState.facts
+    val busy = cleanState.isScanning || cleanState.gate == OperationGate.RUNNING || cleanState.gate == OperationGate.AWAITING_CONSENT
 
     val cacheBytes = facts.ownCacheBytes
     val cacheText = formatBytes(cacheBytes)
@@ -881,25 +892,24 @@ fun V2SmartCleanScreen(onBack: () -> Unit, onOpenDeepScan: () -> Unit, onPro: ()
         (cacheBytes.toFloat() / (facts.storage.freeBytes + cacheBytes).toFloat()).coerceIn(0f, 1f)
     } else 0f
 
-    if (confirm) {
+    if (cleanState.gate == OperationGate.AWAITING_CONSENT) {
         AlertDialog(
-            onDismissRequest = { confirm = false },
+            onDismissRequest = { cleaner.cancelClearOwnCache() },
             title = { androidx.compose.material3.Text("تنظيف كاش KNOUX") },
             text = {
                 androidx.compose.material3.Text(
-                    "سيتم حذف $cacheText من ملفات كاش KNOUX فقط (${formatCount(facts.ownCacheFiles)} ملف). " +
-                        "لن تُحذف صورك أو مستنداتك أو بيانات التطبيقات الأخرى."
+                    "الكاش المقاس قبل الطلب: ${formatBytes(cleanState.measuredBefore)}. " +
+                        "سيُحذف كاش KNOUX فقط دون الصور والمستندات وبيانات التطبيقات الأخرى. " +
+                        "الحذف دائم؛ ستُعاد القراءة وتُحفظ النتيجة في Room."
                 )
             },
             confirmButton = {
-                TextButton(onClick = {
-                    confirm = false
-                    lastFreed = clearOwnCache(context)
-                    bump()
-                }) { androidx.compose.material3.Text("حذف الكاش") }
+                TextButton(modifier = Modifier.height(48.dp), onClick = { cleaner.confirmClearOwnCache() }) {
+                    androidx.compose.material3.Text("تأكيد الحذف")
+                }
             },
             dismissButton = {
-                TextButton(onClick = { confirm = false }) {
+                TextButton(modifier = Modifier.height(48.dp), onClick = { cleaner.cancelClearOwnCache() }) {
                     androidx.compose.material3.Text("إلغاء")
                 }
             },
@@ -917,8 +927,8 @@ fun V2SmartCleanScreen(onBack: () -> Unit, onOpenDeepScan: () -> Unit, onPro: ()
                 item {
                     ServiceBanner(
                         spec = ServiceSpecs.smartClean,
-                        status = if (cacheBytes > 0L) "كاش مقروء" else "لا كاش الآن",
-                        statusColor = if (cacheBytes > 0L) V2Green else V2Muted,
+                        status = if (!cleanState.loaded) "جاري القراءة" else if (cacheBytes > 0L) "كاش مقروء" else "لا كاش الآن",
+                        statusColor = if (!cleanState.loaded) V2Amber else if (cacheBytes > 0L) V2Green else V2Muted,
                         metric = "$cacheText · ${formatCount(facts.ownCacheFiles)} ملف",
                     )
                 }
@@ -959,22 +969,32 @@ fun V2SmartCleanScreen(onBack: () -> Unit, onOpenDeepScan: () -> Unit, onPro: ()
                         icon = Icons.Rounded.Shield,
                     )
                 }
-                if (lastFreed != null) {
+                if (cleanState.gate == OperationGate.VERIFIED || cleanState.gate == OperationGate.PARTIAL) {
                     item {
                         V2GlassCard(
                             Modifier.fillMaxWidth(),
                             padding = 10.dp,
                             radius = 16.dp,
-                            glow = V2Green,
+                            glow = if (cleanState.gate == OperationGate.VERIFIED) V2Green else V2Amber,
                             borderAlpha = .45f,
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Rounded.Verified, null, tint = V2Green, modifier = Modifier.size(20.dp))
+                                Icon(
+                                    if (cleanState.gate == OperationGate.VERIFIED) Icons.Rounded.Verified else Icons.Rounded.Warning,
+                                    null,
+                                    tint = if (cleanState.gate == OperationGate.VERIFIED) V2Green else V2Amber,
+                                    modifier = Modifier.size(20.dp),
+                                )
                                 Spacer(Modifier.width(8.dp))
                                 Column(Modifier.weight(1f)) {
-                                    KText("تم حذف كاش KNOUX فعليًا", size = 10.sp, weight = FontWeight.Bold, color = V2Green)
                                     KText(
-                                        "المساحة المحررة: ${formatBytes(lastFreed ?: 0L)} · أعد القراءة للتأكد",
+                                        if (cleanState.gate == OperationGate.VERIFIED) "تم مسح كاش KNOUX وتأكد الفرق" else "المسح جزئي — راجع القياس",
+                                        size = 10.sp,
+                                        weight = FontWeight.Bold,
+                                        color = if (cleanState.gate == OperationGate.VERIFIED) V2Green else V2Amber,
+                                    )
+                                    KText(
+                                        cleanState.operationMessage ?: "الكاش بعد العملية ${formatBytes(cleanState.measuredAfter ?: 0L)}",
                                         size = 8.sp,
                                         color = V2Soft,
                                     )
@@ -983,7 +1003,7 @@ fun V2SmartCleanScreen(onBack: () -> Unit, onOpenDeepScan: () -> Unit, onPro: ()
                                     Icons.Rounded.Refresh,
                                     null,
                                     tint = V2Cyan,
-                                    modifier = Modifier.size(20.dp).clickable { lastFreed = null; bump() },
+                                    modifier = Modifier.size(20.dp).clickable { bump() },
                                 )
                             }
                         }
@@ -1005,7 +1025,7 @@ fun V2SmartCleanScreen(onBack: () -> Unit, onOpenDeepScan: () -> Unit, onPro: ()
                 Box(Modifier.weight(.82f)) {
                     V2GhostButton(
                         "تحديث",
-                        onClick = { lastFreed = null; bump() },
+                        onClick = { bump() },
                         icon = Icons.Rounded.Refresh,
                         height = 46.dp,
                     )
@@ -1013,7 +1033,7 @@ fun V2SmartCleanScreen(onBack: () -> Unit, onOpenDeepScan: () -> Unit, onPro: ()
                 Box(Modifier.weight(1.18f)) {
                     V2GradientButton(
                         if (cacheBytes > 0L) "تنظيف $cacheText" else "لا يوجد كاش",
-                        onClick = { if (cacheBytes > 0L) confirm = true else bump() },
+                        onClick = { if (cacheBytes > 0L) cleaner.prepareClearOwnCache() else bump() },
                         icon = Icons.Rounded.CleaningServices,
                         height = 46.dp,
                     )
