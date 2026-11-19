@@ -107,6 +107,7 @@ import com.knoux.ai.developer.ui.ModelExplorerScreen
 import com.knoux.ai.developer.ui.AgentEngineScreen
 import com.knoux.ai.developer.ui.MobileDeveloperWorkspaceScreen
 import com.knoux.ai.developer.ui.AgentToolSystemScreen
+import com.knoux.ai.cloud.ui.UnifiedCloudCleanerScreen
 
 class MainActivity : androidx.fragment.app.FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -578,6 +579,9 @@ private fun AppNavHost(
         }
         composable("dev-tool-system") {
             AgentToolSystemScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
+        }
+        composable("cloud-cleaner") {
+            UnifiedCloudCleanerScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
         }
     }
 }
