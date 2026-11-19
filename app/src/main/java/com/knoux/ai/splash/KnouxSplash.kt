@@ -23,7 +23,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,11 +49,11 @@ import androidx.compose.ui.unit.dp
 import com.knoux.ai.R
 import com.knoux.ai.ui.theme.ProDeepInk
 import com.knoux.ai.ui.theme.ProArcticCyan
-import com.knoux.ai.ui.theme.ProArcticCyan
 import com.knoux.ai.ui.theme.ProBlue
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -61,27 +65,60 @@ private const val CLICK_AT_MS = 2440f
 private fun seg(t: Float, start: Float, end: Float): Float =
     ((t - start) / (end - start)).coerceIn(0f, 1f)
 
+/** Preloads the splash click sound off the main thread. Created once, kept for splash lifetime. */
+@Composable
+private fun splashSoundPlayer(context: Context): SplashClickPlayer {
+    val scope = rememberCoroutineScope()
+    return remember(context) {
+        SplashClickPlayer(context).also { player ->
+            scope.launch {
+                withContext(kotlinx.coroutines.Dispatchers.IO) {
+                    player.preload()
+                }
+            }
+        }
+    }
+}
+
 @Composable
 fun KnouxSplashScreen(
     onFinished: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val calm = remember { reducedMotion(context) }
-    val kBitmap = remember {
-        BitmapFactory.decodeResource(context.resources, R.drawable.knoux_symbol_alpha)?.asImageBitmap()
+
+    // Bitmaps decoded on Dispatchers.IO, not during composition.
+    // Keep the android.graphics.Bitmap to read width/height without main-thread cost,
+    // convert to Compose ImageBitmap only at draw time.
+    val kBitmapState = remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    val wordBitmapState = remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    LaunchedEffect(R.drawable.knoux_symbol_alpha) {
+        withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.knoux_symbol_alpha)
+            kBitmapState.value = bitmap
+        }
     }
-    val wordBitmap = remember {
-        BitmapFactory.decodeResource(context.resources, R.drawable.knoux_wordmark_alpha)?.asImageBitmap()
+    LaunchedEffect(R.drawable.knoux_wordmark_alpha) {
+        withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.knoux_wordmark_alpha)
+            wordBitmapState.value = bitmap
+        }
     }
 
+    // Sound preloaded once on Dispatchers.IO; plays once at the click frame.
+    val click = splashSoundPlayer(context)
+
     val clock = remember { Animatable(0f) }
-    val click = remember { SplashClickPlayer(context) }
     DisposableEffect(Unit) {
-        click.preload()
         onDispose { click.release() }
     }
 
+    // Leave only when: (a) the animation timeline is complete, AND
+    // (b) the entry destination has been resolved by StartupCoordinator.
+    // The caller gates onFinished on destination != null, so we never
+    // transition before both the artwork and the session decision are ready.
     LaunchedEffect(Unit) {
         if (calm) {
             clock.snapTo(1f)
@@ -89,14 +126,12 @@ fun KnouxSplashScreen(
             onFinished()
             return@LaunchedEffect
         }
-        launch {
-            clock.animateTo(1f, tween(TOTAL_MS.toInt(), easing = LinearEasing))
-            onFinished()
-        }
+        clock.animateTo(1f, tween(TOTAL_MS.toInt(), easing = LinearEasing))
         launch {
             snapshotFlow { clock.value }.first { it * TOTAL_MS >= CLICK_AT_MS }
             click.playOnce()
         }
+        onFinished()
     }
 
     val t = clock.value * TOTAL_MS
@@ -171,7 +206,8 @@ fun KnouxSplashScreen(
         ) {
             // --- authentic K raster, revealed stroke by stroke with a light tip ---
             Canvas(Modifier.size(width = 200.dp, height = 171.dp)) {
-                val bmp = kBitmap ?: return@Canvas
+                val androidBmp = requireNotNull(kBitmapState.value)
+                val bmp = androidBmp.asImageBitmap()
                 val dst = Size(size.width, size.height)
                 if (calm || t >= 1120f) {
                     // Draw the approved raster exactly once after the reveal.
@@ -181,7 +217,7 @@ fun KnouxSplashScreen(
                     drawImage(
                         image = bmp,
                         srcOffset = IntOffset.Zero,
-                        srcSize = IntSize(bmp.width, bmp.height),
+                        srcSize = IntSize(androidBmp.width, androidBmp.height),
                         dstOffset = IntOffset.Zero,
                         dstSize = IntSize(dst.width.toInt(), dst.height.toInt()),
                     )
@@ -199,9 +235,10 @@ fun KnouxSplashScreen(
 
             // --- lowercase wordmark write-on ---
             Canvas(Modifier.fillMaxWidth().height(52.dp)) {
-                val bmp = wordBitmap ?: return@Canvas
+                val androidBmp = requireNotNull(wordBitmapState.value)
+                val bmp = androidBmp.asImageBitmap()
                 val h = size.height * 0.88f
-                val w = h * (bmp.width.toFloat() / bmp.height.toFloat())
+                val w = h * (androidBmp.width.toFloat() / androidBmp.height.toFloat())
                 val left = (size.width - w) / 2f
                 val top = (size.height - h) / 2f
                 val p = if (calm) 1f else seg(t, 1030f, 1680f)
@@ -210,7 +247,7 @@ fun KnouxSplashScreen(
                     drawImage(
                         image = bmp,
                         srcOffset = IntOffset.Zero,
-                        srcSize = IntSize(bmp.width, bmp.height),
+                        srcSize = IntSize(androidBmp.width, androidBmp.height),
                         dstOffset = IntOffset(left.toInt(), top.toInt()),
                         dstSize = IntSize(w.toInt(), h.toInt()),
                     )

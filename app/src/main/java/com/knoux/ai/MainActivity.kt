@@ -24,10 +24,15 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -47,8 +52,9 @@ import com.knoux.ai.ui.v2.LocalProActive
 import com.knoux.ai.ui.v2.LocalProTheme
 import com.knoux.ai.ui.v2.LocalServiceNavigate
 import com.knoux.ai.ui.v2.ProTheme
-import com.knoux.ai.ui.v2.hasSeenKnouxOnboarding
 import com.knoux.ai.ui.v2.markKnouxOnboardingSeen
+import com.knoux.ai.startup.StartDestination
+import com.knoux.ai.startup.StartupCoordinator
 import com.knoux.ai.ui.v2.V2AiRecommendationsScreen
 import com.knoux.ai.ui.v2.V2AiScreen
 import com.knoux.ai.ui.v2.V2AppDetailScreen
@@ -90,6 +96,10 @@ import com.knoux.ai.ui.v2.V2NetworkScanScreen
 import com.knoux.ai.ui.v2.V2SecurityScanScreen
 import com.knoux.ai.ui.v2.V2NotificationManagerScreen
 import com.knoux.ai.ui.v2.V2ToolsHubScreen
+import com.knoux.ai.ui.v2.V2DeveloperToolsScreen
+import com.knoux.ai.ui.v2.V2GoogleServicesScreen
+import com.knoux.ai.ui.v2.V2AdvancedSecurityScreen
+import com.knoux.ai.ui.v2.V2BackupRestoreScreen
 
 class MainActivity : androidx.fragment.app.FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -98,9 +108,8 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
         // Debug-only route injection so every screen can be inspected directly with adb.
         val debugRoute = if (BuildConfig.DEBUG) intent?.getStringExtra("route") else null
         if (BuildConfig.DEBUG) Log.i("KnouxRoute", "onCreate route=$debugRoute")
-        // Load the local Pro switch before the first composition so the very first
-        // frame already carries the saved identity (no purple flash, no missing badges).
-        KnouxProState.load(this)
+        // KnouxProState.previewEnabled is now resolved off the main thread inside KnouxApp
+        // via produceState, so onCreate stays free of blocking I/O before the first frame.
         setContent {
             KnouxTheme {
                 KnouxApp(startRoute = debugRoute)
@@ -123,9 +132,15 @@ private enum class EntryStage { Splash, Onboarding, Auth, Shell }
 @Composable
 fun KnouxApp(startRoute: String? = null) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val entryDebugRoute = startRoute?.takeIf { it == "onboarding" || it == "auth" }
     val shellStartRoute = startRoute?.takeUnless { it == "onboarding" || it == "auth" }
-    val onboardingSeen = remember { hasSeenKnouxOnboarding(context) }
+    // Resolve the post-splash destination once, off the main thread, while the
+    // approved splash artwork and sound timeline run unchanged.
+    val coordinator = remember {
+        StartupCoordinator(context, scope).also { it.resolve() }
+    }
+    val destination = coordinator.destination.value
     var entryStage by rememberSaveable {
         mutableStateOf(
             when {
@@ -135,6 +150,38 @@ fun KnouxApp(startRoute: String? = null) {
                 else -> EntryStage.Splash
             }
         )
+    }
+    var splashFinished by remember { mutableStateOf(false) }
+
+    // Resolve Pro preview identity off the main thread: read SharedPreferences on
+    // Dispatchers.IO so the first frame is not blocked by disk I/O.
+    val proPreview by produceState(initialValue = false, key1 = context) {
+        val ctx = context.applicationContext
+        withContext(kotlinx.coroutines.Dispatchers.IO) {
+            KnouxProState.load(ctx)
+        }
+        value = KnouxProState.previewEnabled
+    }
+
+    // Leave splash exactly once: after the animation finishes AND the local
+    // session decision is ready. Returning users with a valid local session go
+    // straight to Shell; no login flash, no forced Auth detour.
+    LaunchedEffect(splashFinished, destination) {
+        if (entryStage == EntryStage.Splash && splashFinished && destination != null) {
+            entryStage = when (destination) {
+                StartDestination.Onboarding -> EntryStage.Onboarding
+                StartDestination.Shell -> EntryStage.Shell
+                StartDestination.Auth -> EntryStage.Auth
+                else -> EntryStage.Splash
+            }
+        }
+    }
+    // If the destination resolves after the animation already finished, still
+    // hand off once (and only once) so there is no extra wait on a slow device.
+    LaunchedEffect(destination) {
+        if (destination != null && entryStage == EntryStage.Splash && !splashFinished) {
+            splashFinished = true
+        }
     }
     var signedIn by rememberSaveable { mutableStateOf(false) }
     var accountInfoVisible by remember { mutableStateOf(false) }
@@ -161,7 +208,6 @@ fun KnouxApp(startRoute: String? = null) {
     // markers on the 50 paid services. It is a debug/preview presentation, not a
     // verified entitlement (billing is Stage 2); LocalProActive stays false in
     // release until a real entitlement is supplied.
-    val proPreview = KnouxProState.previewEnabled
     CompositionLocalProvider(
         LocalServiceNavigate provides open,
         LocalProTheme provides if (proPreview) ProTheme.Pro else ProTheme.Standard,
@@ -177,9 +223,7 @@ fun KnouxApp(startRoute: String? = null) {
         ) { stage ->
             when (stage) {
                 EntryStage.Splash -> KnouxSplashScreen(
-                    onFinished = {
-                        entryStage = if (onboardingSeen) EntryStage.Auth else EntryStage.Onboarding
-                    }
+                    onFinished = { splashFinished = true }
                 )
                 EntryStage.Onboarding -> KnouxOnboarding(
                     onFinish = {
@@ -492,6 +536,19 @@ private fun AppNavHost(
         }
         composable("notification-manager") {
             V2NotificationManagerScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
+        }
+        // The four owner-requested extra section hubs route to real device screens.
+        composable("developer-info") {
+            V2DeveloperToolsScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
+        }
+        composable("google-services") {
+            V2GoogleServicesScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
+        }
+        composable("advanced-security") {
+            V2AdvancedSecurityScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
+        }
+        composable("backup-restore") {
+            V2BackupRestoreScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
         }
     }
 }
