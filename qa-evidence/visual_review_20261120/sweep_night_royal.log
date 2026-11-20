@@ -1,0 +1,79 @@
+/sdcard/knoux_vis.png: 1 file pulled, 0 skipped. 26.1 MB/s (1111019 bytes in 0.041s)
+/sdcard/knoux_vis.xml: 1 file pulled, 0 skipped. 5.3 MB/s (33470 bytes in 0.006s)
+home                       resumed=True png=1111019 crash=False
+/sdcard/knoux_vis.png: 1 file pulled, 0 skipped. 18.5 MB/s (1132659 bytes in 0.059s)
+/sdcard/knoux_vis.xml: 1 file pulled, 0 skipped. 9.4 MB/s (35883 bytes in 0.004s)
+hub-smartclean             resumed=True png=1132659 crash=False
+/sdcard/knoux_vis.png: 1 file pulled, 0 skipped. 25.2 MB/s (1149991 bytes in 0.044s)
+/sdcard/knoux_vis.xml: 1 file pulled, 0 skipped. 8.1 MB/s (36074 bytes in 0.004s)
+hub-storage                resumed=True png=1149991 crash=False
+/sdcard/knoux_vis.png: 1 file pulled, 0 skipped. 26.4 MB/s (1082067 bytes in 0.039s)
+/sdcard/knoux_vis.xml: 1 file pulled, 0 skipped. 7.3 MB/s (28242 bytes in 0.004s)
+hub-developer              resumed=True png=1082067 crash=False
+/sdcard/knoux_vis.png: 1 file pulled, 0 skipped. 11.8 MB/s (1012765 bytes in 0.082s)
+/sdcard/knoux_vis.xml: 1 file pulled, 0 skipped. 2.0 MB/s (21505 bytes in 0.010s)
+developer-info             resumed=True png=1012765 crash=False
+/sdcard/knoux_vis.png: 1 file pulled, 0 skipped. 19.3 MB/s (1011778 bytes in 0.050s)
+/sdcard/knoux_vis.xml: 1 file pulled, 0 skipped. 5.0 MB/s (21458 bytes in 0.004s)
+google-services            resumed=True png=1011778 crash=False
+/sdcard/knoux_vis.png: 1 file pulled, 0 skipped. 6.9 MB/s (1019190 bytes in 0.140s)
+/sdcard/knoux_vis.xml: 1 file pulled, 0 skipped. 1.9 MB/s (21541 bytes in 0.011s)
+advanced-security          resumed=True png=1019190 crash=False
+/sdcard/knoux_vis.png: 1 file pulled, 0 skipped. 31.8 MB/s (1016187 bytes in 0.031s)
+/sdcard/knoux_vis.xml: 1 file pulled, 0 skipped. 0.4 MB/s (21486 bytes in 0.053s)
+backup-restore             resumed=True png=1016187 crash=False
+/sdcard/knoux_vis.png: 1 file pulled, 0 skipped. 5.0 MB/s (710435 bytes in 0.136s)
+/sdcard/knoux_vis.xml: 1 file pulled, 0 skipped. 0.3 MB/s (22506 bytes in 0.064s)
+developer-studio           resumed=True png=710435 crash=False
+/sdcard/knoux_vis.png: 1 file pulled, 0 skipped. 7.5 MB/s (441795 bytes in 0.056s)
+/sdcard/knoux_vis.xml: 1 file pulled, 0 skipped. 4.9 MB/s (31638 bytes in 0.006s)
+dev-provider-marketplace   resumed=True png=441795 crash=False
+/sdcard/knoux_vis.png: 1 file pulled, 0 skipped. 7.5 MB/s (433143 bytes in 0.055s)
+/sdcard/knoux_vis.xml: 1 file pulled, 0 skipped. 3.9 MB/s (28620 bytes in 0.007s)
+dev-api-key-vault          resumed=True png=433143 crash=False
+/sdcard/knoux_vis.png: 1 file pulled, 0 skipped. 12.9 MB/s (571365 bytes in 0.042s)
+/sdcard/knoux_vis.xml: 1 file pulled, 0 skipped. 0.3 MB/s (12995 bytes in 0.037s)
+dev-model-explorer         resumed=True png=571365 crash=False
+/sdcard/knoux_vis.png: 1 file pulled, 0 skipped. 6.1 MB/s (470897 bytes in 0.074s)
+/sdcard/knoux_vis.xml: 1 file pulled, 0 skipped. 0.5 MB/s (27943 bytes in 0.053s)
+dev-agent-engine           resumed=True png=470897 crash=False
+/sdcard/knoux_vis.png: 1 file pulled, 0 skipped. 7.6 MB/s (591644 bytes in 0.074s)
+/sdcard/knoux_vis.xml: 1 file pulled, 0 skipped. 0.6 MB/s (14521 bytes in 0.024s)
+dev-workspace              resumed=True png=591644 crash=False
+/sdcard/knoux_vis.png: 1 file pulled, 0 skipped. 12.6 MB/s (460527 bytes in 0.035s)
+/sdcard/knoux_vis.xml: 1 file pulled, 0 skipped. 0.6 MB/s (25156 bytes in 0.040s)
+dev-tool-system            resumed=True png=460527 crash=False
+/sdcard/knoux_vis.png: 1 file pulled, 0 skipped. 7.0 MB/s (483680 bytes in 0.066s)
+/sdcard/knoux_vis.xml: 1 file pulled, 0 skipped. 0.5 MB/s (18293 bytes in 0.036s)
+cloud-cleaner              resumed=True png=483680 crash=False
+/sdcard/knoux_vis.png: 1 file pulled, 0 skipped. 18.4 MB/s (557935 bytes in 0.029s)
+/sdcard/knoux_vis.xml: 1 file pulled, 0 skipped. 1.2 MB/s (17965 bytes in 0.015s)
+google-storage             resumed=True png=557935 crash=False
+/sdcard/knoux_vis.png: 1 file pulled, 0 skipped. 4.4 MB/s (552152 bytes in 0.120s)
+/sdcard/knoux_vis.xml: 1 file pulled, 0 skipped. 0.2 MB/s (16219 bytes in 0.067s)
+microsoft-storage          resumed=True png=552152 crash=False
+/sdcard/knoux_vis.png: 1 file pulled, 0 skipped. 22.5 MB/s (835337 bytes in 0.035s)
+/sdcard/knoux_vis.xml: 1 file pulled, 0 skipped. 0.3 MB/s (19108 bytes in 0.068s)
+deepscan                   resumed=True png=835337 crash=False
+/sdcard/knoux_vis.png: 1 file pulled, 0 skipped. 8.2 MB/s (892254 bytes in 0.104s)
+/sdcard/knoux_vis.xml: 1 file pulled, 0 skipped. 0.2 MB/s (15430 bytes in 0.076s)
+residue                    resumed=True png=892254 crash=False
+/sdcard/knoux_vis.png: 1 file pulled, 0 skipped. 7.6 MB/s (918052 bytes in 0.115s)
+/sdcard/knoux_vis.xml: 1 file pulled, 0 skipped. 0.2 MB/s (17301 bytes in 0.091s)
+privacy                    resumed=True png=918052 crash=False
+/sdcard/knoux_vis.png: 1 file pulled, 0 skipped. 9.4 MB/s (214900 bytes in 0.022s)
+/sdcard/knoux_vis.xml: 1 file pulled, 0 skipped. 0.8 MB/s (17109 bytes in 0.021s)
+duplicates                 resumed=True png=214900 crash=False
+/sdcard/knoux_vis.png: 1 file pulled, 0 skipped. 16.7 MB/s (891049 bytes in 0.051s)
+/sdcard/knoux_vis.xml: 1 file pulled, 0 skipped. 0.1 MB/s (18819 bytes in 0.136s)
+appmanager                 resumed=True png=891049 crash=False
+/sdcard/knoux_vis.png: 1 file pulled, 0 skipped. 3.1 MB/s (777775 bytes in 0.236s)
+/sdcard/knoux_vis.xml: 1 file pulled, 0 skipped. 0.2 MB/s (24041 bytes in 0.126s)
+reports                    resumed=True png=777775 crash=False
+/sdcard/knoux_vis.png: 1 file pulled, 0 skipped. 1.8 MB/s (671106 bytes in 0.351s)
+/sdcard/knoux_vis.xml: 1 file pulled, 0 skipped. 0.5 MB/s (17989 bytes in 0.034s)
+pro                        resumed=True png=671106 crash=False
+/sdcard/knoux_vis.png: 1 file pulled, 0 skipped. 6.6 MB/s (843324 bytes in 0.123s)
+/sdcard/knoux_vis.xml: 1 file pulled, 0 skipped. 0.1 MB/s (13435 bytes in 0.212s)
+onboarding                 resumed=True png=843324 crash=False
+DONE routes=26
