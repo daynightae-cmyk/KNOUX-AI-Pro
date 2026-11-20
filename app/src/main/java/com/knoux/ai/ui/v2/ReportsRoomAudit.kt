@@ -72,7 +72,7 @@ fun ReportsRoomAuditCard(
                         .background(V2Cyan.withAlpha(.12f))
                         .padding(horizontal = 6.dp, vertical = 1.dp)
                 ) {
-                    KText("قياس فعلي", size = 6.6.sp, weight = FontWeight.Bold, color = V2Cyan)
+                    KText("قياس فعلي", size = 9.sp, weight = FontWeight.Bold, color = V2Cyan)
                 }
             }
             Spacer(Modifier.height(8.dp))
@@ -89,7 +89,7 @@ fun ReportsRoomAuditCard(
                     Spacer(Modifier.width(6.dp))
                     KText(
                         "مفيش عمليات مسجلة لسه. نفّذ خدمة من الأقسام وبعدها هيظهر هنا سجلها الحقيقي.",
-                        size = 7.6.sp,
+                        size = 9.sp,
                         lineHeight = 11.sp,
                         color = V2Soft,
                     )
@@ -108,13 +108,13 @@ fun ReportsRoomAuditCard(
 private fun ReportAuditStat(label: String, value: String, accent: Color, modifier: Modifier = Modifier) {
     Column(
         modifier
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(accent.withAlpha(.08f))
             .padding(horizontal = 6.dp, vertical = 5.dp)
     ) {
         KText(value, size = 9.5.sp, weight = FontWeight.Bold, color = accent)
         Spacer(Modifier.height(1.dp))
-        KText(label, size = 6.4.sp, color = V2Muted)
+        KText(label, size = 9.sp, color = V2Muted)
     }
 }
 
@@ -142,7 +142,7 @@ private fun OperationAuditRow(
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(Color.White.copy(alpha = .03f))
             .padding(horizontal = 7.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -157,25 +157,25 @@ private fun OperationAuditRow(
         Column(Modifier.weight(1f)) {
             KText(
                 serviceLabel(operation.serviceId),
-                size = 8.2.sp,
+                size = 9.sp,
                 weight = FontWeight.Bold,
             )
             Spacer(Modifier.height(1.dp))
             KText(
                 "${operation.requestedAction} · ${formatScanTime(operation.createdAt)}",
-                size = 6.4.sp,
+                size = 9.sp,
                 color = V2Muted,
             )
         }
         Column(horizontalAlignment = Alignment.End) {
-            KText(statusText, size = 7.sp, weight = FontWeight.Bold, color = statusColor)
+            KText(statusText, size = 9.sp, weight = FontWeight.Bold, color = statusColor)
             Spacer(Modifier.height(1.dp))
             KText(
                 buildString {
                     append(formatBytes(operation.predictedEligibleBytes ?: 0L))
                     summary?.let { append(" → ${formatBytes(it.measuredBytes)}") }
                 },
-                size = 6.4.sp,
+                size = 9.sp,
                 color = V2Soft,
             )
         }
@@ -260,13 +260,13 @@ fun CatalogCoverageCard(modifier: Modifier = Modifier) {
                         Column(Modifier.weight(1f)) {
                             KText(
                                 "${item.familyLabelAr} · ${item.titleAr}",
-                                size = 7.4.sp,
+                                size = 9.sp,
                                 weight = FontWeight.Bold,
                             )
                             KText(
                                 item.blockReason ?: "غير مربوط بشاشة",
-                                size = 6.4.sp,
-                                lineHeight = 9.sp,
+                                size = 9.sp,
+                                lineHeight = 10.6.sp,
                                 color = V2Muted,
                             )
                         }

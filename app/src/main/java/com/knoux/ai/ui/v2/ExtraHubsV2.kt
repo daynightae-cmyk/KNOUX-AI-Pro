@@ -82,7 +82,12 @@ private fun ExtraHubHeader(
     english: String,
     subtitle: String,
     accent: Color,
+    onBack: () -> Unit,
+    onPro: () -> Unit,
 ) {
+    // Interior top bar gives these hubs the same back/crown affordances as
+    // every other routed screen; previously they relied on system back only.
+    V2TopBar(V2TopMode.INTERIOR, onBack = onBack, onPro = onPro)
     V2LuxuryIdentity(
         title = title,
         english = english,
@@ -119,7 +124,7 @@ private fun ExtraHubAction(
     V2LuxurySurface(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(20.dp))
             .clickable(onClick = onClick),
         radius = 18.dp,
         accent = accent,
@@ -132,9 +137,9 @@ private fun ExtraHubAction(
             Box(
                 Modifier
                     .size(38.dp)
-                    .clip(RoundedCornerShape(13.dp))
+                    .clip(RoundedCornerShape(12.dp))
                     .background(accent.copy(alpha = .16f))
-                    .border(1.dp, accent.copy(alpha = .42f), RoundedCornerShape(13.dp)),
+                    .border(1.dp, accent.copy(alpha = .42f), RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(icon, null, tint = accent, modifier = Modifier.size(19.dp))
@@ -142,7 +147,7 @@ private fun ExtraHubAction(
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 KText(title, size = 12.5.sp, weight = FontWeight.Bold, color = Color.White)
-                KText(subtitle, size = 8.6.sp, color = V2Soft, maxLines = 2)
+                KText(subtitle, size = 9.sp, color = V2Soft, maxLines = 2)
             }
             Icon(Icons.Rounded.Verified, null, tint = accent.copy(alpha = .75f), modifier = Modifier.size(16.dp))
         }
@@ -175,6 +180,8 @@ fun V2DeveloperToolsScreen(onBack: () -> Unit, onPro: () -> Unit) {
             english = "DEVELOPER TOOLS",
             subtitle = "معلومات البناء والنظام وسجل التشغيل على هذا الهاتف",
             accent = V2Cyan,
+            onBack = onBack,
+            onPro = onPro,
         )
         LazyColumn(
             Modifier.weight(1f),
@@ -296,6 +303,8 @@ fun V2GoogleServicesScreen(onBack: () -> Unit, onPro: () -> Unit) {
             english = "GOOGLE SERVICES",
             subtitle = "Google Play Services والإشعارات وتسجيل الدخول على الجهاز",
             accent = V2Violet,
+            onBack = onBack,
+            onPro = onPro,
         )
         LazyColumn(
             Modifier.weight(1f),
@@ -402,6 +411,8 @@ fun V2AdvancedSecurityScreen(onBack: () -> Unit, onPro: () -> Unit) {
             english = "ADVANCED SECURITY",
             subtitle = "قفل الجهاز والمصادقة البيومترية وحسابات الجهاز",
             accent = V2Green,
+            onBack = onBack,
+            onPro = onPro,
         )
         LazyColumn(
             Modifier.weight(1f),
@@ -531,6 +542,8 @@ fun V2BackupRestoreScreen(onBack: () -> Unit, onPro: () -> Unit) {
             english = "BACKUP & RESTORE",
             subtitle = "نسخ احتياطي صريح إلى مجلد تختاره أنت عبر SAF",
             accent = V2Amber,
+            onBack = onBack,
+            onPro = onPro,
         )
         LazyColumn(
             Modifier.weight(1f),

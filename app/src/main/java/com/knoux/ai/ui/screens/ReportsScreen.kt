@@ -179,7 +179,7 @@ fun ReportsScreen(onBack: () -> Unit, onOpenDetail: () -> Unit) {
                                 Spacer(Modifier.height(4.dp))
                                 Text(
                                     listOf("M", "T", "W", "T", "F", "S", "S")[index],
-                                    style = TextStyle(fontSize = 8.5.sp, color = ProTextSecondary),
+                                    style = TextStyle(fontSize = 9.sp, color = ProTextSecondary),
                                 )
                             }
                         }

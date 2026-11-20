@@ -486,7 +486,7 @@ fun PreviewBanner() {
         Spacer(Modifier.width(8.dp))
         Text(
             "Preview / Demo Sample Only — these are example values and do not represent live results from your device.",
-            style = TextStyle(fontSize = 8.5.sp, lineHeight = 11.5.sp, color = ProTextSecondary),
+            style = TextStyle(fontSize = 9.sp, lineHeight = 11.5.sp, color = ProTextSecondary),
         )
     }
 }

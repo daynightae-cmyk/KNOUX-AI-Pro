@@ -49,6 +49,8 @@ import com.knoux.ai.ui.v2.V2GlassCard
 import com.knoux.ai.ui.v2.V2GoldText
 import com.knoux.ai.ui.v2.V2Green
 import com.knoux.ai.ui.v2.V2LuxuryIdentity
+import com.knoux.ai.ui.v2.V2TopBar
+import com.knoux.ai.ui.v2.V2TopMode
 import com.knoux.ai.ui.v2.V2Muted
 import com.knoux.ai.ui.v2.V2Pink
 import com.knoux.ai.ui.v2.V2Red
@@ -196,6 +198,7 @@ fun ModelExplorerScreen(
     LaunchedEffect(Unit) { discoverAll() }
 
     Column(Modifier.fillMaxSize()) {
+        V2TopBar(V2TopMode.INTERIOR, onBack = onBack, onPro = onPro)
         V2LuxuryIdentity(
             title = "مستكشف النماذج",
             english = "MODEL EXPLORER",
@@ -256,7 +259,7 @@ fun ModelExplorerScreen(
                                     Spacer(Modifier.width(8.dp))
                                     Column(Modifier.weight(1f)) {
                                         KText(discovery.providerName, size = 10.6.sp, weight = FontWeight.SemiBold, color = Color.White, maxLines = 1)
-                                        KText(discovery.detail, size = 8.8.sp, color = V2Soft, maxLines = 2)
+                                        KText(discovery.detail, size = 9.sp, color = V2Soft, maxLines = 2)
                                     }
                                     TextButton(onClick = { testProvider(discovery.providerId) }) {
                                         KText("اختبار", size = 9.sp, color = V2Blue)
@@ -330,7 +333,7 @@ private fun ModelCard(
                     KText(model.modelId, size = 13.sp, weight = FontWeight.Bold, color = Color.White, maxLines = 1)
                     KText(
                         model.displayName ?: model.providerId,
-                        size = 8.6.sp,
+                        size = 9.sp,
                         color = V2Soft,
                         maxLines = 1,
                     )
@@ -412,7 +415,7 @@ private fun CapabilityChip(label: String, active: Boolean) {
     ) {
         KText(
             label,
-            size = 8.4.sp,
+            size = 9.sp,
             weight = FontWeight.SemiBold,
             color = if (active) V2Green else V2Muted,
         )

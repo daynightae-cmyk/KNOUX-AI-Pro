@@ -333,7 +333,7 @@ fun SettingsScreen(
             item {
                 Text(
                     "KNOUX AI · all cleanup, optimization and report values are design previews until the measurement engines are connected.",
-                    style = TextStyle(fontSize = 8.5.sp, lineHeight = 12.sp, color = ProTextSecondary),
+                    style = TextStyle(fontSize = 9.sp, lineHeight = 12.sp, color = ProTextSecondary),
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     modifier = Modifier
                         .fillMaxWidth()

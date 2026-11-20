@@ -146,7 +146,7 @@ fun KnouxOnboarding(onFinish: () -> Unit) {
                         .border(1.dp, V2Amber.copy(alpha = .55f), RoundedCornerShape(50))
                         .padding(horizontal = 5.dp, vertical = 1.dp),
                 ) {
-                    KText("PRO", size = 7.sp, weight = FontWeight.Black, color = V2GoldText)
+                    KText("PRO", size = 9.sp, weight = FontWeight.Black, color = V2GoldText)
                 }
             }
             Spacer(Modifier.weight(1f))
@@ -213,11 +213,13 @@ fun KnouxOnboarding(onFinish: () -> Unit) {
                 Modifier
                     .clip(RoundedCornerShape(50))
                     .clickable(enabled = page > 0) { if (page > 0) page-- }
-                    .padding(horizontal = 14.dp, vertical = 6.dp)
+                    .heightIn(min = 36.dp)
+                    .padding(horizontal = 14.dp, vertical = 6.dp),
+                contentAlignment = Alignment.Center,
             ) {
                 KText(
                     if (page > 0) "رجوع" else " ",
-                    size = 9.5.sp,
+                    size = 10.5.sp,
                     color = if (page > 0) V2Soft else Color.Transparent,
                 )
             }
@@ -243,7 +245,7 @@ private fun OnboardingWelcomePage() {
                     withStyle(
                         SpanStyle(
                             brush = Brush.horizontalGradient(
-                                listOf(Color(0xFFFFE7AA), V2Amber, Color(0xFFFFB043))
+                                listOf(V2GoldText, V2Amber, Color(0xFFFFB043))
                             )
                         )
                     ) { append("Pro") }
@@ -387,7 +389,7 @@ private fun OnboardingFounderPage() {
                 Spacer(Modifier.height(3.dp))
                 KText(
                     "FOUNDER & SOFTWARE ENGINEER",
-                    size = 8.sp,
+                    size = 9.sp,
                     weight = FontWeight.Bold,
                     color = V2Soft,
                     letterSpacing = 1.2.sp,
@@ -429,7 +431,7 @@ private fun OnboardingFeature(icon: ImageVector, label: String, accent: Color) {
     ) {
         V2IconTile(icon, accent, size = 30.dp, iconSize = 16.dp)
         Spacer(Modifier.height(5.dp))
-        KText(label, size = 8.sp, weight = FontWeight.Bold, color = Color.White, align = TextAlign.Center)
+        KText(label, size = 9.sp, weight = FontWeight.Bold, color = Color.White, align = TextAlign.Center)
     }
 }
 
@@ -445,7 +447,7 @@ private fun OnboardingChip(icon: ImageVector, text: String) {
     ) {
         Icon(icon, null, tint = V2Cyan, modifier = Modifier.size(12.dp))
         Spacer(Modifier.width(4.dp))
-        KText(text, size = 7.6.sp, color = V2Soft)
+        KText(text, size = 9.sp, color = V2Soft)
     }
 }
 
@@ -500,7 +502,7 @@ private fun OnboardingPromiseRow(
         Column(Modifier.weight(1f)) {
             KText(title, size = 9.6.sp, weight = FontWeight.Bold, color = Color.White)
             Spacer(Modifier.height(1.dp))
-            KText(body, size = 7.8.sp, color = V2Muted, lineHeight = 11.sp)
+            KText(body, size = 9.sp, color = V2Muted, lineHeight = 11.sp)
         }
     }
 }
@@ -526,15 +528,15 @@ private fun OnboardingStatTile(
 ) {
     Column(
         modifier
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(16.dp))
             .background(Brush.verticalGradient(listOf(accent.withAlpha(.13f), Color.White.withAlpha(.02f))))
-            .border(1.dp, accent.withAlpha(.30f), RoundedCornerShape(14.dp))
+            .border(1.dp, accent.withAlpha(.30f), RoundedCornerShape(16.dp))
             .padding(vertical = 7.dp, horizontal = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         KText(value, size = 15.sp, weight = FontWeight.Black, color = accent, maxLines = 1)
         Spacer(Modifier.height(1.dp))
-        KText(label, size = 7.sp, color = V2Soft, align = TextAlign.Center, maxLines = 1)
+        KText(label, size = 9.sp, color = V2Soft, align = TextAlign.Center, maxLines = 1)
     }
 }
 
@@ -572,17 +574,17 @@ private fun OnboardingJourneyStrip() {
                                 .border(1.dp, accent.withAlpha(.52f), CircleShape),
                             contentAlignment = Alignment.Center,
                         ) {
-                            KText("${index + 1}", size = 8.5.sp, weight = FontWeight.Black, color = accent)
+                            KText("${index + 1}", size = 9.sp, weight = FontWeight.Black, color = accent)
                         }
                         Spacer(Modifier.height(5.dp))
-                        KText(step, size = 8.4.sp, weight = FontWeight.Bold, color = Color.White, maxLines = 1)
+                        KText(step, size = 9.sp, weight = FontWeight.Bold, color = Color.White, maxLines = 1)
                     }
                 }
             }
             Spacer(Modifier.height(7.dp))
             KText(
                 "كل خطوة تعرض ما قرأته فعلًا، والقرار النهائي لك.",
-                size = 7.8.sp,
+                size = 9.sp,
                 color = V2Muted,
                 align = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth(),
@@ -668,15 +670,15 @@ private fun OnboardingValue(
 ) {
     Row(
         modifier
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(16.dp))
             .background(Color.White.copy(alpha = .04f))
-            .border(1.dp, accent.withAlpha(.24f), RoundedCornerShape(14.dp))
+            .border(1.dp, accent.withAlpha(.24f), RoundedCornerShape(16.dp))
             .padding(horizontal = 5.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
     ) {
         Icon(icon, null, tint = accent, modifier = Modifier.size(14.dp))
         Spacer(Modifier.width(4.dp))
-        KText(label, size = 8.sp, weight = FontWeight.Bold, color = V2Soft, maxLines = 1)
+        KText(label, size = 9.sp, weight = FontWeight.Bold, color = V2Soft, maxLines = 1)
     }
 }

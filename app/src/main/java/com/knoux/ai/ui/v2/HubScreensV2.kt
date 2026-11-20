@@ -293,19 +293,17 @@ fun V2ToolsHubScreen(
 fun TabTitle(title: String, subtitle: String) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(width = 3.dp, height = 28.dp).clip(RoundedCornerShape(4.dp)).background(
+            Box(Modifier.size(width = 3.dp, height = 28.dp).clip(RoundedCornerShape(8.dp)).background(
                 Brush.verticalGradient(listOf(V2Pink, V2Cyan))
             ))
             Spacer(Modifier.width(7.dp))
-            androidx.compose.material3.Text(
+            KText(
                 title,
-                style = TextStyle(
-                    fontFamily = V2Font,
-                    fontWeight = FontWeight.Black,
-                    fontSize = 27.sp,
-                    color = Color.White,
-                    lineHeight = 34.sp,
-                )
+                size = 27.sp,
+                weight = FontWeight.Black,
+                color = Color.White,
+                lineHeight = 34.sp,
+                maxLines = 1,
             )
         }
         KText(subtitle, size = 10.5.sp, color = V2Soft, align = TextAlign.Center)
@@ -338,7 +336,7 @@ private fun CleanHeroCard(
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         KText(if (health > 0) "$health%" else "—", size = 23.sp, weight = FontWeight.Black)
-                        KText("تقدير الجهاز", size = 7.5.sp, color = V2Soft)
+                        KText("تقدير الجهاز", size = 9.sp, color = V2Soft)
                     }
                 }
                 Spacer(Modifier.width(12.dp))
@@ -350,7 +348,7 @@ private fun CleanHeroCard(
                     }
                     Spacer(Modifier.height(4.dp))
                     KText(formatBytes(cacheBytes), size = 25.sp, weight = FontWeight.Black, color = Color.White)
-                    KText("كاش KNOUX قابل للمراجعة قبل الحذف", size = 8.5.sp, color = V2Soft)
+                    KText("كاش KNOUX قابل للمراجعة قبل الحذف", size = 9.sp, color = V2Soft)
                     Spacer(Modifier.height(7.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         MiniTag("$cacheFiles ملفًا", V2Cyan)
@@ -373,7 +371,7 @@ private fun MiniTag(text: String, accent: Color) {
             .border(1.dp, accent.copy(alpha = .25f), RoundedCornerShape(50))
             .padding(horizontal = 7.dp, vertical = 3.dp)
     ) {
-        KText(text, size = 7.5.sp, color = captionColor(accent))
+        KText(text, size = 9.sp, color = captionColor(accent))
     }
 }
 
@@ -415,7 +413,7 @@ private fun HubCard(service: HubV2, onClick: () -> Unit, modifier: Modifier = Mo
             }
             Spacer(Modifier.height(1.dp))
             KText(service.title, size = 12.5.sp, weight = FontWeight.Bold, maxLines = 1)
-            KText(service.subtitle, size = 8.sp, lineHeight = 11.sp, color = V2Soft, maxLines = 2)
+            KText(service.subtitle, size = 9.sp, lineHeight = 11.sp, color = V2Soft, maxLines = 2)
             Spacer(Modifier.weight(1f))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
@@ -424,10 +422,10 @@ private fun HubCard(service: HubV2, onClick: () -> Unit, modifier: Modifier = Mo
                         .background(service.accent.copy(alpha = .12f))
                         .padding(horizontal = 6.dp, vertical = 2.dp)
                 ) {
-                    KText(service.metric, size = 8.5.sp, weight = FontWeight.Bold, color = captionColor(service.accent))
+                    KText(service.metric, size = 9.sp, weight = FontWeight.Bold, color = captionColor(service.accent))
                 }
                 Spacer(Modifier.width(4.dp))
-                KText(service.metricLabel, size = 7.sp, color = V2Muted, maxLines = 1)
+                KText(service.metricLabel, size = 9.sp, color = V2Muted, maxLines = 1)
             }
         }
     }
@@ -454,7 +452,7 @@ private fun BestNextAction(onClick: () -> Unit) {
             Spacer(Modifier.width(9.dp))
             Column(Modifier.weight(1f)) {
                 KText("الخطوة التالية المقترحة", size = 11.sp, weight = FontWeight.Bold)
-                KText("ابدأ بمراجعة كاش KNOUX والملفات المؤقتة قبل أي حذف.", size = 8.3.sp, color = V2Soft)
+                KText("ابدأ بمراجعة كاش KNOUX والملفات المؤقتة قبل أي حذف.", size = 9.sp, color = V2Soft)
             }
             Icon(Icons.Rounded.ChevronLeft, null, tint = V2Soft, modifier = Modifier.size(17.dp))
         }
@@ -466,7 +464,7 @@ private fun SmartHint() {
     Row(Modifier.fillMaxWidth().padding(horizontal = 3.dp), verticalAlignment = Alignment.CenterVertically) {
         Icon(Icons.Rounded.Shield, null, tint = V2Cyan, modifier = Modifier.size(13.dp))
         Spacer(Modifier.width(5.dp))
-        KText("كل عملية حذف تعرض الملفات أولًا وتطلب تأكيدك. لا شيء يُحذف تلقائيًا.", size = 8.sp, color = V2Muted)
+        KText("كل عملية حذف تعرض الملفات أولًا وتطلب تأكيدك. لا شيء يُحذف تلقائيًا.", size = 9.sp, color = V2Muted)
     }
 }
 
@@ -489,7 +487,7 @@ private fun ToolsSummaryCard(storage: StorageFacts, apps: Int) {
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     KText("${(progress * 100).toInt()}%", size = 20.sp, weight = FontWeight.Black)
-                    KText("تخزين", size = 7.sp, color = V2Soft)
+                    KText("تخزين", size = 9.sp, color = V2Soft)
                 }
             }
             Spacer(Modifier.width(10.dp))
@@ -499,7 +497,7 @@ private fun ToolsSummaryCard(storage: StorageFacts, apps: Int) {
                 Spacer(Modifier.height(5.dp))
                 V2ProgressBar(progress)
                 Spacer(Modifier.height(5.dp))
-                KText("${formatBytes(storage.freeBytes)} متاحة · $apps تطبيقًا مثبتًا", size = 7.9.sp, color = V2Soft)
+                KText("${formatBytes(storage.freeBytes)} متاحة · $apps تطبيقًا مثبتًا", size = 9.sp, color = V2Soft)
             }
             Spacer(Modifier.width(8.dp))
             Icon(Icons.Rounded.Storage, null, tint = V2Cyan, modifier = Modifier.size(30.dp))
@@ -536,7 +534,7 @@ private fun ToolsTip() {
             Spacer(Modifier.width(8.dp))
             Column(Modifier.weight(1f)) {
                 KText("نصيحة الأداء", size = 10.5.sp, weight = FontWeight.Bold)
-                KText("أغلق التطبيقات الثقيلة غير المستخدمة لتحرير الذاكرة وتحسين الاستجابة.", size = 8.sp, color = V2Soft)
+                KText("أغلق التطبيقات الثقيلة غير المستخدمة لتحرير الذاكرة وتحسين الاستجابة.", size = 9.sp, color = V2Soft)
             }
         }
     }
@@ -635,7 +633,7 @@ fun V2ReportsScreen(
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Rounded.Verified, null, tint = V2Green, modifier = Modifier.size(12.dp))
                         Spacer(Modifier.width(4.dp))
-                        KText("البطاقات أعلاه مقروءة من الجهاز. تقرير الاتجاه الأسبوعي غير متاح حتى تتراكم قراءات كافية.", size = 7.2.sp, color = V2Muted)
+                        KText("البطاقات أعلاه مقروءة من الجهاز. تقرير الاتجاه الأسبوعي غير متاح حتى تتراكم قراءات كافية.", size = 9.sp, color = V2Muted)
                     }
                 }
             }
@@ -652,26 +650,26 @@ private fun ReportHistoryCard(history: List<ScanHistoryEntry>, onScan: () -> Uni
                 Spacer(Modifier.width(5.dp))
                 KText("سجل القياسات المحفوظة", size = 10.5.sp, weight = FontWeight.Bold)
                 Spacer(Modifier.weight(1f))
-                KText("${history.size}/24", size = 8.sp, color = V2Soft)
+                KText("${history.size}/24", size = 9.sp, color = V2Soft)
             }
             Spacer(Modifier.height(8.dp))
             if (history.isEmpty()) {
                 KText(
                     "لا توجد قراءة محفوظة بعد. شغّل الفحص العميق ليُحفظ أول قياس على هذا الهاتف.",
-                    size = 8.4.sp,
+                    size = 9.sp,
                     lineHeight = 12.sp,
                     color = V2Soft,
                 )
                 Spacer(Modifier.height(7.dp))
                 Box(
                     Modifier
-                        .clip(RoundedCornerShape(10.dp))
+                        .clip(RoundedCornerShape(12.dp))
                         .background(V2Cyan.withAlpha(.13f))
-                        .border(1.dp, V2Cyan.withAlpha(.34f), RoundedCornerShape(10.dp))
+                        .border(1.dp, V2Cyan.withAlpha(.34f), RoundedCornerShape(12.dp))
                         .clickable(onClick = onScan)
                         .padding(horizontal = 10.dp, vertical = 5.dp)
                 ) {
-                    KText("بدء فحص عميق", size = 7.8.sp, weight = FontWeight.Bold, color = V2Cyan)
+                    KText("بدء فحص عميق", size = 9.sp, weight = FontWeight.Bold, color = V2Cyan)
                 }
             } else {
                 history.take(4).forEachIndexed { index, entry ->
@@ -680,15 +678,15 @@ private fun ReportHistoryCard(history: List<ScanHistoryEntry>, onScan: () -> Uni
                         Box(Modifier.size(6.dp).clip(CircleShape).background(V2Cyan))
                         Spacer(Modifier.width(6.dp))
                         Column(Modifier.weight(1f)) {
-                            KText(formatScanTime(entry.timestamp), size = 8.8.sp, weight = FontWeight.SemiBold)
+                            KText(formatScanTime(entry.timestamp), size = 9.sp, weight = FontWeight.SemiBold)
                             KText(
                                 "${formatCount(entry.appsScanned)} تطبيق · ${formatBytes(entry.storageUsedBytes)} مستخدم" +
                                     (entry.batteryLevel?.let { " · بطارية $it%" } ?: ""),
-                                size = 7.4.sp,
+                                size = 9.sp,
                                 color = V2Soft,
                             )
                         }
-                        KText(formatBytes(entry.cacheBytes), size = 8.sp, weight = FontWeight.Bold, color = V2Pink)
+                        KText(formatBytes(entry.cacheBytes), size = 9.sp, weight = FontWeight.Bold, color = V2Pink)
                     }
                 }
             }
@@ -715,7 +713,7 @@ private fun ReportScoreCard(facts: DeviceFacts) {
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     KText(if (score > 0) "$score%" else "—", size = 26.sp, weight = FontWeight.Black)
-                    KText("تقدير الجهاز", size = 8.sp, color = V2Soft)
+                    KText("تقدير الجهاز", size = 9.sp, color = V2Soft)
                 }
             }
             Spacer(Modifier.width(13.dp))
@@ -728,7 +726,7 @@ private fun ReportScoreCard(facts: DeviceFacts) {
                 Spacer(Modifier.height(4.dp))
                 KText(
                     "يُحسب من التخزين والبطارية والأذونات على هذا الهاتف، وليس من سجل سحابي.",
-                    size = 8.8.sp,
+                    size = 9.sp,
                     lineHeight = 12.5.sp,
                     color = V2Soft,
                 )
@@ -741,7 +739,7 @@ private fun ReportScoreCard(facts: DeviceFacts) {
                         color = V2Cyan,
                     )
                     Spacer(Modifier.width(4.dp))
-                    KText(if (facts.computedAt > 0L) "تخزين مستخدم" else "بانتظار القراءة", size = 8.sp, color = V2Muted)
+                    KText(if (facts.computedAt > 0L) "تخزين مستخدم" else "بانتظار القراءة", size = 9.sp, color = V2Muted)
                 }
             }
         }
@@ -758,13 +756,13 @@ private fun ReportSnapshotCard(facts: DeviceFacts, onRefresh: () -> Unit) {
                 Spacer(Modifier.weight(1f))
                 Box(
                     Modifier
-                        .clip(RoundedCornerShape(9.dp))
+                        .clip(RoundedCornerShape(8.dp))
                         .background(V2Cyan.withAlpha(.12f))
-                        .border(1.dp, V2Cyan.withAlpha(.30f), RoundedCornerShape(9.dp))
+                        .border(1.dp, V2Cyan.withAlpha(.30f), RoundedCornerShape(8.dp))
                         .clickable(onClick = onRefresh)
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
-                    KText(if (loaded) "تحديث" else "جاري القراءة", size = 7.2.sp, weight = FontWeight.Bold, color = V2Cyan)
+                    KText(if (loaded) "تحديث" else "جاري القراءة", size = 9.sp, weight = FontWeight.Bold, color = V2Cyan)
                 }
             }
             Spacer(Modifier.height(8.dp))
@@ -798,7 +796,7 @@ private fun ReportSnapshotCard(facts: DeviceFacts, onRefresh: () -> Unit) {
 @Composable
 private fun ReportSnapshotLine(label: String, value: String, accent: Color) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        KText(label, size = 8.8.sp, color = V2Soft)
+        KText(label, size = 9.sp, color = V2Soft)
         Spacer(Modifier.weight(1f))
         KText(value, size = 9.sp, weight = FontWeight.Bold, color = accent)
     }
@@ -820,7 +818,7 @@ private fun WeekTrendCard() {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(Modifier.size(6.dp).clip(CircleShape).background(V2Cyan))
                     Spacer(Modifier.width(4.dp))
-                    KText("هذا الأسبوع", size = 8.sp, color = V2Soft)
+                    KText("هذا الأسبوع", size = 9.sp, color = V2Soft)
                 }
             }
             Spacer(Modifier.height(8.dp))
@@ -828,7 +826,7 @@ private fun WeekTrendCard() {
             Spacer(Modifier.height(4.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 listOf("الجمعة", "الخميس", "الأربعاء", "الثلاثاء", "الاثنين", "الأحد", "السبت").forEach {
-                    KText(it, size = 7.sp, color = V2Muted)
+                    KText(it, size = 9.sp, color = V2Muted)
                 }
             }
         }
@@ -885,7 +883,7 @@ private fun ReportMiniStat(
             Icon(icon, null, tint = accent, modifier = Modifier.size(19.dp))
             Spacer(Modifier.height(3.dp))
             KText(value, size = 12.sp, weight = FontWeight.Bold)
-            KText(label, size = 7.5.sp, color = V2Soft, maxLines = 1, align = TextAlign.Center)
+            KText(label, size = 9.sp, color = V2Soft, maxLines = 1, align = TextAlign.Center)
         }
     }
 }
@@ -904,7 +902,7 @@ private fun ReportRow(
             Spacer(Modifier.width(9.dp))
             Column(Modifier.weight(1f)) {
                 KText(title, size = 11.sp, weight = FontWeight.Bold)
-                KText(subtitle, size = 8.sp, color = V2Soft)
+                KText(subtitle, size = 9.sp, color = V2Soft)
             }
             Icon(Icons.Rounded.ChevronLeft, null, tint = V2Soft, modifier = Modifier.size(17.dp))
         }
@@ -941,22 +939,24 @@ fun V2SmartCleanScreen(onBack: () -> Unit, onOpenDeepScan: () -> Unit, onPro: ()
     if (cleanState.gate == OperationGate.AWAITING_CONSENT) {
         AlertDialog(
             onDismissRequest = { cleaner.cancelClearOwnCache() },
-            title = { androidx.compose.material3.Text("تنظيف كاش KNOUX") },
+            title = { KText("تنظيف كاش KNOUX", size = 16.sp, weight = FontWeight.Bold, color = Color.White) },
             text = {
-                androidx.compose.material3.Text(
+                KText(
                     "الكاش المقاس قبل الطلب: ${formatBytes(cleanState.measuredBefore)}. " +
                         "سيُحذف كاش KNOUX فقط دون الصور والمستندات وبيانات التطبيقات الأخرى. " +
-                        "الحذف دائم؛ ستُعاد القراءة وتُحفظ النتيجة في Room."
+                        "الحذف دائم؛ ستُعاد القراءة وتُحفظ النتيجة في Room.",
+                    size = 12.sp,
+                    color = V2Soft,
                 )
             },
             confirmButton = {
                 TextButton(modifier = Modifier.height(48.dp), onClick = { cleaner.confirmClearOwnCache() }) {
-                    androidx.compose.material3.Text("تأكيد الحذف")
+                    KText("تأكيد الحذف", size = 12.sp, weight = FontWeight.Bold, color = V2Red)
                 }
             },
             dismissButton = {
                 TextButton(modifier = Modifier.height(48.dp), onClick = { cleaner.cancelClearOwnCache() }) {
-                    androidx.compose.material3.Text("إلغاء")
+                    KText("إلغاء", size = 12.sp, color = V2Soft)
                 }
             },
         )
@@ -1071,7 +1071,7 @@ fun V2SmartCleanScreen(onBack: () -> Unit, onOpenDeepScan: () -> Unit, onPro: ()
                                     )
                                     KText(
                                         cleanState.operationMessage ?: "الكاش بعد العملية ${formatBytes(cleanState.measuredAfter ?: 0L)}",
-                                        size = 8.sp,
+                                        size = 9.sp,
                                         color = V2Soft,
                                     )
                                 }
@@ -1119,7 +1119,7 @@ private fun RealCleanRow(
             Spacer(Modifier.width(9.dp))
             Column(Modifier.weight(1f)) {
                 KText(title, size = 10.5.sp, weight = FontWeight.Bold)
-                KText(subtitle, size = 7.6.sp, color = V2Soft)
+                KText(subtitle, size = 9.sp, color = V2Soft)
             }
             KText(value, size = 9.5.sp, weight = FontWeight.Bold, color = accent)
         }
@@ -1151,7 +1151,7 @@ private fun SmartCleanSummary(
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     KText(selectedSize, size = 17.sp, weight = FontWeight.Black)
-                    KText("كاش KNOUX", size = 7.5.sp, color = V2Soft)
+                    KText("كاش KNOUX", size = 9.sp, color = V2Soft)
                 }
             }
             Spacer(Modifier.width(11.dp))
@@ -1163,11 +1163,11 @@ private fun SmartCleanSummary(
                 }
                 Spacer(Modifier.height(4.dp))
                 KText("$cacheFiles ملفًا", size = 21.sp, weight = FontWeight.Black)
-                KText("داخل كاش KNOUX فقط · صحة تقديرية $health%", size = 8.sp, color = V2Soft)
+                KText("داخل كاش KNOUX فقط · صحة تقديرية $health%", size = 9.sp, color = V2Soft)
                 Spacer(Modifier.height(5.dp))
                 V2ProgressBar(selectedProgress, height = 5.dp)
                 Spacer(Modifier.height(5.dp))
-                KText("$storageFree متاحة · مستخدم الجهاز $totalSize", size = 7.3.sp, color = V2Muted)
+                KText("$storageFree متاحة · مستخدم الجهاز $totalSize", size = 9.sp, color = V2Muted)
             }
         }
     }
@@ -1179,10 +1179,7 @@ private fun SmartCleanHeader() {
         Row(verticalAlignment = Alignment.CenterVertically) {
             V2IconTile(Icons.Rounded.CleaningServices, V2Pink, size = 38.dp, iconSize = 20.dp)
             Spacer(Modifier.width(8.dp))
-            androidx.compose.material3.Text(
-                "التنظيف الذكي",
-                style = TextStyle(fontFamily = V2Font, fontWeight = FontWeight.Black, fontSize = 26.sp, color = Color.White)
-            )
+            KText("التنظيف الذكي", size = 26.sp, weight = FontWeight.Black, color = Color.White, maxLines = 1)
         }
         KText("مراجعة الملفات المؤقتة والكاش قبل أي حذف", size = 10.sp, color = V2Soft, align = TextAlign.Center)
     }
@@ -1210,7 +1207,7 @@ private fun CleanCategoryRow(item: CleanCategory, checked: Boolean, onToggle: ()
         Spacer(Modifier.width(8.dp))
         Column(Modifier.weight(1f)) {
             KText(item.name, size = 11.sp, weight = FontWeight.Bold)
-            KText(item.sub, size = 8.sp, color = V2Soft)
+            KText(item.sub, size = 9.sp, color = V2Soft)
         }
         KText(item.size, size = 10.sp, weight = FontWeight.Bold, color = captionColor(item.accent))
         Spacer(Modifier.width(9.dp))
@@ -1232,7 +1229,7 @@ private fun CleanSafetyCard() {
             Spacer(Modifier.width(7.dp))
             Column(Modifier.weight(1f)) {
                 KText("آمن للملفات الشخصية", size = 9.5.sp, weight = FontWeight.Bold, color = V2Green)
-                KText("لن تلمس الصور أو المستندات أو بيانات التطبيقات الأساسية.", size = 7.5.sp, color = V2Soft)
+                KText("لن تلمس الصور أو المستندات أو بيانات التطبيقات الأساسية.", size = 9.sp, color = V2Soft)
             }
         }
     }
@@ -1304,7 +1301,7 @@ fun V2ProScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                                 KText(
                                     if (previewEnabled) "المعاينة البصرية مفعّلة لهذه الصفحة."
                                     else "أدوات Pro تتطلب استحقاقًا من مزوّد الاشتراك.",
-                                    size = 7.6.sp,
+                                    size = 9.sp,
                                     lineHeight = 11.sp,
                                     color = V2Soft,
                                 )
@@ -1349,7 +1346,7 @@ fun V2ProScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
                 item {
                     KText(
                         "معاينة مزايا Pro. الاشتراك والشراء غير متاحين في هذا الإصدار.",
-                        size = 7.8.sp,
+                        size = 9.sp,
                         color = V2Muted,
                         align = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp),
@@ -1378,11 +1375,11 @@ private fun ProHighlightCard() {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Rounded.Check, null, tint = V2Green, modifier = Modifier.size(13.dp))
                     Spacer(Modifier.width(4.dp))
-                    KText("بدون إعلانات", size = 8.5.sp, color = V2Soft)
+                    KText("بدون إعلانات", size = 9.sp, color = V2Soft)
                     Spacer(Modifier.width(10.dp))
                     Icon(Icons.Rounded.Check, null, tint = V2Green, modifier = Modifier.size(13.dp))
                     Spacer(Modifier.width(4.dp))
-                    KText("حماية أعمق", size = 8.5.sp, color = V2Soft)
+                    KText("حماية أعمق", size = 9.sp, color = V2Soft)
                 }
             }
             Box(
@@ -1405,9 +1402,9 @@ private fun ProFeature(
 ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Box(
-            Modifier.size(34.dp).clip(RoundedCornerShape(11.dp))
+            Modifier.size(34.dp).clip(RoundedCornerShape(12.dp))
                 .background(V2Amber.copy(alpha = .10f))
-                .border(1.dp, V2Amber.copy(alpha = .26f), RoundedCornerShape(11.dp)),
+                .border(1.dp, V2Amber.copy(alpha = .26f), RoundedCornerShape(12.dp)),
             contentAlignment = Alignment.Center
         ) {
             Icon(icon, null, tint = V2Amber, modifier = Modifier.size(18.dp))
@@ -1415,7 +1412,7 @@ private fun ProFeature(
         Spacer(Modifier.width(9.dp))
         Column(Modifier.weight(1f)) {
             KText(title, size = 10.5.sp, weight = FontWeight.Bold)
-            KText(subtitle, size = 8.sp, color = V2Soft)
+            KText(subtitle, size = 9.sp, color = V2Soft)
         }
         Icon(Icons.Rounded.Check, null, tint = V2Green, modifier = Modifier.size(14.dp))
     }

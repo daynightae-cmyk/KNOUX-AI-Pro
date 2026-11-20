@@ -470,7 +470,7 @@ private fun ScanSummaryCard(totalLabel: String, onOpenDeepScan: () -> Unit) {
                         "Rescan",
                         style = TextStyle(
                             fontWeight = FontWeight.Bold,
-                            fontSize = 7.5.sp,
+                            fontSize = 9.sp,
                             color = ProArcticCyan,
                         ),
                         modifier = Modifier
@@ -482,7 +482,7 @@ private fun ScanSummaryCard(totalLabel: String, onOpenDeepScan: () -> Unit) {
                 Spacer(Modifier.height(2.dp))
                 Text(
                     "Analyzed 128,430 files in 14.2s",
-                    style = TextStyle(fontSize = 8.6.sp, color = ProTextSecondary),
+                    style = TextStyle(fontSize = 9.sp, color = ProTextSecondary),
                     maxLines = 1,
                 )
                 Spacer(Modifier.height(5.dp))
@@ -533,7 +533,7 @@ private fun ScanStat(
                     highlight,
                     style = TextStyle(
                         fontWeight = FontWeight.Bold,
-                        fontSize = 6.sp,
+                        fontSize = 9.sp,
                         color = Color(0xFF7CFFD8),
                     ),
                 )
@@ -541,7 +541,7 @@ private fun ScanStat(
         }
         Text(
             label,
-            style = TextStyle(fontSize = 7.sp, color = ProTextSecondary),
+            style = TextStyle(fontSize = 9.sp, color = ProTextSecondary),
             maxLines = 1,
         )
     }
@@ -579,13 +579,13 @@ private fun SelectHeader(
         Spacer(Modifier.weight(1f))
         Text(
             "$selectedCount of ${cleanItems.size} selected",
-            style = TextStyle(fontSize = 8.8.sp, color = ProTextSecondary),
+            style = TextStyle(fontSize = 9.sp, color = ProTextSecondary),
             modifier = Modifier
                 .clip(RoundedCornerShape(50))
                 .clickable(onClick = onToggleAll)
                 .padding(horizontal = 4.dp, vertical = 2.dp),
         )
-        Text(" · ", style = TextStyle(fontSize = 8.sp, color = ProTextSecondary))
+        Text(" · ", style = TextStyle(fontSize = 9.sp, color = ProTextSecondary))
         Text(
             selectedLabel,
             style = TextStyle(
@@ -646,7 +646,7 @@ private fun CleanItemRow(
             )
             Text(
                 item.subtitle,
-                style = TextStyle(fontSize = 8.2.sp, color = ProTextSecondary),
+                style = TextStyle(fontSize = 9.sp, color = ProTextSecondary),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -663,7 +663,7 @@ private fun CleanItemRow(
             )
             Text(
                 item.itemCount,
-                style = TextStyle(fontSize = 7.sp, color = ProTextSecondary),
+                style = TextStyle(fontSize = 9.sp, color = ProTextSecondary),
                 maxLines = 1,
             )
         }
@@ -727,7 +727,7 @@ private fun AiRecommendationCard(selectedLabel: String, hasSelection: Boolean) {
                             "Recommended",
                             style = TextStyle(
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 7.sp,
+                                fontSize = 9.sp,
                                 color = ProArcticCyan,
                             ),
                         )
@@ -748,7 +748,7 @@ private fun AiRecommendationCard(selectedLabel: String, hasSelection: Boolean) {
                             append(".")
                         },
                         style = TextStyle(
-                            fontSize = 8.8.sp,
+                            fontSize = 9.sp,
                             lineHeight = 12.2.sp,
                             color = ProTextSecondary,
                         ),
@@ -757,7 +757,7 @@ private fun AiRecommendationCard(selectedLabel: String, hasSelection: Boolean) {
                     Text(
                         "Select at least one category to preview a safe cleanup. No files are removed in this visual preview.",
                         style = TextStyle(
-                            fontSize = 8.4.sp,
+                            fontSize = 9.sp,
                             lineHeight = 12.sp,
                             color = ProTextSecondary,
                         ),
@@ -787,7 +787,7 @@ private fun StorageGainCard(totalLabel: String) {
             Column(Modifier.width(88.dp)) {
                 Text(
                     "Estimated Storage Gain",
-                    style = TextStyle(fontSize = 7.8.sp, lineHeight = 9.4.sp, color = ProTextSecondary),
+                    style = TextStyle(fontSize = 9.sp, lineHeight = 9.4.sp, color = ProTextSecondary),
                     maxLines = 2,
                 )
                 Text(
@@ -823,7 +823,7 @@ private fun GainBenefit(icon: ImageVector, label: String) {
         Spacer(Modifier.width(4.dp))
         Text(
             label,
-            style = TextStyle(fontWeight = FontWeight.Medium, fontSize = 8.3.sp, color = ProTextSecondary),
+            style = TextStyle(fontWeight = FontWeight.Medium, fontSize = 9.sp, color = ProTextSecondary),
             maxLines = 1,
         )
     }
@@ -879,7 +879,7 @@ private fun SafetyChip(text: String) {
         Spacer(Modifier.width(4.dp))
         Text(
             text,
-            style = TextStyle(fontWeight = FontWeight.Medium, fontSize = 8.sp, color = Color(0xFF7CFFD8)),
+            style = TextStyle(fontWeight = FontWeight.Medium, fontSize = 9.sp, color = Color(0xFF7CFFD8)),
             maxLines = 1,
         )
     }

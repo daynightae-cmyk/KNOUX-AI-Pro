@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -122,7 +123,7 @@ internal fun V2LuxuryIdentity(
         if (!home) {
             KText(
                 english,
-                size = 8.sp,
+                size = 9.sp,
                 weight = FontWeight.Bold,
                 color = accent,
                 letterSpacing = 1.25.sp,
@@ -133,8 +134,8 @@ internal fun V2LuxuryIdentity(
         }
         KText(
             subtitle,
-            size = 9.2.sp,
-            lineHeight = 12.sp,
+            size = 10.5.sp,
+            lineHeight = 14.sp,
             color = V2Soft,
             align = TextAlign.Center,
             maxLines = 2,
@@ -165,6 +166,7 @@ private fun LuxuryLaurel(color: Color, mirror: Boolean) {
 /** Official transparent stag, never a service screenshot or boxed mascot. */
 @Composable
 internal fun V2LuxuryHeaderScenery(accent: Color, modifier: Modifier = Modifier) {
+    val theme = LocalProTheme.current
     Box(modifier.fillMaxWidth().height(228.dp)) {
         Canvas(Modifier.fillMaxSize()) {
             drawCircle(
@@ -187,7 +189,7 @@ internal fun V2LuxuryHeaderScenery(accent: Color, modifier: Modifier = Modifier)
                     close()
                 },
                 Brush.verticalGradient(
-                    listOf(Color(0xFF351079).copy(alpha = .48f), Color.Transparent),
+                    listOf(theme.mountainTint.copy(alpha = .48f), Color.Transparent),
                     startY = size.height * .15f,
                     endY = size.height * .52f,
                 ),
@@ -235,12 +237,13 @@ internal fun V2LuxuryHealthPanel(
 
 @Composable
 private fun V2LuxuryGauge(labelPercent: Int, label: String, accent: Color, accent2: Color, size: Dp) {
+    val theme = LocalProTheme.current
     Box(Modifier.size(size), contentAlignment = Alignment.Center) {
         Canvas(Modifier.fillMaxSize()) {
             val r = this.size.minDimension * .465f
             drawCircle(
                 Brush.radialGradient(
-                    listOf(Color(0xFF10072F), Color(0xFF060315)),
+                    listOf(theme.gaugeCore, theme.gaugeRim),
                     center = center,
                     radius = r * .90f,
                 ),
@@ -271,7 +274,7 @@ private fun V2LuxuryGauge(labelPercent: Int, label: String, accent: Color, accen
                 color = Color.White,
                 maxLines = 1,
             )
-            KText(label, size = 7.4.sp, color = V2Soft, maxLines = 2, align = TextAlign.Center, lineHeight = 9.5.sp)
+            KText(label, size = 9.sp, color = V2Soft, maxLines = 2, align = TextAlign.Center, lineHeight = 11.5.sp)
             Spacer(Modifier.height(2.dp))
             Icon(Icons.Rounded.Verified, null, tint = V2Green, modifier = Modifier.size(10.dp))
         }
@@ -282,9 +285,9 @@ private fun V2LuxuryGauge(labelPercent: Int, label: String, accent: Color, accen
 internal fun V2LuxuryHealthLine(line: SectionLine) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Box(
-            Modifier.size(22.dp).clip(RoundedCornerShape(7.dp))
+            Modifier.size(22.dp).clip(RoundedCornerShape(8.dp))
                 .background(Brush.verticalGradient(listOf(line.accent.copy(alpha = .22f), line.accent.copy(alpha = .04f))))
-                .border(1.dp, line.accent.copy(alpha = .28f), RoundedCornerShape(7.dp)),
+                .border(1.dp, line.accent.copy(alpha = .28f), RoundedCornerShape(8.dp)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(line.icon, null, tint = line.accent, modifier = Modifier.size(13.dp))
@@ -292,10 +295,10 @@ internal fun V2LuxuryHealthLine(line: SectionLine) {
         Spacer(Modifier.width(7.dp))
         Column(Modifier.weight(1f)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                KText(line.label, size = 9.2.sp, weight = FontWeight.SemiBold, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                KText(line.label, size = 10.5.sp, weight = FontWeight.SemiBold, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Spacer(Modifier.width(4.dp))
                 Spacer(Modifier.weight(1f))
-                KText(line.value, size = 7.8.sp, color = V2Soft, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                KText(line.value, size = 9.2.sp, color = V2Soft, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             Spacer(Modifier.height(3.dp))
             V2LuxuryProgress(line.progress, line.accent)
@@ -325,7 +328,7 @@ internal fun V2LuxuryStage(
     onRight: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(modifier.fillMaxWidth().height(199.dp)) {
+    Box(modifier.fillMaxWidth().height(205.dp)) {
         Canvas(Modifier.fillMaxSize()) {
             val center = Offset(size.width * .50f, size.height * .73f)
             for (index in 0 until 4) {
@@ -368,7 +371,7 @@ private fun V2LuxurySideCard(
     onClick: () -> Unit,
 ) {
     V2LuxurySurface(
-        modifier.size(width = 94.dp, height = 84.dp)
+        modifier.width(94.dp).heightIn(min = 90.dp)
             .semantics { contentDescription = "${side.title}، ${side.subtitle}" }
             .clickable(role = Role.Button, onClickLabel = side.title, onClick = onClick),
         radius = 19.dp,
@@ -376,20 +379,21 @@ private fun V2LuxurySideCard(
         borderAlpha = .66f,
     ) {
         Column(
-            Modifier.fillMaxSize().padding(6.dp),
+            Modifier.fillMaxWidth().padding(6.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
             V2LuxuryGlyph(side.icon, accent, 36.dp)
             Spacer(Modifier.height(2.dp))
-            KText(side.title, size = 9.2.sp, weight = FontWeight.Bold, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            KText(side.subtitle, size = 6.2.sp, color = V2Soft, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            KText(side.title, size = 10.sp, weight = FontWeight.Bold, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            KText(side.subtitle, size = 9.sp, color = V2Soft, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
 
 @Composable
 private fun V2LuxuryOrb(spec: KnouxServiceSpec, actionLabel: String, onClick: () -> Unit, modifier: Modifier) {
+    val theme = LocalProTheme.current
     Box(
         modifier.size(160.dp).semantics { contentDescription = "$actionLabel ${spec.title}" }
             .clickable(role = Role.Button, onClickLabel = actionLabel, onClick = onClick),
@@ -401,7 +405,7 @@ private fun V2LuxuryOrb(spec: KnouxServiceSpec, actionLabel: String, onClick: ()
                 Brush.radialGradient(listOf(Color.White.copy(alpha = .10f), spec.accent.copy(alpha = .27f), Color.Transparent), center = center, radius = r * 1.12f),
                 radius = r * 1.12f,
             )
-            drawCircle(Color(0xFF08031B).copy(alpha = .92f), radius = r * .86f)
+            drawCircle(theme.ridgeBase.copy(alpha = .92f), radius = r * .86f)
             for (index in 0 until 3) {
                 drawCircle(
                     brush = Brush.sweepGradient(
@@ -445,8 +449,8 @@ private fun V2LuxuryOrb(spec: KnouxServiceSpec, actionLabel: String, onClick: ()
         }
         Column(
             Modifier.fillMaxSize(.72f).clip(CircleShape)
-                .background(Brush.radialGradient(listOf(Color(0xFF321374), Color(0xFF110735), Color(0xFF070218))))
-                .padding(top = 13.dp, bottom = 8.dp),
+                .background(Brush.radialGradient(listOf(theme.orbCore, theme.orbMid, theme.ridgeBase)))
+                .padding(top = 10.dp, bottom = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
@@ -456,17 +460,17 @@ private fun V2LuxuryOrb(spec: KnouxServiceSpec, actionLabel: String, onClick: ()
                 V2RasterTile(SectionArt.emblem(spec.key), size = 37.dp, accent = spec.accent)
             }
             Spacer(Modifier.height(3.dp))
-            KText(spec.title, size = 11.5.sp, weight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            KText(spec.english, size = 6.2.sp, color = V2Soft, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            KText(spec.title, size = 12.5.sp, weight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            KText(spec.english, size = 9.sp, color = V2Soft, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Spacer(Modifier.height(5.dp))
             Box(
                 Modifier.clip(RoundedCornerShape(50))
-                    .background(Brush.horizontalGradient(listOf(Color(0xFF5A3108), Color(0xFF1C103C), Color(0xFF5A3108))))
+                    .background(Brush.horizontalGradient(listOf(theme.bronzeEdge, theme.bronzeMid, theme.bronzeEdge)))
                     .border(1.dp, V2GoldText.copy(alpha = .82f), RoundedCornerShape(50))
                     .padding(horizontal = 10.dp, vertical = 3.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    KText(actionLabel, size = 7.6.sp, weight = FontWeight.Bold, color = V2GoldText, maxLines = 1)
+                    KText(actionLabel, size = 9.5.sp, weight = FontWeight.Bold, color = V2GoldText, maxLines = 1)
                     Spacer(Modifier.width(3.dp))
                     Icon(Icons.Rounded.ChevronLeft, null, tint = V2GoldText, modifier = Modifier.size(9.dp))
                 }
@@ -484,9 +488,9 @@ internal fun V2LuxurySectionTitle(title: String, trailing: String, accent: Color
                 .background(Brush.verticalGradient(listOf(accent, V2Violet))),
         )
         Spacer(Modifier.width(7.dp))
-        KText(title, size = 14.sp, weight = FontWeight.Bold, color = Color.White, maxLines = 1)
+        KText(title, size = 15.sp, weight = FontWeight.Bold, color = Color.White, maxLines = 1)
         Spacer(Modifier.weight(1f))
-        KText(trailing, size = 8.4.sp, color = V2Soft, maxLines = 1)
+        KText(trailing, size = 9.5.sp, color = V2Soft, maxLines = 1)
     }
 }
 
@@ -505,16 +509,18 @@ internal fun V2LuxuryServiceGrid(items: List<ServiceSubItem>, onNavigate: (Strin
 @Composable
 internal fun V2LuxuryServiceTile(item: ServiceSubItem, modifier: Modifier = Modifier, onClick: () -> Unit) {
     val proActive = LocalProActive.current
-    Box(modifier.height(94.dp)) {
+    // Minimum height keeps the approved grid rhythm, but the tile can grow if
+    // accessibility font scale makes the two-line title taller.
+    Box(modifier.heightIn(min = 102.dp)) {
         V2LuxurySurface(
-            Modifier.fillMaxSize().semantics { contentDescription = item.title }
+            Modifier.fillMaxWidth().semantics { contentDescription = item.title }
                 .clickable(role = Role.Button, onClickLabel = item.title, onClick = onClick),
             radius = 19.dp,
             accent = item.accent,
             borderAlpha = .48f,
         ) {
             Column(
-                Modifier.fillMaxSize().padding(horizontal = 4.dp, vertical = 5.dp),
+                Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 5.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
@@ -526,8 +532,8 @@ internal fun V2LuxuryServiceTile(item: ServiceSubItem, modifier: Modifier = Modi
                 Spacer(Modifier.height(2.dp))
                 KText(
                     item.title,
-                    size = 9.4.sp,
-                    lineHeight = 11.4.sp,
+                    size = 10.5.sp,
+                    lineHeight = 13.sp,
                     weight = FontWeight.SemiBold,
                     color = Color.White,
                     align = TextAlign.Center,
@@ -584,14 +590,15 @@ internal fun V2LuxurySurface(
     content: @Composable () -> Unit,
 ) {
     val shape = RoundedCornerShape(radius)
+    val theme = LocalProTheme.current
     Box(
         modifier.clip(shape).drawBehind {
             drawRoundRect(
                 brush = Brush.verticalGradient(
                     listOf(
-                        Color(0xFF211353),
-                        Color(0xFF130A34),
-                        Color(0xFF09051F),
+                        theme.surfaceTop,
+                        theme.surfaceMid,
+                        theme.surfaceBase,
                     ),
                 ),
                 cornerRadius = CornerRadius(radius.toPx(), radius.toPx()),
@@ -634,7 +641,7 @@ internal fun V2LuxurySurface(
             )
         }.border(
             .8.dp,
-            Brush.linearGradient(listOf(accent.copy(alpha = borderAlpha), Color.White.copy(alpha = .12f), Color(0xFF3F3A92), accent.copy(alpha = borderAlpha * .75f))),
+            Brush.linearGradient(listOf(accent.copy(alpha = borderAlpha), Color.White.copy(alpha = .12f), theme.surfaceSeam, accent.copy(alpha = borderAlpha * .75f))),
             shape,
         ),
         contentAlignment = Alignment.Center,
@@ -667,7 +674,7 @@ internal fun V2LuxuryProBanner(
         Row(Modifier.fillMaxSize().padding(horizontal = 11.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 CrownGold(size = 29.dp)
-                KText("PRO", size = 5.7.sp, weight = FontWeight.Black, color = V2GoldText, letterSpacing = .7.sp)
+                KText("PRO", size = 9.sp, weight = FontWeight.Black, color = V2GoldText, letterSpacing = .7.sp)
             }
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
@@ -681,7 +688,7 @@ internal fun V2LuxuryProBanner(
                     KText(title, size = 13.5.sp, weight = FontWeight.Black, color = V2GoldText, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
                 Spacer(Modifier.height(1.dp))
-                KText(subtitle, size = 8.sp, color = V2Soft, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                KText(subtitle, size = 9.5.sp, color = V2Soft, maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             Spacer(Modifier.width(8.dp))
             Box(
@@ -701,7 +708,7 @@ internal fun V2LuxuryStatStrip(stats: List<SectionStat>, modifier: Modifier = Mo
     Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
         shown.forEach { stat ->
             V2LuxurySurface(
-                Modifier.weight(1f).height(62.dp),
+                Modifier.weight(1f).height(66.dp),
                 radius = 17.dp,
                 accent = stat.accent,
                 borderAlpha = .38f,
@@ -714,13 +721,13 @@ internal fun V2LuxuryStatStrip(stats: List<SectionStat>, modifier: Modifier = Mo
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(stat.icon, null, tint = stat.accent, modifier = Modifier.size(14.dp))
                         Spacer(Modifier.width(4.dp))
-                        KText(stat.value, size = 10.5.sp, weight = FontWeight.Black, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        KText(stat.value, size = 11.5.sp, weight = FontWeight.Black, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                     Spacer(Modifier.height(1.dp))
                     KText(
                         stat.label,
-                        size = 7.sp,
-                        lineHeight = 8.6.sp,
+                        size = 9.sp,
+                        lineHeight = 11.sp,
                         color = V2Soft,
                         align = TextAlign.Center,
                         maxLines = 2,
@@ -739,8 +746,8 @@ internal fun V2LuxuryStat(icon: ImageVector, value: String, label: String, accen
         Icon(icon, null, tint = accent, modifier = Modifier.size(19.dp))
         Spacer(Modifier.width(6.dp))
         Column(Modifier.weight(1f)) {
-            KText(value, size = 10.5.sp, weight = FontWeight.Black, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            KText(label, size = 7.sp, color = V2Soft, maxLines = 2, lineHeight = 9.sp, overflow = TextOverflow.Ellipsis)
+            KText(value, size = 11.5.sp, weight = FontWeight.Black, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            KText(label, size = 9.sp, color = V2Soft, maxLines = 2, lineHeight = 11.sp, overflow = TextOverflow.Ellipsis)
         }
     }
 }

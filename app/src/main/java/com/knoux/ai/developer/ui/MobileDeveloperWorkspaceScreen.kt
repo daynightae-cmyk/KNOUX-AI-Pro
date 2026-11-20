@@ -55,6 +55,8 @@ import com.knoux.ai.ui.v2.V2GlassCard
 import com.knoux.ai.ui.v2.V2GoldText
 import com.knoux.ai.ui.v2.V2Green
 import com.knoux.ai.ui.v2.V2LuxuryIdentity
+import com.knoux.ai.ui.v2.V2TopBar
+import com.knoux.ai.ui.v2.V2TopMode
 import com.knoux.ai.ui.v2.V2Pink
 import com.knoux.ai.ui.v2.V2Red
 import com.knoux.ai.ui.v2.V2Soft
@@ -330,6 +332,7 @@ fun MobileDeveloperWorkspaceScreen(
     }
 
     Column(Modifier.fillMaxSize()) {
+        V2TopBar(V2TopMode.INTERIOR, onBack = onBack, onPro = onPro)
         V2LuxuryIdentity(
             title = "مساحة عمل المطور",
             english = "MOBILE DEVELOPER WORKSPACE",
@@ -370,7 +373,7 @@ fun MobileDeveloperWorkspaceScreen(
                                 KText("مجلد المشروع", size = 13.sp, weight = FontWeight.Bold, color = Color.White)
                                 KText(
                                     workspaceUri?.lastPathSegment ?: "لم يتم اختيار مجلد بعد",
-                                    size = 8.6.sp,
+                                    size = 9.sp,
                                     color = V2Soft,
                                     maxLines = 1,
                                 )
@@ -411,7 +414,7 @@ fun MobileDeveloperWorkspaceScreen(
                                 workspaceUri == null -> "اختر مجلدًا أولًا"
                                 else -> "${filtered.size} من ${files.size} ملفًا نصيًا"
                             },
-                            size = 8.6.sp,
+                            size = 9.sp,
                             color = V2Soft,
                             maxLines = 1,
                         )
@@ -494,7 +497,7 @@ fun MobileDeveloperWorkspaceScreen(
                             KText(file.relativePath, size = 10.6.sp, weight = FontWeight.SemiBold, color = Color.White, maxLines = 1)
                             KText(
                                 "${formatFileSize(file.sizeBytes)} · اضغط للتحرير",
-                                size = 8.4.sp,
+                                size = 9.sp,
                                 color = V2Soft,
                                 maxLines = 1,
                             )

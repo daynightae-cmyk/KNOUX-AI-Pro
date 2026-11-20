@@ -140,12 +140,12 @@ internal fun LiveReadNotice() {
             Icon(Icons.Rounded.Verified, null, tint = V2Green, modifier = Modifier.size(15.dp))
             Spacer(Modifier.width(8.dp))
             Column(Modifier.weight(1f)) {
-                KText("قراءة حقيقية من هذا الجهاز", size = 9.8.sp, weight = FontWeight.Bold, color = V2Green)
+                KText("قراءة حقيقية من هذا الجهاز", size = 11.sp, weight = FontWeight.Bold, color = V2Green)
                 Spacer(Modifier.height(1.dp))
                 KText(
                     "كل الأرقام أعلاه من مصادر Android المتاحة على هاتفك، ولا يتم رفع أي بيانات.",
-                    size = 8.4.sp,
-                    lineHeight = 11.5.sp,
+                    size = 9.5.sp,
+                    lineHeight = 13.sp,
                     color = V2Soft,
                     maxLines = 2,
                     overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,

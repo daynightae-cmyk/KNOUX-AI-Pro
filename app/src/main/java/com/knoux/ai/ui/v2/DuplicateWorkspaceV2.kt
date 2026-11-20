@@ -337,7 +337,7 @@ internal fun V2DuplicatesWorkspace(
 private fun DuplicateModeButton(text: String, icon: androidx.compose.ui.graphics.vector.ImageVector, active: Boolean,
     enabled: Boolean, modifier: Modifier, onClick: () -> Unit) {
     Surface(color = if (active) V2Cyan.copy(alpha = .10f) else V2Panel2,
-        shape = RoundedCornerShape(14.dp), border = BorderStroke(1.dp, if (active) V2Cyan else V2Soft.copy(alpha = .24f)),
+        shape = RoundedCornerShape(16.dp), border = BorderStroke(1.dp, if (active) V2Cyan else V2Soft.copy(alpha = .24f)),
         modifier = modifier.selectable(selected = active, enabled = enabled, role = Role.RadioButton, onClick = onClick)) {
         Row(Modifier.heightIn(min = 56.dp).padding(horizontal = 10.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -439,7 +439,7 @@ private fun DuplicateReviewCard(group: DuplicateScanGroup, keeper: String, selec
         DuplicateMatchKind.VISUAL -> Icons.Rounded.Compare
         DuplicateMatchKind.NAME -> Icons.Rounded.TextFields
     }
-    Surface(color = V2Panel2, shape = RoundedCornerShape(22.dp), border = BorderStroke(1.dp, tint.copy(alpha = .26f))) {
+    Surface(color = V2Panel2, shape = RoundedCornerShape(24.dp), border = BorderStroke(1.dp, tint.copy(alpha = .26f))) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {

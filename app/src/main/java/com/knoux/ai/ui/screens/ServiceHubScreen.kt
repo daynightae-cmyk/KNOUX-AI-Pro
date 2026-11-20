@@ -263,7 +263,7 @@ private fun FeaturedHubCard(featured: HubService, onClick: () -> Unit) {
                         "FEATURED",
                         style = TextStyle(
                             fontWeight = FontWeight.Bold,
-                            fontSize = 8.sp,
+                            fontSize = 9.sp,
                             letterSpacing = 1.2.sp,
                             color = featured.accent,
                         ),
@@ -309,7 +309,7 @@ private fun FeaturedHubCard(featured: HubService, onClick: () -> Unit) {
                     Spacer(Modifier.width(5.dp))
                     Text(
                         featured.valueLabel,
-                        style = TextStyle(fontSize = 8.5.sp, color = ProTextSecondary),
+                        style = TextStyle(fontSize = 9.sp, color = ProTextSecondary),
                         maxLines = 1,
                     )
                 }
@@ -398,7 +398,7 @@ private fun HubServiceCard(service: HubService, onClick: () -> Unit) {
                     Spacer(Modifier.width(5.dp))
                     Text(
                         service.valueLabel,
-                        style = TextStyle(fontSize = 8.sp, color = ProTextSecondary),
+                        style = TextStyle(fontSize = 9.sp, color = ProTextSecondary),
                         maxLines = 1,
                     )
                 }

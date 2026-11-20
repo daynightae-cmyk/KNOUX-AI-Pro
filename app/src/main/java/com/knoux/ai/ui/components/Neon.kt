@@ -521,7 +521,7 @@ fun ProgressDonut(
             if (caption != null) {
                 Text(
                     caption,
-                    style = TextStyle(fontSize = 8.5.sp, color = ProTextSecondary),
+                    style = TextStyle(fontSize = 9.sp, color = ProTextSecondary),
                     textAlign = TextAlign.Center
                 )
             }
@@ -1217,7 +1217,7 @@ fun PreviewDisclosure(modifier: Modifier = Modifier) {
         Text(
             "DESIGN PREVIEW",
             style = TextStyle(
-                fontWeight = FontWeight.Bold, fontSize = 8.sp, letterSpacing = 0.6.sp,
+                fontWeight = FontWeight.Bold, fontSize = 9.sp, letterSpacing = 0.6.sp,
                 color = ProWarning
             )
         )

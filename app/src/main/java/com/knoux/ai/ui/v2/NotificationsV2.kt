@@ -448,7 +448,7 @@ fun V2NotificationsScreen(
                                 .border(1.dp, if (isPro) proTheme.amber.copy(alpha = .48f) else V2Amber.copy(alpha = .48f), RoundedCornerShape(50))
                                 .padding(horizontal = 9.dp, vertical = 5.dp)
                         ) {
-                            KText("$unread جديدة", size = 8.sp, weight = FontWeight.Bold, color = if (isPro) proTheme.amber else V2Amber)
+                            KText("$unread جديدة", size = 9.sp, weight = FontWeight.Bold, color = if (isPro) proTheme.amber else V2Amber)
                         }
                     }
                 }
@@ -477,7 +477,7 @@ fun V2NotificationsScreen(
                             ) {
                                 KText(
                                     option,
-                                    size = 8.4.sp,
+                                    size = 9.sp,
                                     weight = if (selected) FontWeight.Bold else FontWeight.Normal,
                                     color = if (selected) if (isPro) proTheme.deep else filterAccent else if (isPro) ProMuted else V2Soft,
                                 )
@@ -488,7 +488,7 @@ fun V2NotificationsScreen(
 
                 item {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        KText("الأحدث أولًا", size = 8.sp, color = if (isPro) ProMuted else V2Muted)
+                        KText("الأحدث أولًا", size = 9.sp, color = if (isPro) ProMuted else V2Muted)
                         Spacer(Modifier.weight(1f))
                         Row(
                             Modifier
@@ -499,7 +499,7 @@ fun V2NotificationsScreen(
                         ) {
                             Icon(Icons.Rounded.Check, null, tint = if (isPro) proTheme.amber else V2Cyan, modifier = Modifier.size(13.dp))
                             Spacer(Modifier.width(4.dp))
-                            KText("تحديد الكل كمقروء", size = 8.sp, color = if (isPro) proTheme.amber else V2Cyan)
+                            KText("تحديد الكل كمقروء", size = 9.sp, color = if (isPro) proTheme.amber else V2Cyan)
                         }
                     }
                 }
@@ -572,9 +572,9 @@ private fun NoticeCard(notice: KnouxNotice, unread: Boolean, onClick: () -> Unit
                     }
                 }
                 Spacer(Modifier.height(2.dp))
-                KText(notice.body, size = 7.9.sp, lineHeight = 11.5.sp, color = if (isPro) ProMuted else V2Soft, maxLines = 2)
+                KText(notice.body, size = 9.sp, lineHeight = 11.5.sp, color = if (isPro) ProMuted else V2Soft, maxLines = 2)
                 Spacer(Modifier.height(3.dp))
-                KText(notice.time, size = 7.sp, color = if (isPro) ProMuted else V2Muted)
+                KText(notice.time, size = 9.sp, color = if (isPro) ProMuted else V2Muted)
             }
             Spacer(Modifier.width(4.dp))
             Icon(

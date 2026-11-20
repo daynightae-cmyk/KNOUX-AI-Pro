@@ -75,6 +75,8 @@ import com.knoux.ai.ui.v2.formatBytes
 import com.knoux.ai.ui.v2.formatCount
 import com.knoux.ai.ui.v2.v2Bidi
 import com.knoux.ai.ui.v2.V2LuxuryIdentity
+import com.knoux.ai.ui.v2.V2TopBar
+import com.knoux.ai.ui.v2.V2TopMode
 import com.knoux.ai.ui.v2.V2LuxuryServiceGrid
 import com.knoux.ai.ui.v2.V2LuxuryStatStrip
 import com.knoux.ai.ui.v2.SectionStat
@@ -125,6 +127,7 @@ fun DeveloperStudioScreen(
     }
 
     Column(Modifier.fillMaxSize()) {
+        V2TopBar(V2TopMode.INTERIOR, onBack = onBack, onPro = onPro)
         V2LuxuryIdentity(
             title = "لوحة المطور",
             english = "DEVELOPER STUDIO",

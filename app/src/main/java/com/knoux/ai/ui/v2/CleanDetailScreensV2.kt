@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -224,15 +225,7 @@ private fun LegacyDeepScanScreen(onBack: () -> Unit, onOpenSummary: () -> Unit, 
 @Composable
 private fun ScanScreenHeader(finished: Boolean, paused: Boolean) {
     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        androidx.compose.material3.Text(
-            "الفحص العميق",
-            style = androidx.compose.ui.text.TextStyle(
-                fontFamily = V2Font,
-                fontWeight = FontWeight.Black,
-                fontSize = 30.sp,
-                color = Color.White,
-            )
-        )
+        KText("الفحص العميق", size = 30.sp, weight = FontWeight.Black, color = Color.White, maxLines = 1)
         KText(
             "تحليل شامل للجهاز واكتشاف الفرص للتحسين",
             size = 10.5.sp,
@@ -258,7 +251,7 @@ private fun ScanScreenHeader(finished: Boolean, paused: Boolean) {
                     paused -> "متوقف مؤقتًا"
                     else -> "جاري الفحص الآن"
                 },
-                size = 7.8.sp,
+                size = 9.sp,
                 weight = FontWeight.SemiBold,
                 color = accent,
             )
@@ -335,6 +328,9 @@ private fun ScanOrbCard(
                 size = 34.dp,
                 stroke = 3.dp,
                 colors = listOf(V2Cyan, V2Pink),
+                // Whole 34dp ring is the pause/resume touch target; the glyph
+                // inside stays decorative.
+                modifier = Modifier.clickable(onClick = onToggle),
             ) {
                 Icon(
                     when {
@@ -344,13 +340,14 @@ private fun ScanOrbCard(
                     },
                     null,
                     tint = Color.White,
-                    modifier = Modifier.size(13.dp).clickable(onClick = onToggle),
+                    modifier = Modifier.size(13.dp),
                 )
             }
+            // The whole ring is the touch target (34dp), not the tiny glyph.
             Spacer(Modifier.height(3.dp))
             KText(
                 "وحدة: $activeLabel · ${completedLabel(progress)}",
-                size = 8.5.sp,
+                size = 9.sp,
                 color = V2Muted,
             )
         }
@@ -394,7 +391,7 @@ private fun ScanModulesCard(completed: Int) {
                 Spacer(Modifier.width(6.dp))
                 KText("وحدات الفحص", size = 11.sp, weight = FontWeight.Bold)
                 Spacer(Modifier.weight(1f))
-                KText("$completed من ${scanModules.size}", size = 8.sp, color = V2Cyan)
+                KText("$completed من ${scanModules.size}", size = 9.sp, color = V2Cyan)
             }
             Spacer(Modifier.height(8.dp))
             scanModules.chunked(3).forEachIndexed { rowIndex, row ->
@@ -406,14 +403,14 @@ private fun ScanModulesCard(completed: Int) {
                             Modifier
                                 .weight(1f)
                                 .height(58.dp)
-                                .clip(RoundedCornerShape(13.dp))
+                                .clip(RoundedCornerShape(12.dp))
                                 .background(
                                     if (done) module.accent.copy(alpha = .16f) else Color.White.copy(alpha = .04f)
                                 )
                                 .border(
                                     1.dp,
                                     if (done) module.accent.copy(alpha = .45f) else Color.White.copy(alpha = .10f),
-                                    RoundedCornerShape(13.dp),
+                                    RoundedCornerShape(12.dp),
                                 )
                                 .padding(5.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -426,10 +423,10 @@ private fun ScanModulesCard(completed: Int) {
                                 modifier = Modifier.size(15.dp),
                             )
                             Spacer(Modifier.height(2.dp))
-                            KText(module.label, size = 7.6.sp, color = if (done) Color.White else V2Soft, maxLines = 1)
+                            KText(module.label, size = 9.sp, color = if (done) Color.White else V2Soft, maxLines = 1)
                             KText(
                                 if (done) "تم" else "بانتظار",
-                                size = 6.4.sp,
+                                size = 9.sp,
                                 color = if (done) module.accent else V2Muted,
                             )
                         }
@@ -456,7 +453,7 @@ private fun ScanResultsCard(facts: DeviceFacts, finished: Boolean) {
         Column {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(Modifier.size(width = 3.dp, height = 17.dp).clip(RoundedCornerShape(4.dp)).background(V2Pink))
+                    Box(Modifier.size(width = 3.dp, height = 17.dp).clip(RoundedCornerShape(8.dp)).background(V2Pink))
                     Spacer(Modifier.width(6.dp))
                     KText("نتائج الفحص", size = 15.sp, weight = FontWeight.Bold)
                 }
@@ -479,7 +476,7 @@ private fun ScanResultsCard(facts: DeviceFacts, finished: Boolean) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.Rounded.Storage, null, tint = V2Cyan, modifier = Modifier.size(22.dp))
                         KText(formatBytes(facts.storage.usedBytes), size = 11.sp, weight = FontWeight.Bold)
-                        KText("مستخدم من ${formatBytes(facts.storage.totalBytes)}", size = 5.8.sp, color = V2Soft)
+                        KText("مستخدم من ${formatBytes(facts.storage.totalBytes)}", size = 9.sp, color = V2Soft)
                     }
                 }
                 Spacer(Modifier.width(10.dp))
@@ -537,17 +534,17 @@ private fun ResultRow(
         Box(
             Modifier
                 .size(22.dp)
-                .clip(RoundedCornerShape(7.dp))
+                .clip(RoundedCornerShape(8.dp))
                 .background(accent.copy(alpha = .16f))
-                .border(1.dp, accent.copy(alpha = .34f), RoundedCornerShape(7.dp)),
+                .border(1.dp, accent.copy(alpha = .34f), RoundedCornerShape(8.dp)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(icon, null, tint = accent, modifier = Modifier.size(12.dp))
         }
         Spacer(Modifier.width(6.dp))
         Column(Modifier.weight(1f)) {
-            KText(label, size = 8.6.sp, weight = FontWeight.Bold, maxLines = 1)
-            KText(detail, size = 6.8.sp, color = V2Muted, maxLines = 1)
+            KText(label, size = 9.sp, weight = FontWeight.Bold, maxLines = 1)
+            KText(detail, size = 9.sp, color = V2Muted, maxLines = 1)
         }
         Spacer(Modifier.width(4.dp))
         KText(value, size = 9.sp, weight = FontWeight.Bold, color = accent, maxLines = 1)
@@ -570,13 +567,13 @@ private fun ScanHistoryCard(history: List<ScanHistoryEntry>) {
             Column(Modifier.weight(1f)) {
                 if (latest == null) {
                     KText("لا يوجد فحص محفوظ بعد", size = 10.sp, weight = FontWeight.Bold)
-                    KText("سيُحفظ الفحص التالي في السجل المحلي تلقائيًا.", size = 7.6.sp, color = V2Soft)
+                    KText("سيُحفظ الفحص التالي في السجل المحلي تلقائيًا.", size = 9.sp, color = V2Soft)
                 } else {
                     KText("آخر فحص محفوظ", size = 10.sp, weight = FontWeight.Bold, color = V2Green)
                     KText(
                         "${formatScanTime(latest.timestamp)} · ${formatCount(latest.appsScanned)} تطبيقًا · " +
                             "${formatBytes(latest.cacheBytes)} كاش",
-                        size = 7.6.sp,
+                        size = 9.sp,
                         color = V2Soft,
                     )
                 }
@@ -612,7 +609,7 @@ private fun PermissionNeededCard(title: String, body: String, accent: Color) {
             Column(Modifier.weight(1f)) {
                 KText(title, size = 12.sp, weight = FontWeight.Bold)
                 Spacer(Modifier.height(3.dp))
-                KText(body, size = 8.5.sp, color = V2Soft)
+                KText(body, size = 9.sp, color = V2Soft)
             }
         }
     }
@@ -633,7 +630,7 @@ private fun EmptyStateCard(title: String, body: String, accent: Color) {
             Column(Modifier.weight(1f)) {
                 KText(title, size = 11.5.sp, weight = FontWeight.Bold, color = accent)
                 Spacer(Modifier.height(3.dp))
-                KText(body, size = 8.4.sp, color = V2Soft)
+                KText(body, size = 9.sp, color = V2Soft)
             }
         }
     }
@@ -663,7 +660,7 @@ private fun DuplicateSummaryCard(
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     KText(formatBytes(reclaimable), size = 16.sp, weight = FontWeight.Black)
-                    KText("قابل للتحرير", size = 8.sp, color = V2Soft)
+                    KText("قابل للتحرير", size = 9.sp, color = V2Soft)
                 }
             }
             Spacer(Modifier.width(15.dp))
@@ -688,7 +685,7 @@ private fun SummaryInline(
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Icon(icon, null, tint = accent, modifier = Modifier.size(25.dp))
         KText(value, size = 18.sp, weight = FontWeight.Black, color = Color.White)
-        KText(label, size = 8.5.sp, color = V2Soft)
+        KText(label, size = 9.sp, color = V2Soft)
     }
 }
 
@@ -723,7 +720,7 @@ private fun RealDuplicateGroupCard(
                     )
                     KText(
                         "${formatBytes(group.sizeBytes)} لكل نسخة · متطابق المحتوى",
-                        size = 7.6.sp,
+                        size = 9.sp,
                         color = V2Soft,
                         maxLines = 1,
                     )
@@ -738,7 +735,7 @@ private fun RealDuplicateGroupCard(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Rounded.Layers, null, tint = accent, modifier = Modifier.size(10.dp))
                         Spacer(Modifier.width(3.dp))
-                        KText("${group.count}", size = 8.5.sp, weight = FontWeight.Bold, color = accent)
+                        KText("${group.count}", size = 9.sp, weight = FontWeight.Bold, color = accent)
                     }
                 }
             }
@@ -768,7 +765,7 @@ private fun RealDuplicateGroupCard(
                                 Row(verticalAlignment = Alignment.CenterVertically) {
                                     CrownGold(size = 10.dp)
                                     Spacer(Modifier.width(2.dp))
-                                    KText("الأصل", size = 6.sp, color = V2Amber, weight = FontWeight.Bold)
+                                    KText("الأصل", size = 9.sp, color = V2Amber, weight = FontWeight.Bold)
                                 }
                             }
                         } else {
@@ -789,7 +786,7 @@ private fun RealDuplicateGroupCard(
             Spacer(Modifier.height(6.dp))
             KText(
                 "توفير محتمل ${formatBytes(group.reclaimableBytes)} عند إبقاء الأصل وحذف النسخ الزائدة",
-                size = 7.4.sp,
+                size = 9.sp,
                 color = V2Muted,
             )
         }
@@ -804,6 +801,7 @@ internal fun V2MediaThumb(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val theme = LocalProTheme.current
     val bitmap by produceState<androidx.compose.ui.graphics.ImageBitmap?>(initialValue = null, uri) {
         value = withContext(Dispatchers.IO) {
             if (uri.isBlank() || android.os.Build.VERSION.SDK_INT < 29) return@withContext null
@@ -819,7 +817,7 @@ internal fun V2MediaThumb(
     Box(
         modifier
             .clip(RoundedCornerShape(12.dp))
-            .background(Brush.verticalGradient(listOf(accent.copy(alpha = .28f), Color(0xFF0B0A1A))))
+            .background(Brush.verticalGradient(listOf(accent.copy(alpha = .28f), theme.glassBottom)))
             .border(1.dp, accent.copy(alpha = .36f), RoundedCornerShape(12.dp)),
         contentAlignment = Alignment.Center,
     ) {
@@ -865,14 +863,14 @@ fun V2Check(
     Box(
         modifier
             .size(21.dp)
-            .clip(RoundedCornerShape(7.dp))
+            .clip(RoundedCornerShape(8.dp))
             .then(
                 if (checked) {
                     Modifier.background(Brush.linearGradient(listOf(accent, V2Violet)))
-                        .border(1.dp, Color.White.copy(alpha = .30f), RoundedCornerShape(7.dp))
+                        .border(1.dp, Color.White.copy(alpha = .30f), RoundedCornerShape(8.dp))
                 } else {
                     Modifier.background(Color.Black.copy(alpha = .20f))
-                        .border(1.dp, Color.White.copy(alpha = .38f), RoundedCornerShape(7.dp))
+                        .border(1.dp, Color.White.copy(alpha = .38f), RoundedCornerShape(8.dp))
                 }
             )
             .then(if (onToggle != null) Modifier.clickable(onClick = onToggle) else Modifier),
@@ -909,11 +907,13 @@ fun V2ResidueScreen(onBack: () -> Unit, onReview: () -> Unit, onPro: () -> Unit)
     if (confirm) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { confirm = false },
-            title = { androidx.compose.material3.Text("تنظيف بقايا KNOUX") },
+            title = { KText("تنظيف بقايا KNOUX", size = 16.sp, weight = FontWeight.Bold, color = Color.White) },
             text = {
-                androidx.compose.material3.Text(
+                KText(
                     "سيُحذف $cacheText من الكاش والملفات المؤقتة الخاصة بـ KNOUX فقط " +
-                        "(${formatCount(facts.ownCacheFiles)} ملف). ملفاتك الدائمة لن تُمس."
+                        "(${formatCount(facts.ownCacheFiles)} ملف). ملفاتك الدائمة لن تُمس.",
+                    size = 12.sp,
+                    color = V2Soft,
                 )
             },
             confirmButton = {
@@ -954,11 +954,11 @@ fun V2ResidueScreen(onBack: () -> Unit, onReview: () -> Unit, onPro: () -> Unit)
                         lastFreed = freed
                         bump()
                     }
-                }) { androidx.compose.material3.Text("تنظيف الآن") }
+                }) { KText("تنظيف الآن", size = 12.sp, weight = FontWeight.Bold, color = V2Cyan) }
             },
             dismissButton = {
                 androidx.compose.material3.TextButton(onClick = { confirm = false }) {
-                    androidx.compose.material3.Text("إلغاء")
+                    KText("إلغاء", size = 12.sp, color = V2Soft)
                 }
             },
         )
@@ -1066,7 +1066,7 @@ fun V2ResidueScreen(onBack: () -> Unit, onReview: () -> Unit, onPro: () -> Unit)
                                 Spacer(Modifier.width(8.dp))
                                 Column(Modifier.weight(1f)) {
                                     KText("تم التنظيف فعليًا", size = 10.sp, weight = FontWeight.Bold, color = V2Green)
-                                    KText("حُرر ${formatBytes(lastFreed ?: 0L)} من كاش KNOUX.", size = 8.sp, color = V2Soft)
+                                    KText("حُرر ${formatBytes(lastFreed ?: 0L)} من كاش KNOUX.", size = 9.sp, color = V2Soft)
                                 }
                             }
                         }
@@ -1105,21 +1105,16 @@ private fun ResidueTitle() {
         Box(
             Modifier
                 .size(43.dp)
-                .clip(RoundedCornerShape(14.dp))
+                .clip(RoundedCornerShape(16.dp))
                 .background(Brush.linearGradient(listOf(V2Cyan.copy(alpha = .28f), V2Violet.copy(alpha = .30f))))
-                .border(1.dp, V2Cyan.copy(alpha = .42f), RoundedCornerShape(14.dp)),
+                .border(1.dp, V2Cyan.copy(alpha = .42f), RoundedCornerShape(16.dp)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(Icons.Rounded.Layers, null, tint = Color.White, modifier = Modifier.size(23.dp))
         }
         Spacer(Modifier.width(9.dp))
         Column(Modifier.weight(1f)) {
-            androidx.compose.material3.Text(
-                "منظف بقايا التطبيقات",
-                style = androidx.compose.ui.text.TextStyle(
-                    fontFamily = V2Font, fontWeight = FontWeight.Black, fontSize = 24.sp, color = Color.White
-                )
-            )
+            KText("منظف بقايا التطبيقات", size = 24.sp, weight = FontWeight.Black, color = Color.White, maxLines = 1)
             KText("البقايا والملفات المؤقتة غير الضرورية", size = 9.sp, color = V2Soft)
         }
     }
@@ -1146,14 +1141,14 @@ private fun ResidueHeroCard(cacheBytes: Long, fileCount: Int, freeBytes: Long) {
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     KText(formatBytes(cacheBytes), size = 17.sp, weight = FontWeight.Black)
-                    KText("كاش KNOUX", size = 8.sp, color = V2Soft)
+                    KText("كاش KNOUX", size = 9.sp, color = V2Soft)
                     Icon(Icons.Rounded.Verified, null, tint = V2Green, modifier = Modifier.size(11.dp))
                 }
             }
             Spacer(Modifier.weight(1f))
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 NeonTrashCan(Modifier.size(72.dp))
-                KText("${formatCount(fileCount)} ملفًا", size = 8.2.sp, color = V2Soft)
+                KText("${formatCount(fileCount)} ملفًا", size = 9.sp, color = V2Soft)
             }
             Spacer(Modifier.width(6.dp))
         }
@@ -1240,7 +1235,7 @@ private fun RealResidueRow(
             Spacer(Modifier.width(9.dp))
             Column(Modifier.weight(1f)) {
                 KText(title, size = 10.5.sp, weight = FontWeight.Bold)
-                KText(subtitle, size = 7.6.sp, color = V2Soft, maxLines = 2)
+                KText(subtitle, size = 9.sp, color = V2Soft, maxLines = 2)
             }
             Spacer(Modifier.width(6.dp))
             KText(value, size = 9.5.sp, weight = FontWeight.Bold, color = accent)
@@ -1266,7 +1261,7 @@ private fun CacheFilesCard(files: List<OwnFileFact>) {
                 Spacer(Modifier.width(6.dp))
                 KText("أكبر ملفات كاش KNOUX", size = 10.5.sp, weight = FontWeight.Bold)
                 Spacer(Modifier.weight(1f))
-                KText("${files.size} ملف", size = 8.sp, color = V2Cyan)
+                KText("${files.size} ملف", size = 9.sp, color = V2Cyan)
             }
             Spacer(Modifier.height(6.dp))
             files.forEach { file ->
@@ -1274,10 +1269,10 @@ private fun CacheFilesCard(files: List<OwnFileFact>) {
                     Icon(Icons.Rounded.Folder, null, tint = V2Muted, modifier = Modifier.size(13.dp))
                     Spacer(Modifier.width(6.dp))
                     Column(Modifier.weight(1f)) {
-                        KText(file.name, size = 8.2.sp, color = Color.White, maxLines = 1)
-                        KText(file.folder, size = 6.8.sp, color = V2Muted, maxLines = 1)
+                        KText(file.name, size = 9.sp, color = Color.White, maxLines = 1)
+                        KText(file.folder, size = 9.sp, color = V2Muted, maxLines = 1)
                     }
-                    KText(formatBytes(file.bytes), size = 8.sp, weight = FontWeight.Bold, color = V2Cyan)
+                    KText(formatBytes(file.bytes), size = 9.sp, weight = FontWeight.Bold, color = V2Cyan)
                 }
             }
         }
@@ -1298,14 +1293,14 @@ private fun ResidueSafetyCard(cacheBytes: Long) {
             Spacer(Modifier.width(7.dp))
             Column(Modifier.weight(1f)) {
                 KText("قياس فعلي", size = 10.5.sp, weight = FontWeight.Bold, color = V2Green)
-                KText("كاش KNOUX فقط — بياناتك الدائمة لا تُمس", size = 8.sp, color = V2Soft)
+                KText("كاش KNOUX فقط — بياناتك الدائمة لا تُمس", size = 9.sp, color = V2Soft)
             }
             Spacer(Modifier.width(10.dp))
             Box(Modifier.width(1.dp).height(31.dp).background(Color.White.copy(alpha = .13f)))
             Spacer(Modifier.width(10.dp))
             Column(horizontalAlignment = Alignment.End) {
                 KText(formatBytes(cacheBytes), size = 12.sp, weight = FontWeight.Bold, color = V2Cyan)
-                KText("قابل للإزالة", size = 7.sp, color = V2Soft)
+                KText("قابل للإزالة", size = 9.sp, color = V2Soft)
             }
         }
     }
@@ -1416,7 +1411,7 @@ fun V2PrivacyScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> U
                                 label = {
                                     KText(
                                         "ملاحظة خصوصية تُحفظ محليًا فقط",
-                                        size = 7.4.sp,
+                                        size = 9.sp,
                                         color = V2Soft,
                                     )
                                 },
@@ -1452,7 +1447,7 @@ fun V2PrivacyScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> U
                                     modifier = Modifier.weight(1f),
                                 )
                                 if (noteSaved) {
-                                    KText("حُفظ في السجل المحلي", size = 7.4.sp, color = V2Green)
+                                    KText("حُفظ في السجل المحلي", size = 9.sp, color = V2Green)
                                 }
                             }
                         }
@@ -1483,12 +1478,7 @@ private fun PrivacyTitle() {
         )
         Spacer(Modifier.width(9.dp))
         Column(Modifier.weight(1f)) {
-            androidx.compose.material3.Text(
-                "الخصوصية الذكية",
-                style = androidx.compose.ui.text.TextStyle(
-                    fontFamily = V2Font, fontWeight = FontWeight.Black, fontSize = 27.sp, color = Color.White
-                )
-            )
+            KText("الخصوصية الذكية", size = 27.sp, weight = FontWeight.Black, color = Color.White, maxLines = 1)
             KText("تحكم كامل في أذوناتك وخصوصيتك بذكاء متقدم.", size = 10.sp, color = V2Soft)
         }
     }
@@ -1519,7 +1509,7 @@ private fun PrivacyHeroCard(score: Int, sensitiveApps: Int, granted: Int, declar
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(Icons.Rounded.Shield, null, tint = accent, modifier = Modifier.size(20.dp))
                         KText("$score%", size = 23.sp, weight = FontWeight.Black)
-                        KText("مؤشر تقديري", size = 7.sp, color = V2Soft)
+                        KText("مؤشر تقديري", size = 9.sp, color = V2Soft)
                     }
                 }
                 Spacer(Modifier.width(12.dp))
@@ -1534,13 +1524,13 @@ private fun PrivacyHeroCard(score: Int, sensitiveApps: Int, granted: Int, declar
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(Icons.Rounded.Verified, null, tint = accent, modifier = Modifier.size(13.dp))
                             Spacer(Modifier.width(4.dp))
-                            KText("قراءة من PackageManager", size = 8.sp, weight = FontWeight.Bold, color = accent)
+                            KText("قراءة من PackageManager", size = 9.sp, weight = FontWeight.Bold, color = accent)
                         }
                     }
                     Spacer(Modifier.height(6.dp))
                     KText(
                         "يُحسب المؤشر من نسبة الأذونات الحساسة الممنوحة فعليًا إلى المعلنة.",
-                        size = 8.4.sp,
+                        size = 9.sp,
                         lineHeight = 12.sp,
                         color = V2Soft,
                     )
@@ -1559,7 +1549,7 @@ private fun PrivacyHeroCard(score: Int, sensitiveApps: Int, granted: Int, declar
             Spacer(Modifier.height(4.dp))
             KText(
                 "يمكنك سحب أي إذن من إعدادات التطبيق في Android.",
-                size = 7.4.sp,
+                size = 9.sp,
                 color = V2Muted,
             )
         }
@@ -1573,7 +1563,7 @@ private fun PrivacyCount(value: String, label: String, icon: androidx.compose.ui
         Spacer(Modifier.width(5.dp))
         Column {
             KText(value, size = 14.sp, weight = FontWeight.Black, color = accent)
-            KText(label, size = 7.2.sp, color = V2Soft, maxLines = 1)
+            KText(label, size = 9.sp, color = V2Soft, maxLines = 1)
         }
     }
 }
@@ -1616,23 +1606,23 @@ private fun PrivacyDomainGrid(groups: List<AppPermissionGroup>, onOpen: () -> Un
 private fun PrivacyDomainCard(group: AppPermissionGroup, modifier: Modifier, onClick: () -> Unit) {
     val accent = privacyDomainAccent(group.key)
     V2GlassCard(
-        modifier.height(93.dp).clickable(onClick = onClick),
+        modifier.heightIn(min = 93.dp).clickable(onClick = onClick),
         padding = 8.dp,
         radius = 16.dp,
         glow = accent,
         borderAlpha = .35f,
     ) {
         Column(
-            Modifier.fillMaxSize(),
+            Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
             V2IconTile(privacyDomainIcon(group.key), accent, size = 31.dp, iconSize = 16.dp)
             Spacer(Modifier.height(4.dp))
-            KText(group.label, size = 8.4.sp, weight = FontWeight.Bold, maxLines = 1, align = TextAlign.Center)
+            KText(group.label, size = 9.sp, weight = FontWeight.Bold, maxLines = 1, align = TextAlign.Center)
             KText(
                 "${formatCount(group.grantedCount)} ممنوح · ${formatCount(group.appCount)} معلن",
-                size = 7.sp,
+                size = 9.sp,
                 color = V2Soft,
                 maxLines = 1,
             )
@@ -1652,13 +1642,13 @@ private fun SensitiveAppsCard(
                 Spacer(Modifier.width(6.dp))
                 KText("تطبيقات تطلب أذونات حساسة", size = 12.sp, weight = FontWeight.Black)
                 Spacer(Modifier.weight(1f))
-                KText("${formatCount(apps.size)}", size = 7.6.sp, color = V2Muted)
+                KText("${formatCount(apps.size)}", size = 9.sp, color = V2Muted)
             }
             Spacer(Modifier.height(9.dp))
             if (apps.isEmpty()) {
                 KText(
                     "لا توجد تطبيقات معلنة لأي من الأذونات الحساسة المرصودة.",
-                    size = 8.4.sp,
+                    size = 9.sp,
                     color = V2Soft,
                 )
             } else {
@@ -1673,7 +1663,7 @@ private fun SensitiveAppsCard(
                             KText(app.label, size = 9.2.sp, weight = FontWeight.Bold, maxLines = 1)
                             KText(
                                 "${formatCount(app.sensitivePermissions.size)} أذونات حساسة معلنة · ${app.packageName}",
-                                size = 6.9.sp,
+                                size = 9.sp,
                                 color = V2Muted,
                                 maxLines = 1,
                             )
@@ -1702,9 +1692,9 @@ private fun AppIconImage(packageName: String, size: Dp) {
     Box(
         Modifier
             .size(size)
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(Color.White.copy(alpha = .06f))
-            .border(1.dp, Color.White.copy(alpha = .12f), RoundedCornerShape(10.dp)),
+            .border(1.dp, Color.White.copy(alpha = .12f), RoundedCornerShape(12.dp)),
         contentAlignment = Alignment.Center,
     ) {
         if (bitmap != null) {
@@ -1736,7 +1726,7 @@ private fun PrivacyPreviewNote() {
         KText(
             "العدّ من PackageManager: الأذونات المعلنة في كل تطبيق وما مُنح منها فعليًا. " +
                 "لا يدّعي التطبيق قراءة سجل تغييرات الأذونات.",
-            size = 7.2.sp,
+            size = 9.sp,
             color = V2Muted,
         )
     }

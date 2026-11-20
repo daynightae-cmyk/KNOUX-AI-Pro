@@ -310,9 +310,9 @@ private fun androidx.compose.foundation.lazy.LazyListScope.scanItems(facts: Devi
                 Spacer(Modifier.width(9.dp))
                 Column(Modifier.weight(1f)) {
                     KText("${formatCount(facts.media.duplicateGroups.size)} مجموعة تكرار", size = 15.sp, weight = FontWeight.Black, color = V2Cyan)
-                    KText("${formatCount(facts.media.duplicateGroups.sumOf { it.count - 1 })} ملف زائد · ${formatBytes(facts.media.duplicateGroups.sumOf { it.reclaimableBytes })}", size = 8.sp, color = V2Soft)
+                    KText("${formatCount(facts.media.duplicateGroups.sumOf { it.count - 1 })} ملف زائد · ${formatBytes(facts.media.duplicateGroups.sumOf { it.reclaimableBytes })}", size = 9.sp, color = V2Soft)
                     Spacer(Modifier.height(3.dp))
-                    KText("كاش KNOUX: ${formatBytes(facts.ownCacheBytes)} · ${formatCount(facts.ownCacheFiles)} ملف", size = 7.6.sp, color = V2Muted)
+                    KText("كاش KNOUX: ${formatBytes(facts.ownCacheBytes)} · ${formatCount(facts.ownCacheFiles)} ملف", size = 9.sp, color = V2Muted)
                 }
             }
         }
@@ -382,21 +382,21 @@ private fun FilterBody(facts: DeviceFacts) {
                     Box(
                         Modifier
                             .weight(1f)
-                            .clip(RoundedCornerShape(10.dp))
+                            .clip(RoundedCornerShape(12.dp))
                             .background(if (minMb == value) V2Amber.withAlpha(.20f) else Color.White.withAlpha(.04f))
-                            .border(1.dp, if (minMb == value) V2Amber.withAlpha(.55f) else Color.White.withAlpha(.10f), RoundedCornerShape(10.dp))
+                            .border(1.dp, if (minMb == value) V2Amber.withAlpha(.55f) else Color.White.withAlpha(.10f), RoundedCornerShape(12.dp))
                             .clickable { minMb = value }
                             .padding(vertical = 6.dp),
                         contentAlignment = Alignment.Center,
                     ) {
-                        KText("${value}MB", size = 8.sp, weight = FontWeight.Bold, color = if (minMb == value) V2Amber else V2Soft)
+                        KText("${value}MB", size = 9.sp, weight = FontWeight.Bold, color = if (minMb == value) V2Amber else V2Soft)
                     }
                 }
             }
             Spacer(Modifier.height(7.dp))
             KText(
                 "${formatCount(filtered.size)} ملف يطابق الحد · ${formatBytes(filtered.sumOf { it.sizeBytes })}",
-                size = 7.6.sp,
+                size = 9.sp,
                 color = V2Muted,
             )
         }
@@ -445,7 +445,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.protectedItems(facts:
                     KText(
                         "الملفات الخاصة بتطبيق آخر لا يمكن قراءتها أو حذفها من KNOUX. " +
                             "حتى مجلدات التطبيق نفسه تُمسح فقط بعد تأكيدك.",
-                        size = 8.sp,
+                        size = 9.sp,
                         lineHeight = 12.sp,
                         color = V2Soft,
                     )
@@ -537,7 +537,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.confirmItems(facts: D
                     Spacer(Modifier.width(8.dp))
                     Column(Modifier.weight(1f)) {
                         KText("الحذف ليس تلقائيًا", size = 11.sp, weight = FontWeight.Black, color = V2Pink)
-                        KText("لا يوجد زر يحذف شيئًا بدون حوار Android الرسمي.", size = 8.sp, color = V2Soft)
+                        KText("لا يوجد زر يحذف شيئًا بدون حوار Android الرسمي.", size = 9.sp, color = V2Soft)
                     }
                 }
                 Spacer(Modifier.height(9.dp))
@@ -545,7 +545,7 @@ private fun androidx.compose.foundation.lazy.LazyListScope.confirmItems(facts: D
                     "عدد المجموعات المتاحة الآن: ${formatCount(facts.media.duplicateGroups.size)} · " +
                         "المساحة القابلة للاسترجاع: ${formatBytes(facts.media.duplicateGroups.sumOf { it.reclaimableBytes })}. " +
                         "كاش KNOUX الحالي: ${formatBytes(facts.ownCacheBytes)}.",
-                    size = 8.sp,
+                    size = 9.sp,
                     lineHeight = 12.sp,
                     color = V2Muted,
                 )
@@ -584,9 +584,9 @@ private fun androidx.compose.foundation.lazy.LazyListScope.historyItems(history:
                         Spacer(Modifier.width(8.dp))
                         Column(Modifier.weight(1f)) {
                             KText(formatScanTime(entry.timestamp), size = 9.2.sp, weight = FontWeight.Bold)
-                            KText("${formatCount(entry.appsScanned)} تطبيق · ${formatBytes(entry.storageUsedBytes)} مستخدم", size = 7.2.sp, color = V2Soft)
+                            KText("${formatCount(entry.appsScanned)} تطبيق · ${formatBytes(entry.storageUsedBytes)} مستخدم", size = 9.sp, color = V2Soft)
                         }
-                        KText(formatBytes(entry.cacheBytes), size = 8.4.sp, weight = FontWeight.Bold, color = V2Pink)
+                        KText(formatBytes(entry.cacheBytes), size = 9.sp, weight = FontWeight.Bold, color = V2Pink)
                     }
                 }
             }
@@ -780,7 +780,7 @@ private fun CleanFactRow(icon: ImageVector, title: String, value: String, accent
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Icon(icon, null, tint = accent, modifier = Modifier.size(17.dp))
         Spacer(Modifier.width(7.dp))
-        KText(title, size = 8.6.sp, color = V2Soft, modifier = Modifier.weight(1f))
+        KText(title, size = 9.sp, color = V2Soft, modifier = Modifier.weight(1f))
         KText(value, size = 9.sp, weight = FontWeight.Bold, color = accent)
     }
 }
@@ -792,10 +792,10 @@ private fun CleanFileRow(title: String, subtitle: String, size: String, accent: 
             V2IconTile(Icons.Rounded.Image, accent, size = 33.dp, iconSize = 16.dp)
             Spacer(Modifier.width(7.dp))
             Column(Modifier.weight(1f)) {
-                KText(title, size = 8.8.sp, weight = FontWeight.SemiBold, maxLines = 1)
-                KText(subtitle, size = 7.sp, color = V2Soft, maxLines = 1)
+                KText(title, size = 9.sp, weight = FontWeight.SemiBold, maxLines = 1)
+                KText(subtitle, size = 9.sp, color = V2Soft, maxLines = 1)
             }
-            KText(size, size = 8.4.sp, weight = FontWeight.Bold, color = accent)
+            KText(size, size = 9.sp, weight = FontWeight.Bold, color = accent)
         }
     }
 }
@@ -814,10 +814,10 @@ private fun CleanActionCard(
             Spacer(Modifier.width(8.dp))
             Column(Modifier.weight(1f)) {
                 KText(title, size = 9.4.sp, weight = FontWeight.Bold)
-                KText(body, size = 7.2.sp, lineHeight = 10.sp, color = V2Soft)
+                KText(body, size = 9.sp, lineHeight = 10.6.sp, color = V2Soft)
             }
             androidx.compose.material3.TextButton(onClick = onClick) {
-                androidx.compose.material3.Text(action, color = V2Cyan, fontSize = 8.sp)
+                androidx.compose.material3.Text(action, color = V2Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
         }
     }

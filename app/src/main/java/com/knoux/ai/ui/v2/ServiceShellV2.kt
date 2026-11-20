@@ -237,6 +237,7 @@ fun ServiceHero(
         label = "serviceStagBreath",
     )
     val titleSize = (if (compact) compactServiceTitleSize(spec.title.length) else serviceTitleSize(spec.title.length)).sp
+    val theme = LocalProTheme.current
 
     BoxWithConstraints(
         modifier
@@ -251,13 +252,13 @@ fun ServiceHero(
             .background(
                 Brush.verticalGradient(
                     listOf(
-                        Color(0xFF120633),
-                        Color(0xFF1C0A46),
-                        Color(0xFF0A0424),
+                        theme.heroTop,
+                        theme.heroMid,
+                        theme.heroBase,
                     )
                 )
             )
-            .drawBehind { CompactHeroSky(spec) }
+            .drawBehind { CompactHeroSky(spec, theme) }
             .clipToBounds(),
     ) {
         val stagSize = serviceStagSize(maxHeight, maxWidth)
@@ -355,9 +356,9 @@ fun ServiceHero(
                             .align(Alignment.BottomEnd)
                             .padding(3.dp)
                             .size(if (compact) 13.dp else 15.dp)
-                            .clip(RoundedCornerShape(5.dp))
+                            .clip(RoundedCornerShape(8.dp))
                             .background(V2Deep.copy(alpha = .94f))
-                            .border(1.dp, spec.accent.copy(alpha = .66f), RoundedCornerShape(5.dp)),
+                            .border(1.dp, spec.accent.copy(alpha = .66f), RoundedCornerShape(8.dp)),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(
@@ -397,7 +398,7 @@ fun ServiceHero(
                             .border(1.dp, V2GoldText.copy(alpha = .50f), RoundedCornerShape(50))
                             .padding(horizontal = 7.dp, vertical = 3.dp),
                     ) {
-                        KText("PRO", size = 6.6.sp, weight = FontWeight.Black, color = V2GoldText)
+                        KText("PRO", size = 9.sp, weight = FontWeight.Black, color = V2GoldText)
                     }
                 }
             }
@@ -454,20 +455,20 @@ fun ServiceHero(
  * identity — nebula, aurora, star field, mountain ridge — but at a header
  * scale where it reads as a live backdrop instead of a poster.
  */
-private fun androidx.compose.ui.graphics.drawscope.DrawScope.CompactHeroSky(spec: KnouxServiceSpec) {
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.CompactHeroSky(spec: KnouxServiceSpec, theme: ProTheme) {
     val w = size.width
     val h = size.height
     val accent = spec.accent
     val accent2 = spec.accent2
-    val gold = Color(0xFFFFD700)
+    val gold = theme.gold
 
     drawRect(
         brush = Brush.verticalGradient(
             listOf(
-                Color(0xFF050210),
-                Color(0xFF0D0424),
-                Color(0xFF1A0638),
-                Color(0xFF0C0322),
+                theme.skyTop,
+                theme.skyMid,
+                theme.skyGlow,
+                theme.skyBase,
             ),
             startY = 0f,
             endY = h,
@@ -564,7 +565,7 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.CompactHeroSky(spec
     drawPath(
         ridge,
         brush = Brush.verticalGradient(
-            listOf(Color(0xFF1B0A3C).copy(alpha = .90f), Color(0xFF080214).copy(alpha = .98f)),
+            listOf(theme.ridgeTop.copy(alpha = .90f), theme.ridgeBase.copy(alpha = .98f)),
             startY = h * .55f,
             endY = h,
         ),
@@ -721,7 +722,8 @@ fun ServiceArtScene(
         ),
         label = "serviceArtOrbit2",
     )
-    val gold = Color(0xFFFFD700)
+    val theme = LocalProTheme.current
+    val gold = theme.gold
     val accent = spec.accent
     val accent2 = spec.accent2
 
@@ -932,9 +934,9 @@ fun ServiceArtScene(
                 .background(
                     Brush.radialGradient(
                         listOf(
-                            Color(0xFF1A0A3A),
-                            Color(0xFF0D0318),
-                            Color(0xFF050108),
+                            theme.artCoreTop,
+                            theme.artCoreMid,
+                            theme.artCoreBase,
                         ),
                     ),
                 )
@@ -1044,6 +1046,7 @@ internal fun ServiceMeter(
 @Composable
 internal fun DeepScanSonar(state: DeepScanUiState, modifier: Modifier = Modifier) {
     val motion = rememberMotionEnabled()
+    val theme = LocalProTheme.current
     val running = state is DeepScanUiState.Running
     var sweep by remember { mutableFloatStateOf(0f) }
 
@@ -1108,7 +1111,7 @@ internal fun DeepScanSonar(state: DeepScanUiState, modifier: Modifier = Modifier
             // Dark glass orb behind the instrument face.
             drawCircle(
                 brush = Brush.radialGradient(
-                    listOf(Color(0xFF261152).copy(alpha = .92f), Color(0xFF070218).copy(alpha = .98f)),
+                    listOf(theme.sonarGlass.copy(alpha = .92f), theme.ridgeBase.copy(alpha = .98f)),
                     center = center,
                     radius = radius,
                 ),
@@ -1240,7 +1243,7 @@ internal fun DeepScanSonar(state: DeepScanUiState, modifier: Modifier = Modifier
             Modifier
                 .size(if (running) 54.dp else 48.dp)
                 .clip(CircleShape)
-                .background(Color(0xFF070218).copy(alpha = .94f))
+                .background(theme.ridgeBase.copy(alpha = .94f))
                 .border(1.dp, accent.copy(alpha = .55f), CircleShape),
             contentAlignment = Alignment.Center,
         ) {

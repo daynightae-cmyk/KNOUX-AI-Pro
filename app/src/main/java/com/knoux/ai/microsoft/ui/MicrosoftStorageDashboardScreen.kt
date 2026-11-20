@@ -63,6 +63,8 @@ import com.knoux.ai.ui.v2.V2GlassCard
 import com.knoux.ai.ui.v2.V2GoldText
 import com.knoux.ai.ui.v2.V2Green
 import com.knoux.ai.ui.v2.V2LuxuryIdentity
+import com.knoux.ai.ui.v2.V2TopBar
+import com.knoux.ai.ui.v2.V2TopMode
 import com.knoux.ai.ui.v2.V2Pink
 import com.knoux.ai.ui.v2.V2Red
 import com.knoux.ai.ui.v2.V2Soft
@@ -240,6 +242,7 @@ fun MicrosoftStorageDashboardScreen(
     }
 
     Column(Modifier.fillMaxSize()) {
+        V2TopBar(V2TopMode.INTERIOR, onBack = onBack, onPro = onPro)
         V2LuxuryIdentity(
             title = "لوحة تخزين مايكروسوفت",
             english = "MICROSOFT STORAGE DASHBOARD",
@@ -346,7 +349,7 @@ private fun MicrosoftAccountsStrip(
                     KText("حسابات مايكروسوفت المتصلة", size = 13.sp, weight = FontWeight.Bold, color = Color.White)
                     KText(
                         if (accounts.isEmpty()) "لا حساب مرتبط" else "${accounts.size} حساب مرتبط",
-                        size = 8.6.sp,
+                        size = 9.sp,
                         color = V2Soft,
                         maxLines = 1,
                     )
@@ -419,7 +422,7 @@ private fun MicrosoftQuotaNote() {
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     KText("تخزين مايكروسوفت", size = 13.sp, weight = FontWeight.Bold, color = Color.White)
-                    KText("لا أرقام حصة من المزوّد", size = 8.6.sp, color = V2Soft, maxLines = 1)
+                    KText("لا أرقام حصة من المزوّد", size = 9.sp, color = V2Soft, maxLines = 1)
                 }
             }
             Spacer(Modifier.height(6.dp))
@@ -464,7 +467,7 @@ private fun MicrosoftActionButtons(
                     modifier = Modifier.size(24.dp),
                 )
                 KText(if (scanning) "جارٍ الفحص…" else "فحص Outlook", size = 11.sp, weight = FontWeight.Bold, color = V2Blue)
-                KText("الرسائل القديمة والكبيرة", size = 8.4.sp, color = V2Soft, maxLines = 2)
+                KText("الرسائل القديمة والكبيرة", size = 9.sp, color = V2Soft, maxLines = 2)
             }
         }
     }
@@ -500,7 +503,7 @@ private fun MicrosoftScanResults(results: List<ScanResult>) {
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     KText("نتائج الفحص", size = 13.sp, weight = FontWeight.Bold, color = Color.White)
-                    KText("${results.size} جلسة فحص", size = 8.6.sp, color = V2Soft, maxLines = 1)
+                    KText("${results.size} جلسة فحص", size = 9.sp, color = V2Soft, maxLines = 1)
                 }
             }
             Spacer(Modifier.height(8.dp))
@@ -561,7 +564,7 @@ private fun MicrosoftScanRow(result: ScanResult) {
             )
         }
         result.error?.let { error ->
-            KText(error, size = 8.4.sp, color = V2Red, maxLines = 2)
+            KText(error, size = 9.sp, color = V2Red, maxLines = 2)
         }
     }
 }
@@ -605,7 +608,7 @@ private fun MicrosoftCandidatesList(
                     KText("عناصر للمراجعة", size = 13.sp, weight = FontWeight.Bold, color = Color.White)
                     KText(
                         if (candidates.isEmpty()) "لا عناصر" else "${candidates.size} عنصر · ${selected.size} محدد",
-                        size = 8.6.sp,
+                        size = 9.sp,
                         color = V2Soft,
                         maxLines = 1,
                     )
@@ -714,7 +717,7 @@ private fun MicrosoftCandidateRow(
             Column(Modifier.weight(1f)) {
                 KText(candidate.itemName ?: "عنصر غير مسمّى", size = 11.sp, weight = FontWeight.SemiBold, color = Color.White, maxLines = 1)
                 KText(categoryLabel(candidate.category), size = 9.sp, color = V2Soft, maxLines = 1)
-                KText(candidate.sourceAccount ?: "", size = 8.sp, color = V2Soft, maxLines = 1)
+                KText(candidate.sourceAccount ?: "", size = 9.sp, color = V2Soft, maxLines = 1)
             }
             Spacer(Modifier.weight(1f))
             Column {

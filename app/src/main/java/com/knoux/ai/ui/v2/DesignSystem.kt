@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -35,6 +36,7 @@ import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.Call
+import androidx.compose.material.icons.rounded.ChevronLeft
 import androidx.compose.material.icons.rounded.CleaningServices
 import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material.icons.rounded.Home
@@ -118,6 +120,39 @@ val V2ProRed = Color(0xFFFF1744)
 val V2ProRedDeep = Color(0xFF8B0018)
 
 /* ------------------------------------------------------------------ *
+ * Cosmic scenery — layered sky/hero/ridge tones used by the shared
+ * shells. Standard values reproduce the approved neon art exactly;
+ * Pro values warm the same layers toward the golden horizon instead
+ * of bypassing the theme with raw literals.
+ * ------------------------------------------------------------------ */
+
+val V2SkyTop = Color(0xFF050210)
+val V2SkyMid = Color(0xFF0D0424)
+val V2SkyGlow = Color(0xFF1A0638)
+val V2SkyBase = Color(0xFF0C0322)
+val V2HeroTop = Color(0xFF120633)
+val V2HeroMid = Color(0xFF1C0A46)
+val V2HeroBase = Color(0xFF0A0424)
+val V2RidgeTop = Color(0xFF1B0A3C)
+val V2RidgeBase = Color(0xFF080214)
+val V2ArtCoreTop = Color(0xFF1A0A3A)
+val V2ArtCoreMid = Color(0xFF0D0318)
+val V2ArtCoreBase = Color(0xFF050108)
+val V2SonarGlass = Color(0xFF261152)
+val V2OrbCore = Color(0xFF321374)
+val V2OrbMid = Color(0xFF110735)
+val V2SurfaceTop = Color(0xFF211353)
+val V2SurfaceMid = Color(0xFF130A34)
+val V2SurfaceBase = Color(0xFF09051F)
+val V2SurfaceSeam = Color(0xFF3F3A92)
+val V2MountainTint = Color(0xFF351079)
+val V2GaugeCore = Color(0xFF10072F)
+val V2GaugeRim = Color(0xFF060315)
+val V2BronzeEdge = Color(0xFF5A3108)
+val V2BronzeMid = Color(0xFF1C103C)
+val V2BarTop = Color(0xFF291453)
+
+/* ------------------------------------------------------------------ *
  * Pro Identity — complete brand change when Pro activates
  * ------------------------------------------------------------------ */
 
@@ -167,6 +202,31 @@ data class ProTheme(
     val muted: Color,
     val gold: Color,
     val goldBright: Color,
+    val skyTop: Color,
+    val skyMid: Color,
+    val skyGlow: Color,
+    val skyBase: Color,
+    val heroTop: Color,
+    val heroMid: Color,
+    val heroBase: Color,
+    val ridgeTop: Color,
+    val ridgeBase: Color,
+    val artCoreTop: Color,
+    val artCoreMid: Color,
+    val artCoreBase: Color,
+    val sonarGlass: Color,
+    val orbCore: Color,
+    val orbMid: Color,
+    val surfaceTop: Color,
+    val surfaceMid: Color,
+    val surfaceBase: Color,
+    val surfaceSeam: Color,
+    val mountainTint: Color,
+    val gaugeCore: Color,
+    val gaugeRim: Color,
+    val bronzeEdge: Color,
+    val bronzeMid: Color,
+    val barTop: Color,
 ) {
     companion object {
         val Standard = ProTheme(
@@ -176,6 +236,15 @@ data class ProTheme(
             violet = V2Violet, pink = V2Pink, cyan = V2Cyan, blue = V2Blue,
             green = V2Green, red = V2Red, amber = V2Amber, soft = V2Soft, muted = V2Muted,
             gold = V2GoldText, goldBright = Color(0xFFFFE9B0),
+            skyTop = V2SkyTop, skyMid = V2SkyMid, skyGlow = V2SkyGlow, skyBase = V2SkyBase,
+            heroTop = V2HeroTop, heroMid = V2HeroMid, heroBase = V2HeroBase,
+            ridgeTop = V2RidgeTop, ridgeBase = V2RidgeBase,
+            artCoreTop = V2ArtCoreTop, artCoreMid = V2ArtCoreMid, artCoreBase = V2ArtCoreBase,
+            sonarGlass = V2SonarGlass, orbCore = V2OrbCore, orbMid = V2OrbMid,
+            surfaceTop = V2SurfaceTop, surfaceMid = V2SurfaceMid, surfaceBase = V2SurfaceBase,
+            surfaceSeam = V2SurfaceSeam, mountainTint = V2MountainTint,
+            gaugeCore = V2GaugeCore, gaugeRim = V2GaugeRim,
+            bronzeEdge = V2BronzeEdge, bronzeMid = V2BronzeMid, barTop = V2BarTop,
         )
         val Pro = ProTheme(
             isPro = true,
@@ -187,6 +256,23 @@ data class ProTheme(
             violet = V2Violet, pink = V2Pink, cyan = V2Cyan, blue = V2Blue,
             green = ProGreen, red = ProRed, amber = ProAmber, soft = ProSoft, muted = ProMuted,
             gold = ProGold, goldBright = ProGoldBright,
+            // Warm-horizon variants of the same scenery layers; gold stays an
+            // accent over a deep plum sky, never a flat brown wash.
+            skyTop = Color(0xFF0A0416), skyMid = Color(0xFF160A28),
+            skyGlow = Color(0xFF2E1638), skyBase = Color(0xFF140826),
+            heroTop = Color(0xFF1A0C30), heroMid = Color(0xFF2A1440),
+            heroBase = Color(0xFF120626),
+            ridgeTop = Color(0xFF2E1638), ridgeBase = Color(0xFF0C0416),
+            artCoreTop = Color(0xFF2E1638), artCoreMid = Color(0xFF160820),
+            artCoreBase = Color(0xFF080208),
+            sonarGlass = Color(0xFF341A40), orbCore = Color(0xFF3A1E44),
+            orbMid = Color(0xFF1A0C30),
+            surfaceTop = Color(0xFF2E1840), surfaceMid = Color(0xFF1D0E32),
+            surfaceBase = Color(0xFF100620), surfaceSeam = Color(0xFF7A5230),
+            mountainTint = Color(0xFF5A3108),
+            gaugeCore = Color(0xFF1A0C30), gaugeRim = Color(0xFF0A0416),
+            bronzeEdge = V2BronzeEdge, bronzeMid = V2BronzeMid,
+            barTop = ProGlassTop,
         )
     }
 }
@@ -265,6 +351,10 @@ fun KText(
         V2GoldText -> proTheme.gold
         else -> color
     }
+    // Single-line labels must ellipsize instead of hard-clipping mid-glyph;
+    // callers can still pin Clip explicitly where a precise cut is intended.
+    val resolvedOverflow =
+        if (overflow == TextOverflow.Clip && maxLines == 1) TextOverflow.Ellipsis else overflow
     Text(
         text = resolved,
         modifier = modifier,
@@ -272,7 +362,7 @@ fun KText(
             .copy(textDirection = direction),
         textAlign = align,
         maxLines = maxLines,
-        overflow = overflow,
+        overflow = resolvedOverflow,
     )
 }
 
@@ -606,9 +696,11 @@ fun V2TopBar(
 
 @Composable
 fun HeaderIcon(icon: ImageVector, description: String, onClick: () -> Unit) {
+    // 40dp touch target (visual disc stays compact); keeps a11y minimum while
+    // fitting the 54dp header row.
     Box(
         Modifier
-            .size(36.dp)
+            .size(40.dp)
             .clip(CircleShape)
             .background(Color.White.withAlpha( .035f))
             .border(1.dp, Color.White.withAlpha( .14f), CircleShape)
@@ -616,7 +708,7 @@ fun HeaderIcon(icon: ImageVector, description: String, onClick: () -> Unit) {
         contentAlignment = Alignment.Center,
     ) {
         HeaderHalo(Modifier.matchParentSize(), color = V2Cyan)
-        Icon(icon, description, tint = Color.White.withAlpha( .92f), modifier = Modifier.size(19.dp))
+        Icon(icon, description, tint = Color.White.withAlpha( .92f), modifier = Modifier.size(20.dp))
     }
 }
 
@@ -664,7 +756,7 @@ fun ProPill(modifier: Modifier = Modifier) {
     ) {
         KText(
             if (active) "PRO ✓" else "PRO",
-            size = 8.sp,
+            size = 9.sp,
             weight = FontWeight.Bold,
             color = if (active) proTheme.deep else proTheme.amber,
             letterSpacing = .6.sp,
@@ -703,7 +795,7 @@ fun ProBadge(modifier: Modifier = Modifier, label: String = "PRO") {
         Spacer(Modifier.width(3.dp))
         KText(
             label,
-            size = 7.sp,
+            size = 9.sp,
             weight = FontWeight.Black,
             color = Color.White,
             letterSpacing = .5.sp,
@@ -716,9 +808,9 @@ fun ProBadge(modifier: Modifier = Modifier, label: String = "PRO") {
 fun CrownHexButton(onClick: () -> Unit = {}) {
     val proTheme = LocalProTheme.current
     val isPro = proTheme.isPro
-    Box(Modifier.size(34.dp).clickable(onClickLabel = "Pro", onClick = onClick)) {
-        HeaderHalo(Modifier.matchParentSize(), color = proTheme.gold)
-        Canvas(Modifier.matchParentSize()) {
+    Box(Modifier.size(40.dp).clickable(onClickLabel = "Pro", onClick = onClick), contentAlignment = Alignment.Center) {
+        HeaderHalo(Modifier.size(34.dp), color = proTheme.gold)
+        Canvas(Modifier.size(34.dp)) {
             val path = hexagonPath(size.width * .5f, size.height * .5f, size.width * .47f)
             val gradient = if (isPro)
                 Brush.linearGradient(listOf(proTheme.goldBright.withAlpha( .4f), proTheme.amber.withAlpha( .1f)))
@@ -801,6 +893,34 @@ val V2Tabs = listOf(
     V2Tab("reports", "التقارير", Icons.Rounded.BarChart),
 )
 
+/**
+ * Catalog-driven bottom-bar lane for routes without an explicit mapping.
+ * Section hubs, catalog tools and the dev/cloud dashboards all highlight the
+ * lane they belong to instead of falling through to Home.
+ */
+internal fun bottomBarLaneForRoute(route: String): String {
+    SectionHub.byRoute(route)?.let { entry ->
+        return when (entry.key) {
+            "smartclean", "duplicates", "residue", "deepscan" -> "clean"
+            "reports" -> "reports"
+            else -> "tools"
+        }
+    }
+    if (route.startsWith("clean-")) return "clean"
+    SectionTools.defs.firstOrNull { it.route == route }?.let { def ->
+        return when (def.section) {
+            "smartclean", "duplicates", "residue", "deepscan" -> "clean"
+            "reports" -> "reports"
+            else -> "tools"
+        }
+    }
+    if (route.startsWith("dev-") ||
+        route == "developer-studio" || route == "cloud-cleaner" ||
+        route == "google-storage" || route == "microsoft-storage"
+    ) return "tools"
+    return "home"
+}
+
 @Composable
 fun V2BottomBar(
     selectedRoute: String,
@@ -818,7 +938,9 @@ fun V2BottomBar(
         "ai-recommendations", "privacy-risk" -> "tools"
         "reports", "performance-report" -> "reports"
         "pro" -> "pro"
-        else -> "home"
+        // Everything else resolves through the catalog so new services never
+        // silently fall back to the Home highlight while browsing them.
+        else -> bottomBarLaneForRoute(selectedRoute)
     }
 
     Box(modifier.fillMaxWidth().height(88.dp).padding(horizontal = 12.dp)) {
@@ -832,8 +954,8 @@ fun V2BottomBar(
                     )
                 )
             }
-            val bgColor1 = if (isPro) proTheme.deep else Color(0xFF291453)
-            val bgColor2 = if (isPro) proTheme.deep2 else Color(0xFF0D0728)
+            val bgColor1 = if (isPro) proTheme.deep else proTheme.barTop
+            val bgColor2 = if (isPro) proTheme.deep2 else proTheme.panel2
             val borderColor = if (isPro) proTheme.border else V2Border
             val accentColor = if (isPro) proTheme.cyan else V2Cyan
             
@@ -898,7 +1020,9 @@ fun V2BottomBar(
                         if (isPro)
                             Brush.verticalGradient(listOf(proTheme.deep2, proTheme.deep))
                         else
-                            Brush.verticalGradient(listOf(Color(0xFF4A2A20), Color(0xFF1D0F0B)))
+                            // Violet world in standard mode too — the crown stays
+                            // gold-accented, but the orb no longer clashes brown.
+                            Brush.verticalGradient(listOf(proTheme.panel, proTheme.panel2))
                     )
                     .border(2.dp, if (isPro) proTheme.goldBright.withAlpha( .9f) else V2Amber.withAlpha( .9f), CircleShape)
                     .border(1.dp, if (isPro) proTheme.soft.withAlpha( .3f) else Color.White.withAlpha( .22f), CircleShape),
@@ -922,13 +1046,13 @@ private fun RowScope.BottomItem(
 ) {
     val proTheme = LocalProTheme.current
     val isPro = proTheme.isPro
-    val activeTop = if (isPro) proTheme.amber else Color(0xFF1357AD)
-    val activeBottom = if (isPro) proTheme.deep2 else Color(0xFF0D244E)
+    val activeTop = if (isPro) proTheme.amber else V2Blue
+    val activeBottom = if (isPro) proTheme.deep2 else proTheme.panel2
     val activeBorder = if (isPro) proTheme.gold else V2Cyan
     Box(
         modifier
             .fillMaxSize()
-            .clip(RoundedCornerShape(19.dp))
+            .clip(RoundedCornerShape(20.dp))
             .then(
                 if (active) {
                     Modifier
@@ -937,7 +1061,7 @@ private fun RowScope.BottomItem(
                                 listOf(activeTop.withAlpha(.82f), activeBottom.withAlpha(.66f))
                             )
                         )
-                        .border(1.dp, activeBorder.withAlpha(.52f), RoundedCornerShape(19.dp))
+                        .border(1.dp, activeBorder.withAlpha(.52f), RoundedCornerShape(20.dp))
                 } else Modifier
             )
             .clickable(onClick = onClick),
@@ -948,12 +1072,12 @@ private fun RowScope.BottomItem(
                 tab.icon ?: return@Column,
                 contentDescription = tab.label,
                 tint = if (active) Color.White else proTheme.soft.withAlpha(.82f),
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(22.dp),
             )
             Spacer(Modifier.height(2.dp))
             KText(
                 tab.label,
-                size = 9.5.sp,
+                size = 10.5.sp,
                 weight = if (active) FontWeight.Bold else FontWeight.Medium,
                 color = if (active) Color.White else proTheme.soft.withAlpha(.85f),
                 maxLines = 1,
@@ -1067,7 +1191,7 @@ fun V2SectionLabel(title: String, modifier: Modifier = Modifier, trailing: Strin
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         KText(title, size = 15.sp, weight = FontWeight.Bold)
         Spacer(Modifier.weight(1f))
-        if (trailing != null) KText(trailing, size = 10.sp, color = V2Muted)
+        if (trailing != null) KText(trailing, size = 10.5.sp, color = V2Muted)
     }
 }
 
@@ -1108,7 +1232,9 @@ fun V2GradientButton(
         KText(text, size = 15.sp, weight = FontWeight.Bold, color = contentColor)
         if (trailingChevron) {
             Spacer(Modifier.width(8.dp))
-            Icon(Icons.Rounded.ArrowBack, null, tint = contentColor, modifier = Modifier.size(17.dp))
+            // RTL shell: "forward" reads to the left; use the same chevron the
+            // luxury surfaces use instead of a back-arrow glyph.
+            Icon(Icons.Rounded.ChevronLeft, null, tint = contentColor, modifier = Modifier.size(17.dp))
         }
     }
 }
@@ -1325,12 +1451,12 @@ fun V2MetricRow(
             Icon(icon, null, tint = accent, modifier = Modifier.size(14.dp))
         }
         Spacer(Modifier.width(7.dp))
-        KText(label, size = 10.sp, weight = FontWeight.Medium, color = V2Soft, modifier = Modifier.width(52.dp))
+        KText(label, size = 10.sp, weight = FontWeight.Medium, color = V2Soft, maxLines = 1, modifier = Modifier.width(58.dp))
         Column(Modifier.weight(1f)) {
             V2ProgressBar(progress, height = 5.dp, colors = listOf(accent, V2Cyan))
         }
         Spacer(Modifier.width(7.dp))
-        KText(value, size = 8.8.sp, color = Color.White, weight = FontWeight.SemiBold, maxLines = 1)
+        KText(value, size = 9.sp, color = Color.White, weight = FontWeight.SemiBold, maxLines = 1)
     }
 }
 
@@ -1344,9 +1470,9 @@ fun V2SearchField(
         modifier
             .fillMaxWidth()
             .height(40.dp)
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(16.dp))
             .background(Color.White.withAlpha( .045f))
-            .border(1.dp, V2Border.withAlpha( .32f), RoundedCornerShape(14.dp))
+            .border(1.dp, V2Border.withAlpha( .32f), RoundedCornerShape(16.dp))
             .clickable(onClick = onClick)
             .padding(horizontal = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -1430,6 +1556,7 @@ fun V2Chip(
             )
             .border(if (active) 0.dp else 1.dp, if (active) Color.Transparent else accent.withAlpha( .28f), shape)
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .then(if (onClick != null) Modifier.heightIn(min = 36.dp) else Modifier)
             .padding(horizontal = 13.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -1447,7 +1574,7 @@ fun V2StatCell(value: String, label: String, accent: Color, modifier: Modifier =
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         KText(value, size = 12.5.sp, weight = FontWeight.Bold, color = accent)
         Spacer(Modifier.height(1.dp))
-        KText(label, size = 8.5.sp, color = V2Soft, maxLines = 1)
+        KText(label, size = 9.sp, color = V2Soft, maxLines = 1)
     }
 }
 
@@ -1480,9 +1607,8 @@ fun V2DeerHeader(
         if (proTheme.isPro) {
             CrownGold(
                 size = 28.dp,
-                color = proTheme.gold
+                color = proTheme.gold,
             )
-            Spacer(Modifier.height(-8.dp)) // Overlap crown with stag head
         }
         Image(
             painter = painterResource(R.drawable.knoux_stag_official),

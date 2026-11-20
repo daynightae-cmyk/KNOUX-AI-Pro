@@ -46,6 +46,8 @@ import com.knoux.ai.ui.v2.V2GlassCard
 import com.knoux.ai.ui.v2.V2GoldText
 import com.knoux.ai.ui.v2.V2Green
 import com.knoux.ai.ui.v2.V2LuxuryIdentity
+import com.knoux.ai.ui.v2.V2TopBar
+import com.knoux.ai.ui.v2.V2TopMode
 import com.knoux.ai.ui.v2.V2Pink
 import com.knoux.ai.ui.v2.V2Red
 import com.knoux.ai.ui.v2.V2Soft
@@ -182,6 +184,7 @@ fun AgentToolSystemScreen(
     }
 
     Column(Modifier.fillMaxSize()) {
+        V2TopBar(V2TopMode.INTERIOR, onBack = onBack, onPro = onPro)
         V2LuxuryIdentity(
             title = "نظام أدوات الوكيل",
             english = "AGENT TOOL SYSTEM",
@@ -258,7 +261,7 @@ private fun ToolCard(
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     KText(agentToolText(tool), size = 13.sp, weight = FontWeight.Bold, color = Color.White)
-                    KText(status.label, size = 8.6.sp, color = stateColor, maxLines = 1)
+                    KText(status.label, size = 9.sp, color = stateColor, maxLines = 1)
                 }
                 Spacer(Modifier.weight(1f))
                 TextButton(onClick = onClick) {

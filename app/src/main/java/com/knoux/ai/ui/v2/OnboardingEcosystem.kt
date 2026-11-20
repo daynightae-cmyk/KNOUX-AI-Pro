@@ -103,7 +103,7 @@ internal fun OnboardingEcosystemPage() {
                         .border(1.dp, V2Amber.copy(alpha = .55f), RoundedCornerShape(50))
                         .padding(horizontal = 6.dp, vertical = 2.dp),
                 ) {
-                    KText("PRO", size = 7.sp, weight = FontWeight.Black, color = V2GoldText)
+                    KText("PRO", size = 9.sp, weight = FontWeight.Black, color = V2GoldText)
                 }
             }
         }
@@ -147,7 +147,7 @@ internal fun OnboardingEcosystemPage() {
         Spacer(Modifier.height(5.dp))
         KText(
             "كل قسم يفتح خدماته الخمس عشرة، وكل خدمة لها شاشة مستقلة.",
-            size = 8.6.sp,
+            size = 9.sp,
             color = V2Soft,
             align = TextAlign.Center,
             modifier = Modifier.fillMaxWidth(),
@@ -178,8 +178,8 @@ private fun EcosystemRail(
             Icon(icon, null, tint = accent, modifier = Modifier.size(17.dp))
             Spacer(Modifier.width(5.dp))
             Column {
-                KText(value, size = 8.sp, weight = FontWeight.Bold, maxLines = 1)
-                KText(label, size = 6.8.sp, color = V2Soft, maxLines = 1)
+                KText(value, size = 9.sp, weight = FontWeight.Bold, maxLines = 1)
+                KText(label, size = 9.sp, color = V2Soft, maxLines = 1)
             }
         }
     }
@@ -289,7 +289,7 @@ private fun EcosystemMap() {
 
 @Composable
 private fun EcosystemTile(service: EcosystemService, modifier: Modifier = Modifier) {
-    val shape = RoundedCornerShape(18.dp)
+    val shape = RoundedCornerShape(20.dp)
     Column(
         modifier.clip(shape)
             .background(Brush.verticalGradient(listOf(Color(0xFF261957), Color(0xFF100E32))))

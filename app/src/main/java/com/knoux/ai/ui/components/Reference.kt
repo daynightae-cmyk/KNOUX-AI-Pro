@@ -79,7 +79,7 @@ fun SignalTileCard(tile: SignalTile, modifier: Modifier = Modifier) {
                             tile.trailing,
                             style = TextStyle(
                                 fontWeight = FontWeight.Bold,
-                                fontSize = 8.sp,
+                                fontSize = 9.sp,
                                 color = tile.tint,
                             ),
                             maxLines = 1,
@@ -88,7 +88,7 @@ fun SignalTileCard(tile: SignalTile, modifier: Modifier = Modifier) {
                 }
                 Text(
                     tile.label,
-                    style = TextStyle(fontSize = 8.sp, color = ProTextSecondary),
+                    style = TextStyle(fontSize = 9.sp, color = ProTextSecondary),
                     maxLines = 1,
                 )
             }
@@ -173,7 +173,7 @@ fun InsightBanner(
                                 badge,
                                 style = TextStyle(
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = 7.sp,
+                                    fontSize = 9.sp,
                                     letterSpacing = 0.4.sp,
                                     color = tint,
                                 ),
@@ -216,7 +216,7 @@ fun ReferenceSectionLabel(text: String, trailing: String? = null, modifier: Modi
         if (trailing != null) {
             Text(
                 trailing,
-                style = TextStyle(fontSize = 8.sp, color = ProTextSecondary),
+                style = TextStyle(fontSize = 9.sp, color = ProTextSecondary),
                 maxLines = 1,
             )
         }
@@ -245,7 +245,7 @@ fun StatusChip(
             text,
             style = TextStyle(
                 fontWeight = FontWeight.Bold,
-                fontSize = 7.5.sp,
+                fontSize = 9.sp,
                 color = tint,
             ),
             maxLines = 1,

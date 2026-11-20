@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -574,7 +575,7 @@ fun V2SectionToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
                             KText("مراجعة قبل التنفيذ", size = 9.6.sp, weight = FontWeight.Bold, color = V2Green)
                             KText(
                                 "هذه الشاشة تقرأ وتوضح فقط. لا تغيير على النظام من دون تأكيد صريح منك.",
-                                size = 8.4.sp,
+                                size = 9.sp,
                                 lineHeight = 11.8.sp,
                                 color = V2Soft,
                             )
@@ -588,7 +589,7 @@ fun V2SectionToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
                             V2GlassCard(
                                 Modifier
                                     .weight(1f)
-                                    .height(72.dp)
+                                    .heightIn(min = 72.dp)
                                     .clickable { navigate(related.route) },
                                 padding = 7.dp,
                                 radius = 15.dp,
@@ -596,7 +597,7 @@ fun V2SectionToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
                                 borderAlpha = .34f,
                             ) {
                                 Column(
-                                    Modifier.fillMaxSize(),
+                                    Modifier.fillMaxWidth(),
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.Center,
                                 ) {
@@ -604,7 +605,7 @@ fun V2SectionToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
                                     Spacer(Modifier.height(3.dp))
                                     KText(
                                         related.title,
-                                        size = 8.6.sp,
+                                        size = 9.sp,
                                         weight = FontWeight.SemiBold,
                                         lineHeight = 11.sp,
                                         align = TextAlign.Center,
@@ -664,7 +665,7 @@ private fun ToolBehaviorCard(
                         Spacer(Modifier.width(6.dp))
                         Box(Modifier.weight(1f)) {
                             if (query.isBlank()) {
-                                KText("اسم التطبيق …", size = 8.6.sp, color = V2Muted)
+                                KText("اسم التطبيق …", size = 9.sp, color = V2Muted)
                             }
                             BasicTextField(
                                 value = query,
@@ -707,7 +708,7 @@ private fun ToolBehaviorCard(
                         Spacer(Modifier.width(6.dp))
                         Box(Modifier.weight(1f)) {
                             if (query.isBlank()) {
-                                KText("اسم الملف …", size = 8.6.sp, color = V2Muted)
+                                KText("اسم الملف …", size = 9.sp, color = V2Muted)
                             }
                             BasicTextField(
                                 value = query,
@@ -801,12 +802,12 @@ private fun ChipsRow(
             Box(
                 Modifier
                     .weight(1f)
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(12.dp))
                     .background(if (selected == index) accent.withAlpha(.20f) else Color.White.withAlpha(.04f))
                     .border(
                         1.dp,
                         if (selected == index) accent.withAlpha(.55f) else Color.White.withAlpha(.09f),
-                        RoundedCornerShape(10.dp),
+                        RoundedCornerShape(12.dp),
                     )
                     .clickable { onSelect(index) }
                     .padding(vertical = 6.dp, horizontal = 2.dp),
@@ -814,7 +815,7 @@ private fun ChipsRow(
             ) {
                 KText(
                     label,
-                    size = 6.8.sp,
+                    size = 9.sp,
                     weight = FontWeight.Bold,
                     color = if (selected == index) accent else V2Soft,
                     align = TextAlign.Center,
@@ -835,8 +836,8 @@ private fun ToolToggleRow(label: String, hint: String, checked: Boolean, onChang
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
-            KText(label, size = 8.8.sp, weight = FontWeight.Bold)
-            KText(hint, size = 7.sp, color = V2Muted)
+            KText(label, size = 9.sp, weight = FontWeight.Bold)
+            KText(hint, size = 9.sp, color = V2Muted)
         }
         Box(
             Modifier
@@ -1040,7 +1041,7 @@ private fun ToolAppRow(app: InstalledAppFacts, behavior: ToolBehavior, accent: C
             Box(
                 Modifier
                     .size(34.dp)
-                    .clip(RoundedCornerShape(9.dp))
+                    .clip(RoundedCornerShape(8.dp))
                     .background(Color.White.withAlpha(.06f)),
                 contentAlignment = Alignment.Center,
             ) {
@@ -1052,10 +1053,10 @@ private fun ToolAppRow(app: InstalledAppFacts, behavior: ToolBehavior, accent: C
             }
             Spacer(Modifier.width(8.dp))
             Column(Modifier.weight(1f)) {
-                KText(app.label, size = 8.8.sp, weight = FontWeight.Bold, maxLines = 1)
+                KText(app.label, size = 9.sp, weight = FontWeight.Bold, maxLines = 1)
                 KText(
                     "${app.packageName} · ${if (app.isSystem) "نظام" else "مستخدم"}",
-                    size = 6.6.sp,
+                    size = 9.sp,
                     color = V2Soft,
                     maxLines = 1,
                 )
@@ -1069,7 +1070,7 @@ private fun ToolAppRow(app: InstalledAppFacts, behavior: ToolBehavior, accent: C
                 else -> {
                     KText(
                         app.versionName?.takeIf { it.isNotBlank() }?.let { "v$it" } ?: "—",
-                        size = 7.4.sp,
+                        size = 9.sp,
                         weight = FontWeight.Bold,
                         color = accent,
                         maxLines = 1,
@@ -1082,15 +1083,22 @@ private fun ToolAppRow(app: InstalledAppFacts, behavior: ToolBehavior, accent: C
 
 @Composable
 private fun AppAction(icon: ImageVector, tint: Color, onClick: () -> Unit) {
+    // 40dp hit area; the visible disc stays 30dp to fit the card row.
     Box(
         Modifier
-            .size(30.dp)
-            .clip(CircleShape)
-            .background(tint.withAlpha(.14f))
+            .size(40.dp)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, null, tint = tint, modifier = Modifier.size(16.dp))
+        Box(
+            Modifier
+                .size(30.dp)
+                .clip(CircleShape)
+                .background(tint.withAlpha(.14f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, null, tint = tint, modifier = Modifier.size(16.dp))
+        }
     }
 }
 
@@ -1119,7 +1127,7 @@ private fun ToolActionCard(
                 Spacer(Modifier.width(7.dp))
                 KText(
                     "البيانات تعتمد على الأذونات المتاحة. لا تُجري هذه الشاشة تغييرًا على النظام من دون موافقتك.",
-                    size = 7.6.sp,
+                    size = 9.sp,
                     lineHeight = 11.sp,
                     color = V2Soft,
                 )
@@ -1141,7 +1149,7 @@ private fun ToolActionCard(
                     KText(
                         if (hasHandoff) "التحويل يتم إلى شاشة النظام الرسمية، وليس تنفيذًا داخليًا."
                         else "تفتح الشاشة التي تعرض هذه البيانات بتفصيل أوسع.",
-                        size = 7.sp,
+                        size = 9.sp,
                         color = V2Soft,
                     )
                 }
@@ -1153,12 +1161,12 @@ private fun ToolActionCard(
                         .clickable { if (hasRoute) onNavigate(def.actionRoute!!) else onHandoff() }
                         .padding(horizontal = 10.dp, vertical = 5.dp)
                 ) {
-                    KText("فتح", size = 8.sp, weight = FontWeight.Black, color = def.accent)
+                    KText("فتح", size = 9.sp, weight = FontWeight.Black, color = def.accent)
                 }
             }
             if (hasHandoff && facts.media.duplicatesNote().isNotBlank()) {
                 Spacer(Modifier.height(5.dp))
-                KText(facts.media.duplicatesNote(), size = 7.sp, color = V2Muted)
+                KText(facts.media.duplicatesNote(), size = 9.sp, color = V2Muted)
             }
         }
     }
@@ -1345,6 +1353,7 @@ private fun SectionOrb(
     progress: Float,
     modifier: Modifier = Modifier,
 ) {
+    val theme = LocalProTheme.current
     Box(modifier.size(162.dp), contentAlignment = Alignment.Center) {
         Canvas(Modifier.fillMaxSize()) {
             val centre = center
@@ -1623,7 +1632,7 @@ private fun SectionOrb(
             Modifier
                 .size(136.dp)
                 .clip(CircleShape)
-                .background(Brush.radialGradient(listOf(Color(0xFF25115C), Color(0xFF0F082B))))
+                .background(Brush.radialGradient(listOf(theme.orbCore, theme.orbMid)))
                 .border(1.dp, spec.accent.copy(alpha = .44f), CircleShape),
             contentAlignment = Alignment.Center,
         ) {
@@ -1631,7 +1640,7 @@ private fun SectionOrb(
                 V2RasterTile(image = SectionArt.emblem(spec.key), size = 46.dp, accent = spec.accent)
                 Spacer(Modifier.height(3.dp))
                 KText(spec.title, size = 12.sp, weight = FontWeight.Bold, maxLines = 1)
-                KText(spec.english, size = 8.sp, color = V2Soft, maxLines = 1)
+                KText(spec.english, size = 9.sp, color = V2Soft, maxLines = 1)
                 Spacer(Modifier.height(3.dp))
                 Box(
                     Modifier
@@ -1644,7 +1653,7 @@ private fun SectionOrb(
                         .border(1.dp, spec.accent.copy(alpha = .28f), RoundedCornerShape(50))
                         .padding(horizontal = 9.dp, vertical = 2.dp)
                 ) {
-                    KText(status, size = 7.5.sp, color = V2Cyan, maxLines = 1)
+                    KText(status, size = 9.sp, color = V2Cyan, maxLines = 1)
                 }
             }
         }

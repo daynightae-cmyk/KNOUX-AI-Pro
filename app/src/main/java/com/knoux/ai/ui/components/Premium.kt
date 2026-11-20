@@ -865,7 +865,7 @@ fun TinyPreviewLabel(modifier: Modifier = Modifier) {
             "PREVIEW",
             style = TextStyle(
                 fontWeight = FontWeight.Bold,
-                fontSize = 7.5.sp,
+                fontSize = 9.sp,
                 letterSpacing = 0.7.sp,
                 color = com.knoux.ai.ui.theme.ProWarning,
             ),

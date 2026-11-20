@@ -130,7 +130,7 @@ internal fun ServiceVisualDeck(
                         ) {
                             KText(
                                 if (live) "LIVE" else "…",
-                                size = 5.8.sp,
+                                size = 9.sp,
                                 weight = FontWeight.Black,
                                 color = if (live) V2Green else V2Amber,
                             )
@@ -139,8 +139,8 @@ internal fun ServiceVisualDeck(
                     Spacer(Modifier.height(2.dp))
                     KText(
                         dashboardCaption(section, facts),
-                        size = 7.4.sp,
-                        lineHeight = 10.5.sp,
+                        size = 9.sp,
+                        lineHeight = 10.6.sp,
                         color = V2Soft,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
@@ -174,6 +174,7 @@ internal fun ServiceGauge(
     valueText: String? = null,
 ) {
     val motion = rememberMotionEnabled()
+    val theme = LocalProTheme.current
     val target = if (live) percent.coerceIn(0, 100) / 100f else 0f
     val progress by animateFloatAsState(
         targetValue = target,
@@ -193,7 +194,7 @@ internal fun ServiceGauge(
                 radius = radius * 1.34f,
                 center = center,
             )
-            drawCircle(Color(0xFF070218).copy(alpha = .88f), radius = radius * .80f, center = center)
+            drawCircle(theme.ridgeBase.copy(alpha = .88f), radius = radius * .80f, center = center)
             drawCircle(
                 color = Color.White.copy(alpha = .08f),
                 radius = radius * .94f,
@@ -248,8 +249,8 @@ internal fun ServiceGauge(
             )
             KText(
                 label,
-                size = 6.4.sp,
-                lineHeight = 8.sp,
+                size = 9.sp,
+                lineHeight = 10.6.sp,
                 color = V2Soft,
                 align = TextAlign.Center,
                 maxLines = 2,
@@ -274,25 +275,26 @@ private fun SectionStatGrid(stats: List<SectionStat>, modifier: Modifier = Modif
 
 @Composable
 private fun SectionStatTile(stat: SectionStat, modifier: Modifier = Modifier) {
+    val theme = LocalProTheme.current
     Row(
         modifier
             .height(58.dp)
-            .clip(RoundedCornerShape(15.dp))
+            .clip(RoundedCornerShape(16.dp))
             .background(
                 Brush.verticalGradient(
-                    listOf(stat.accent.withAlpha(.16f), Color(0xFF0C0627).withAlpha(.88f)),
+                    listOf(stat.accent.withAlpha(.16f), theme.deep2.withAlpha(.88f)),
                 ),
             )
-            .border(1.dp, stat.accent.withAlpha(.30f), RoundedCornerShape(15.dp))
+            .border(1.dp, stat.accent.withAlpha(.30f), RoundedCornerShape(16.dp))
             .padding(horizontal = 8.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
             Modifier
                 .size(28.dp)
-                .clip(RoundedCornerShape(9.dp))
+                .clip(RoundedCornerShape(8.dp))
                 .background(stat.accent.withAlpha(.16f))
-                .border(1.dp, stat.accent.withAlpha(.34f), RoundedCornerShape(9.dp)),
+                .border(1.dp, stat.accent.withAlpha(.34f), RoundedCornerShape(8.dp)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(stat.icon, null, tint = stat.accent, modifier = Modifier.size(15.dp))
@@ -309,7 +311,7 @@ private fun SectionStatTile(stat: SectionStat, modifier: Modifier = Modifier) {
             )
             KText(
                 stat.label,
-                size = 6.9.sp,
+                size = 9.sp,
                 color = V2Soft,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -336,13 +338,14 @@ internal fun ServiceRowTileGrid(rows: List<ToolRow>, modifier: Modifier = Modifi
 
 @Composable
 private fun ServiceRowTile(row: ToolRow, modifier: Modifier = Modifier) {
+    val theme = LocalProTheme.current
     Column(
         modifier
             .height(86.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(
                 Brush.verticalGradient(
-                    listOf(row.accent.withAlpha(.15f), Color(0xFF0B0626).withAlpha(.90f)),
+                    listOf(row.accent.withAlpha(.15f), theme.glassBottom.withAlpha(.90f)),
                 ),
             )
             .border(1.dp, row.accent.withAlpha(.30f), RoundedCornerShape(16.dp))
@@ -369,8 +372,8 @@ private fun ServiceRowTile(row: ToolRow, modifier: Modifier = Modifier) {
         Spacer(Modifier.height(4.dp))
         KText(
             row.label,
-            size = 7.2.sp,
-            lineHeight = 9.sp,
+            size = 9.sp,
+            lineHeight = 10.6.sp,
             color = V2Soft,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -447,7 +450,7 @@ private fun DuplicateThumbStrip(facts: DeviceFacts, accent: Color) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             groups.take(4).forEach { group ->
-                Box(Modifier.size(52.dp)) {
+                Box(Modifier.size(58.dp)) {
                     V2MediaThumb(
                         uri = group.sampleUri,
                         isVideo = group.isVideo,
@@ -462,7 +465,7 @@ private fun DuplicateThumbStrip(facts: DeviceFacts, accent: Color) {
                             .background(Color.Black.copy(alpha = .72f))
                             .padding(horizontal = 4.dp, vertical = 1.dp),
                     ) {
-                        KText("×${group.count}", size = 6.sp, weight = FontWeight.Black, color = Color.White)
+                        KText("×${group.count}", size = 9.sp, weight = FontWeight.Black, color = Color.White)
                     }
                 }
             }
@@ -476,7 +479,7 @@ private fun DuplicateThumbStrip(facts: DeviceFacts, accent: Color) {
                 color = V2Green,
                 maxLines = 1,
             )
-            KText("قابل للاستعادة", size = 6.8.sp, color = V2Soft, maxLines = 1)
+            KText("قابل للاستعادة", size = 9.sp, color = V2Soft, maxLines = 1)
         }
     }
 }
@@ -511,7 +514,7 @@ private fun MediaThumbStrip(files: List<MediaFileFacts>, accent: Color) {
         Spacer(Modifier.weight(1f))
         Column(horizontalAlignment = Alignment.End) {
             KText("${files.size}", size = 14.sp, weight = FontWeight.Black, color = accent, maxLines = 1)
-            KText("وسيط مقروء", size = 6.8.sp, color = V2Soft, maxLines = 1)
+            KText("وسيط مقروء", size = 9.sp, color = V2Soft, maxLines = 1)
         }
     }
 }
@@ -553,11 +556,11 @@ private fun LegendChip(label: String, value: String, color: Color, modifier: Mod
             .padding(horizontal = 5.dp, vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(5.dp).clip(CircleShape).background(color))
-        Spacer(Modifier.width(3.dp))
+        Box(Modifier.size(6.dp).clip(CircleShape).background(color))
+        Spacer(Modifier.width(4.dp))
         Column {
-            KText(label, size = 5.8.sp, color = V2Muted, maxLines = 1)
-            KText(value, size = 7.2.sp, weight = FontWeight.Bold, color = color, maxLines = 1)
+            KText(label, size = 9.sp, color = V2Muted, maxLines = 1)
+            KText(value, size = 9.sp, weight = FontWeight.Bold, color = color, maxLines = 1)
         }
     }
 }
@@ -583,9 +586,9 @@ private fun AppIconStrip(apps: List<InstalledAppFacts>, accent: Color) {
                 Box(
                     Modifier
                         .size(38.dp)
-                        .clip(RoundedCornerShape(11.dp))
+                        .clip(RoundedCornerShape(12.dp))
                         .background(Color.White.withAlpha(.06f))
-                        .border(1.dp, accent.withAlpha(.24f), RoundedCornerShape(11.dp)),
+                        .border(1.dp, accent.withAlpha(.24f), RoundedCornerShape(12.dp)),
                     contentAlignment = Alignment.Center,
                 ) {
                     if (icon != null) {
@@ -599,7 +602,7 @@ private fun AppIconStrip(apps: List<InstalledAppFacts>, accent: Color) {
         Spacer(Modifier.weight(1f))
         Column(horizontalAlignment = Alignment.End) {
             KText(formatCount(apps.size), size = 13.sp, weight = FontWeight.Black, color = accent)
-            KText("تطبيق مثبت", size = 6.6.sp, color = V2Soft)
+            KText("تطبيق مثبت", size = 9.sp, color = V2Soft)
         }
     }
 }
@@ -624,7 +627,7 @@ private fun PermissionVisualStrip(facts: DeviceFacts, accent: Color) {
         groups.forEach { group ->
             val ratio = if (group.appCount <= 0) 0f else group.grantedCount.toFloat() / group.appCount
             Row(verticalAlignment = Alignment.CenterVertically) {
-                KText(group.label, size = 6.8.sp, color = V2Soft, modifier = Modifier.width(66.dp), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                KText(group.label, size = 9.sp, color = V2Soft, modifier = Modifier.width(66.dp), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Spacer(Modifier.width(5.dp))
                 V2ProgressBar(
                     progress = ratio,
@@ -633,7 +636,7 @@ private fun PermissionVisualStrip(facts: DeviceFacts, accent: Color) {
                     colors = listOf(accent, V2Cyan),
                 )
                 Spacer(Modifier.width(5.dp))
-                KText("${group.grantedCount}/${group.appCount}", size = 6.6.sp, weight = FontWeight.Bold, color = accent)
+                KText("${group.grantedCount}/${group.appCount}", size = 9.sp, weight = FontWeight.Bold, color = accent)
             }
         }
     }
@@ -676,14 +679,14 @@ private fun BatteryVisualStrip(battery: BatteryFacts, accent: Color) {
         }
         Spacer(Modifier.width(10.dp))
         Column {
-            KText("$level% · ${battery.statusLabel}", size = 8.4.sp, weight = FontWeight.Bold, color = accent)
+            KText("$level% · ${battery.statusLabel}", size = 9.sp, weight = FontWeight.Bold, color = accent)
             KText(
                 listOfNotNull(
                     battery.temperatureC?.let { "حرارة $it°" },
                     battery.voltageMv?.let { "جهد ${it}mV" },
                     battery.healthLabel,
                 ).joinToString(" · "),
-                size = 6.6.sp,
+                size = 9.sp,
                 color = V2Soft,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -717,7 +720,7 @@ private fun HistoryVisualStrip(history: List<ScanHistoryEntry>, accent: Color) {
                     Modifier
                         .width(13.dp)
                         .height((46f * fraction).dp)
-                        .clip(RoundedCornerShape(4.dp))
+                        .clip(RoundedCornerShape(8.dp))
                         .background(
                             Brush.verticalGradient(
                                 listOf(accent, accent.copy(alpha = .20f)),
@@ -729,7 +732,7 @@ private fun HistoryVisualStrip(history: List<ScanHistoryEntry>, accent: Color) {
         Spacer(Modifier.width(10.dp))
         Column {
             KText(formatBytes(history.first().cacheBytes), size = 11.sp, weight = FontWeight.Black, color = accent)
-            KText("آخر كاش مقروء", size = 6.4.sp, color = V2Soft)
+            KText("آخر كاش مقروء", size = 9.sp, color = V2Soft)
         }
     }
 }
@@ -744,17 +747,17 @@ private fun PermissionInlineStrip(
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(11.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(accent.withAlpha(.08f))
-            .border(1.dp, accent.withAlpha(.24f), RoundedCornerShape(11.dp))
+            .border(1.dp, accent.withAlpha(.24f), RoundedCornerShape(12.dp))
             .padding(7.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(icon, null, tint = accent, modifier = Modifier.size(17.dp))
         Spacer(Modifier.width(7.dp))
         Column(Modifier.weight(1f)) {
-            KText(title, size = 7.6.sp, weight = FontWeight.Bold, color = accent, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            KText(subtitle, size = 6.4.sp, lineHeight = 8.6.sp, color = V2Soft, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            KText(title, size = 9.sp, weight = FontWeight.Bold, color = accent, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            KText(subtitle, size = 9.sp, lineHeight = 10.6.sp, color = V2Soft, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
     }
 }
@@ -777,11 +780,11 @@ internal fun ServiceFileCard(
             )
             Spacer(Modifier.width(9.dp))
             Column(Modifier.weight(1f)) {
-                KText(file.name, size = 8.8.sp, weight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                KText(file.name, size = 9.sp, weight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Spacer(Modifier.height(2.dp))
                 KText(
                     "${file.bucket ?: if (file.isVideo) "فيديو" else "صورة"} · ${if (file.isVideo) "فيديو" else "صورة"}",
-                    size = 6.6.sp,
+                    size = 9.sp,
                     color = V2Soft,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -795,7 +798,7 @@ internal fun ServiceFileCard(
                     .border(1.dp, accent.withAlpha(.28f), RoundedCornerShape(50))
                     .padding(horizontal = 7.dp, vertical = 2.dp),
             ) {
-                KText(formatBytes(file.sizeBytes), size = 7.4.sp, weight = FontWeight.Bold, color = accent, maxLines = 1)
+                KText(formatBytes(file.sizeBytes), size = 9.sp, weight = FontWeight.Bold, color = accent, maxLines = 1)
             }
         }
     }
@@ -828,16 +831,16 @@ internal fun ServiceGroupCard(
                         .background(Color.Black.copy(alpha = .76f))
                         .padding(horizontal = 5.dp, vertical = 1.dp),
                 ) {
-                    KText("×${group.count}", size = 6.2.sp, weight = FontWeight.Black, color = Color.White)
+                    KText("×${group.count}", size = 9.sp, weight = FontWeight.Black, color = Color.White)
                 }
             }
             Spacer(Modifier.width(9.dp))
             Column(Modifier.weight(1f)) {
-                KText(group.name, size = 8.8.sp, weight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                KText(group.name, size = 9.sp, weight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Spacer(Modifier.height(2.dp))
                 KText(
                     "${if (group.isVideo) "فيديو" else "صور"} · ${group.count} نسخة · ${formatBytes(group.sizeBytes)} للملف",
-                    size = 6.6.sp,
+                    size = 9.sp,
                     color = V2Soft,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -846,7 +849,7 @@ internal fun ServiceGroupCard(
             Spacer(Modifier.width(8.dp))
             Column(horizontalAlignment = Alignment.End) {
                 KText(formatBytes(group.reclaimableBytes), size = 10.5.sp, weight = FontWeight.Black, color = V2Green, maxLines = 1)
-                KText("توفير", size = 6.2.sp, color = V2Muted, maxLines = 1)
+                KText("توفير", size = 9.sp, color = V2Muted, maxLines = 1)
             }
         }
     }
@@ -865,8 +868,8 @@ internal fun ServicePermissionCard(
                 V2IconTile(Icons.Rounded.Lock, accent, size = 30.dp, iconSize = 15.dp)
                 Spacer(Modifier.width(7.dp))
                 Column(Modifier.weight(1f)) {
-                    KText(group.label, size = 8.8.sp, weight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    KText("${group.grantedCount} ممنوحة من ${group.appCount} تطبيقًا", size = 6.6.sp, color = V2Soft)
+                    KText(group.label, size = 9.sp, weight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    KText("${group.grantedCount} ممنوحة من ${group.appCount} تطبيقًا", size = 9.sp, color = V2Soft)
                 }
                 KText("${(ratio * 100).roundToInt()}%", size = 9.sp, weight = FontWeight.Black, color = accent)
             }
@@ -889,10 +892,10 @@ internal fun ServiceHistoryEntryCard(
             V2IconTile(Icons.Rounded.Radar, accent, size = 32.dp, iconSize = 16.dp)
             Spacer(Modifier.width(8.dp))
             Column(Modifier.weight(1f)) {
-                KText(formatScanTime(entry.timestamp), size = 8.8.sp, weight = FontWeight.Bold)
+                KText(formatScanTime(entry.timestamp), size = 9.sp, weight = FontWeight.Bold)
                 KText(
                     "${formatCount(entry.appsScanned)} تطبيق · ${formatBytes(entry.storageUsedBytes)} مستخدمة",
-                    size = 6.6.sp,
+                    size = 9.sp,
                     color = V2Soft,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -901,7 +904,7 @@ internal fun ServiceHistoryEntryCard(
                 V2ProgressBar(fraction, height = 4.dp, colors = listOf(accent, V2Cyan))
             }
             Spacer(Modifier.width(8.dp))
-            KText(formatBytes(entry.cacheBytes), size = 8.sp, weight = FontWeight.Black, color = V2Pink)
+            KText(formatBytes(entry.cacheBytes), size = 9.sp, weight = FontWeight.Black, color = V2Pink)
         }
     }
 }
@@ -969,7 +972,7 @@ internal fun DeepScanResultTiles(
                     colors = listOf(V2Cyan, V2Pink),
                 )
                 Spacer(Modifier.width(6.dp))
-                KText(formatBytes(facts.storage.usedBytes), size = 6.4.sp, color = V2Soft)
+                KText(formatBytes(facts.storage.usedBytes), size = 9.sp, color = V2Soft)
             }
             Spacer(Modifier.height(8.dp))
         }

@@ -61,7 +61,7 @@ fun StorageCacheActionCard(
             Spacer(Modifier.height(6.dp))
             KText(
                 "المساحة المقاسة لكاش التطبيق نفسه فقط. مفيش ملفات شخصية بتتلمس، ومفيش حذف قبل موافقتك.",
-                size = 7.6.sp,
+                size = 9.sp,
                 lineHeight = 11.sp,
                 color = V2Soft,
             )
@@ -76,7 +76,7 @@ fun StorageCacheActionCard(
                     Row(
                         Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(10.dp))
+                            .clip(RoundedCornerShape(12.dp))
                             .background(V2Amber.withAlpha(.10f))
                             .padding(8.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -85,8 +85,8 @@ fun StorageCacheActionCard(
                         Spacer(Modifier.width(6.dp))
                         KText(
                             "هتمسح ${formatBytes(state.measuredBefore)} من كاش KNOUX. تأكد إنك موافق.",
-                            size = 7.6.sp,
-                            lineHeight = 10.5.sp,
+                            size = 9.sp,
+                            lineHeight = 10.6.sp,
                             color = V2Soft,
                             modifier = Modifier.weight(1f),
                         )
@@ -99,20 +99,20 @@ fun StorageCacheActionCard(
                 }
 
                 OperationGate.RUNNING -> {
-                    KText("جاري التنفيذ وإعادة القياس…", size = 8.sp, color = accent)
+                    KText("جاري التنفيذ وإعادة القياس…", size = 9.sp, color = accent)
                 }
 
                 OperationGate.VERIFIED, OperationGate.PARTIAL, OperationGate.ERROR -> {
                     KText(
                         state.operationMessage ?: "تم التنفيذ",
-                        size = 8.sp,
+                        size = 9.sp,
                         weight = FontWeight.Bold,
                         color = accent,
                     )
                     Spacer(Modifier.height(3.dp))
                     KText(
                         "قبل: ${formatBytes(state.measuredBefore)} · بعد: ${formatBytes(state.measuredAfter ?: 0L)}",
-                        size = 7.sp,
+                        size = 9.sp,
                         color = V2Muted,
                     )
                     Spacer(Modifier.height(8.dp))
@@ -132,14 +132,14 @@ private fun ActionPill(
 ) {
     Box(
         modifier
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(accent.withAlpha(.16f))
-            .border(1.dp, accent.withAlpha(.45f), RoundedCornerShape(10.dp))
+            .border(1.dp, accent.withAlpha(.45f), RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)
             .padding(horizontal = 10.dp, vertical = 7.dp),
         contentAlignment = Alignment.Center,
     ) {
-        KText(label, size = 8.sp, weight = FontWeight.Bold, color = accent)
+        KText(label, size = 9.sp, weight = FontWeight.Bold, color = accent)
     }
 }
 
@@ -152,13 +152,13 @@ private fun OutlinePill(
 ) {
     Box(
         modifier
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(12.dp))
             .background(Color.White.copy(alpha = .03f))
-            .border(1.dp, accent.withAlpha(.35f), RoundedCornerShape(10.dp))
+            .border(1.dp, accent.withAlpha(.35f), RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)
             .padding(horizontal = 10.dp, vertical = 7.dp),
         contentAlignment = Alignment.Center,
     ) {
-        KText(label, size = 8.sp, weight = FontWeight.Bold, color = accent)
+        KText(label, size = 9.sp, weight = FontWeight.Bold, color = accent)
     }
 }

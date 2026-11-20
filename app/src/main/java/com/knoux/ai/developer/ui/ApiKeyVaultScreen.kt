@@ -57,6 +57,8 @@ import com.knoux.ai.ui.v2.V2GlassCard
 import com.knoux.ai.ui.v2.V2GoldText
 import com.knoux.ai.ui.v2.V2Green
 import com.knoux.ai.ui.v2.V2LuxuryIdentity
+import com.knoux.ai.ui.v2.V2TopBar
+import com.knoux.ai.ui.v2.V2TopMode
 import com.knoux.ai.ui.v2.V2Red
 import com.knoux.ai.ui.v2.V2Soft
 import com.knoux.ai.ui.v2.V2Violet
@@ -256,7 +258,7 @@ fun ApiKeyVaultScreen(
                     Spacer(Modifier.height(6.dp))
                     KText(
                         "Ollama المحلي لا يحتاج مفتاحًا. المفاتيح الأخرى تُخزَّن AES-256-GCM في Android Keystore.",
-                        size = 8.6.sp,
+                        size = 9.sp,
                         color = V2Soft,
                         maxLines = 3,
                     )
@@ -322,6 +324,7 @@ fun ApiKeyVaultScreen(
     }
 
     Column(Modifier.fillMaxSize()) {
+        V2TopBar(V2TopMode.INTERIOR, onBack = onBack, onPro = onPro)
         V2LuxuryIdentity(
             title = "خزنة المفاتيح الآمنة",
             english = "API KEY VAULT",
@@ -434,7 +437,7 @@ private fun VaultEntryCard(
                             entry.isEnabled -> "مهيأ ومفعّل"
                             else -> "مهيأ ومعطّل"
                         },
-                        size = 8.6.sp,
+                        size = 9.sp,
                         color = V2Soft,
                         maxLines = 1,
                     )

@@ -418,7 +418,7 @@ private fun LegacyServiceBanner(
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     KText(
                         "KNOUX AI",
-                        size = 7.5.sp,
+                        size = 9.sp,
                         weight = FontWeight.Black,
                         color = spec.accent,
                         letterSpacing = 1.8.sp,
@@ -431,7 +431,7 @@ private fun LegacyServiceBanner(
                             .border(1.dp, spec.accent.withAlpha(.37f), RoundedCornerShape(50))
                             .padding(horizontal = 5.dp, vertical = 1.dp)
                     ) {
-                        KText(spec.order, size = 7.sp, weight = FontWeight.Bold, color = spec.accent)
+                        KText(spec.order, size = 9.sp, weight = FontWeight.Bold, color = spec.accent)
                     }
                     if (proActive) {
                         Spacer(Modifier.width(5.dp))
@@ -494,7 +494,7 @@ private fun LegacyServiceBanner(
                 KText(spec.title, size = 23.sp, weight = FontWeight.Black, color = Color.White, modifier = Modifier.fillMaxWidth(), align = TextAlign.Center)
                 KText(
                     spec.english,
-                    size = 7.6.sp,
+                    size = 9.sp,
                     weight = FontWeight.Bold,
                     color = spec.accent2,
                     letterSpacing = 1.4.sp,
@@ -504,7 +504,7 @@ private fun LegacyServiceBanner(
                 Spacer(Modifier.height(3.dp))
                 KText(
                     spec.tagline,
-                    size = 8.6.sp,
+                    size = 9.sp,
                     lineHeight = 12.sp,
                     color = V2Soft,
                     maxLines = 2,
@@ -523,13 +523,13 @@ private fun LegacyServiceBanner(
                         Box(
                             Modifier
                                 .weight(1f)
-                                .clip(RoundedCornerShape(9.dp))
+                                .clip(RoundedCornerShape(8.dp))
                                 .background(Color.White.withAlpha(.045f))
-                                .border(1.dp, spec.accent.withAlpha(.20f), RoundedCornerShape(9.dp))
+                                .border(1.dp, spec.accent.withAlpha(.20f), RoundedCornerShape(8.dp))
                                 .padding(horizontal = 7.dp, vertical = 4.dp),
                             contentAlignment = Alignment.Center,
                         ) {
-                            KText(chip, size = 7.4.sp, color = V2Soft, maxLines = 1)
+                            KText(chip, size = 9.sp, color = V2Soft, maxLines = 1)
                         }
                     }
                 }
@@ -583,7 +583,7 @@ private fun ServiceStatusChip(text: String, accent: Color) {
     ) {
         Box(Modifier.size(4.dp).clip(androidx.compose.foundation.shape.CircleShape).background(accent))
         Spacer(Modifier.width(4.dp))
-        KText(text, size = 7.4.sp, weight = FontWeight.Bold, color = accent, maxLines = 1)
+        KText(text, size = 9.sp, weight = FontWeight.Bold, color = accent, maxLines = 1)
     }
 }
 
@@ -596,7 +596,7 @@ private fun ServiceGlassChip(text: String) {
             .border(1.dp, Color.White.withAlpha(.12f), RoundedCornerShape(50))
             .padding(horizontal = 7.dp, vertical = 2.dp)
     ) {
-        KText(text, size = 7.4.sp, weight = FontWeight.SemiBold, color = V2Soft, maxLines = 1)
+        KText(text, size = 9.sp, weight = FontWeight.SemiBold, color = V2Soft, maxLines = 1)
     }
 }
 
@@ -616,9 +616,9 @@ fun ServiceArt(spec: KnouxServiceSpec, modifier: Modifier = Modifier) {
             )
             Box(
                 Modifier.align(Alignment.BottomEnd).size(25.dp)
-                    .clip(RoundedCornerShape(9.dp))
+                    .clip(RoundedCornerShape(8.dp))
                     .background(V2Deep.copy(alpha = .92f))
-                    .border(1.dp, spec.accent.copy(alpha = .70f), RoundedCornerShape(9.dp)),
+                    .border(1.dp, spec.accent.copy(alpha = .70f), RoundedCornerShape(8.dp)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(spec.glyph, null, tint = spec.accent, modifier = Modifier.size(15.dp))
@@ -986,18 +986,18 @@ fun ServiceCapabilityCard(
                             .background(accent.withAlpha(.12f))
                             .padding(horizontal = 5.dp, vertical = 1.dp)
                     ) {
-                        KText(stateText, size = 7.2.sp, weight = FontWeight.Bold, color = accent)
+                        KText(stateText, size = 9.sp, weight = FontWeight.Bold, color = accent)
                     }
                 }
                 Spacer(Modifier.height(2.dp))
-                KText(body, size = 8.6.sp, lineHeight = 12.5.sp, color = V2Soft)
+                KText(body, size = 9.sp, lineHeight = 12.5.sp, color = V2Soft)
                 if (actionLabel != null && onAction != null) {
                     Spacer(Modifier.height(8.dp))
                     Box(
                         Modifier
-                            .clip(RoundedCornerShape(9.dp))
+                            .clip(RoundedCornerShape(8.dp))
                             .background(accent.withAlpha(.16f))
-                            .border(1.dp, accent.withAlpha(.38f), RoundedCornerShape(9.dp))
+                            .border(1.dp, accent.withAlpha(.38f), RoundedCornerShape(8.dp))
                             .clickable(onClick = onAction)
                             .padding(horizontal = 12.dp, vertical = 9.dp)
                     ) {

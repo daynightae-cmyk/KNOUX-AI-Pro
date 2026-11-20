@@ -51,6 +51,8 @@ import com.knoux.ai.ui.v2.V2GlassCard
 import com.knoux.ai.ui.v2.V2GoldText
 import com.knoux.ai.ui.v2.V2Green
 import com.knoux.ai.ui.v2.V2LuxuryIdentity
+import com.knoux.ai.ui.v2.V2TopBar
+import com.knoux.ai.ui.v2.V2TopMode
 import com.knoux.ai.ui.v2.V2Pink
 import com.knoux.ai.ui.v2.V2Red
 import com.knoux.ai.ui.v2.V2Soft
@@ -215,6 +217,7 @@ fun AgentEngineScreen(
     }
 
     Column(Modifier.fillMaxSize()) {
+        V2TopBar(V2TopMode.INTERIOR, onBack = onBack, onPro = onPro)
         V2LuxuryIdentity(
             title = "محرك الوكلاء",
             english = "AGENT ENGINE",
@@ -387,7 +390,7 @@ private fun ChoiceRow(label: String, selected: Boolean, color: Color, onClick: (
             weight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
         )
         Spacer(Modifier.weight(1f))
-        TextButton(onClick = onClick) { KText(if (selected) "محدد" else "اختيار", size = 8.6.sp, color = color) }
+        TextButton(onClick = onClick) { KText(if (selected) "محدد" else "اختيار", size = 9.sp, color = color) }
     }
 }
 
@@ -438,7 +441,7 @@ private fun AgentProfileCard(
                     KText(agentRoleText(profile.role), size = 13.sp, weight = FontWeight.Bold, color = Color.White)
                     KText(
                         executionModeText(profile.executionMode),
-                        size = 8.6.sp,
+                        size = 9.sp,
                         color = V2Soft,
                         maxLines = 1,
                     )

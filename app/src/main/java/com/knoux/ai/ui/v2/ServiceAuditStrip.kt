@@ -71,7 +71,7 @@ fun ServiceAuditStrip(
                     ) {
                         KText(
                             if (state.isScanning) "جارٍ التوثيق" else "مكتوب في Room",
-                            size = 6.4.sp,
+                            size = 9.sp,
                             weight = FontWeight.Bold,
                             color = accent,
                         )
@@ -97,8 +97,8 @@ private fun AuditStat(label: String, value: Int, accent: Color) {
             .padding(horizontal = 6.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        KText(formatCount(value), size = 8.sp, weight = FontWeight.Bold, color = accent)
+        KText(formatCount(value), size = 9.sp, weight = FontWeight.Bold, color = accent)
         Spacer(Modifier.width(3.dp))
-        KText(label, size = 6.6.sp, color = V2Soft)
+        KText(label, size = 9.sp, color = V2Soft)
     }
 }

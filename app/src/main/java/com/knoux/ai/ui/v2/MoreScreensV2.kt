@@ -198,9 +198,9 @@ private fun PageHeading(
             Box(
                 Modifier
                     .size(46.dp)
-                    .clip(RoundedCornerShape(15.dp))
+                    .clip(RoundedCornerShape(16.dp))
                     .background(Brush.linearGradient(listOf(accent.withAlpha( .34f), V2Violet.withAlpha( .22f))))
-                    .border(1.dp, accent.withAlpha( .52f), RoundedCornerShape(15.dp)),
+                    .border(1.dp, accent.withAlpha( .52f), RoundedCornerShape(16.dp)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(icon, null, tint = Color.White, modifier = Modifier.size(24.dp))
@@ -318,7 +318,7 @@ internal fun PreviewNote(text: String) {
     ) {
         Icon(Icons.Rounded.Info, null, tint = V2Muted, modifier = Modifier.size(13.dp))
         Spacer(Modifier.width(4.dp))
-        KText(text, size = 8.4.sp, lineHeight = 11.5.sp, color = V2Muted, align = TextAlign.Center)
+        KText(text, size = 9.sp, lineHeight = 11.5.sp, color = V2Muted, align = TextAlign.Center)
     }
 }
 
@@ -544,7 +544,7 @@ fun V2AppManagerScreen(
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 KText("التطبيقات الظاهرة للتطبيق", size = 12.5.sp, weight = FontWeight.Bold)
                 Spacer(Modifier.weight(1f))
-                KText("مرتبة حسب الحجم", size = 8.sp, color = V2Muted)
+                KText("مرتبة حسب الحجم", size = 9.sp, color = V2Muted)
             }
         }
         if (apps.isEmpty()) {
@@ -609,7 +609,7 @@ private fun AppManagerRealSummary(facts: DeviceFacts) {
 private fun RealSummaryCell(value: String, label: String, accent: Color, modifier: Modifier = Modifier) {
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         KText(value, size = 16.sp, weight = FontWeight.Black, color = accent)
-        KText(label, size = 7.6.sp, color = V2Soft)
+        KText(label, size = 9.sp, color = V2Soft)
     }
 }
 
@@ -632,9 +632,9 @@ private fun RealInstalledAppRow(
             Box(
                 Modifier
                     .size(38.dp)
-                    .clip(RoundedCornerShape(11.dp))
+                    .clip(RoundedCornerShape(12.dp))
                     .background(V2Deep2)
-                    .border(1.dp, (if (app.isSystem) V2Violet else V2Cyan).withAlpha(.28f), RoundedCornerShape(11.dp)),
+                    .border(1.dp, (if (app.isSystem) V2Violet else V2Cyan).withAlpha(.28f), RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center,
             ) {
                 if (icon != null) {
@@ -656,25 +656,33 @@ private fun RealInstalledAppRow(
                         if (app.isSystem) append(" · نظام")
                         if (!app.isEnabled) append(" · معطّل")
                     },
-                    size = 7.2.sp,
+                    size = 9.sp,
                     color = V2Muted,
                     maxLines = 1,
                 )
             }
             Column(horizontalAlignment = Alignment.End) {
-                KText(app.appBytes?.let { formatBytes(it) } ?: "غير متاح", size = 8.8.sp, weight = FontWeight.Bold, color = V2Cyan)
-                KText(app.versionName ?: "—", size = 7.sp, color = V2Muted, maxLines = 1)
+                KText(app.appBytes?.let { formatBytes(it) } ?: "غير متاح", size = 9.sp, weight = FontWeight.Bold, color = V2Cyan)
+                KText(app.versionName ?: "—", size = 9.sp, color = V2Muted, maxLines = 1)
                 if (canUninstall) {
                     Spacer(Modifier.height(4.dp))
+                    // 40dp touch target around the small delete glyph.
                     Box(
                         Modifier
-                            .clickable(onClick = onUninstall)
-                            .padding(4.dp)
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(V2Red.withAlpha(.10f))
-                            .border(1.dp, V2Red.withAlpha(.45f), RoundedCornerShape(6.dp)),
+                            .size(40.dp)
+                            .clickable(onClick = onUninstall),
+                        contentAlignment = Alignment.Center,
                     ) {
-                        Icon(Icons.Rounded.Delete, null, tint = V2Red, modifier = Modifier.size(14.dp))
+                        Box(
+                            Modifier
+                                .size(28.dp)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(V2Red.withAlpha(.10f))
+                                .border(1.dp, V2Red.withAlpha(.45f), RoundedCornerShape(8.dp)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(Icons.Rounded.Delete, null, tint = V2Red, modifier = Modifier.size(14.dp))
+                        }
                     }
                 }
             }
@@ -704,7 +712,7 @@ private fun AppFilterChip(
     ) {
         KText(
             text,
-            size = 8.6.sp,
+            size = 9.sp,
             weight = if (active) FontWeight.Bold else FontWeight.Medium,
             color = if (active) V2Deep else V2Soft,
             maxLines = 1,
@@ -730,13 +738,13 @@ private fun AppManagerSummary() {
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     KText("46.8", size = 17.sp, weight = FontWeight.Black)
-                    KText("GB مستخدمة", size = 7.sp, color = V2Soft)
+                    KText("GB مستخدمة", size = 9.sp, color = V2Soft)
                 }
             }
             Spacer(Modifier.width(13.dp))
             Column(Modifier.weight(1f)) {
                 KText("54 تطبيقًا مثبتًا", size = 11.5.sp, weight = FontWeight.Bold)
-                KText("من أصل 72.4 GB مساحة متاحة", size = 8.3.sp, color = V2Soft)
+                KText("من أصل 72.4 GB مساحة متاحة", size = 9.sp, color = V2Soft)
                 Spacer(Modifier.height(6.dp))
                 V2ProgressBar(.67f, height = 5.dp)
                 Spacer(Modifier.height(7.dp))
@@ -758,7 +766,7 @@ internal fun SummaryPill(text: String, accent: Color) {
             .border(1.dp, accent.withAlpha( .28f), RoundedCornerShape(50))
             .padding(horizontal = 8.dp, vertical = 3.dp)
     ) {
-        KText(text, size = 7.6.sp, weight = FontWeight.SemiBold, color = accent)
+        KText(text, size = 9.sp, weight = FontWeight.SemiBold, color = accent)
     }
 }
 
@@ -769,7 +777,7 @@ private fun ManagedAppRow(
     onToggle: () -> Unit,
     onClick: () -> Unit,
 ) {
-    val shape = RoundedCornerShape(17.dp)
+    val shape = RoundedCornerShape(20.dp)
     Row(
         Modifier
             .fillMaxWidth()
@@ -789,13 +797,13 @@ private fun ManagedAppRow(
         Spacer(Modifier.width(9.dp))
         Column(Modifier.weight(1f)) {
             KText(app.name, size = 11.5.sp, weight = FontWeight.Bold, maxLines = 1)
-            KText(app.packageName, size = 7.2.sp, color = V2Muted, maxLines = 1)
+            KText(app.packageName, size = 9.sp, color = V2Muted, maxLines = 1)
             Spacer(Modifier.height(2.dp))
-            KText("آخر استخدام ${app.lastUsed}", size = 7.sp, color = V2Muted, maxLines = 1)
+            KText("آخر استخدام ${app.lastUsed}", size = 9.sp, color = V2Muted, maxLines = 1)
         }
         Column(horizontalAlignment = Alignment.End) {
             KText(app.size, size = 10.5.sp, weight = FontWeight.Bold, color = app.accent)
-            KText("${app.permissions} أذونات", size = 7.sp, color = V2Muted)
+            KText("${app.permissions} أذونات", size = 9.sp, color = V2Muted)
         }
         Spacer(Modifier.width(8.dp))
         V2Check(checked = checked, accent = app.accent, onToggle = onToggle)
@@ -879,9 +887,9 @@ private fun DetailLegend(label: String, value: String, accent: Color) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Box(Modifier.size(7.dp).clip(CircleShape).background(accent))
         Spacer(Modifier.width(5.dp))
-        KText(label, size = 8.2.sp, color = V2Soft)
+        KText(label, size = 9.sp, color = V2Soft)
         Spacer(Modifier.weight(1f))
-        KText(value, size = 8.4.sp, weight = FontWeight.SemiBold, color = Color.White)
+        KText(value, size = 9.sp, weight = FontWeight.SemiBold, color = Color.White)
     }
 }
 
@@ -895,7 +903,7 @@ private fun AppActionTile(label: String, icon: ImageVector, accent: Color, modif
         ) {
             Icon(icon, null, tint = accent, modifier = Modifier.size(19.dp))
             Spacer(Modifier.height(4.dp))
-            KText(label, size = 8.2.sp, weight = FontWeight.SemiBold, color = Color.White, maxLines = 1)
+            KText(label, size = 9.sp, weight = FontWeight.SemiBold, color = Color.White, maxLines = 1)
         }
     }
 }
@@ -912,9 +920,9 @@ private fun PermissionRow(
         Box(
             Modifier
                 .size(30.dp)
-                .clip(RoundedCornerShape(9.dp))
+                .clip(RoundedCornerShape(8.dp))
                 .background(accent.withAlpha( .10f))
-                .border(1.dp, accent.withAlpha( .26f), RoundedCornerShape(9.dp)),
+                .border(1.dp, accent.withAlpha( .26f), RoundedCornerShape(8.dp)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(icon, null, tint = accent, modifier = Modifier.size(15.dp))
@@ -922,7 +930,7 @@ private fun PermissionRow(
         Spacer(Modifier.width(8.dp))
         Column(Modifier.weight(1f)) {
             KText(title, size = 9.8.sp, weight = FontWeight.SemiBold)
-            KText(subtitle, size = 7.4.sp, color = V2Muted, maxLines = 1)
+            KText(subtitle, size = 9.sp, color = V2Muted, maxLines = 1)
         }
         Box(
             Modifier
@@ -930,7 +938,7 @@ private fun PermissionRow(
                 .background(accent.withAlpha( .11f))
                 .padding(horizontal = 7.dp, vertical = 2.dp)
         ) {
-            KText(status, size = 7.2.sp, weight = FontWeight.Bold, color = accent)
+            KText(status, size = 9.sp, weight = FontWeight.Bold, color = accent)
         }
     }
 }
@@ -949,7 +957,7 @@ private fun SettingToggleRow(
         Spacer(Modifier.width(9.dp))
         Column(Modifier.weight(1f)) {
             KText(title, size = 9.8.sp, weight = FontWeight.SemiBold)
-            KText(subtitle, size = 7.4.sp, color = V2Muted, maxLines = 1)
+            KText(subtitle, size = 9.sp, color = V2Muted, maxLines = 1)
         }
         V2Toggle(checked, onChange, accent)
     }
@@ -1105,13 +1113,13 @@ private fun StorageHeroCard(storage: StorageFacts, cacheBytes: Long) {
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     KText("${(progress * 100).toInt()}%", size = 26.sp, weight = FontWeight.Black)
-                    KText("مستخدم", size = 8.sp, color = V2Soft)
+                    KText("مستخدم", size = 9.sp, color = V2Soft)
                 }
             }
             Spacer(Modifier.width(13.dp))
             Column(Modifier.weight(1f)) {
                 KText(formatBytes(storage.usedBytes), size = 22.sp, weight = FontWeight.Black)
-                KText("من إجمالي ${formatBytes(storage.totalBytes)}", size = 8.4.sp, color = V2Soft)
+                KText("من إجمالي ${formatBytes(storage.totalBytes)}", size = 9.sp, color = V2Soft)
                 Spacer(Modifier.height(7.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Rounded.Check, null, tint = V2Green, modifier = Modifier.size(13.dp))
@@ -1119,7 +1127,7 @@ private fun StorageHeroCard(storage: StorageFacts, cacheBytes: Long) {
                     KText("${formatBytes(storage.freeBytes)} متاحة", size = 9.sp, weight = FontWeight.SemiBold, color = V2Green)
                 }
                 Spacer(Modifier.height(5.dp))
-                KText("كاش KNOUX المقروء: ${formatBytes(cacheBytes)} · يُحذف بتأكيدك فقط.", size = 7.8.sp, color = V2Muted)
+                KText("كاش KNOUX المقروء: ${formatBytes(cacheBytes)} · يُحذف بتأكيدك فقط.", size = 9.sp, color = V2Muted)
             }
         }
     }
@@ -1179,7 +1187,7 @@ private fun LoadingFileRow(title: String, subtitle: String, size: String, accent
             Spacer(Modifier.width(8.dp))
             Column(Modifier.weight(1f)) {
                 KText(title, size = 9.2.sp, weight = FontWeight.SemiBold, maxLines = 1)
-                KText(subtitle, size = 7.2.sp, color = V2Muted, maxLines = 1)
+                KText(subtitle, size = 9.sp, color = V2Muted, maxLines = 1)
             }
             KText(size, size = 9.2.sp, weight = FontWeight.Bold, color = accent)
         }
@@ -1192,9 +1200,9 @@ private fun StorageCategoryRow(category: StorageCategoryV2) {
         Box(
             Modifier
                 .size(30.dp)
-                .clip(RoundedCornerShape(9.dp))
+                .clip(RoundedCornerShape(8.dp))
                 .background(category.accent.withAlpha( .12f))
-                .border(1.dp, category.accent.withAlpha( .28f), RoundedCornerShape(9.dp)),
+                .border(1.dp, category.accent.withAlpha( .28f), RoundedCornerShape(8.dp)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(category.icon, null, tint = category.accent, modifier = Modifier.size(15.dp))
@@ -1210,7 +1218,7 @@ private fun StorageCategoryRow(category: StorageCategoryV2) {
             V2ProgressBar(category.fraction, height = 4.dp, colors = listOf(category.accent, category.accent.withAlpha( .55f)))
         }
         Spacer(Modifier.width(8.dp))
-        KText(category.percent, size = 7.6.sp, color = V2Muted, modifier = Modifier.width(26.dp), align = TextAlign.End)
+        KText(category.percent, size = 9.sp, color = V2Muted, modifier = Modifier.width(26.dp), align = TextAlign.End)
     }
 }
 
@@ -1221,7 +1229,7 @@ private fun BigFileRow(title: String, size: String, icon: ImageVector, accent: C
             Box(
                 Modifier
                     .size(34.dp)
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(12.dp))
                     .background(accent.withAlpha( .12f)),
                 contentAlignment = Alignment.Center,
             ) {
@@ -1393,9 +1401,9 @@ fun V2BatteryReadingsScreen(onBack: () -> Unit, onPro: () -> Unit) {
                 Column {
                     KText(
                         "كل عينة تُسجل لحظة القراءة الفعلية من BatteryManager - لا تقديرات، لا أرقام وهمية.",
-                        size = 7.4.sp,
+                        size = 9.sp,
                         color = V2Soft,
-                        lineHeight = 10.sp,
+                        lineHeight = 10.6.sp,
                     )
                 }
             }
@@ -1419,7 +1427,7 @@ fun V2BatteryReadingsScreen(onBack: () -> Unit, onPro: () -> Unit) {
                         Spacer(Modifier.height(4.dp))
                         KText(
                             "افتح شاشة البطارية لتسجيل أول قراءة فعلية من النظام.",
-                            size = 7.4.sp,
+                            size = 9.sp,
                             color = V2Soft,
                         )
                     }
@@ -1445,21 +1453,21 @@ fun V2BatteryReadingsScreen(onBack: () -> Unit, onPro: () -> Unit) {
                             )
                             KText(
                                 "${s.health ?: "—"} · ${if (s.charging) "يشحن" else "لا يشحن"}",
-                                size = 6.8.sp,
+                                size = 9.sp,
                                 color = V2Muted,
                             )
                         }
                         Column(horizontalAlignment = Alignment.End) {
                             KText(
                                 s.temperatureC?.let { String.format(java.util.Locale.US, "%.1f°C", it) } ?: "—",
-                                size = 8.6.sp,
+                                size = 9.sp,
                                 weight = FontWeight.Bold,
                                 color = V2Amber,
                             )
                             KText(
                                 java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
                                     .format(java.util.Date(s.recordedAt)),
-                                size = 6.8.sp,
+                                size = 9.sp,
                                 color = V2Muted,
                             )
                         }
@@ -1490,7 +1498,7 @@ private fun BatteryHeroCard(battery: BatteryFacts) {
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     KText(level?.let { "$it%" } ?: "—", size = 28.sp, weight = FontWeight.Black)
-                    KText("مستوى البطارية", size = 7.6.sp, color = V2Soft)
+                    KText("مستوى البطارية", size = 9.sp, color = V2Soft)
                 }
             }
             Spacer(Modifier.width(13.dp))
@@ -1502,7 +1510,7 @@ private fun BatteryHeroCard(battery: BatteryFacts) {
                 }
                 Spacer(Modifier.height(4.dp))
                 KText(battery.healthLabel, size = 18.sp, weight = FontWeight.Black)
-                KText("صحة البطارية من النظام", size = 7.6.sp, color = V2Muted)
+                KText("صحة البطارية من النظام", size = 9.sp, color = V2Muted)
                 Spacer(Modifier.height(6.dp))
                 battery.temperatureC?.let {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1512,7 +1520,7 @@ private fun BatteryHeroCard(battery: BatteryFacts) {
                     }
                     Spacer(Modifier.height(4.dp))
                 }
-                KText(if (battery.charging) "الشاحن متصل" else "يعمل على البطارية", size = 7.6.sp, color = V2Soft)
+                KText(if (battery.charging) "الشاحن متصل" else "يعمل على البطارية", size = 9.sp, color = V2Soft)
             }
         }
     }
@@ -1750,7 +1758,7 @@ fun V2AiScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> Unit) 
                     Spacer(Modifier.width(8.dp))
                     Column(Modifier.weight(1f)) {
                         KText("تحسينات Pro الأعمق", size = 9.8.sp, weight = FontWeight.Bold, color = V2GoldText)
-                        KText("غير متاح في هذا الإصدار — لا يوجد محرك تغيير تلقائي لإعدادات النظام.", size = 7.6.sp, color = V2Soft)
+                        KText("غير متاح في هذا الإصدار — لا يوجد محرك تغيير تلقائي لإعدادات النظام.", size = 9.sp, color = V2Soft)
                     }
                 }
             }
@@ -1783,7 +1791,7 @@ private fun AiScoreCard(score: Int, storageUsed: Float, batteryLevel: Int?, apps
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     KText(if (score > 0) "$score" else "—", size = 30.sp, weight = FontWeight.Black)
-                    KText("تقدير الجهاز", size = 7.2.sp, color = V2Soft)
+                    KText("تقدير الجهاز", size = 9.sp, color = V2Soft)
                 }
             }
             Spacer(Modifier.width(13.dp))
@@ -1796,15 +1804,15 @@ private fun AiScoreCard(score: Int, storageUsed: Float, batteryLevel: Int?, apps
                 Spacer(Modifier.height(4.dp))
                 KText(
                     "يُحسب من التخزين والبطارية والأذونات، وليس قياسًا لسرعة المعالج.",
-                    size = 8.2.sp,
+                    size = 9.sp,
                     lineHeight = 11.5.sp,
                     color = V2Soft,
                 )
                 Spacer(Modifier.height(6.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    KText("تخزين ${(storageUsed * 100).toInt()}%", size = 7.6.sp, color = V2Cyan)
-                    KText(batteryLevel?.let { "بطارية $it%" } ?: "بطارية —", size = 7.6.sp, color = V2Green)
-                    KText("$apps تطبيق", size = 7.6.sp, color = V2Violet)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    KText("تخزين ${(storageUsed * 100).toInt()}%", size = 9.sp, color = V2Cyan, maxLines = 1, modifier = Modifier.weight(1f))
+                    KText(batteryLevel?.let { "بطارية $it%" } ?: "بطارية —", size = 9.sp, color = V2Green, maxLines = 1, modifier = Modifier.weight(1f))
+                    KText("$apps تطبيق", size = 9.sp, color = V2Violet, maxLines = 1, modifier = Modifier.weight(1f))
                 }
                 Spacer(Modifier.height(6.dp))
                 V2ProgressBar(score / 100f, height = 5.dp, colors = listOf(V2Pink, V2Violet, V2Cyan))
@@ -1827,9 +1835,9 @@ private fun LiveRecommendationRow(action: LiveRecommendation, onClick: () -> Uni
             Spacer(Modifier.width(9.dp))
             Column(Modifier.weight(1f)) {
                 KText(action.title, size = 9.8.sp, weight = FontWeight.Bold)
-                KText(action.detail, size = 7.4.sp, color = V2Muted, maxLines = 1)
+                KText(action.detail, size = 9.sp, color = V2Muted, maxLines = 1)
             }
-            KText(action.value, size = 8.8.sp, weight = FontWeight.Bold, color = action.accent)
+            KText(action.value, size = 9.sp, weight = FontWeight.Bold, color = action.accent)
             Spacer(Modifier.width(5.dp))
             Icon(Icons.Rounded.ChevronLeft, null, tint = V2Soft, modifier = Modifier.size(15.dp))
         }
@@ -1850,10 +1858,10 @@ private fun AiActionRow(action: AiAction, applied: Boolean, onToggle: () -> Unit
             Spacer(Modifier.width(9.dp))
             Column(Modifier.weight(1f)) {
                 KText(action.title, size = 9.8.sp, weight = FontWeight.Bold)
-                KText(action.detail, size = 7.4.sp, color = V2Muted, maxLines = 1)
+                KText(action.detail, size = 9.sp, color = V2Muted, maxLines = 1)
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                KText(action.gain, size = 8.6.sp, weight = FontWeight.Bold, color = V2Cyan)
+                KText(action.gain, size = 9.sp, weight = FontWeight.Bold, color = V2Cyan)
                 Spacer(Modifier.height(3.dp))
                 AppFilterChip(
                     text = if (applied) "مطبق" else "تطبيق",
@@ -1878,7 +1886,7 @@ private fun AiImpactStat(
             Icon(icon, null, tint = accent, modifier = Modifier.size(18.dp))
             Spacer(Modifier.height(3.dp))
             KText(value, size = 12.sp, weight = FontWeight.Bold)
-            KText(label, size = 7.5.sp, color = V2Soft, maxLines = 1, align = TextAlign.Center)
+            KText(label, size = 9.sp, color = V2Soft, maxLines = 1, align = TextAlign.Center)
         }
     }
 }
@@ -1920,7 +1928,7 @@ fun V2SettingsScreenV2(onBack: () -> Unit) {
                             Spacer(Modifier.width(10.dp))
                             Column(Modifier.weight(1f)) {
                                 KText("KNOUX ID", size = 11.sp, weight = FontWeight.Bold)
-                                KText("وضع الضيف · كل الأدوات محلية", size = 7.8.sp, color = V2Soft)
+                                KText("وضع الضيف · كل الأدوات محلية", size = 9.sp, color = V2Soft)
                             }
                             SummaryPill("ضيف", V2Cyan)
                         }
@@ -2006,7 +2014,7 @@ private fun SettingNavRow(icon: ImageVector, title: String, value: String, accen
         V2IconTile(icon, accent, size = 30.dp, iconSize = 15.dp)
         Spacer(Modifier.width(9.dp))
         KText(title, size = 9.8.sp, weight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-        KText(value, size = 8.4.sp, color = V2Muted, maxLines = 1)
+        KText(value, size = 9.sp, color = V2Muted, maxLines = 1)
         Spacer(Modifier.width(3.dp))
         Icon(Icons.Rounded.ChevronLeft, null, tint = V2Soft, modifier = Modifier.size(15.dp))
     }
@@ -2084,7 +2092,7 @@ private fun SummaryModuleRow(icon: ImageVector, title: String, subtitle: String,
             Spacer(Modifier.width(9.dp))
             Column(Modifier.weight(1f)) {
                 KText(title, size = 9.8.sp, weight = FontWeight.Bold)
-                KText(subtitle, size = 7.5.sp, color = V2Muted)
+                KText(subtitle, size = 9.sp, color = V2Muted)
             }
             KText(value, size = 9.sp, weight = FontWeight.Bold, color = accent)
         }
@@ -2166,7 +2174,7 @@ private fun PrivacyRiskDetailRow(icon: ImageVector, title: String, subtitle: Str
             Spacer(Modifier.width(9.dp))
             Column(Modifier.weight(1f)) {
                 KText(title, size = 9.8.sp, weight = FontWeight.Bold)
-                KText(subtitle, size = 7.4.sp, color = V2Muted, maxLines = 1)
+                KText(subtitle, size = 9.sp, color = V2Muted, maxLines = 1)
             }
             SummaryPill(risk, accent)
         }
@@ -2238,7 +2246,7 @@ fun V2DuplicateGroupScreen(onBack: () -> Unit, onPro: () -> Unit) {
                                         Row(verticalAlignment = Alignment.CenterVertically) {
                                             CrownGold(size = 11.dp)
                                             Spacer(Modifier.width(2.dp))
-                                            KText("الأفضل", size = 6.4.sp, weight = FontWeight.Bold, color = V2GoldText)
+                                            KText("الأفضل", size = 9.sp, weight = FontWeight.Bold, color = V2GoldText)
                                         }
                                     }
                                 }
@@ -2257,9 +2265,9 @@ fun V2DuplicateGroupScreen(onBack: () -> Unit, onPro: () -> Unit) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Rounded.PhotoLibrary, null, tint = V2Cyan, modifier = Modifier.size(15.dp))
                         Spacer(Modifier.width(5.dp))
-                        KText("IMG_2026_0451.jpg · 4.8 MB", size = 8.sp, color = V2Soft)
+                        KText("IMG_2026_0451.jpg · 4.8 MB", size = 9.sp, color = V2Soft)
                         Spacer(Modifier.weight(1f))
-                        KText("3 محددة", size = 8.sp, weight = FontWeight.Bold, color = V2Pink)
+                        KText("3 محددة", size = 9.sp, weight = FontWeight.Bold, color = V2Pink)
                     }
                 }
             }
@@ -2301,13 +2309,13 @@ fun V2DuplicateGroupScreen(onBack: () -> Unit, onPro: () -> Unit) {
                     Column(Modifier.weight(1f)) {
                         KText(
                             if (index == 0) "IMG_2026_0451.jpg" else "IMG_2026_0451 ($index).jpg",
-                            size = 8.4.sp,
+                            size = 9.sp,
                             weight = FontWeight.SemiBold,
                             maxLines = 1,
                         )
                         KText(
                             if (index == 0) "النسخة الأصلية · 4.8 MB" else "نسخة مطابقة · 4.4 MB",
-                            size = 7.2.sp,
+                            size = 9.sp,
                             color = V2Muted,
                         )
                     }
@@ -2537,7 +2545,7 @@ private fun DiagnosticNote(icon: ImageVector, title: String, subtitle: String, a
             Spacer(Modifier.width(8.dp))
             Column(Modifier.weight(1f)) {
                 KText(title, size = 9.6.sp, weight = FontWeight.Bold)
-                KText(subtitle, size = 7.6.sp, color = V2Soft)
+                KText(subtitle, size = 9.sp, color = V2Soft)
             }
         }
     }
@@ -2601,7 +2609,7 @@ fun V2AiRecommendationsScreen(onBack: () -> Unit, onPro: () -> Unit) {
                     KText(
                         "من التخزين الفعلي، وحجم كاش KNOUX، ومجموعات MediaStore، وأذونات الحزم، وحالة البطارية. " +
                             "لا يوجد تنفيذ تلقائي؛ كل إجراء يفتح الشاشة أو إعدادات Android المختصة.",
-                        size = 8.sp,
+                        size = 9.sp,
                         lineHeight = 12.sp,
                         color = V2Soft,
                     )
@@ -2643,18 +2651,18 @@ fun V2PerformanceReportScreen(onBack: () -> Unit, onPro: () -> Unit) {
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             KText(if (facts.healthEstimate > 0) "${facts.healthEstimate}" else "—", size = 26.sp, weight = FontWeight.Black)
-                            KText("نقطة", size = 7.4.sp, color = V2Soft)
+                            KText("نقطة", size = 9.sp, color = V2Soft)
                         }
                     }
                     Spacer(Modifier.width(13.dp))
                     Column(Modifier.weight(1f)) {
                         KText("قراءة اللحظة", size = 15.sp, weight = FontWeight.Black, color = V2Cyan)
-                        KText("محسوبة من التخزين والبطارية والأذونات", size = 8.2.sp, color = V2Soft)
+                        KText("محسوبة من التخزين والبطارية والأذونات", size = 9.sp, color = V2Soft)
                         Spacer(Modifier.height(6.dp))
                         KText(
                             "${formatCount(facts.installedCount)} تطبيق · ${formatBytes(facts.storage.freeBytes)} متاحة · " +
                                 (facts.battery.levelPercent?.let { "بطارية $it%" } ?: "بطارية غير متاحة"),
-                            size = 7.8.sp,
+                            size = 9.sp,
                             lineHeight = 11.sp,
                             color = V2Muted,
                         )
@@ -2703,13 +2711,13 @@ private fun PerformanceHistoryRow(entry: ScanHistoryEntry) {
                 KText(
                     "${formatCount(entry.appsScanned)} تطبيق · ${formatBytes(entry.storageUsedBytes)} مستخدم" +
                         (entry.batteryLevel?.let { " · بطارية $it%" } ?: ""),
-                    size = 7.4.sp,
+                    size = 9.sp,
                     color = V2Soft,
                 )
             }
             Column(horizontalAlignment = Alignment.End) {
                 KText(formatBytes(entry.cacheBytes), size = 9.sp, weight = FontWeight.Bold, color = V2Pink)
-                KText("كاش KNOUX", size = 6.8.sp, color = V2Muted)
+                KText("كاش KNOUX", size = 9.sp, color = V2Muted)
             }
         }
     }
@@ -2758,10 +2766,16 @@ private fun DeveloperPanel(onDismiss: () -> Unit) {
                     Spacer(Modifier.width(8.dp))
                     KText("لوحة المطور", size = 18.sp, weight = FontWeight.Black, color = V2Amber)
                     Spacer(Modifier.weight(1f))
-                    Icon(Icons.Rounded.Close, null, tint = V2Soft, modifier = Modifier
-                        .size(24.dp)
-                        .clickable(onClick = onDismiss)
-                    )
+                    // 40dp hit area around the 20dp close glyph.
+                    Box(
+                        Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .clickable(onClick = onDismiss),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(Icons.Rounded.Close, null, tint = V2Soft, modifier = Modifier.size(20.dp))
+                    }
                 }
                 Spacer(Modifier.height(16.dp))
                 Box(
@@ -2800,7 +2814,7 @@ private fun DeveloperPanel(onDismiss: () -> Unit) {
                 Spacer(Modifier.height(8.dp))
                 KText(
                     "اضغط على الإصدار 5 مرات لفتح هذه اللوحة",
-                    size = 7.5.sp,
+                    size = 9.sp,
                     color = V2Muted,
                     align = TextAlign.Center,
                 )
@@ -2971,9 +2985,9 @@ fun V2OldBackupsScreen(onBack: () -> Unit, onPro: () -> Unit) {
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
-                        Modifier.size(38.dp).clip(RoundedCornerShape(10.dp))
+                        Modifier.size(38.dp).clip(RoundedCornerShape(12.dp))
                             .background(item.accent.withAlpha(.12f))
-                            .border(1.dp, item.accent.withAlpha(.32f), RoundedCornerShape(10.dp)),
+                            .border(1.dp, item.accent.withAlpha(.32f), RoundedCornerShape(12.dp)),
                         contentAlignment = Alignment.Center,
                     ) {
                         Icon(Icons.Rounded.Backup, null, tint = item.accent, modifier = Modifier.size(18.dp))
@@ -2981,7 +2995,7 @@ fun V2OldBackupsScreen(onBack: () -> Unit, onPro: () -> Unit) {
                     Spacer(Modifier.width(9.dp))
                     Column(Modifier.weight(1f)) {
                         KText(item.name, size = 9.4.sp, weight = FontWeight.SemiBold, maxLines = 1)
-                        KText("${item.date} · ${item.path}", size = 7.2.sp, color = V2Muted, maxLines = 1)
+                        KText("${item.date} · ${item.path}", size = 9.sp, color = V2Muted, maxLines = 1)
                     }
                     KText(item.size, size = 9.4.sp, weight = FontWeight.Bold, color = item.accent)
                     Spacer(Modifier.width(8.dp))
@@ -3048,17 +3062,17 @@ fun V2SystemLogsScreen(onBack: () -> Unit, onPro: () -> Unit) {
                     Spacer(Modifier.width(9.dp))
                     Column(Modifier.weight(1f)) {
                         KText(log.app, size = 9.4.sp, weight = FontWeight.SemiBold, maxLines = 1)
-                        KText(log.message, size = 7.6.sp, color = V2Soft, maxLines = 1)
+                        KText(log.message, size = 9.sp, color = V2Soft, maxLines = 1)
                     }
                     Column(horizontalAlignment = Alignment.End) {
-                        KText(log.time, size = 7.6.sp, color = V2Muted)
+                        KText(log.time, size = 9.sp, color = V2Muted)
                         Box(
                             Modifier.clip(RoundedCornerShape(50))
                                 .background(log.accent.withAlpha(.12f))
                                 .border(1.dp, log.accent.withAlpha(.32f), RoundedCornerShape(50))
                                 .padding(horizontal = 6.dp, vertical = 2.dp),
                         ) {
-                            KText(log.level, size = 7.sp, weight = FontWeight.Bold, color = log.accent)
+                            KText(log.level, size = 9.sp, weight = FontWeight.Bold, color = log.accent)
                         }
                     }
                 }
@@ -3260,7 +3274,7 @@ private fun NetworkRow(name: String, percent: String, accent: Color) {
     V2GlassCard(Modifier.fillMaxWidth(), padding = 8.dp, radius = 12.dp, glow = accent, borderAlpha = .20f) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             KText(name, size = 9.sp, weight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-            KText(percent, size = 8.8.sp, weight = FontWeight.Bold, color = accent)
+            KText(percent, size = 9.sp, weight = FontWeight.Bold, color = accent)
         }
     }
 }
@@ -3307,7 +3321,7 @@ private fun SecurityRow(title: String, status: String, accent: Color, icon: andr
             Icon(icon, null, tint = accent, modifier = Modifier.size(16.dp))
             Spacer(Modifier.width(8.dp))
             KText(title, size = 9.sp, weight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-            KText(status, size = 8.8.sp, color = V2Soft)
+            KText(status, size = 9.sp, color = V2Soft)
         }
     }
 }
@@ -3351,7 +3365,7 @@ private fun NotificationRow(name: String, status: String, accent: Color, enabled
             Spacer(Modifier.width(9.dp))
             Column(Modifier.weight(1f)) {
                 KText(name, size = 9.4.sp, weight = FontWeight.SemiBold, maxLines = 1)
-                KText(status, size = 7.4.sp, color = V2Soft, maxLines = 1)
+                KText(status, size = 9.sp, color = V2Soft, maxLines = 1)
             }
             Box(
                 Modifier.clip(RoundedCornerShape(50))
@@ -3359,7 +3373,7 @@ private fun NotificationRow(name: String, status: String, accent: Color, enabled
                     .border(1.dp, if (enabled) V2Green.withAlpha(.40f) else V2Red.withAlpha(.40f), RoundedCornerShape(50))
                     .padding(horizontal = 6.dp, vertical = 2.dp),
             ) {
-                KText(if (enabled) "مفعل" else "معطل", size = 7.sp, weight = FontWeight.Bold, color = if (enabled) V2Green else V2Red)
+                KText(if (enabled) "مفعل" else "معطل", size = 9.sp, weight = FontWeight.Bold, color = if (enabled) V2Green else V2Red)
             }
         }
     }

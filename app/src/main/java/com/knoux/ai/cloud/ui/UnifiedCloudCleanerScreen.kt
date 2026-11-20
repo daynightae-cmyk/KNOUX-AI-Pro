@@ -72,6 +72,8 @@ import com.knoux.ai.ui.v2.V2GlassCard
 import com.knoux.ai.ui.v2.V2GoldText
 import com.knoux.ai.ui.v2.V2Green
 import com.knoux.ai.ui.v2.V2LuxuryIdentity
+import com.knoux.ai.ui.v2.V2TopBar
+import com.knoux.ai.ui.v2.V2TopMode
 import com.knoux.ai.ui.v2.V2Pink
 import com.knoux.ai.ui.v2.V2Red
 import com.knoux.ai.ui.v2.V2Soft
@@ -382,6 +384,7 @@ fun UnifiedCloudCleanerScreen(
     val selectedBytes = selectedItems.sumOf { it.sizeBytes }
 
     Column(Modifier.fillMaxSize()) {
+        V2TopBar(V2TopMode.INTERIOR, onBack = onBack, onPro = onPro)
         V2LuxuryIdentity(
             title = "المنظف الموحد للبريد والسحابة",
             english = "UNIFIED MAIL & CLOUD CLEANER",
@@ -488,7 +491,7 @@ private fun CloudAccountsStrip(
                     KText("الحسابات المتصلة", size = 13.sp, weight = FontWeight.Bold, color = Color.White)
                     KText(
                         if (accounts.isEmpty()) "لا حساب مرتبط" else "${accounts.size} حساب مرتبط",
-                        size = 8.6.sp,
+                        size = 9.sp,
                         color = V2Soft,
                         maxLines = 1,
                     )
@@ -521,7 +524,7 @@ private fun CloudAccountsStrip(
                             KText(account.email, size = 10.5.sp, color = Color.White, maxLines = 1)
                             KText(
                                 providerDisplayName(account.provider),
-                                size = 8.6.sp,
+                                size = 9.sp,
                                 color = V2Soft,
                                 maxLines = 1,
                             )
@@ -597,7 +600,7 @@ private fun StorageAnalyticsCard(analytics: List<StorageAnalytics>) {
                     KText(
                         if (analytics.isEmpty()) "لا أرقام موثوقة من المزوّد بعد"
                         else "${formatBytes(totalUsed)} مستخدمة من ${formatBytes(totalUsed + totalFree)}",
-                        size = 8.6.sp,
+                        size = 9.sp,
                         color = V2Soft,
                         maxLines = 1,
                     )
@@ -763,7 +766,7 @@ private fun ScanSummary(scans: List<ScanResult>) {
                     )
                 }
                 scan.error?.let { error ->
-                    KText(error, size = 8.6.sp, color = V2Red, maxLines = 2)
+                    KText(error, size = 9.sp, color = V2Red, maxLines = 2)
                 }
             }
         }
@@ -804,7 +807,7 @@ private fun CleanupCandidatesList(
                     KText("عناصر للمراجعة", size = 13.sp, weight = FontWeight.Bold, color = Color.White)
                     KText(
                         if (candidates.isEmpty()) "لا عناصر" else "${candidates.size} عنصرًا · ${selected.size} محدد",
-                        size = 8.6.sp,
+                        size = 9.sp,
                         color = V2Soft,
                         maxLines = 1,
                     )
@@ -890,7 +893,7 @@ private fun CandidateRow(
                     maxLines = 1,
                 )
                 KText(categoryDisplayName(candidate.category), size = 9.sp, color = V2Soft, maxLines = 1)
-                KText(candidate.sourceAccount ?: "", size = 8.sp, color = V2Soft, maxLines = 1)
+                KText(candidate.sourceAccount ?: "", size = 9.sp, color = V2Soft, maxLines = 1)
             }
             Spacer(Modifier.weight(1f))
             Column {
@@ -937,7 +940,7 @@ private fun OperationHistory(
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     KText("سجل العمليات", size = 13.sp, weight = FontWeight.Bold, color = Color.White)
-                    KText("$total عملية في هذه الجلسة", size = 8.6.sp, color = V2Soft, maxLines = 1)
+                    KText("$total عملية في هذه الجلسة", size = 9.sp, color = V2Soft, maxLines = 1)
                 }
                 if (total > 5) {
                     TextButton(onClick = onToggleAll) {
@@ -989,7 +992,7 @@ private fun OperationRow(operation: CleanupOperation) {
                 maxLines = 1,
             )
             operation.error?.let { error ->
-                KText(error, size = 8.4.sp, color = V2Red, maxLines = 2)
+                KText(error, size = 9.sp, color = V2Red, maxLines = 2)
             }
         }
         Spacer(Modifier.weight(1f))

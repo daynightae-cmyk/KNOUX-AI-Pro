@@ -59,6 +59,8 @@ import com.knoux.ai.ui.v2.V2Muted
 import com.knoux.ai.ui.v2.formatCount
 import com.knoux.ai.ui.v2.v2Bidi
 import com.knoux.ai.ui.v2.V2LuxuryIdentity
+import com.knoux.ai.ui.v2.V2TopBar
+import com.knoux.ai.ui.v2.V2TopMode
 import com.knoux.ai.ui.v2.V2GlassCard
 
 /**
@@ -165,7 +167,7 @@ fun ProviderMarketplaceScreen(
                     Spacer(Modifier.height(6.dp))
                     KText(
                         "يُخزَّن مشفرًا في Android Keystore. لا يظهر في السجلات أو النسخ الاحتياطي.",
-                        size = 8.6.sp,
+                        size = 9.sp,
                         color = V2Soft,
                         maxLines = 3,
                     )
@@ -225,6 +227,7 @@ fun ProviderMarketplaceScreen(
     }
 
     Column(Modifier.fillMaxSize()) {
+        V2TopBar(V2TopMode.INTERIOR, onBack = onBack, onPro = onPro)
         V2LuxuryIdentity(
             title = "سوق مزودي الذكاء الاصطناعي",
             english = "AI PROVIDER MARKETPLACE",
@@ -308,7 +311,7 @@ private fun ProviderCard(
                     KText(provider.name, size = 13.sp, weight = FontWeight.Bold, color = Color.White)
                     KText(
                         provider.authScheme.v2Bidi(),
-                        size = 8.6.sp,
+                        size = 9.sp,
                         color = V2Soft,
                         maxLines = 1,
                     )
@@ -359,7 +362,7 @@ private fun ProviderCard(
                     Spacer(Modifier.height(4.dp))
                     KText(
                         if (provider.isConfigured) "مكوّن" else "غير مكوّن",
-                        size = 8.4.sp,
+                        size = 9.sp,
                         color = V2Soft,
                     )
                 }

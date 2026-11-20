@@ -36,6 +36,8 @@ import kotlinx.coroutines.withContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -47,6 +49,9 @@ import com.knoux.ai.splash.KnouxSplashScreen
 import com.knoux.ai.ui.theme.KnouxTheme
 import com.knoux.ai.ui.screens.WelcomeScreen
 import com.knoux.ai.ui.v2.KnouxOnboarding
+import com.knoux.ai.ui.v2.KText
+import com.knoux.ai.ui.v2.V2Soft
+import com.knoux.ai.ui.v2.V2Cyan
 import com.knoux.ai.ui.v2.KnouxProState
 import com.knoux.ai.ui.v2.LocalProActive
 import com.knoux.ai.ui.v2.LocalProTheme
@@ -294,16 +299,18 @@ fun KnouxApp(startRoute: String? = null) {
     if (accountInfoVisible) {
         AlertDialog(
             onDismissRequest = { accountInfoVisible = false },
-            title = { Text(if (signedIn) "KNOUX ID · تم تسجيل الدخول" else "KNOUX ID") },
+            title = { KText(if (signedIn) "KNOUX ID · تم تسجيل الدخول" else "KNOUX ID", size = 16.sp, weight = FontWeight.Bold, color = Color.White) },
             text = {
-                Text(
+                KText(
                     "يمكنك الدخول بحساب Google أو Passkey أو البريد وكلمة المرور/رمز OTP، " +
-                        "أو المتابعة كضيف. وضع الضيف يشغّل الأدوات محليًا بدون اعتباره اشتراكًا أو استحقاق Pro."
+                        "أو المتابعة كضيف. وضع الضيف يشغّل الأدوات محليًا بدون اعتباره اشتراكًا أو استحقاق Pro.",
+                    size = 12.sp,
+                    color = V2Soft,
                 )
             },
             confirmButton = {
                 TextButton(onClick = { accountInfoVisible = false }) {
-                    Text("فهمت")
+                    KText("فهمت", size = 12.sp, weight = FontWeight.Bold, color = V2Cyan)
                 }
             },
         )

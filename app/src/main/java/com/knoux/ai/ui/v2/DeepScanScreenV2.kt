@@ -177,7 +177,7 @@ fun V2DeepScanScreen(onBack: () -> Unit, onOpenSummary: () -> Unit, onPro: () ->
                                     KText(
                                         "KNOUX يقرأ الوسائط المرئية المصرح بها فقط عبر MediaStore. " +
                                             "امنح صلاحية الصور والفيديو من إعدادات النظام، ثم ابدأ الفحص.",
-                                        size = 7.4.sp,
+                                        size = 9.sp,
                                         color = V2Soft,
                                     )
                                 }
@@ -287,7 +287,7 @@ private fun ScanReadyCard() {
                 Spacer(Modifier.width(7.dp))
                 KText("الفحص العميق جاهز", size = 14.5.sp, weight = FontWeight.Bold)
                 Spacer(Modifier.weight(1f))
-                KText("لم يبدأ بعد", size = 8.6.sp, color = V2Muted)
+                KText("لم يبدأ بعد", size = 9.sp, color = V2Muted)
             }
             Spacer(Modifier.height(5.dp))
             KText(
@@ -317,7 +317,7 @@ private fun ReadyChip(label: String, accent: Color) {
             .border(1.dp, accent.copy(alpha = .30f), RoundedCornerShape(50))
             .padding(horizontal = 8.dp, vertical = 3.dp),
     ) {
-        KText(label, size = 8.4.sp, weight = FontWeight.SemiBold, color = accent)
+        KText(label, size = 9.sp, weight = FontWeight.SemiBold, color = accent)
     }
 }
 
@@ -337,7 +337,7 @@ private fun ScanLiveCard(completed: Int, stage: DeepScanStage) {
                 KText("يقرأ الآن: ${stage.label}", size = 12.sp, weight = FontWeight.Bold)
                 KText(
                     "أكملت $completed من 6 وحدات. الرادار يتحرك فقط أثناء القراءة الفعلية.",
-                    size = 8.8.sp,
+                    size = 9.sp,
                     lineHeight = 12.sp,
                     color = V2Soft,
                 )
@@ -361,7 +361,7 @@ private fun ScanModulesCard(completed: Int, active: DeepScanStage?) {
                 Spacer(Modifier.width(6.dp))
                 KText("وحدات الفحص", size = 12.sp, weight = FontWeight.Bold)
                 Spacer(Modifier.weight(1f))
-                KText("$completed من 6", size = 8.6.sp, color = V2Cyan)
+                KText("$completed من 6", size = 9.sp, color = V2Cyan)
             }
             Spacer(Modifier.height(8.dp))
             DeepScanStage.values().toList().chunked(3).forEachIndexed { rowIndex, row ->
@@ -374,7 +374,7 @@ private fun ScanModulesCard(completed: Int, active: DeepScanStage?) {
                             Modifier
                                 .weight(1f)
                                 .height(64.dp)
-                                .clip(RoundedCornerShape(13.dp))
+                                .clip(RoundedCornerShape(12.dp))
                                 .background(
                                     when {
                                         done -> V2Cyan.copy(alpha = .14f)
@@ -389,7 +389,7 @@ private fun ScanModulesCard(completed: Int, active: DeepScanStage?) {
                                         isActive -> V2Cyan.copy(alpha = .55f)
                                         else -> Color.White.copy(alpha = .10f)
                                     },
-                                    RoundedCornerShape(13.dp),
+                                    RoundedCornerShape(12.dp),
                                 )
                                 .padding(5.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -408,7 +408,7 @@ private fun ScanModulesCard(completed: Int, active: DeepScanStage?) {
                             Spacer(Modifier.height(2.dp))
                             KText(
                                 stage.label,
-                                size = 8.2.sp,
+                                size = 9.sp,
                                 color = if (done || isActive) Color.White else V2Soft,
                                 maxLines = 1,
                             )
@@ -418,7 +418,7 @@ private fun ScanModulesCard(completed: Int, active: DeepScanStage?) {
                                     isActive -> "يقرأ"
                                     else -> "بانتظار"
                                 },
-                                size = 7.sp,
+                                size = 9.sp,
                                 color = when {
                                     done -> V2Cyan
                                     isActive -> V2Cyan
@@ -461,7 +461,7 @@ private fun ScanResultsCard(facts: DeviceFacts, complete: Boolean, measured: Int
                     Box(
                         Modifier
                             .size(width = 3.dp, height = 17.dp)
-                            .clip(RoundedCornerShape(4.dp))
+                            .clip(RoundedCornerShape(8.dp))
                             .background(if (complete) V2Green else V2Amber),
                     )
                     Spacer(Modifier.width(6.dp))
@@ -489,8 +489,8 @@ private fun ScanResultsCard(facts: DeviceFacts, complete: Boolean, measured: Int
             KText(
                 if (complete) "كل الأرقام أعلاه مقروءة من وحدات الفحص الست."
                 else "تظهر قيم الوحدات المقروءة فقط؛ الباقي بلا أرقام.",
-                size = 6.8.sp,
-                lineHeight = 9.5.sp,
+                size = 9.sp,
+                lineHeight = 10.6.sp,
                 color = V2Muted,
             )
             if (!complete) {
@@ -498,7 +498,7 @@ private fun ScanResultsCard(facts: DeviceFacts, complete: Boolean, measured: Int
                 KText(
                     "لم يكتمل الفحص، لذلك تعرض الوحدات المقروءة فقط قيمها، والباقي بلا أرقام. " +
                         "لا يُحفظ هذا الفحص في السجل.",
-                    size = 7.8.sp,
+                    size = 9.sp,
                     lineHeight = 12.sp,
                     color = V2Amber,
                 )
@@ -521,9 +521,9 @@ private fun ResultRow(
         Box(
             Modifier
                 .size(24.dp)
-                .clip(RoundedCornerShape(7.dp))
+                .clip(RoundedCornerShape(8.dp))
                 .background(tint.copy(alpha = .16f))
-                .border(1.dp, tint.copy(alpha = .34f), RoundedCornerShape(7.dp)),
+                .border(1.dp, tint.copy(alpha = .34f), RoundedCornerShape(8.dp)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(icon, null, tint = tint, modifier = Modifier.size(13.dp))
@@ -537,7 +537,7 @@ private fun ResultRow(
                 maxLines = 1,
                 color = if (measured) Color.White else V2Soft,
             )
-            KText(detail, size = 7.4.sp, color = V2Muted, maxLines = 1)
+            KText(detail, size = 9.sp, color = V2Muted, maxLines = 1)
         }
         Spacer(Modifier.width(4.dp))
         KText(value, size = 10.sp, weight = FontWeight.Bold, color = tint, maxLines = 1)
@@ -561,7 +561,7 @@ private fun ScanCancelledCard(completed: Int) {
                 KText(
                     "الرادار توقف فور الإلغاء. لا يُحفظ هذا الفحص في السجل؛ " +
                         "يمكنك بدء فحص جديد من الزر الثابت أسفل الشاشة.",
-                    size = 8.8.sp,
+                    size = 9.sp,
                     lineHeight = 13.sp,
                     color = V2Soft,
                 )
@@ -586,7 +586,7 @@ private fun ScanFailedCard(reason: String) {
                 KText("تعذّر إكمال الفحص", size = 11.5.sp, weight = FontWeight.Bold)
                 KText(
                     "$reason. القياسات المكتملة فقط هي المعروضة، ولم يُحفظ سجل جديد.",
-                    size = 8.8.sp,
+                    size = 9.sp,
                     lineHeight = 13.sp,
                     color = V2Soft,
                 )
@@ -611,13 +611,13 @@ private fun ScanHistoryCard(history: List<ScanHistoryEntry>) {
             Column(Modifier.weight(1f)) {
                 if (latest == null) {
                     KText("لا يوجد فحص محفوظ بعد", size = 11.sp, weight = FontWeight.Bold)
-                    KText("سيُحفظ الفحص التالي في السجل المحلي تلقائيًا.", size = 8.2.sp, color = V2Soft)
+                    KText("سيُحفظ الفحص التالي في السجل المحلي تلقائيًا.", size = 9.sp, color = V2Soft)
                 } else {
                     KText("آخر فحص محفوظ", size = 11.sp, weight = FontWeight.Bold, color = V2Green)
                     KText(
                         "${formatScanTime(latest.timestamp)} · ${formatCount(latest.appsScanned)} تطبيقًا · " +
                             "${formatBytes(latest.cacheBytes)} كاش",
-                        size = 8.2.sp,
+                        size = 9.sp,
                         color = V2Soft,
                     )
                 }
