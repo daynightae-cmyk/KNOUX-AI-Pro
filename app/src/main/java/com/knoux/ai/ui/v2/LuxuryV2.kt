@@ -450,27 +450,27 @@ private fun V2LuxuryOrb(spec: KnouxServiceSpec, actionLabel: String, onClick: ()
         Column(
             Modifier.fillMaxSize(.72f).clip(CircleShape)
                 .background(Brush.radialGradient(listOf(theme.orbCore, theme.orbMid, theme.ridgeBase)))
-                .padding(top = 10.dp, bottom = 8.dp),
+                .padding(top = 6.dp, bottom = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
             if (spec.key == "deepscan" && spec.artwork == R.drawable.knoux_svc_deepscan) {
-                Image(painterResource(R.drawable.knoux_symbol_alpha), null, modifier = Modifier.size(33.dp))
+                Image(painterResource(R.drawable.knoux_symbol_alpha), null, modifier = Modifier.size(29.dp))
             } else {
-                V2RasterTile(SectionArt.emblem(spec.key), size = 37.dp, accent = spec.accent)
+                V2RasterTile(SectionArt.emblem(spec.key), size = 33.dp, accent = spec.accent)
             }
-            Spacer(Modifier.height(3.dp))
+            Spacer(Modifier.height(2.dp))
             KText(spec.title, size = 12.5.sp, weight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
             KText(spec.english, size = 9.sp, color = V2Soft, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Spacer(Modifier.height(5.dp))
+            Spacer(Modifier.height(3.dp))
             Box(
                 Modifier.clip(RoundedCornerShape(50))
                     .background(Brush.horizontalGradient(listOf(theme.bronzeEdge, theme.bronzeMid, theme.bronzeEdge)))
                     .border(1.dp, V2GoldText.copy(alpha = .82f), RoundedCornerShape(50))
-                    .padding(horizontal = 10.dp, vertical = 3.dp),
+                    .padding(horizontal = 10.dp, vertical = 2.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    KText(actionLabel, size = 9.5.sp, weight = FontWeight.Bold, color = V2GoldText, maxLines = 1)
+                    KText(actionLabel, size = 9.5.sp, weight = FontWeight.Bold, color = V2GoldText, maxLines = 1, lineHeight = 12.sp)
                     Spacer(Modifier.width(3.dp))
                     Icon(Icons.Rounded.ChevronLeft, null, tint = V2GoldText, modifier = Modifier.size(9.dp))
                 }

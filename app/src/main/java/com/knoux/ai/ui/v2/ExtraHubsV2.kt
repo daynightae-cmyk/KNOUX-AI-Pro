@@ -15,12 +15,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -174,7 +177,7 @@ fun V2DeveloperToolsScreen(onBack: () -> Unit, onPro: () -> Unit) {
     val facts = rememberDeviceFacts()
     val navigate = LocalServiceNavigate.current
 
-    Column(Modifier.fillMaxWidth()) {
+    Column(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.statusBars)) {
         ExtraHubHeader(
             title = "أدوات المطورين",
             english = "DEVELOPER TOOLS",
@@ -297,7 +300,7 @@ fun V2GoogleServicesScreen(onBack: () -> Unit, onPro: () -> Unit) {
     val navigate = LocalServiceNavigate.current
     val googleCount = googleAppCount(facts)
 
-    Column(Modifier.fillMaxWidth()) {
+    Column(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.statusBars)) {
         ExtraHubHeader(
             title = "خدمات جوجل",
             english = "GOOGLE SERVICES",
@@ -405,7 +408,7 @@ fun V2AdvancedSecurityScreen(onBack: () -> Unit, onPro: () -> Unit) {
     val facts = rememberDeviceFacts()
     val navigate = LocalServiceNavigate.current
 
-    Column(Modifier.fillMaxWidth()) {
+    Column(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.statusBars)) {
         ExtraHubHeader(
             title = "الأمان المتقدم",
             english = "ADVANCED SECURITY",
@@ -536,7 +539,7 @@ fun V2BackupRestoreScreen(onBack: () -> Unit, onPro: () -> Unit) {
         }
     }
 
-    Column(Modifier.fillMaxWidth()) {
+    Column(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.statusBars)) {
         ExtraHubHeader(
             title = "النسخ والاستعادة",
             english = "BACKUP & RESTORE",
