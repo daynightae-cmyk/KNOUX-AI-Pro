@@ -17,10 +17,14 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Apps
+import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Backup
 import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material.icons.rounded.CleaningServices
+import androidx.compose.material.icons.rounded.DeveloperMode
+import androidx.compose.material.icons.rounded.Fingerprint
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.Radar
@@ -60,6 +64,16 @@ fun V2HomeScreen(
             ServiceSubItem("الفحص العميق", "", "hub-deepscan", Icons.Rounded.Radar, V2Cyan, art = R.drawable.knoux_svc_deepscan),
             ServiceSubItem("التقارير الذكية", "", "hub-reports", Icons.Rounded.BarChart, V2Violet),
             ServiceSubItem("تحسين الأداء", "", "hub-ai", Icons.Rounded.AutoAwesome, V2Pink, art = R.drawable.knoux_home_icon_ai),
+        )
+    }
+    // The four owner-requested extra hubs must be reachable by tapping, not
+    // only via the debug route hook — same royal hubs, visible front door.
+    val extraHubs = remember {
+        listOf(
+            ServiceSubItem("أدوات المطورين", "", "hub-developer", Icons.Rounded.DeveloperMode, V2Cyan, art = R.drawable.knoux_svc_deepscan),
+            ServiceSubItem("خدمات جوجل", "", "hub-googleservices", Icons.Rounded.AccountCircle, V2Violet, art = R.drawable.knoux_svc_apps),
+            ServiceSubItem("الأمان المتقدم", "", "hub-security", Icons.Rounded.Fingerprint, V2Green, art = R.drawable.knoux_svc_privacy),
+            ServiceSubItem("النسخ والاستعادة", "", "hub-backup", Icons.Rounded.Backup, V2Amber, art = R.drawable.knoux_svc_residue),
         )
     }
     Box(Modifier.fillMaxSize().windowInsetsPadding(androidx.compose.foundation.layout.WindowInsets.statusBars)) {
@@ -108,6 +122,8 @@ fun V2HomeScreen(
                 }
                 item { V2LuxurySectionTitle("الخدمات الرئيسية", "١٠ أقسام تشغيل", V2Cyan) }
                 item { V2LuxuryServiceGrid(services, onNavigate) }
+                item { V2LuxurySectionTitle("مراكز إضافية", "٤ مراكز بنفس الفخامة", V2Amber) }
+                item { V2LuxuryServiceGrid(extraHubs, onNavigate) }
                 item { V2LuxuryProBanner(onClick = onPro) }
                 item {
                     V2LuxuryStatStrip(

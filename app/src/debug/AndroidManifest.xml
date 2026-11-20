@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Debug build only: uploads its own runtime screenshots to the loopback
          dev server that runs beside the project on the phone. -->
@@ -7,6 +8,8 @@
 
     <application
         android:name=".debug.KnouxDebugApp"
-        android:usesCleartextTraffic="true" />
+        android:label="KNOUX AI QA"
+        android:usesCleartextTraffic="true"
+        tools:replace="android:label" />
 
 </manifest>

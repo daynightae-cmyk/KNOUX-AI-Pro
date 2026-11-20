@@ -1,0 +1,125 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/8.11.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest
+> Task :app:processDebugManifest
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:processDebugManifestForPackage
+> Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
+> Task :app:mergeDebugShaders UP-TO-DATE
+> Task :app:compileDebugShaders NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets UP-TO-DATE
+> Task :app:compressDebugAssets UP-TO-DATE
+> Task :app:desugarDebugFileDependencies UP-TO-DATE
+> Task :app:checkDebugDuplicateClasses UP-TO-DATE
+> Task :app:mergeExtDexDebug UP-TO-DATE
+> Task :app:mergeLibDexDebug UP-TO-DATE
+> Task :app:mergeDebugJniLibFolders UP-TO-DATE
+> Task :app:mergeDebugNativeLibs UP-TO-DATE
+> Task :app:stripDebugDebugSymbols UP-TO-DATE
+> Task :app:validateSigningDebug UP-TO-DATE
+> Task :app:writeDebugAppMetadata UP-TO-DATE
+> Task :app:writeDebugSigningConfigVersions UP-TO-DATE
+> Task :app:processDebugResources
+> Task :app:kspDebugKotlin
+> Task :app:compileDebugKotlin
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/developer/ui/AgentToolSystemScreen.kt:311:43 'val Icons.Rounded.ArrowForward: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.ArrowForward.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/developer/ui/MobileDeveloperWorkspaceScreen.kt:492:61 'val Icons.Rounded.InsertDriveFile: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.InsertDriveFile.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/google/auth/GoogleAuthProvider.kt:90:64 'static field FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET: Int' is deprecated. Deprecated in Java.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/microsoft/auth/MicrosoftAuthProvider.kt:85:64 'static field FLAG_ACTIVITY_CLEAR_WHEN_TASK_RESET: Int' is deprecated. Deprecated in Java.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/components/AppHeader.kt:109:38 'val Icons.Rounded.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.ArrowBack.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/components/Neon.kt:715:17 'fun quadraticBezierTo(x1: Float, y1: Float, x2: Float, y2: Float): Unit' is deprecated. Use quadraticTo() for consistency with cubicTo().
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/components/Neon.kt:716:17 'fun quadraticBezierTo(x1: Float, y1: Float, x2: Float, y2: Float): Unit' is deprecated. Use quadraticTo() for consistency with cubicTo().
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/screens/DetailScreens.kt:458:46 'val Icons.Rounded.TrendingUp: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.TrendingUp.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/screens/DetailScreens.kt:472:51 'val Icons.Rounded.TrendingUp: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.TrendingUp.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/screens/LoginVisual.kt:147:13 'fun quadraticBezierTo(x1: Float, y1: Float, x2: Float, y2: Float): Unit' is deprecated. Use quadraticTo() for consistency with cubicTo().
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/screens/ReportsScreen.kt:145:51 'val Icons.Rounded.TrendingUp: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.TrendingUp.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/screens/ReportsScreen.kt:214:46 'val Icons.Rounded.TrendingUp: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.TrendingUp.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/screens/SettingsScreen.kt:296:90 'field versionCode: Int' is deprecated. Deprecated in Java.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/screens/StorageAnalyzerScreen.kt:128:51 'val Icons.Rounded.TrendingUp: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.TrendingUp.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/DesignSystem.kt:100:1 Expected performance impact from inlining is insignificant. Inlining works best for functions with parameters of function types.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/DesignSystem.kt:809:42 'val Icons.Rounded.ArrowBack: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.ArrowBack.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/DeviceReality.kt:222:56 'constructor(p0: String!): Locale' is deprecated. Deprecated in Java.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/DeviceReality.kt:535:16 'fun unsafeCheckOpNoThrow(p0: String, p1: Int, p2: String): Int' is deprecated. Deprecated in Java.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/MoreScreensV2.kt:294:73 'val Icons.Rounded.OpenInNew: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.OpenInNew.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/MoreScreensV2.kt:988:72 'val Icons.Rounded.Article: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.Article.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/MoreScreensV2.kt:2890:102 'val Icons.Rounded.OpenInNew: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.OpenInNew.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/MoreScreensV2.kt:3223:101 'field versionCode: Int' is deprecated. Deprecated in Java.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/NotificationsV2.kt:340:23 'val Icons.Rounded.TrendingUp: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.TrendingUp.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/ReportsRoomAudit.kt:215:36 'val Icons.Rounded.FactCheck: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.FactCheck.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/SectionToolsV2.kt:1152:58 'val Icons.Rounded.OpenInNew: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.OpenInNew.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/SectionToolsV2.kt:1777:77 'val Icons.Rounded.ManageSearch: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.ManageSearch.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/SectionToolsV2.kt:1814:74 'val Icons.Rounded.FactCheck: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.FactCheck.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/SectionToolsV2.kt:1831:83 'val Icons.Rounded.TrendingUp: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.TrendingUp.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/SectionToolsV2.kt:1868:80 'val Icons.Rounded.Sort: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.Sort.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/ServiceAuditStrip.kt:55:42 'val Icons.Rounded.FactCheck: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.FactCheck.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/ServiceFinish.kt:742:17 'fun quadraticBezierTo(x1: Float, y1: Float, x2: Float, y2: Float): Unit' is deprecated. Use quadraticTo() for consistency with cubicTo().
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/ServiceFinish.kt:743:17 'fun quadraticBezierTo(x1: Float, y1: Float, x2: Float, y2: Float): Unit' is deprecated. Use quadraticTo() for consistency with cubicTo().
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/ServiceFinish.kt:894:17 'fun quadraticBezierTo(x1: Float, y1: Float, x2: Float, y2: Float): Unit' is deprecated. Use quadraticTo() for consistency with cubicTo().
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/ServiceFinish.kt:895:17 'fun quadraticBezierTo(x1: Float, y1: Float, x2: Float, y2: Float): Unit' is deprecated. Use quadraticTo() for consistency with cubicTo().
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/ServiceFinish.kt:896:17 'fun quadraticBezierTo(x1: Float, y1: Float, x2: Float, y2: Float): Unit' is deprecated. Use quadraticTo() for consistency with cubicTo().
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/ServiceFinish.kt:897:17 'fun quadraticBezierTo(x1: Float, y1: Float, x2: Float, y2: Float): Unit' is deprecated. Use quadraticTo() for consistency with cubicTo().
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/ToolCatalogExpansionV2.kt:471:43 'val Icons.Rounded.Rule: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.Rule.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/ToolCatalogExpansionV2.kt:485:43 'val Icons.Rounded.Rule: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.Rule.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/ToolCatalogExpansionV2.kt:588:74 'val Icons.Rounded.TrendingDown: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.TrendingDown.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/ToolCatalogExpansionV2.kt:601:43 'val Icons.Rounded.TrendingUp: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.TrendingUp.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/ToolCatalogExpansionV2.kt:620:43 'val Icons.Rounded.TrendingUp: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.TrendingUp.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/ToolCatalogExpansionV2.kt:628:69 'val Icons.Rounded.CompareArrows: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.CompareArrows.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/ToolCatalogExpansionV2.kt:669:43 'val Icons.Rounded.Rule: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.Rule.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/ToolCatalogExpansionV2.kt:739:64 'val Icons.Rounded.ReceiptLong: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.ReceiptLong.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/ToolCatalogExpansionV2.kt:744:43 'val Icons.Rounded.ReceiptLong: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.ReceiptLong.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/ToolCatalogExpansionV2.kt:1147:66 'val Icons.Rounded.HelpOutline: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.HelpOutline.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/ToolCatalogExpansionV2.kt:1151:43 'val Icons.Rounded.HelpOutline: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.HelpOutline.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/ToolCatalogV2.kt:272:71 'val Icons.Rounded.Rule: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.Rule.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/ToolCatalogV2.kt:288:71 'val Icons.Rounded.FactCheck: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.FactCheck.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/ToolCatalogV2.kt:474:68 'val Icons.Rounded.Rule: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.Rule.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/ToolCatalogV2.kt:522:59 'val Icons.Rounded.ManageSearch: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.ManageSearch.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/ToolCatalogV2.kt:564:63 'val Icons.Rounded.OpenInNew: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.OpenInNew.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/ToolCatalogV2.kt:578:63 'val Icons.Rounded.FactCheck: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.FactCheck.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/ToolCatalogV2.kt:755:56 'val Icons.Rounded.FactCheck: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.FactCheck.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/ToolCatalogV2.kt:843:38 'val Icons.Rounded.TrendingUp: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.TrendingUp.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/ToolCatalogV2.kt:852:53 'val Icons.Rounded.ReceiptLong: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.ReceiptLong.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/ToolCatalogV2.kt:951:70 'val Icons.Rounded.Sort: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.Sort.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/ToolCatalogV2.kt:956:38 'val Icons.Rounded.Sort: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.Sort.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/ToolCatalogV2.kt:986:66 'val Icons.Rounded.OpenInNew: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.OpenInNew.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/ToolCatalogV2.kt:1091:70 'val Icons.Rounded.Sort: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.Sort.
+w: file:///K:/KNOUX-AI-Pro/app/src/main/java/com/knoux/ai/ui/v2/ToolCatalogV2.kt:1265:67 'val Icons.Rounded.OpenInNew: ImageVector' is deprecated. Use the AutoMirrored version at Icons.AutoMirrored.Rounded.OpenInNew.
+
+> Task :app:compileDebugJavaWithJavac UP-TO-DATE
+> Task :app:bundleDebugClassesToCompileJar
+> Task :app:dexBuilderDebug
+> Task :app:mergeDebugGlobalSynthetics UP-TO-DATE
+> Task :app:processDebugJavaRes UP-TO-DATE
+> Task :app:mergeDebugJavaResource UP-TO-DATE
+> Task :app:mergeProjectDexDebug
+> Task :app:packageDebug
+> Task :app:createDebugApkListingFileRedirect UP-TO-DATE
+> Task :app:assembleDebug
+> Task :app:bundleDebugClassesToRuntimeJar
+> Task :app:kspDebugUnitTestKotlin
+
+> Task :app:compileDebugUnitTestKotlin
+w: file:///K:/KNOUX-AI-Pro/app/src/test/java/com/knoux/ai/AppDatabaseMigrationJvmTest.kt:42:33 Java type mismatch: inferred type is 'kotlin.String?', but 'kotlin.String' was expected.
+
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:copyRoomSchemas NO-SOURCE
+> Task :app:processDebugUnitTestJavaRes UP-TO-DATE
+> Task :app:testDebugUnitTest
+
+BUILD SUCCESSFUL in 4m 12s
+45 actionable tasks: 14 executed, 31 up-to-date

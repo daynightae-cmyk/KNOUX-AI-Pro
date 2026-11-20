@@ -1069,7 +1069,7 @@ internal object SectionToolsExpansion {
         ),
         x(
             "developer", "developer-info", "11.5", "معلومات المطور", "ABOUT THE BUILD",
-            "هوية التطبيق والإصدار وال版权", Icons.Rounded.Info, V2Cyan,
+            "هوية التطبيق والإصدار والحقوق", Icons.Rounded.Info, V2Cyan,
             metric = { f, _ -> if (f.computedAt > 0L) "إصدار مثبت" else "جاري القراءة" },
             rows = { f, _ ->
                 listOf(
@@ -1248,7 +1248,7 @@ internal object SectionToolsExpansion {
             note = "الاختيار عبر ACTION_OPEN_DOCUMENT_TREE. لا يُكتب أي ملف قبل موافقتك.",
         ),
         x(
-            "backup", "bkp-inventory", "14.2", "جرد ما将被 نسخ", "BACKUP INVENTORY",
+            "backup", "bkp-inventory", "14.2", "جرد ما سيُنسخ", "BACKUP INVENTORY",
             "قائمة صريحة بالملفات المرشحة قبل النسخ", Icons.Rounded.Inventory, V2Cyan,
             metric = { f, _ -> "${formatCount(f.ownCacheFiles)} ملف" },
             rows = { f, _ ->
