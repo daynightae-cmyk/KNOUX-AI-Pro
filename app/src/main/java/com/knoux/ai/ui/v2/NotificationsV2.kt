@@ -436,7 +436,7 @@ fun V2NotificationsScreen(
                                     fontFamily = V2Font,
                                     fontWeight = FontWeight.Black,
                                     fontSize = 27.sp,
-                                    color = Color.White,
+                                    color = if (LocalDayMode.current) DayInk else Color.White,
                                 ),
                             )
                             KText("ملخص ما حدث على جهازك خلال آخر يومين.", size = 10.sp, color = if (isPro) ProSoft else V2Soft)

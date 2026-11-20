@@ -86,48 +86,49 @@ import kotlin.math.min
 import kotlin.math.sin
 
 /* ------------------------------------------------------------------ *
- * KNOUX AI Pro — compact service header
+ * KNOUX AI Pro — royal service stage
  *
- * Owner direction (17 Nov, second pass): the intro Home screen is the
- * reference. Every service opens on a short header now — the official
- * stag floats behind the identity block, the service instrument sits in
- * a small glass window, and the measured status ribbon stays readable.
- * The results get the screen back.
+ * Owner direction (20 Nov): match the annotated reference boards — the
+ * service opens on a large fixed stage: title and tagline on top, the
+ * service instrument (radar / artwork) alive at full size in the middle,
+ * the official stag floating behind it, and the measured status ribbon
+ * closing the stage. Results scroll beneath; the primary action stays
+ * pinned. Beauty first for the everyday user, honesty in every number.
  * ------------------------------------------------------------------ */
 
 /**
- * Height of the compact service header. On a 360dp phone it is 176dp, so the
- * header never behaves like a landing page. Landscape uses a shorter lane so
- * the results list still has usable room.
+ * Height of the royal service stage. On a 360dp phone it is 288dp — the
+ * reference proportion (~45% of the window) — capped at 312dp on wide
+ * phones. Landscape / very short windows use a compact lane so the results
+ * list still has usable room.
  */
 internal fun serviceHeaderHeight(maxWidth: Dp, compact: Boolean): Dp =
-    if (compact) 120.dp else (maxWidth * .49f).coerceIn(166.dp, 196.dp)
+    if (compact) 140.dp else (maxWidth * .80f).coerceIn(264.dp, 312.dp)
 
 /**
- * The stag owns the header height, with a width cap so the text keeps a safe
- * lane. It is deliberately larger than the old 44dp badge: the owner asked for
- * the stag to sit behind the header, not beside the title as a decoration.
+ * The stag floats behind the instrument at stage scale, with a width cap so
+ * the title lane and the scene both keep their space.
  */
 internal fun serviceStagSize(headerHeight: Dp, maxWidth: Dp): Dp =
-    minOf(headerHeight * .98f, maxWidth * .52f).coerceIn(104.dp, 194.dp)
+    minOf(headerHeight * .88f, maxWidth * .62f).coerceIn(120.dp, 252.dp)
 
-/** Title size that keeps every service name readable inside the short header. */
+/** Title size for the royal stage — the service name is the hero text. */
 internal fun serviceTitleSize(titleLength: Int): Float = when {
-    titleLength <= 14 -> 27f
-    titleLength <= 21 -> 24f
-    titleLength <= 27 -> 21.5f
-    else -> 19.5f
+    titleLength <= 14 -> 28f
+    titleLength <= 21 -> 25f
+    titleLength <= 27 -> 22.5f
+    else -> 20.5f
 }
 
 /** Title size for the shorter landscape lane. */
 internal fun compactServiceTitleSize(titleLength: Int): Float =
-    serviceTitleSize(titleLength) - 2.5f
+    serviceTitleSize(titleLength) - 3f
 
 /**
- * The shared service page. The compact header is fixed above the results; the
- * list beneath it scrolls, so the stag and the live status never disappear.
- * Only the primary action stays pinned so a running scan can always be
- * cancelled.
+ * The shared service page — the reference structure. The royal stage is
+ * fixed under the app bar; the primary action is pinned directly beneath it
+ * (never at the bottom of the screen), so the run/cancel control always sits
+ * in the service context next to its live instrument. Results scroll below.
  */
 @Composable
 fun FixedServiceScreen(
@@ -161,6 +162,14 @@ fun FixedServiceScreen(
                     .testTag("service_fixed_cover"),
                 scene = scene,
             )
+            if (action != null) {
+                Spacer(Modifier.height(10.dp))
+                Box(
+                    Modifier
+                        .padding(horizontal = 16.dp)
+                        .testTag("service_primary_action"),
+                ) { action() }
+            }
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -179,10 +188,6 @@ fun FixedServiceScreen(
                         content = content,
                     )
                 }
-            }
-            if (action != null) {
-                Spacer(Modifier.height(6.dp))
-                Box(Modifier.padding(horizontal = 16.dp)) { action() }
             }
         }
     }
@@ -239,6 +244,9 @@ fun ServiceHero(
     val titleSize = (if (compact) compactServiceTitleSize(spec.title.length) else serviceTitleSize(spec.title.length)).sp
     val theme = LocalProTheme.current
 
+    // The royal stage stays a night-lit cosmic island even in day mode: the
+    // approved art and its white text keep their contrast on porcelain chrome.
+    CompositionLocalProvider(LocalKnouxOnDark provides true) {
     BoxWithConstraints(
         modifier
             .clip(
@@ -262,6 +270,13 @@ fun ServiceHero(
             .clipToBounds(),
     ) {
         val stagSize = serviceStagSize(maxHeight, maxWidth)
+        // The instrument keeps stage scale but never eats the identity lane
+        // or the ribbon lane: cap it by what the column actually has left.
+        val sceneSize = if (compact) 44.dp else minOf(
+            maxHeight * .52f,
+            maxWidth * .50f,
+            maxHeight - 165.dp,
+        )
         val glowScale = 1.04f + breath * .035f
 
         // The halo travels with the stag, so the mascot reads as one object
@@ -269,18 +284,18 @@ fun ServiceHero(
         Box(
             Modifier
                 .align(Alignment.BottomEnd)
-                .offset(x = 12.dp, y = 6.dp)
-                .size(stagSize * 1.25f)
+                .offset(x = 14.dp, y = 4.dp)
+                .size(stagSize * 1.22f)
                 .graphicsLayer {
                     scaleX = glowScale
                     scaleY = glowScale
-                    alpha = .70f + breath * .16f
+                    alpha = .66f + breath * .16f
                 }
                 .background(
                     Brush.radialGradient(
                         listOf(
-                            spec.accent2.copy(alpha = .34f),
-                            spec.accent.copy(alpha = .18f),
+                            spec.accent2.copy(alpha = .32f),
+                            spec.accent.copy(alpha = .16f),
                             Color.Transparent,
                         ),
                     ),
@@ -292,31 +307,30 @@ fun ServiceHero(
             contentDescription = null,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .offset(x = 10.dp, y = 8.dp)
+                .offset(x = 12.dp, y = 6.dp)
                 .size(stagSize)
                 .graphicsLayer {
                     translationY = float.dp.toPx()
                     rotationZ = -1.2f + breath * .7f
                     scaleX = .995f + breath * .012f
                     scaleY = .995f + breath * .012f
-                    alpha = .96f
+                    alpha = .84f
                 }
                 .testTag("service_cover_stag"),
             contentScale = ContentScale.Fit,
         )
 
-        // Text keeps the left lane bright while the stag stays visible on the
-        // right. The gradient is intentionally soft; the stag is a background
-        // layer, not a cropped card.
+        // The stage keeps its middle clear for the live instrument: darker at
+        // the title lane on top and under the ribbon, open in the centre.
         Box(
             Modifier
                 .fillMaxSize()
                 .background(
-                    Brush.horizontalGradient(
-                        0f to V2Deep.copy(alpha = .90f),
-                        .42f to V2Deep.copy(alpha = .62f),
-                        .70f to V2Deep.copy(alpha = .16f),
-                        1f to Color.Transparent,
+                    Brush.verticalGradient(
+                        0f to V2Deep.copy(alpha = .74f),
+                        .32f to V2Deep.copy(alpha = .22f),
+                        .64f to V2Deep.copy(alpha = .16f),
+                        1f to V2Deep.copy(alpha = .62f),
                     )
                 ),
         )
@@ -328,52 +342,24 @@ fun ServiceHero(
                     alpha = revealAlpha
                     translationY = revealRise.dp.toPx()
                 }
-                .padding(horizontal = if (compact) 12.dp else 14.dp)
-                .padding(top = if (compact) 8.dp else 10.dp, bottom = if (compact) 7.dp else 9.dp),
+                .padding(horizontal = if (compact) 12.dp else 16.dp)
+                .padding(
+                    top = if (compact) 8.dp else 12.dp,
+                    // The ribbon is pinned to the stage floor outside this
+                    // column; reserve its lane so the instrument can never
+                    // push it past the clip edge and slice its glyphs.
+                    bottom = if (compact) 28.dp else 40.dp,
+                ),
         ) {
+            // Identity line — order number and the wordmark, PRO badge when earned.
             Row(
                 Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // Small service instrument window. The same composable that
-                // used to fill the old hero is now a badge, so Deep Scan keeps
-                // its live radar without stealing the results area.
-                Box(
-                    Modifier
-                        .size(if (compact) 42.dp else 54.dp)
-                        .clip(RoundedCornerShape(if (compact) 13.dp else 16.dp))
-                        .background(Color.Black.copy(alpha = .30f))
-                        .border(
-                            1.dp,
-                            spec.accent.copy(alpha = .52f),
-                            RoundedCornerShape(if (compact) 13.dp else 16.dp),
-                        ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    scene(Modifier.fillMaxSize().padding(if (compact) 3.dp else 4.dp))
-                    Box(
-                        Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(3.dp)
-                            .size(if (compact) 13.dp else 15.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(V2Deep.copy(alpha = .94f))
-                            .border(1.dp, spec.accent.copy(alpha = .66f), RoundedCornerShape(8.dp)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            spec.glyph,
-                            contentDescription = null,
-                            tint = spec.accent,
-                            modifier = Modifier.size(if (compact) 8.dp else 9.dp),
-                        )
-                    }
-                }
-                Spacer(Modifier.width(9.dp))
                 Column(Modifier.weight(1f)) {
                     KText(
                         "${spec.order} · ${spec.english}",
-                        size = if (compact) 7.2.sp else 8.sp,
+                        size = if (compact) 8.sp else 9.sp,
                         weight = FontWeight.Bold,
                         color = spec.accent2,
                         letterSpacing = 1.8.sp,
@@ -383,7 +369,7 @@ fun ServiceHero(
                     Spacer(Modifier.height(1.dp))
                     KText(
                         if (spec.pro) "KNOUX AI · PRO" else "KNOUX AI",
-                        size = if (compact) 5.8.sp else 6.4.sp,
+                        size = if (compact) 6.4.sp else 7.2.sp,
                         weight = FontWeight.SemiBold,
                         color = V2Muted,
                         letterSpacing = 1.4.sp,
@@ -403,11 +389,12 @@ fun ServiceHero(
                 }
             }
 
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.height(if (compact) 3.dp else 5.dp))
 
+            // The service name is the hero text, with its promise underneath.
             Column(
                 Modifier
-                    .fillMaxWidth(if (compact) .86f else .68f)
+                    .fillMaxWidth(if (compact) .86f else .92f)
                     .testTag("service_cover_title_block"),
             ) {
                 KText(
@@ -427,10 +414,10 @@ fun ServiceHero(
                     Spacer(Modifier.height(2.dp))
                     KText(
                         spec.tagline,
-                        size = 9.8.sp,
-                        lineHeight = 12.5.sp,
+                        size = 10.sp,
+                        lineHeight = 13.5.sp,
                         color = V2Soft.copy(alpha = .94f),
-                        maxLines = 2,
+                        maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -439,14 +426,71 @@ fun ServiceHero(
                 }
             }
 
-            Spacer(Modifier.height(if (compact) 4.dp else 6.dp))
-            HeroStatusRibbon(
-                status = status,
-                statusColor = statusColor,
-                metric = metric,
-                compact = compact,
-            )
+            Spacer(Modifier.weight(1f))
+
+            // The instrument lives at stage scale, centred like the reference
+            // boards: the radar sweeps, the artwork breathes, the stag floats
+            // behind it. In the compact lane it returns to a glass badge.
+            Box(
+                Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (compact) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            Modifier
+                                .size(36.dp)
+                                .clip(RoundedCornerShape(11.dp))
+                                .background(Color.Black.copy(alpha = .30f))
+                                .border(1.dp, spec.accent.copy(alpha = .52f), RoundedCornerShape(11.dp)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            scene(Modifier.fillMaxSize().padding(3.dp))
+                        }
+                        Spacer(Modifier.width(10.dp))
+                        KText(
+                            spec.tagline,
+                            size = 9.sp,
+                            lineHeight = 11.5.sp,
+                            color = V2Soft.copy(alpha = .94f),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                } else {
+                    Box(
+                        Modifier
+                            .size(sceneSize)
+                            .testTag("service_stage_instrument"),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        scene(Modifier.fillMaxSize())
+                    }
+                }
+            }
+
+            Spacer(Modifier.weight(1f))
         }
+
+        // The measured status ribbon is pinned to the stage floor — it is the
+        // contract strip and can never be squeezed by the column above it.
+        HeroStatusRibbon(
+            status = status,
+            statusColor = statusColor,
+            metric = metric,
+            compact = compact,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(
+                    horizontal = if (compact) 12.dp else 16.dp,
+                    vertical = if (compact) 7.dp else 10.dp,
+                ),
+        )
+    }
     }
 }
 
@@ -616,6 +660,7 @@ private fun HeroStatusRibbon(
     statusColor: Color,
     metric: String?,
     compact: Boolean,
+    modifier: Modifier = Modifier,
 ) {
     val motion = rememberMotionEnabled()
     val pulse by rememberInfiniteTransition(label = "serviceStatusPulse").animateFloat(
@@ -627,7 +672,7 @@ private fun HeroStatusRibbon(
         ),
     )
     Row(
-        Modifier
+        modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(if (compact) 9.dp else 10.dp))
             .background(Color.Black.copy(alpha = .40f))

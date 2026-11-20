@@ -6,19 +6,20 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * The service header is now a compact Home-style banner: the stag floats
- * behind the identity block and the results start right under it. These tests
- * pin the size contract so a future change cannot turn the header back into a
- * full-screen poster.
+ * Owner direction (20 Nov): the service page opens on the royal stage from
+ * the reference boards — large fixed header with the live instrument at
+ * stage scale, the stag behind it, results scrolling beneath. These tests
+ * pin the new size contract.
  */
 class ServiceHeaderLayoutTest {
 
     private val header = serviceHeaderHeight(maxWidth = 360.dp, compact = false)
 
     @Test
-    fun headerIsAContentBannerNotAPoster() {
-        assertTrue("360dp header must stay under 200dp, was $header", header <= 200.dp)
-        assertTrue("360dp header must leave the results visible", 800.dp - header >= 600.dp)
+    fun headerIsTheRoyalStageWithResultsBeneath() {
+        assertTrue("360dp stage must be at least 264dp, was $header", header >= 264.dp)
+        assertTrue("360dp stage must stay under 320dp, was $header", header <= 320.dp)
+        assertTrue("360dp stage must leave the results visible", 800.dp - header >= 480.dp)
     }
 
     @Test
@@ -27,33 +28,33 @@ class ServiceHeaderLayoutTest {
         val mid = serviceHeaderHeight(maxWidth = 360.dp, compact = false)
         val wide = serviceHeaderHeight(maxWidth = 412.dp, compact = false)
         assertTrue("header grows with width", wide >= mid && mid >= narrow)
-        assertTrue("narrow header keeps the minimum lane", narrow >= 166.dp)
-        assertTrue("wide header is capped", wide <= 196.dp)
-        assertEquals(120.dp, serviceHeaderHeight(maxWidth = 640.dp, compact = true))
+        assertTrue("narrow header keeps the minimum lane", narrow >= 264.dp)
+        assertTrue("wide header is capped", wide <= 312.dp)
+        assertEquals(140.dp, serviceHeaderHeight(maxWidth = 640.dp, compact = true))
     }
 
     @Test
-    fun stagIsLargeBehindTheHeader() {
+    fun stagFloatsLargeBehindTheStage() {
         val stag = serviceStagSize(headerHeight = header, maxWidth = 360.dp)
-        assertTrue("stag must dominate the header height, was $stag", stag >= header * .90f)
-        assertTrue("stag must stay inside the header, was $stag", stag <= header)
-        assertTrue("stag must not cover the title lane, was $stag", stag <= 360.dp * .55f)
+        assertTrue("stag must own the stage backdrop, was $stag", stag >= header * .60f)
+        assertTrue("stag must stay inside the stage, was $stag", stag <= header)
+        assertTrue("stag must keep the title lane open, was $stag", stag <= 360.dp * .65f)
     }
 
     @Test
     fun stagIsBoundedOnVeryWideAndVeryShortScreens() {
-        val wide = serviceStagSize(headerHeight = 196.dp, maxWidth = 500.dp)
-        assertTrue("stag is capped at 194dp, was $wide", wide <= 194.dp)
+        val wide = serviceStagSize(headerHeight = 312.dp, maxWidth = 500.dp)
+        assertTrue("stag is capped at 252dp, was $wide", wide <= 252.dp)
         val tiny = serviceStagSize(headerHeight = 60.dp, maxWidth = 320.dp)
-        assertTrue("stag keeps a visible floor, was $tiny", tiny >= 104.dp)
+        assertTrue("stag keeps a visible floor, was $tiny", tiny >= 120.dp)
     }
 
     @Test
     fun titleFitsOnOneLineAcrossServiceNames() {
-        assertTrue(serviceTitleSize(11) >= 26f)
-        assertTrue(serviceTitleSize(20) in 23f..25f)
-        assertTrue(serviceTitleSize(27) in 21f..22f)
-        assertTrue(serviceTitleSize(40) in 19f..20f)
+        assertTrue(serviceTitleSize(11) >= 27f)
+        assertTrue(serviceTitleSize(20) in 24f..26f)
+        assertTrue(serviceTitleSize(27) in 22f..23f)
+        assertTrue(serviceTitleSize(40) in 20f..21f)
         assertTrue("landscape title is shorter", compactServiceTitleSize(20) < serviceTitleSize(20))
     }
 

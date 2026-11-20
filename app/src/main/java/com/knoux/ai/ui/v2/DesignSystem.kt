@@ -351,6 +351,17 @@ fun KText(
         V2GoldText -> proTheme.gold
         else -> color
     }
+    // Day world: chrome text turns deep ink and neon accents deepen for
+    // contrast on porcelain. Dark islands (cosmic stage, orb jewel, gradient
+    // CTAs) keep their night text untouched via LocalKnouxOnDark.
+    val dayMode = LocalDayMode.current
+    val onDark = LocalKnouxOnDark.current
+    val finalColor = when {
+        !dayMode -> themedColor
+        onDark -> if (color == Color.White) Color.White else themedColor
+        color == Color.White -> DayInk
+        else -> dayAccent(themedColor)
+    }
     // Single-line labels must ellipsize instead of hard-clipping mid-glyph;
     // callers can still pin Clip explicitly where a precise cut is intended.
     val resolvedOverflow =
@@ -358,7 +369,7 @@ fun KText(
     Text(
         text = resolved,
         modifier = modifier,
-        style = kStyle(size, weight, themedColor, lineHeight, letterSpacing)
+        style = kStyle(size, weight, finalColor, lineHeight, letterSpacing)
             .copy(textDirection = direction),
         textAlign = align,
         maxLines = maxLines,
@@ -374,7 +385,52 @@ fun KText(
 fun V2Background(modifier: Modifier = Modifier) {
     val proTheme = LocalProTheme.current
     val isPro = proTheme.isPro
+    val day = LocalDayMode.current
     Canvas(modifier.fillMaxSize()) {
+        if (day) {
+            // Porcelain morning: warm paper sky, a soft gold horizon and the
+            // same mountain silhouette in lavender mist. Stars become faint
+            // dust; the energy ribbon keeps its neon accent, deepened.
+            drawRect(
+                Brush.verticalGradient(
+                    0f to DayPaperTop,
+                    0.34f to DayPaperMid,
+                    0.70f to DayPaperBase,
+                    1f to DayHorizon,
+                )
+            )
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(DayCyan.withAlpha(.10f), Color.Transparent),
+                    center = Offset(size.width * 0.82f, size.height * 0.12f),
+                    radius = size.width * 0.68f,
+                ),
+                radius = size.width * 0.68f,
+                center = Offset(size.width * 0.82f, size.height * 0.12f),
+            )
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(DayPink.withAlpha(.08f), Color.Transparent),
+                    center = Offset(size.width * 0.08f, size.height * 0.35f),
+                    radius = size.width * 0.70f,
+                ),
+                radius = size.width * 0.70f,
+                center = Offset(size.width * 0.08f, size.height * 0.35f),
+            )
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(DayAmber.withAlpha(if (isPro) .20f else .14f), Color.Transparent),
+                    center = Offset(size.width * 0.50f, size.height * 0.97f),
+                    radius = size.width * 0.92f,
+                ),
+                radius = size.width * 0.92f,
+                center = Offset(size.width * 0.50f, size.height * 0.97f),
+            )
+            drawDayMountains()
+            drawDayDust()
+            drawEnergyRibbon(isPro, proTheme)
+            return@Canvas
+        }
         drawRect(
             Brush.verticalGradient(
                 0f to (if (isPro) Color(0xFF0A0522) else Color(0xFF060318)),
@@ -449,6 +505,68 @@ fun V2Background(modifier: Modifier = Modifier) {
         drawMountains(isPro)
         drawStars(isPro, proTheme)
         drawEnergyRibbon(isPro, proTheme)
+    }
+}
+
+private fun DrawScope.drawDayMountains() {
+    val back = Path().apply {
+        moveTo(0f, size.height * 0.20f)
+        lineTo(size.width * 0.11f, size.height * 0.13f)
+        lineTo(size.width * 0.19f, size.height * 0.19f)
+        lineTo(size.width * 0.31f, size.height * 0.09f)
+        lineTo(size.width * 0.43f, size.height * 0.18f)
+        lineTo(size.width * 0.55f, size.height * 0.12f)
+        lineTo(size.width * 0.69f, size.height * 0.21f)
+        lineTo(size.width * 0.84f, size.height * 0.11f)
+        lineTo(size.width, size.height * 0.17f)
+        lineTo(size.width, 0f)
+        lineTo(0f, 0f)
+        close()
+    }
+    drawPath(
+        back,
+        Brush.verticalGradient(
+            listOf(Color(0xFFB9A6DE).withAlpha(.30f), Color(0xFFB9A6DE).withAlpha(0f)),
+            startY = 0f,
+            endY = size.height * 0.25f,
+        )
+    )
+    val front = Path().apply {
+        moveTo(0f, size.height * 0.26f)
+        lineTo(size.width * 0.09f, size.height * 0.21f)
+        lineTo(size.width * 0.18f, size.height * 0.25f)
+        lineTo(size.width * 0.30f, size.height * 0.16f)
+        lineTo(size.width * 0.45f, size.height * 0.26f)
+        lineTo(size.width * 0.60f, size.height * 0.19f)
+        lineTo(size.width * 0.77f, size.height * 0.28f)
+        lineTo(size.width * 0.89f, size.height * 0.20f)
+        lineTo(size.width, size.height * 0.25f)
+        lineTo(size.width, 0f)
+        lineTo(0f, 0f)
+        close()
+    }
+    drawPath(
+        front,
+        Brush.verticalGradient(
+            listOf(Color(0xFF8F76C9).withAlpha(.22f), Color(0xFF8F76C9).withAlpha(0f)),
+            startY = 0f,
+            endY = size.height * 0.30f,
+        )
+    )
+}
+
+private fun DrawScope.drawDayDust() {
+    val motes = listOf(
+        .09f to .08f, .23f to .16f, .38f to .07f, .55f to .13f, .71f to .05f,
+        .87f to .15f, .14f to .34f, .44f to .40f, .78f to .33f, .30f to .58f,
+        .62f to .62f, .90f to .55f,
+    )
+    motes.forEachIndexed { index, (x, y) ->
+        drawCircle(
+            color = (if (index % 4 == 0) DayGold else DayViolet).withAlpha(.16f),
+            radius = if (index % 5 == 0) 1.4.dp.toPx() else .8.dp.toPx(),
+            center = Offset(size.width * x, size.height * y),
+        )
     }
 }
 
@@ -698,22 +816,24 @@ fun V2TopBar(
 fun HeaderIcon(icon: ImageVector, description: String, onClick: () -> Unit) {
     // 40dp touch target (visual disc stays compact); keeps a11y minimum while
     // fitting the 54dp header row.
+    val day = LocalDayMode.current
     Box(
         Modifier
             .size(40.dp)
             .clip(CircleShape)
-            .background(Color.White.withAlpha( .035f))
-            .border(1.dp, Color.White.withAlpha( .14f), CircleShape)
+            .background(if (day) Color.White.withAlpha(.72f) else Color.White.withAlpha( .035f))
+            .border(1.dp, if (day) DayBorderSoft.withAlpha(.55f) else Color.White.withAlpha( .14f), CircleShape)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        HeaderHalo(Modifier.matchParentSize(), color = V2Cyan)
-        Icon(icon, description, tint = Color.White.withAlpha( .92f), modifier = Modifier.size(20.dp))
+        HeaderHalo(Modifier.matchParentSize(), color = if (day) DayCyan else V2Cyan)
+        Icon(icon, description, tint = if (day) DayInk else Color.White.withAlpha( .92f), modifier = Modifier.size(20.dp))
     }
 }
 
 @Composable
 fun BrandLockupV2() {
+    val day = LocalDayMode.current
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(Modifier.size(28.dp), contentAlignment = Alignment.Center) {
@@ -728,6 +848,9 @@ fun BrandLockupV2() {
             Image(
                 painter = painterResource(R.drawable.knoux_wordmark_alpha),
                 contentDescription = "knoux ai",
+                // The wordmark is white-on-transparent night art; on porcelain
+                // it is re-inked to the day violet so the brand stays legible.
+                colorFilter = if (day) androidx.compose.ui.graphics.ColorFilter.tint(DayViolet) else null,
                 modifier = Modifier.height(14.5.dp),
             )
             Spacer(Modifier.width(7.dp))
@@ -754,13 +877,18 @@ fun ProPill(modifier: Modifier = Modifier) {
             .border(1.dp, if (active) proTheme.goldBright.withAlpha( .9f) else proTheme.amber.withAlpha( .72f), shape)
             .padding(horizontal = 9.dp, vertical = 3.dp),
     ) {
-        KText(
-            if (active) "PRO ✓" else "PRO",
-            size = 9.sp,
-            weight = FontWeight.Bold,
-            color = if (active) proTheme.deep else proTheme.amber,
-            letterSpacing = .6.sp,
-        )
+        // The active pill is a gold island; its dark text must never be
+        // re-inked by day mode. The inactive pill reads as amber text on
+        // porcelain, deepened for contrast.
+        CompositionLocalProvider(LocalKnouxOnDark provides active) {
+            KText(
+                if (active) "PRO ✓" else "PRO",
+                size = 9.sp,
+                weight = FontWeight.Bold,
+                color = if (active) proTheme.deep else proTheme.amber,
+                letterSpacing = .6.sp,
+            )
+        }
     }
 }
 
@@ -793,14 +921,16 @@ fun ProBadge(modifier: Modifier = Modifier, label: String = "PRO") {
                 .border(.6.dp, Color(0xFFFFC2CE), CircleShape)
         )
         Spacer(Modifier.width(3.dp))
-        KText(
-            label,
-            size = 9.sp,
-            weight = FontWeight.Black,
-            color = Color.White,
-            letterSpacing = .5.sp,
-            maxLines = 1,
-        )
+        CompositionLocalProvider(LocalKnouxOnDark provides true) {
+            KText(
+                label,
+                size = 9.sp,
+                weight = FontWeight.Black,
+                color = Color.White,
+                letterSpacing = .5.sp,
+                maxLines = 1,
+            )
+        }
     }
 }
 
@@ -929,6 +1059,7 @@ fun V2BottomBar(
 ) {
     val proTheme = LocalProTheme.current
     val isPro = proTheme.isPro
+    val day = LocalDayMode.current
     val selected = when (selectedRoute) {
         "home" -> "home"
         "clean", "smartclean", "deepscan", "duplicates", "residue", "duplicate-group",
@@ -954,10 +1085,10 @@ fun V2BottomBar(
                     )
                 )
             }
-            val bgColor1 = if (isPro) proTheme.deep else proTheme.barTop
-            val bgColor2 = if (isPro) proTheme.deep2 else proTheme.panel2
-            val borderColor = if (isPro) proTheme.border else V2Border
-            val accentColor = if (isPro) proTheme.cyan else V2Cyan
+            val bgColor1 = if (day) DayCardTop else if (isPro) proTheme.deep else proTheme.barTop
+            val bgColor2 = if (day) DayCardBottom else if (isPro) proTheme.deep2 else proTheme.panel2
+            val borderColor = if (day) DayBorderSoft else if (isPro) proTheme.border else V2Border
+            val accentColor = if (day) DayCyan else if (isPro) proTheme.cyan else V2Cyan
             
             drawPath(shape, Brush.verticalGradient(listOf(bgColor1, bgColor2)))
             drawPath(shape, borderColor.withAlpha(.48f), style = Stroke(1.dp.toPx()))
@@ -1017,20 +1148,24 @@ fun V2BottomBar(
                     .size(66.dp)
                     .clip(CircleShape)
                     .background(
-                        if (isPro)
+                        if (day)
+                            Brush.verticalGradient(listOf(Color(0xFF2A1A4E), Color(0xFF171034)))
+                        else if (isPro)
                             Brush.verticalGradient(listOf(proTheme.deep2, proTheme.deep))
                         else
                             // Violet world in standard mode too — the crown stays
                             // gold-accented, but the orb no longer clashes brown.
                             Brush.verticalGradient(listOf(proTheme.panel, proTheme.panel2))
                     )
-                    .border(2.dp, if (isPro) proTheme.goldBright.withAlpha( .9f) else V2Amber.withAlpha( .9f), CircleShape)
-                    .border(1.dp, if (isPro) proTheme.soft.withAlpha( .3f) else Color.White.withAlpha( .22f), CircleShape),
+                    .border(2.dp, if (day) DayGold.withAlpha(.9f) else if (isPro) proTheme.goldBright.withAlpha( .9f) else V2Amber.withAlpha( .9f), CircleShape)
+                    .border(1.dp, if (day) Color.White.withAlpha(.30f) else if (isPro) proTheme.soft.withAlpha( .3f) else Color.White.withAlpha( .22f), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    CrownGold(size = 24.dp, color = if (isPro) proTheme.gold else V2Amber)
-                    KText("Pro", size = 10.sp, weight = FontWeight.Bold, color = proTheme.gold)
+                    CrownGold(size = 24.dp, color = if (day) V2GoldText else if (isPro) proTheme.gold else V2Amber)
+                    CompositionLocalProvider(LocalKnouxOnDark provides true) {
+                        KText("Pro", size = 10.sp, weight = FontWeight.Bold, color = if (day) V2GoldText else proTheme.gold)
+                    }
                 }
             }
         }
@@ -1046,9 +1181,10 @@ private fun RowScope.BottomItem(
 ) {
     val proTheme = LocalProTheme.current
     val isPro = proTheme.isPro
-    val activeTop = if (isPro) proTheme.amber else V2Blue
-    val activeBottom = if (isPro) proTheme.deep2 else proTheme.panel2
-    val activeBorder = if (isPro) proTheme.gold else V2Cyan
+    val day = LocalDayMode.current
+    val activeTop = if (day) DayViolet else if (isPro) proTheme.amber else V2Blue
+    val activeBottom = if (day) DayBlue else if (isPro) proTheme.deep2 else proTheme.panel2
+    val activeBorder = if (day) DayGold else if (isPro) proTheme.gold else V2Cyan
     Box(
         modifier
             .fillMaxSize()
@@ -1067,11 +1203,12 @@ private fun RowScope.BottomItem(
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
+        CompositionLocalProvider(LocalKnouxOnDark provides active) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(
                 tab.icon ?: return@Column,
                 contentDescription = tab.label,
-                tint = if (active) Color.White else proTheme.soft.withAlpha(.82f),
+                tint = if (active) Color.White else if (day) DayInkSoft else proTheme.soft.withAlpha(.82f),
                 modifier = Modifier.size(22.dp),
             )
             Spacer(Modifier.height(2.dp))
@@ -1079,9 +1216,10 @@ private fun RowScope.BottomItem(
                 tab.label,
                 size = 10.5.sp,
                 weight = if (active) FontWeight.Bold else FontWeight.Medium,
-                color = if (active) Color.White else proTheme.soft.withAlpha(.85f),
+                color = if (active) Color.White else if (day) DayInkSoft else proTheme.soft.withAlpha(.85f),
                 maxLines = 1,
             )
+        }
         }
     }
 }
@@ -1101,12 +1239,13 @@ fun V2GlassCard(
 ) {
     val proTheme = LocalProTheme.current
     val isPro = proTheme.isPro
+    val day = LocalDayMode.current
     val shape = RoundedCornerShape(radius)
     // Use Pro-aware colors when Pro is active
-    val glassTop = if (isPro) proTheme.glassTop else V2GlassTop
-    val glassBottom = if (isPro) proTheme.glassBottom else V2GlassBottom
-    val borderColor = if (isPro) proTheme.border else glow
-    val glowColor = if (isPro) proTheme.amber else glow
+    val glassTop = if (day) DayCardTop else if (isPro) proTheme.glassTop else V2GlassTop
+    val glassBottom = if (day) DayCardBottom else if (isPro) proTheme.glassBottom else V2GlassBottom
+    val borderColor = if (day) dayAccent(glow) else if (isPro) proTheme.border else glow
+    val glowColor = if (day) dayAccent(glow) else if (isPro) proTheme.amber else glow
     
     Box(
         modifier
@@ -1114,7 +1253,7 @@ fun V2GlassCard(
             .drawBehind {
                 drawCircle(
                     brush = Brush.radialGradient(
-                        listOf(glowColor.withAlpha( .16f), Color.Transparent),
+                        listOf(glowColor.withAlpha( if (day) .10f else .16f), Color.Transparent),
                         center = Offset(size.width * .12f, 0f),
                         radius = size.width * .85f,
                     ),
@@ -1123,7 +1262,7 @@ fun V2GlassCard(
                 )
                 drawLine(
                     brush = Brush.horizontalGradient(
-                        listOf(Color.Transparent, glowColor.withAlpha( .52f), Color.Transparent)
+                        listOf(Color.Transparent, glowColor.withAlpha( if (day) .38f else .52f), Color.Transparent)
                     ),
                     start = Offset(size.width * .10f, 1.dp.toPx()),
                     end = Offset(size.width * .90f, 1.dp.toPx()),
@@ -1131,7 +1270,7 @@ fun V2GlassCard(
                 )
             }
             .background(Brush.verticalGradient(listOf(glassTop.withAlpha( .93f), glassBottom.withAlpha( .98f))))
-            .border(1.dp, borderColor.withAlpha( borderAlpha), shape)
+            .border(1.dp, borderColor.withAlpha( if (day) (borderAlpha * .8f).coerceAtLeast(.30f) else borderAlpha), shape)
             .padding(padding),
         content = content,
     )
@@ -1151,11 +1290,12 @@ fun V2ProGlassCard(
 ) {
     val proTheme = LocalProTheme.current
     val isPro = proTheme.isPro
+    val day = LocalDayMode.current
     val shape = RoundedCornerShape(radius)
-    val glassTop = if (isPro) proTheme.glassTop else V2GlassTop
-    val glassBottom = if (isPro) proTheme.glassBottom else V2GlassBottom
-    val borderColor = if (isPro) proTheme.border else V2Border
-    val glowColor = if (isPro) proTheme.amber else V2Violet
+    val glassTop = if (day) DayCardTop else if (isPro) proTheme.glassTop else V2GlassTop
+    val glassBottom = if (day) DayCardBottom else if (isPro) proTheme.glassBottom else V2GlassBottom
+    val borderColor = if (day) DayBorderSoft else if (isPro) proTheme.border else V2Border
+    val glowColor = if (day) DayViolet else if (isPro) proTheme.amber else V2Violet
     
     Box(
         modifier
@@ -1225,6 +1365,8 @@ fun V2GradientButton(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
     ) {
+        // The gradient CTA stays a night-lit island in day mode too.
+        CompositionLocalProvider(LocalKnouxOnDark provides true) {
         if (icon != null) {
             Icon(icon, null, tint = contentColor, modifier = Modifier.size(19.dp))
             Spacer(Modifier.width(8.dp))
@@ -1235,6 +1377,7 @@ fun V2GradientButton(
             // RTL shell: "forward" reads to the left; use the same chevron the
             // luxury surfaces use instead of a back-arrow glyph.
             Icon(Icons.Rounded.ChevronLeft, null, tint = contentColor, modifier = Modifier.size(17.dp))
+        }
         }
     }
 }
@@ -1261,11 +1404,13 @@ fun V2GoldButton(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
     ) {
+        CompositionLocalProvider(LocalKnouxOnDark provides true) {
         if (icon != null) {
             Icon(icon, null, tint = proTheme.gold, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(7.dp))
         }
         KText(text, size = 14.sp, weight = FontWeight.Bold, color = proTheme.gold)
+        }
     }
 }
 
@@ -1316,14 +1461,18 @@ fun V2GhostButton(
     height: Dp = 44.dp,
 ) {
     val proTheme = LocalProTheme.current
+    val day = LocalDayMode.current
     val shape = RoundedCornerShape(50)
     Row(
         modifier
             .fillMaxWidth()
             .height(height)
             .clip(shape)
-            .background(Color.White.withAlpha(if (proTheme.isPro) .06f else .035f))
-            .border(1.dp, proTheme.border.withAlpha(.50f), shape)
+            .background(
+                if (day) Color.White.withAlpha(.80f)
+                else Color.White.withAlpha(if (proTheme.isPro) .06f else .035f)
+            )
+            .border(1.dp, (if (day) DayBorderSoft else proTheme.border).withAlpha(if (day) .70f else .50f), shape)
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -1348,6 +1497,7 @@ fun V2NeonRing(
 ) {
     val proTheme = LocalProTheme.current
     val isPro = proTheme.isPro
+    val day = LocalDayMode.current
     val proColors = if (isPro) listOf(proTheme.cyan, proTheme.blue, proTheme.violet, proTheme.pink) else colors
     val glowColor = if (isPro) proTheme.amber else colors.last()
     
@@ -1355,6 +1505,14 @@ fun V2NeonRing(
         Canvas(Modifier.fillMaxSize()) {
             val sw = stroke.toPx()
             val inset = sw / 2f
+            // Day world: a porcelain face inside the ring keeps the center
+            // text legible; night keeps the transparent cosmic center.
+            if (day) {
+                drawCircle(
+                    brush = Brush.radialGradient(listOf(DayCardTop, DayCardBottom)),
+                    radius = (this.size.minDimension - sw * 2f) / 2f,
+                )
+            }
             drawCircle(
                 brush = Brush.radialGradient(
                     listOf(glowColor.withAlpha( .20f), Color.Transparent),
@@ -1363,7 +1521,7 @@ fun V2NeonRing(
                 radius = this.size.minDimension * .53f,
             )
             drawArc(
-                color = Color.White.withAlpha( .08f),
+                color = (if (day) DayBorderSoft else Color.White).withAlpha(if (day) .50f else .08f),
                 startAngle = -90f,
                 sweepAngle = 360f,
                 useCenter = false,
@@ -1396,7 +1554,7 @@ fun V2NeonRing(
                 val angle = Math.toRadians((-90f + sweep).toDouble())
                 val r = (this.size.width - sw) / 2f
                 drawCircle(
-                    Color.White.withAlpha( .95f),
+                    (if (day) DayViolet else Color.White).withAlpha( .95f),
                     radius = sw * .34f,
                     center = Offset(center.x + (r * cos(angle)).toFloat(), center.y + (r * sin(angle)).toFloat()),
                 )
@@ -1413,12 +1571,13 @@ fun V2ProgressBar(
     height: Dp = 6.dp,
     colors: List<Color> = listOf(V2Cyan, V2Blue),
 ) {
+    val day = LocalDayMode.current
     Box(
         modifier
             .fillMaxWidth()
             .height(height)
             .clip(RoundedCornerShape(50))
-            .background(Color.White.withAlpha( .09f))
+            .background(if (day) DayBorderSoft.withAlpha(.30f) else Color.White.withAlpha( .09f))
     ) {
         Box(
             Modifier
@@ -1439,16 +1598,18 @@ fun V2MetricRow(
     accent: Color,
     modifier: Modifier = Modifier,
 ) {
+    val day = LocalDayMode.current
+    val tint = if (day) dayAccent(accent) else accent
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Box(
             Modifier
                 .size(26.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(accent.withAlpha( .10f))
-                .border(1.dp, accent.withAlpha( .28f), RoundedCornerShape(8.dp)),
+                .background(tint.withAlpha( if (day) .14f else .10f))
+                .border(1.dp, tint.withAlpha( if (day) .42f else .28f), RoundedCornerShape(8.dp)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, null, tint = accent, modifier = Modifier.size(14.dp))
+            Icon(icon, null, tint = tint, modifier = Modifier.size(14.dp))
         }
         Spacer(Modifier.width(7.dp))
         KText(label, size = 10.sp, weight = FontWeight.Medium, color = V2Soft, maxLines = 1, modifier = Modifier.width(58.dp))
@@ -1466,13 +1627,14 @@ fun V2SearchField(
     modifier: Modifier = Modifier,
     onClick: () -> Unit = {},
 ) {
+    val day = LocalDayMode.current
     Row(
         modifier
             .fillMaxWidth()
             .height(40.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(Color.White.withAlpha( .045f))
-            .border(1.dp, V2Border.withAlpha( .32f), RoundedCornerShape(16.dp))
+            .background(if (day) Color.White.withAlpha(.85f) else Color.White.withAlpha( .045f))
+            .border(1.dp, (if (day) DayBorderSoft else V2Border).withAlpha( if (day) .60f else .32f), RoundedCornerShape(16.dp))
             .clickable(onClick = onClick)
             .padding(horizontal = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -1491,15 +1653,20 @@ fun V2IconTile(
     size: Dp = 36.dp,
     iconSize: Dp = 18.dp,
 ) {
+    val day = LocalDayMode.current
+    val dayTint = dayAccent(accent)
     Box(
         modifier
             .size(size)
             .clip(RoundedCornerShape(size * .31f))
-            .background(Brush.linearGradient(listOf(accent.withAlpha( .28f), Color(0xFF1B1040))))
-            .border(1.dp, accent.withAlpha( .50f), RoundedCornerShape(size * .31f)),
+            .background(
+                if (day) Brush.linearGradient(listOf(dayTint.withAlpha(.14f), DayCardBottom))
+                else Brush.linearGradient(listOf(accent.withAlpha( .28f), Color(0xFF1B1040)))
+            )
+            .border(1.dp, (if (day) dayTint else accent).withAlpha( if (day) .45f else .50f), RoundedCornerShape(size * .31f)),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, null, tint = accent, modifier = Modifier.size(iconSize))
+        Icon(icon, null, tint = if (day) dayTint else accent, modifier = Modifier.size(iconSize))
     }
 }
 
@@ -1547,25 +1714,29 @@ fun V2Chip(
     onClick: (() -> Unit)? = null,
 ) {
     val shape = RoundedCornerShape(50)
+    val day = LocalDayMode.current
     Row(
         modifier
             .clip(shape)
             .background(
-                if (active) Brush.horizontalGradient(listOf(V2Cyan.withAlpha( .85f), V2Blue.withAlpha( .90f)))
+                if (active) Brush.horizontalGradient(listOf((if (day) DayCyan else V2Cyan).withAlpha( .85f), (if (day) DayBlue else V2Blue).withAlpha( .90f)))
+                else if (day) Brush.horizontalGradient(listOf(Color.White.withAlpha(.85f), Color.White.withAlpha(.65f)))
                 else Brush.horizontalGradient(listOf(Color.White.withAlpha( .05f), Color.White.withAlpha( .02f)))
             )
-            .border(if (active) 0.dp else 1.dp, if (active) Color.Transparent else accent.withAlpha( .28f), shape)
+            .border(if (active) 0.dp else 1.dp, if (active) Color.Transparent else (if (day) dayAccent(accent) else accent).withAlpha( if (day) .40f else .28f), shape)
             .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
             .then(if (onClick != null) Modifier.heightIn(min = 36.dp) else Modifier)
             .padding(horizontal = 13.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        KText(
-            text,
-            size = 10.5.sp,
-            weight = if (active) FontWeight.Bold else FontWeight.Medium,
-            color = if (active) V2Deep else V2Soft,
-        )
+        CompositionLocalProvider(LocalKnouxOnDark provides active) {
+            KText(
+                text,
+                size = 10.5.sp,
+                weight = if (active) FontWeight.Bold else FontWeight.Medium,
+                color = if (active) V2Deep else V2Soft,
+            )
+        }
     }
 }
 

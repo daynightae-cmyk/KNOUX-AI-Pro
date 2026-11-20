@@ -34,6 +34,7 @@ import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -240,6 +241,8 @@ internal fun ServiceGauge(
             }
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            // The gauge face stays night-lit: it is an instrument, not chrome.
+            CompositionLocalProvider(LocalKnouxOnDark provides true) {
             KText(
                 valueText ?: if (live) "$percent%" else "—",
                 size = if (valueText != null) 15.sp else 20.sp,
@@ -256,6 +259,7 @@ internal fun ServiceGauge(
                 maxLines = 2,
                 modifier = Modifier.width(size * .62f),
             )
+            }
         }
     }
 }
@@ -276,16 +280,18 @@ private fun SectionStatGrid(stats: List<SectionStat>, modifier: Modifier = Modif
 @Composable
 private fun SectionStatTile(stat: SectionStat, modifier: Modifier = Modifier) {
     val theme = LocalProTheme.current
+    val day = LocalDayMode.current
+    val tint = if (day) dayAccent(stat.accent) else stat.accent
     Row(
         modifier
             .height(58.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(
                 Brush.verticalGradient(
-                    listOf(stat.accent.withAlpha(.16f), theme.deep2.withAlpha(.88f)),
+                    listOf(tint.withAlpha(if (day) .12f else .16f), if (day) DayCardBottom else theme.deep2.withAlpha(.88f)),
                 ),
             )
-            .border(1.dp, stat.accent.withAlpha(.30f), RoundedCornerShape(16.dp))
+            .border(1.dp, tint.withAlpha(if (day) .42f else .30f), RoundedCornerShape(16.dp))
             .padding(horizontal = 8.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -293,11 +299,11 @@ private fun SectionStatTile(stat: SectionStat, modifier: Modifier = Modifier) {
             Modifier
                 .size(28.dp)
                 .clip(RoundedCornerShape(8.dp))
-                .background(stat.accent.withAlpha(.16f))
-                .border(1.dp, stat.accent.withAlpha(.34f), RoundedCornerShape(8.dp)),
+                .background(tint.withAlpha(if (day) .14f else .16f))
+                .border(1.dp, tint.withAlpha(if (day) .42f else .34f), RoundedCornerShape(8.dp)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(stat.icon, null, tint = stat.accent, modifier = Modifier.size(15.dp))
+            Icon(stat.icon, null, tint = tint, modifier = Modifier.size(15.dp))
         }
         Spacer(Modifier.width(7.dp))
         Column(Modifier.weight(1f)) {
@@ -339,16 +345,18 @@ internal fun ServiceRowTileGrid(rows: List<ToolRow>, modifier: Modifier = Modifi
 @Composable
 private fun ServiceRowTile(row: ToolRow, modifier: Modifier = Modifier) {
     val theme = LocalProTheme.current
+    val day = LocalDayMode.current
+    val tint = if (day) dayAccent(row.accent) else row.accent
     Column(
         modifier
             .height(86.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(
                 Brush.verticalGradient(
-                    listOf(row.accent.withAlpha(.15f), theme.glassBottom.withAlpha(.90f)),
+                    listOf(tint.withAlpha(if (day) .12f else .15f), if (day) DayCardBottom else theme.glassBottom.withAlpha(.90f)),
                 ),
             )
-            .border(1.dp, row.accent.withAlpha(.30f), RoundedCornerShape(16.dp))
+            .border(1.dp, tint.withAlpha(if (day) .42f else .30f), RoundedCornerShape(16.dp))
             .padding(horizontal = 9.dp, vertical = 8.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -356,17 +364,17 @@ private fun ServiceRowTile(row: ToolRow, modifier: Modifier = Modifier) {
                 Modifier
                     .size(25.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(row.accent.withAlpha(.17f)),
+                    .background(tint.withAlpha(if (day) .14f else .17f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(row.icon, null, tint = row.accent, modifier = Modifier.size(14.dp))
+                Icon(row.icon, null, tint = tint, modifier = Modifier.size(14.dp))
             }
             Spacer(Modifier.weight(1f))
             Box(
                 Modifier
                     .size(5.dp)
                     .clip(CircleShape)
-                    .background(row.accent.copy(alpha = .72f)),
+                    .background(tint.copy(alpha = .72f)),
             )
         }
         Spacer(Modifier.height(4.dp))
@@ -465,7 +473,9 @@ private fun DuplicateThumbStrip(facts: DeviceFacts, accent: Color) {
                             .background(Color.Black.copy(alpha = .72f))
                             .padding(horizontal = 4.dp, vertical = 1.dp),
                     ) {
-                        KText("×${group.count}", size = 9.sp, weight = FontWeight.Black, color = Color.White)
+                        CompositionLocalProvider(LocalKnouxOnDark provides true) {
+                            KText("×${group.count}", size = 9.sp, weight = FontWeight.Black, color = Color.White)
+                        }
                     }
                 }
             }
@@ -548,15 +558,16 @@ private fun StorageVisualStrip(facts: DeviceFacts, accent: Color) {
 
 @Composable
 private fun LegendChip(label: String, value: String, color: Color, modifier: Modifier = Modifier) {
+    val tint = if (LocalDayMode.current) dayAccent(color) else color
     Row(
         modifier
             .clip(RoundedCornerShape(8.dp))
-            .background(color.withAlpha(.10f))
-            .border(1.dp, color.withAlpha(.24f), RoundedCornerShape(8.dp))
+            .background(tint.withAlpha(if (LocalDayMode.current) .12f else .10f))
+            .border(1.dp, tint.withAlpha(if (LocalDayMode.current) .40f else .24f), RoundedCornerShape(8.dp))
             .padding(horizontal = 5.dp, vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(Modifier.size(6.dp).clip(CircleShape).background(color))
+        Box(Modifier.size(6.dp).clip(CircleShape).background(tint))
         Spacer(Modifier.width(4.dp))
         Column {
             KText(label, size = 9.sp, color = V2Muted, maxLines = 1)
@@ -831,7 +842,9 @@ internal fun ServiceGroupCard(
                         .background(Color.Black.copy(alpha = .76f))
                         .padding(horizontal = 5.dp, vertical = 1.dp),
                 ) {
-                    KText("×${group.count}", size = 9.sp, weight = FontWeight.Black, color = Color.White)
+                    CompositionLocalProvider(LocalKnouxOnDark provides true) {
+                        KText("×${group.count}", size = 9.sp, weight = FontWeight.Black, color = Color.White)
+                    }
                 }
             }
             Spacer(Modifier.width(9.dp))

@@ -647,6 +647,8 @@ private fun ToolBehaviorCard(
 ) {
     V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 18.dp, glow = accent, borderAlpha = .30f) {
         Column {
+            val day = LocalDayMode.current
+            val fieldInk = if (day) DayInk else Color.White
             when (behavior) {
                 ToolBehavior.SEARCH_APPS -> {
                     KText("ابحث بالاسم أو اسم الحزمة", size = 9.sp, weight = FontWeight.Bold, color = accent)
@@ -656,8 +658,8 @@ private fun ToolBehaviorCard(
                             .fillMaxWidth()
                             .height(38.dp)
                             .clip(RoundedCornerShape(12.dp))
-                            .background(Color.White.withAlpha(.05f))
-                            .border(1.dp, Color.White.withAlpha(.10f), RoundedCornerShape(12.dp))
+                            .background(if (day) Color.White.withAlpha(.85f) else Color.White.withAlpha(.05f))
+                            .border(1.dp, (if (day) DayBorderSoft else Color.White).withAlpha(if (day) .60f else .10f), RoundedCornerShape(12.dp))
                             .padding(horizontal = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
@@ -672,7 +674,7 @@ private fun ToolBehaviorCard(
                                 onValueChange = onQuery,
                                 singleLine = true,
                                 textStyle = TextStyle(
-                                    color = Color.White,
+                                    color = fieldInk,
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.Medium,
                                 ),
@@ -699,8 +701,8 @@ private fun ToolBehaviorCard(
                             .fillMaxWidth()
                             .height(38.dp)
                             .clip(RoundedCornerShape(12.dp))
-                            .background(Color.White.withAlpha(.05f))
-                            .border(1.dp, Color.White.withAlpha(.10f), RoundedCornerShape(12.dp))
+                            .background(if (day) Color.White.withAlpha(.85f) else Color.White.withAlpha(.05f))
+                            .border(1.dp, (if (day) DayBorderSoft else Color.White).withAlpha(if (day) .60f else .10f), RoundedCornerShape(12.dp))
                             .padding(horizontal = 10.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
@@ -715,7 +717,7 @@ private fun ToolBehaviorCard(
                                 onValueChange = onQuery,
                                 singleLine = true,
                                 textStyle = TextStyle(
-                                    color = Color.White,
+                                    color = fieldInk,
                                     fontSize = 9.sp,
                                     fontWeight = FontWeight.Medium,
                                 ),
@@ -797,16 +799,24 @@ private fun ChipsRow(
     onSelect: (Int) -> Unit,
     accent: Color,
 ) {
+    val day = LocalDayMode.current
+    val tint = if (day) dayAccent(accent) else accent
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(5.dp)) {
         options.forEachIndexed { index, label ->
             Box(
                 Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(if (selected == index) accent.withAlpha(.20f) else Color.White.withAlpha(.04f))
+                    .background(
+                        if (selected == index) tint.withAlpha(if (day) .16f else .20f)
+                        else if (day) Color.White.withAlpha(.80f)
+                        else Color.White.withAlpha(.04f)
+                    )
                     .border(
                         1.dp,
-                        if (selected == index) accent.withAlpha(.55f) else Color.White.withAlpha(.09f),
+                        if (selected == index) tint.withAlpha(if (day) .55f else .55f)
+                        else if (day) DayBorderSoft.withAlpha(.60f)
+                        else Color.White.withAlpha(.09f),
                         RoundedCornerShape(12.dp),
                     )
                     .clickable { onSelect(index) }
@@ -843,7 +853,8 @@ private fun ToolToggleRow(label: String, hint: String, checked: Boolean, onChang
             Modifier
                 .size(width = 34.dp, height = 19.dp)
                 .clip(RoundedCornerShape(50))
-                .background(if (checked) accent.withAlpha(.80f) else Color.White.withAlpha(.10f))
+                .background(if (checked) (if (LocalDayMode.current) dayAccent(accent) else accent).withAlpha(.80f) else if (LocalDayMode.current) Color(0xFFE6DEF5) else Color.White.withAlpha(.10f))
+                .then(if (!checked && LocalDayMode.current) Modifier.border(1.dp, DayBorderSoft, RoundedCornerShape(50)) else Modifier)
                 .padding(2.dp),
             contentAlignment = if (checked) Alignment.CenterEnd else Alignment.CenterStart,
         ) {

@@ -39,6 +39,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -46,6 +48,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.knoux.ai.splash.KnouxSplashScreen
+import com.knoux.ai.ui.theme.KnouxDayColorScheme
 import com.knoux.ai.ui.theme.KnouxTheme
 import com.knoux.ai.ui.screens.WelcomeScreen
 import com.knoux.ai.ui.v2.KnouxOnboarding
@@ -53,6 +56,9 @@ import com.knoux.ai.ui.v2.KText
 import com.knoux.ai.ui.v2.V2Soft
 import com.knoux.ai.ui.v2.V2Cyan
 import com.knoux.ai.ui.v2.KnouxProState
+import com.knoux.ai.ui.v2.KnouxDayState
+import com.knoux.ai.ui.v2.LocalDayMode
+import com.knoux.ai.ui.v2.LocalKnouxOnDark
 import com.knoux.ai.ui.v2.LocalProActive
 import com.knoux.ai.ui.v2.LocalProTheme
 import com.knoux.ai.ui.v2.LocalServiceNavigate
@@ -124,12 +130,13 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
         enableEdgeToEdge()
         // Debug-only route injection so every screen can be inspected directly with adb.
         val debugRoute = if (BuildConfig.DEBUG) intent?.getStringExtra("route") else null
+        val debugDayMode = if (BuildConfig.DEBUG) intent?.getStringExtra("day_mode")?.toBooleanStrictOrNull() else null
         if (BuildConfig.DEBUG) Log.i("KnouxRoute", "onCreate route=$debugRoute")
         // KnouxProState.previewEnabled is now resolved off the main thread inside KnouxApp
         // via produceState, so onCreate stays free of blocking I/O before the first frame.
         setContent {
             KnouxTheme {
-                KnouxApp(startRoute = debugRoute)
+                KnouxApp(startRoute = debugRoute, startDayMode = debugDayMode)
             }
         }
     }
@@ -147,7 +154,7 @@ private const val ROUTE_APP_DETAIL = "app-detail"
 private enum class EntryStage { Splash, Onboarding, Auth, Shell }
 
 @Composable
-fun KnouxApp(startRoute: String? = null) {
+fun KnouxApp(startRoute: String? = null, startDayMode: Boolean? = null) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val entryDebugRoute = startRoute?.takeIf { it == "onboarding" || it == "auth" }
@@ -178,6 +185,28 @@ fun KnouxApp(startRoute: String? = null) {
             KnouxProState.load(ctx)
         }
         value = KnouxProState.previewEnabled
+    }
+
+    // Day world resolves the same way: prefs on IO, then recomposition paints
+    // the porcelain chrome. KnouxDayState.enabled is observable state, so the
+    // settings toggle repaints the whole shell instantly.
+    LaunchedEffect(context) {
+        val ctx = context.applicationContext
+        withContext(kotlinx.coroutines.Dispatchers.IO) {
+            KnouxDayState.load(ctx, startDayMode)
+        }
+    }
+    val dayActive = KnouxDayState.enabled
+
+    // Status-bar glyphs follow the world: dark icons on porcelain, light on
+    // the night sky. The entry art stays night-lit, so its stage keeps light
+    // icons even when the shell behind it is porcelain.
+    val view = LocalView.current
+    androidx.compose.runtime.SideEffect {
+        val window = (view.context as? android.app.Activity)?.window ?: return@SideEffect
+        val nightStage = entryStage != EntryStage.Shell
+        WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars =
+            dayActive && !nightStage
     }
 
     // Leave splash exactly once: after the animation finishes AND the local
@@ -226,10 +255,13 @@ fun KnouxApp(startRoute: String? = null) {
         LocalServiceNavigate provides open,
         LocalProTheme provides if (proPreview) ProTheme.Pro else ProTheme.Standard,
         LocalProActive provides proPreview,
+        LocalDayMode provides dayActive,
     ) {
         Box(Modifier.fillMaxSize()) {
         V2Background()
 
+        // Splash, onboarding and auth are approved night-lit art: they keep
+        // the full night world even when the shell behind them is porcelain.
         Crossfade(
             targetState = entryStage,
             animationSpec = tween(420),
@@ -239,24 +271,44 @@ fun KnouxApp(startRoute: String? = null) {
                 EntryStage.Splash -> KnouxSplashScreen(
                     onFinished = { splashFinished = true }
                 )
-                EntryStage.Onboarding -> KnouxOnboarding(
-                    onFinish = {
-                        markKnouxOnboardingSeen(context)
-                        entryStage = EntryStage.Auth
+                EntryStage.Onboarding -> CompositionLocalProvider(
+                    LocalDayMode provides false,
+                    LocalKnouxOnDark provides true,
+                ) {
+                    Box(Modifier.fillMaxSize()) {
+                        V2Background()
+                        KnouxOnboarding(
+                            onFinish = {
+                                markKnouxOnboardingSeen(context)
+                                entryStage = EntryStage.Auth
+                            }
+                        )
                     }
-                )
-                EntryStage.Auth -> WelcomeScreen(
-                    onContinueAsGuest = {
-                        signedIn = false
-                        entryStage = EntryStage.Shell
-                    },
-                    onSignedIn = {
-                        signedIn = true
-                        entryStage = EntryStage.Shell
-                    },
-                    onOpenAccountInfo = { accountInfoVisible = true },
-                )
+                }
+                EntryStage.Auth -> CompositionLocalProvider(
+                    LocalDayMode provides false,
+                    LocalKnouxOnDark provides true,
+                ) {
+                    Box(Modifier.fillMaxSize()) {
+                        V2Background()
+                        WelcomeScreen(
+                            onContinueAsGuest = {
+                                signedIn = false
+                                entryStage = EntryStage.Shell
+                            },
+                            onSignedIn = {
+                                signedIn = true
+                                entryStage = EntryStage.Shell
+                            },
+                            onOpenAccountInfo = { accountInfoVisible = true },
+                        )
+                    }
+                }
                 EntryStage.Shell -> {
+                // Material surfaces (dialogs, sheets) follow the porcelain day
+                // scheme; the V2 chrome paints its own world on top.
+                val shellScheme = if (dayActive) KnouxDayColorScheme else androidx.compose.material3.MaterialTheme.colorScheme
+                androidx.compose.material3.MaterialTheme(colorScheme = shellScheme) {
                 Scaffold(
                     containerColor = Color.Transparent,
                     // Nothing hides the page's ending: the bottom bar already
@@ -292,11 +344,17 @@ fun KnouxApp(startRoute: String? = null) {
                     )
                 }
                 }
+                }
             }
         }
     }
 
     if (accountInfoVisible) {
+        // The account dialog lives outside the shell branch: give it the same
+        // porcelain Material scheme so its surface and text match day mode.
+        androidx.compose.material3.MaterialTheme(
+            colorScheme = if (dayActive) KnouxDayColorScheme else androidx.compose.material3.MaterialTheme.colorScheme,
+        ) {
         AlertDialog(
             onDismissRequest = { accountInfoVisible = false },
             title = { KText(if (signedIn) "KNOUX ID · تم تسجيل الدخول" else "KNOUX ID", size = 16.sp, weight = FontWeight.Bold, color = Color.White) },
@@ -314,6 +372,7 @@ fun KnouxApp(startRoute: String? = null) {
                 }
             },
         )
+        }
     }
     }
 }

@@ -77,6 +77,8 @@ internal fun V2LuxuryIdentity(
     modifier: Modifier = Modifier,
     home: Boolean = false,
 ) {
+    val day = LocalDayMode.current
+    val titleColor = if (day) DayInk else Color.White
     Column(
         modifier.fillMaxWidth().padding(start = 76.dp, top = 2.dp, bottom = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -93,7 +95,7 @@ internal fun V2LuxuryIdentity(
                             "KNOUX AI",
                             size = 23.sp,
                             weight = FontWeight.Black,
-                            color = Color.White,
+                            color = titleColor,
                             maxLines = 1,
                         )
                         Spacer(Modifier.width(5.dp))
@@ -111,7 +113,7 @@ internal fun V2LuxuryIdentity(
                     title,
                     size = 21.sp,
                     weight = FontWeight.Black,
-                    color = Color.White,
+                    color = titleColor,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -238,12 +240,14 @@ internal fun V2LuxuryHealthPanel(
 @Composable
 private fun V2LuxuryGauge(labelPercent: Int, label: String, accent: Color, accent2: Color, size: Dp) {
     val theme = LocalProTheme.current
+    val day = LocalDayMode.current
     Box(Modifier.size(size), contentAlignment = Alignment.Center) {
         Canvas(Modifier.fillMaxSize()) {
             val r = this.size.minDimension * .465f
             drawCircle(
                 Brush.radialGradient(
-                    listOf(theme.gaugeCore, theme.gaugeRim),
+                    // Porcelain face in day mode; the neon arc keeps its punch.
+                    listOf(if (day) DayCardTop else theme.gaugeCore, if (day) DayCardBottom else theme.gaugeRim),
                     center = center,
                     radius = r * .90f,
                 ),
@@ -264,7 +268,7 @@ private fun V2LuxuryGauge(labelPercent: Int, label: String, accent: Color, accen
                 topLeft = Offset(center.x - r, center.y - r),
                 size = Size(r * 2f, r * 2f),
             )
-            drawCircle(Color.White.copy(alpha = .09f), radius = r * .84f, style = Stroke(.75.dp.toPx()))
+            drawCircle((if (day) DayBorderSoft else Color.White).copy(alpha = if (day) .55f else .09f), radius = r * .84f, style = Stroke(.75.dp.toPx()))
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             KText(
@@ -276,21 +280,23 @@ private fun V2LuxuryGauge(labelPercent: Int, label: String, accent: Color, accen
             )
             KText(label, size = 9.sp, color = V2Soft, maxLines = 2, align = TextAlign.Center, lineHeight = 11.5.sp)
             Spacer(Modifier.height(2.dp))
-            Icon(Icons.Rounded.Verified, null, tint = V2Green, modifier = Modifier.size(10.dp))
+            Icon(Icons.Rounded.Verified, null, tint = if (day) DayGreen else V2Green, modifier = Modifier.size(10.dp))
         }
     }
 }
 
 @Composable
 internal fun V2LuxuryHealthLine(line: SectionLine) {
+    val day = LocalDayMode.current
+    val tint = if (day) dayAccent(line.accent) else line.accent
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Box(
             Modifier.size(22.dp).clip(RoundedCornerShape(8.dp))
-                .background(Brush.verticalGradient(listOf(line.accent.copy(alpha = .22f), line.accent.copy(alpha = .04f))))
-                .border(1.dp, line.accent.copy(alpha = .28f), RoundedCornerShape(8.dp)),
+                .background(Brush.verticalGradient(listOf(tint.copy(alpha = if (day) .16f else .22f), tint.copy(alpha = .04f))))
+                .border(1.dp, tint.copy(alpha = if (day) .40f else .28f), RoundedCornerShape(8.dp)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(line.icon, null, tint = line.accent, modifier = Modifier.size(13.dp))
+            Icon(line.icon, null, tint = tint, modifier = Modifier.size(13.dp))
         }
         Spacer(Modifier.width(7.dp))
         Column(Modifier.weight(1f)) {
@@ -308,7 +314,8 @@ internal fun V2LuxuryHealthLine(line: SectionLine) {
 
 @Composable
 internal fun V2LuxuryProgress(progress: Float, accent: Color, modifier: Modifier = Modifier) {
-    Box(modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(50)).background(Color.White.copy(alpha = .09f))) {
+    val day = LocalDayMode.current
+    Box(modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(50)).background(if (day) DayBorderSoft.withAlpha(.30f) else Color.White.copy(alpha = .09f))) {
         Box(
             Modifier.fillMaxWidth(progress.coerceIn(0f, 1f)).height(4.dp).clip(RoundedCornerShape(50))
                 .background(Brush.horizontalGradient(listOf(accent, V2Cyan, V2Green.copy(alpha = .80f)))),
@@ -454,6 +461,8 @@ private fun V2LuxuryOrb(spec: KnouxServiceSpec, actionLabel: String, onClick: ()
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
+            // The orb jewel is a night-lit island in every world.
+            CompositionLocalProvider(LocalKnouxOnDark provides true) {
             if (spec.key == "deepscan" && spec.artwork == R.drawable.knoux_svc_deepscan) {
                 Image(painterResource(R.drawable.knoux_symbol_alpha), null, modifier = Modifier.size(29.dp))
             } else {
@@ -475,6 +484,7 @@ private fun V2LuxuryOrb(spec: KnouxServiceSpec, actionLabel: String, onClick: ()
                     Icon(Icons.Rounded.ChevronLeft, null, tint = V2GoldText, modifier = Modifier.size(9.dp))
                 }
             }
+            }
         }
     }
 }
@@ -482,10 +492,11 @@ private fun V2LuxuryOrb(spec: KnouxServiceSpec, actionLabel: String, onClick: ()
 /** Section headers are small, legible and separated from the service tiles. */
 @Composable
 internal fun V2LuxurySectionTitle(title: String, trailing: String, accent: Color, modifier: Modifier = Modifier) {
+    val day = LocalDayMode.current
     Row(modifier.fillMaxWidth().padding(horizontal = 2.dp, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
         Box(
             Modifier.width(3.dp).height(17.dp).clip(RoundedCornerShape(50))
-                .background(Brush.verticalGradient(listOf(accent, V2Violet))),
+                .background(Brush.verticalGradient(listOf(if (day) dayAccent(accent) else accent, if (day) DayViolet else V2Violet))),
         )
         Spacer(Modifier.width(7.dp))
         KText(title, size = 15.sp, weight = FontWeight.Bold, color = Color.White, maxLines = 1)
@@ -557,23 +568,25 @@ internal fun V2NeonGlyph(icon: ImageVector, accent: Color, size: Dp) {
 
 @Composable
 private fun V2LuxuryGlyph(icon: ImageVector, accent: Color, size: Dp) {
+    val day = LocalDayMode.current
+    val tint = if (day) dayAccent(accent) else accent
     Box(Modifier.size(size), contentAlignment = Alignment.Center) {
         Canvas(Modifier.fillMaxSize()) {
             drawCircle(
-                Brush.radialGradient(listOf(accent.copy(alpha = .37f), accent.copy(alpha = .06f), Color.Transparent), center = center, radius = this.size.minDimension * .52f),
+                Brush.radialGradient(listOf(tint.copy(alpha = if (day) .22f else .37f), tint.copy(alpha = .06f), Color.Transparent), center = center, radius = this.size.minDimension * .52f),
                 radius = this.size.minDimension * .52f,
             )
             drawCircle(
-                Brush.linearGradient(listOf(Color.White.copy(alpha = .14f), accent.copy(alpha = .16f), Color.Transparent)),
+                Brush.linearGradient(listOf(Color.White.copy(alpha = if (day) .55f else .14f), tint.copy(alpha = .16f), Color.Transparent)),
                 radius = this.size.minDimension * .31f,
             )
             drawOval(
-                Brush.horizontalGradient(listOf(Color.Transparent, accent.copy(alpha = .8f), V2GoldText.copy(alpha = .4f), Color.Transparent)),
+                Brush.horizontalGradient(listOf(Color.Transparent, tint.copy(alpha = .8f), (if (day) DayGold else V2GoldText).copy(alpha = .4f), Color.Transparent)),
                 topLeft = Offset(this.size.width * .16f, this.size.height * .86f),
                 size = Size(this.size.width * .68f, .8.dp.toPx()),
             )
         }
-        Icon(icon, null, tint = accent, modifier = Modifier.size(size * .45f))
+        Icon(icon, null, tint = tint, modifier = Modifier.size(size * .45f))
     }
 }
 
@@ -591,21 +604,22 @@ internal fun V2LuxurySurface(
 ) {
     val shape = RoundedCornerShape(radius)
     val theme = LocalProTheme.current
+    val day = LocalDayMode.current
     Box(
         modifier.clip(shape).drawBehind {
             drawRoundRect(
                 brush = Brush.verticalGradient(
                     listOf(
-                        theme.surfaceTop,
-                        theme.surfaceMid,
-                        theme.surfaceBase,
+                        if (day) DayCardTop else theme.surfaceTop,
+                        if (day) DayCardTop else theme.surfaceMid,
+                        if (day) DayCardBottom else theme.surfaceBase,
                     ),
                 ),
                 cornerRadius = CornerRadius(radius.toPx(), radius.toPx()),
             )
             drawCircle(
                 brush = Brush.radialGradient(
-                    listOf(accent.copy(alpha = .22f), Color.Transparent),
+                    listOf((if (day) dayAccent(accent) else accent).copy(alpha = if (day) .12f else .22f), Color.Transparent),
                     center = Offset(size.width * .10f, 0f),
                     radius = size.width * .78f,
                 ),
@@ -614,7 +628,7 @@ internal fun V2LuxurySurface(
             )
             drawCircle(
                 brush = Brush.radialGradient(
-                    listOf(V2Cyan.copy(alpha = .09f), Color.Transparent),
+                    listOf((if (day) DayCyan else V2Cyan).copy(alpha = if (day) .06f else .09f), Color.Transparent),
                     center = Offset(size.width * .96f, size.height * .72f),
                     radius = size.width * .68f,
                 ),
@@ -622,7 +636,7 @@ internal fun V2LuxurySurface(
                 center = Offset(size.width * .96f, size.height * .72f),
             )
             drawLine(
-                Brush.horizontalGradient(listOf(accent.copy(alpha = .10f), Color.White.copy(alpha = .74f), accent.copy(alpha = .36f), Color.Transparent)),
+                Brush.horizontalGradient(listOf(accent.copy(alpha = .10f), (if (day) dayAccent(accent) else Color.White).copy(alpha = if (day) .55f else .74f), accent.copy(alpha = .36f), Color.Transparent)),
                 start = Offset(radius.toPx(), .6.dp.toPx()),
                 end = Offset(size.width - radius.toPx(), .6.dp.toPx()),
                 strokeWidth = .65.dp.toPx(),
@@ -634,14 +648,14 @@ internal fun V2LuxurySurface(
                 strokeWidth = .65.dp.toPx(),
             )
             drawLine(
-                Brush.horizontalGradient(listOf(Color.Transparent, accent.copy(alpha = .58f), V2GoldText.copy(alpha = .13f), Color.Transparent)),
+                Brush.horizontalGradient(listOf(Color.Transparent, (if (day) dayAccent(accent) else accent).copy(alpha = if (day) .40f else .58f), (if (day) DayGold else V2GoldText).copy(alpha = .13f), Color.Transparent)),
                 start = Offset(size.width * .10f, size.height - .7.dp.toPx()),
                 end = Offset(size.width * .90f, size.height - .7.dp.toPx()),
                 strokeWidth = .75.dp.toPx(),
             )
         }.border(
             .8.dp,
-            Brush.linearGradient(listOf(accent.copy(alpha = borderAlpha), Color.White.copy(alpha = .12f), theme.surfaceSeam, accent.copy(alpha = borderAlpha * .75f))),
+            Brush.linearGradient(listOf((if (day) dayAccent(accent) else accent).copy(alpha = borderAlpha), Color.White.copy(alpha = if (day) .55f else .12f), if (day) DayCardSeam else theme.surfaceSeam, accent.copy(alpha = borderAlpha * .75f))),
             shape,
         ),
         contentAlignment = Alignment.Center,
@@ -663,17 +677,18 @@ internal fun V2LuxuryProBanner(
         accent = V2GoldText,
         borderAlpha = .64f,
     ) {
+        val day = LocalDayMode.current
         Canvas(Modifier.fillMaxSize()) {
             val aurora = Path().apply {
                 moveTo(-10f, size.height * .68f)
                 cubicTo(size.width * .16f, size.height * .10f, size.width * .42f, size.height * .90f, size.width * .69f, size.height * .44f)
                 cubicTo(size.width * .88f, size.height * .14f, size.width, size.height * .45f, size.width + 10f, size.height * .20f)
             }
-            drawPath(aurora, Brush.horizontalGradient(listOf(Color.Transparent, V2Pink.copy(alpha = .50f), V2Cyan.copy(alpha = .36f), Color.Transparent)), style = Stroke(1.2.dp.toPx(), cap = StrokeCap.Round))
+            drawPath(aurora, Brush.horizontalGradient(listOf(Color.Transparent, (if (day) DayPink else V2Pink).copy(alpha = .50f), (if (day) DayCyan else V2Cyan).copy(alpha = .36f), Color.Transparent)), style = Stroke(1.2.dp.toPx(), cap = StrokeCap.Round))
         }
         Row(Modifier.fillMaxSize().padding(horizontal = 11.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                CrownGold(size = 29.dp)
+                CrownGold(size = 29.dp, color = if (LocalDayMode.current) DayGold else V2GoldText)
                 KText("PRO", size = 9.sp, weight = FontWeight.Black, color = V2GoldText, letterSpacing = .7.sp)
             }
             Spacer(Modifier.width(10.dp))
@@ -692,11 +707,11 @@ internal fun V2LuxuryProBanner(
             }
             Spacer(Modifier.width(8.dp))
             Box(
-                Modifier.size(32.dp).clip(CircleShape).background(V2GoldText.copy(alpha = .12f))
-                    .border(1.dp, V2GoldText.copy(alpha = .70f), CircleShape),
+                Modifier.size(32.dp).clip(CircleShape).background((if (LocalDayMode.current) DayGold else V2GoldText).copy(alpha = .12f))
+                    .border(1.dp, (if (LocalDayMode.current) DayGold else V2GoldText).copy(alpha = .70f), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Rounded.ChevronLeft, null, tint = V2GoldText, modifier = Modifier.size(18.dp))
+                Icon(Icons.Rounded.ChevronLeft, null, tint = if (LocalDayMode.current) DayGold else V2GoldText, modifier = Modifier.size(18.dp))
             }
         }
     }
@@ -719,7 +734,7 @@ internal fun V2LuxuryStatStrip(stats: List<SectionStat>, modifier: Modifier = Mo
                     verticalArrangement = Arrangement.Center,
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(stat.icon, null, tint = stat.accent, modifier = Modifier.size(14.dp))
+                        Icon(stat.icon, null, tint = if (LocalDayMode.current) dayAccent(stat.accent) else stat.accent, modifier = Modifier.size(14.dp))
                         Spacer(Modifier.width(4.dp))
                         KText(stat.value, size = 11.5.sp, weight = FontWeight.Black, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
@@ -743,7 +758,7 @@ internal fun V2LuxuryStatStrip(stats: List<SectionStat>, modifier: Modifier = Mo
 @Composable
 internal fun V2LuxuryStat(icon: ImageVector, value: String, label: String, accent: Color, modifier: Modifier = Modifier) {
     Row(modifier.padding(horizontal = 5.dp), verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, null, tint = accent, modifier = Modifier.size(19.dp))
+        Icon(icon, null, tint = if (LocalDayMode.current) dayAccent(accent) else accent, modifier = Modifier.size(19.dp))
         Spacer(Modifier.width(6.dp))
         Column(Modifier.weight(1f)) {
             KText(value, size = 11.5.sp, weight = FontWeight.Black, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -755,7 +770,7 @@ internal fun V2LuxuryStat(icon: ImageVector, value: String, label: String, accen
 @Composable
 internal fun V2LuxuryStatDivider() {
     Box(Modifier.width(1.dp).height(25.dp).background(
-        Brush.verticalGradient(listOf(Color.Transparent, V2Border.copy(alpha = .34f), Color.Transparent)),
+        Brush.verticalGradient(listOf(Color.Transparent, (if (LocalDayMode.current) DayBorderSoft else V2Border).copy(alpha = if (LocalDayMode.current) .60f else .34f), Color.Transparent)),
     ))
 }
 

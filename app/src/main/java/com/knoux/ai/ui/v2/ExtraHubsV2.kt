@@ -81,22 +81,33 @@ import kotlin.math.roundToInt
 
 @Composable
 private fun ExtraHubHeader(
-    title: String,
-    english: String,
-    subtitle: String,
-    accent: Color,
+    spec: KnouxServiceSpec,
+    status: String,
+    statusColor: Color,
+    metric: String?,
     onBack: () -> Unit,
     onPro: () -> Unit,
 ) {
     // Interior top bar gives these hubs the same back/crown affordances as
     // every other routed screen; previously they relied on system back only.
     V2TopBar(V2TopMode.INTERIOR, onBack = onBack, onPro = onPro)
-    V2LuxuryIdentity(
-        title = title,
-        english = english,
-        subtitle = subtitle,
-        accent = accent,
-    )
+    // The four extra sections open on the same royal stage as the ten core
+    // services: fixed cosmic header, live instrument, stag behind, measured
+    // ribbon — the owner's reference structure, everywhere.
+    androidx.compose.foundation.layout.BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val compact = maxHeight < 560.dp || maxWidth < 340.dp
+        ServiceHero(
+            spec = spec,
+            status = status,
+            statusColor = statusColor,
+            metric = metric,
+            compact = compact,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(serviceHeaderHeight(maxWidth, compact)),
+            scene = { sceneModifier -> ServiceArtScene(spec, sceneModifier) },
+        )
+    }
 }
 
 @Composable
@@ -174,15 +185,16 @@ private fun openSystemSettings(context: android.content.Context, action: String)
 @Composable
 fun V2DeveloperToolsScreen(onBack: () -> Unit, onPro: () -> Unit) {
     val context = LocalContext.current
-    val facts = rememberDeviceFacts()
+    val (refresh, bump) = rememberRefreshCounter()
+    val facts = rememberDeviceFacts(refresh)
     val navigate = LocalServiceNavigate.current
 
     Column(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.statusBars)) {
         ExtraHubHeader(
-            title = "أدوات المطورين",
-            english = "DEVELOPER TOOLS",
-            subtitle = "معلومات البناء والنظام وسجل التشغيل على هذا الهاتف",
-            accent = V2Cyan,
+            spec = ServiceSpecs.developer,
+            status = if (facts.computedAt > 0L) "قراءة مباشرة من الجهاز" else "جاري القراءة…",
+            statusColor = if (facts.computedAt > 0L) V2Green else V2Amber,
+            metric = "Android ${Build.VERSION.RELEASE} · API ${Build.VERSION.SDK_INT}",
             onBack = onBack,
             onPro = onPro,
         )
@@ -195,12 +207,12 @@ fun V2DeveloperToolsScreen(onBack: () -> Unit, onPro: () -> Unit) {
                 KnouxRunOrbBlock(
                     progress = if (facts.computedAt > 0L) 1f else 0f,
                     running = false,
-                    enabled = false,
-                    label = if (facts.computedAt > 0L) "قراءة مباشرة من الجهاز" else "جاري القراءة…",
+                    enabled = facts.computedAt > 0L,
+                    label = if (facts.computedAt > 0L) "اضغط لإعادة قراءة الجهاز" else "جاري القراءة…",
                     accent = V2Cyan,
                     accent2 = V2Blue,
-                    size = 132.dp,
-                    onTap = {},
+                    size = 118.dp,
+                    onTap = { bump() },
                 )
             }
             item {
@@ -242,7 +254,7 @@ fun V2DeveloperToolsScreen(onBack: () -> Unit, onPro: () -> Unit) {
                 V2LuxurySurface(Modifier.fillMaxWidth(), radius = 18.dp, accent = V2Cyan, borderAlpha = .38f) {
                     Column(Modifier.fillMaxWidth().padding(13.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Rounded.Info, null, tint = V2Cyan, modifier = Modifier.size(15.dp))
+                            Icon(Icons.Rounded.Info, null, tint = if (LocalDayMode.current) DayCyan else V2Cyan, modifier = Modifier.size(15.dp))
                             Spacer(Modifier.width(7.dp))
                             KText("معلومات البناء", size = 12.5.sp, weight = FontWeight.Bold, color = Color.White)
                         }
@@ -296,16 +308,17 @@ private fun ExtraInfoLine(label: String, value: String) {
 @Composable
 fun V2GoogleServicesScreen(onBack: () -> Unit, onPro: () -> Unit) {
     val context = LocalContext.current
-    val facts = rememberDeviceFacts()
+    val (refresh, bump) = rememberRefreshCounter()
+    val facts = rememberDeviceFacts(refresh)
     val navigate = LocalServiceNavigate.current
     val googleCount = googleAppCount(facts)
 
     Column(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.statusBars)) {
         ExtraHubHeader(
-            title = "خدمات جوجل",
-            english = "GOOGLE SERVICES",
-            subtitle = "Google Play Services والإشعارات وتسجيل الدخول على الجهاز",
-            accent = V2Violet,
+            spec = ServiceSpecs.googleServices,
+            status = if (facts.computedAt > 0L) "PackageManager" else "جاري القراءة…",
+            statusColor = if (facts.computedAt > 0L) V2Green else V2Amber,
+            metric = "$googleCount تطبيق Google مرئي",
             onBack = onBack,
             onPro = onPro,
         )
@@ -318,12 +331,12 @@ fun V2GoogleServicesScreen(onBack: () -> Unit, onPro: () -> Unit) {
                 KnouxRunOrbBlock(
                     progress = if (facts.computedAt > 0L) 1f else 0f,
                     running = false,
-                    enabled = false,
-                    label = "$googleCount تطبيق Google مرئي",
+                    enabled = facts.computedAt > 0L,
+                    label = if (facts.computedAt > 0L) "اضغط لإعادة قراءة حزم Google" else "جاري القراءة…",
                     accent = V2Violet,
                     accent2 = V2Cyan,
-                    size = 132.dp,
-                    onTap = {},
+                    size = 118.dp,
+                    onTap = { bump() },
                 )
             }
             item {
@@ -405,15 +418,16 @@ fun V2GoogleServicesScreen(onBack: () -> Unit, onPro: () -> Unit) {
 @Composable
 fun V2AdvancedSecurityScreen(onBack: () -> Unit, onPro: () -> Unit) {
     val context = LocalContext.current
-    val facts = rememberDeviceFacts()
+    val (refresh, bump) = rememberRefreshCounter()
+    val facts = rememberDeviceFacts(refresh)
     val navigate = LocalServiceNavigate.current
 
     Column(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.statusBars)) {
         ExtraHubHeader(
-            title = "الأمان المتقدم",
-            english = "ADVANCED SECURITY",
-            subtitle = "قفل الجهاز والمصادقة البيومترية وحسابات الجهاز",
-            accent = V2Green,
+            spec = ServiceSpecs.advancedSecurity,
+            status = if (facts.computedAt > 0L) "قراءة مباشرة من الجهاز" else "جاري القراءة…",
+            statusColor = if (facts.computedAt > 0L) V2Green else V2Amber,
+            metric = "${formatCount(facts.sensitiveAppCount)} تطبيق حساس",
             onBack = onBack,
             onPro = onPro,
         )
@@ -426,12 +440,12 @@ fun V2AdvancedSecurityScreen(onBack: () -> Unit, onPro: () -> Unit) {
                 KnouxRunOrbBlock(
                     progress = if (facts.computedAt > 0L) 1f else 0f,
                     running = false,
-                    enabled = false,
-                    label = "${formatCount(facts.sensitiveAppCount)} تطبيق حساس",
+                    enabled = facts.computedAt > 0L,
+                    label = if (facts.computedAt > 0L) "اضغط لإعادة قراءة حالة الأمان" else "جاري القراءة…",
                     accent = V2Green,
                     accent2 = V2Cyan,
-                    size = 132.dp,
-                    onTap = {},
+                    size = 118.dp,
+                    onTap = { bump() },
                 )
             }
             item {
@@ -519,7 +533,8 @@ fun V2AdvancedSecurityScreen(onBack: () -> Unit, onPro: () -> Unit) {
 @Composable
 fun V2BackupRestoreScreen(onBack: () -> Unit, onPro: () -> Unit) {
     val context = LocalContext.current
-    val facts = rememberDeviceFacts()
+    val (refresh, bump) = rememberRefreshCounter()
+    val facts = rememberDeviceFacts(refresh)
     val navigate = LocalServiceNavigate.current
     var pickedTree by remember { mutableStateOf<Uri?>(null) }
 
@@ -541,10 +556,10 @@ fun V2BackupRestoreScreen(onBack: () -> Unit, onPro: () -> Unit) {
 
     Column(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.statusBars)) {
         ExtraHubHeader(
-            title = "النسخ والاستعادة",
-            english = "BACKUP & RESTORE",
-            subtitle = "نسخ احتياطي صريح إلى مجلد تختاره أنت عبر SAF",
-            accent = V2Amber,
+            spec = ServiceSpecs.backupRestore,
+            status = if (pickedTree != null) "الوجهة محددة" else if (facts.computedAt > 0L) "جاهز · اختر الوجهة" else "جاري القراءة…",
+            statusColor = if (pickedTree != null) V2Green else if (facts.computedAt > 0L) V2Amber else V2Muted,
+            metric = "${formatBytes(facts.storage.freeBytes)} متاحة للنسخ",
             onBack = onBack,
             onPro = onPro,
         )
@@ -557,12 +572,12 @@ fun V2BackupRestoreScreen(onBack: () -> Unit, onPro: () -> Unit) {
                 KnouxRunOrbBlock(
                     progress = if (facts.computedAt > 0L) 1f else 0f,
                     running = false,
-                    enabled = false,
-                    label = "${formatBytes(facts.storage.freeBytes)} متاحة للنسخ",
+                    enabled = facts.computedAt > 0L,
+                    label = if (facts.computedAt > 0L) "اضغط لإعادة قراءة المساحة المتاحة" else "جاري القراءة…",
                     accent = V2Amber,
                     accent2 = V2Violet,
-                    size = 132.dp,
-                    onTap = {},
+                    size = 118.dp,
+                    onTap = { bump() },
                 )
             }
             item {

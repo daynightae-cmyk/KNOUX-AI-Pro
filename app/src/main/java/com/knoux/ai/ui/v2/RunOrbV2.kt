@@ -3,22 +3,30 @@ package com.knoux.ai.ui.v2
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,6 +39,8 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -41,6 +51,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.knoux.ai.ui.components.rememberMotionEnabled
 import kotlin.math.roundToInt
 
 /**
@@ -106,13 +117,29 @@ internal fun KnouxRunOrb(
     )
     val pulse = if (running) breath else 1f
     val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val motion = rememberMotionEnabled()
+    val haptics = LocalHapticFeedback.current
+    // The orb answers the finger: it settles under the press and springs back
+    // on release, so the start control feels physical, not painted.
+    val pressScale by animateFloatAsState(
+        targetValue = if (pressed) .93f else 1f,
+        animationSpec = tween(if (pressed) 90 else 240),
+        label = "orb-press",
+    )
+    val pressGlow by animateFloatAsState(
+        targetValue = if (pressed) 1f else 0f,
+        animationSpec = tween(140),
+        label = "orb-press-glow",
+    )
 
     Box(
         modifier
             .size(size)
             .graphicsLayer {
-                scaleX = pulse
-                scaleY = pulse
+                val s = pulse * pressScale
+                scaleX = s
+                scaleY = s
                 // A running orb must stay fully lit: the halo and progress arc
                 // are the evidence that work is happening. Only a genuinely
                 // unavailable orb fades back.
@@ -134,7 +161,10 @@ internal fun KnouxRunOrb(
                 enabled = enabled,
                 role = Role.Button,
                 onClickLabel = if (running) "قيد التنفيذ" else "بدء الخدمة",
-                onClick = onTap,
+                onClick = {
+                    if (motion) haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onTap()
+                },
             ),
         contentAlignment = Alignment.Center,
     ) {
@@ -145,6 +175,17 @@ internal fun KnouxRunOrb(
             drawCore(r * .62f, accent, accent2)
             drawKMark(r * .62f, accent, accent2)
             drawSpark(r * .92f, spark, accent)
+            if (pressGlow > 0f) {
+                // A light bloom under the finger while pressed.
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        listOf(Color.White.copy(alpha = .18f * pressGlow), Color.Transparent),
+                        center = center,
+                        radius = r * .9f,
+                    ),
+                    radius = r * .9f,
+                )
+            }
             if (running && progress != null) drawProgress(r, progress, accent)
             if (running && progress == null) drawIndeterminate(r, spin, accent)
         }
@@ -182,29 +223,77 @@ internal fun KnouxRunOrbBlock(
         } ?: "$label. قيد التشغيل"
         else -> "$label. جاهز للتشغيل"
     }
+    val day = LocalDayMode.current
+    val motion = rememberMotionEnabled()
+    // A tap sends one visible ripple out of the jewel — the service heard you.
+    var rippleTick by remember { mutableIntStateOf(0) }
+    val ripple = remember { androidx.compose.animation.core.Animatable(0f) }
+    androidx.compose.runtime.LaunchedEffect(rippleTick) {
+        if (rippleTick == 0) return@LaunchedEffect
+        ripple.snapTo(0f)
+        ripple.animateTo(1f, tween(620))
+    }
     Column(
         modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        KnouxRunOrb(
-            progress = progress,
-            running = running,
-            enabled = enabled,
-            accent = accent,
-            accent2 = accent2,
-            size = size,
-            contentDescription = spoken,
-            onTap = onTap,
-        )
-        KText(
-            label,
-            modifier = Modifier.clearAndSetSemantics { },
-            size = 11.sp,
-            color = if (running) accent else V2Soft,
-            weight = if (running) FontWeight.Bold else FontWeight.Medium,
-            align = TextAlign.Center,
-        )
+        Box(contentAlignment = Alignment.Center) {
+            if (motion) {
+                Canvas(Modifier.size(size * 1.32f)) {
+                    if (ripple.value > 0f && ripple.value < 1f) {
+                        val t = ripple.value
+                        drawCircle(
+                            color = accent.copy(alpha = (1f - t) * .45f),
+                            radius = size.toPx() * (.42f + t * .34f),
+                            style = Stroke(width = (2.4f * (1f - t) + .6f).dp.toPx()),
+                        )
+                    }
+                }
+            }
+            KnouxRunOrb(
+                progress = progress,
+                running = running,
+                enabled = enabled,
+                accent = accent,
+                accent2 = accent2,
+                size = size,
+                contentDescription = spoken,
+                onTap = {
+                    rippleTick++
+                    onTap()
+                },
+            )
+        }
+        // The caption is a clear pill, not floating text: the everyday user
+        // always sees what a tap will do.
+        Box(
+            Modifier
+                .clip(RoundedCornerShape(50))
+                .background(
+                    if (running) accent.copy(alpha = if (day) .14f else .16f)
+                    else if (day) Color.White.copy(alpha = .78f)
+                    else Color.White.copy(alpha = .06f)
+                )
+                .border(
+                    1.dp,
+                    if (running) accent.copy(alpha = .55f)
+                    else if (day) dayAccent(accent).copy(alpha = .38f)
+                    else accent.copy(alpha = .30f),
+                    RoundedCornerShape(50),
+                )
+                .padding(horizontal = 14.dp, vertical = 5.dp),
+        ) {
+            KText(
+                label,
+                modifier = Modifier.clearAndSetSemantics { },
+                size = 11.sp,
+                color = if (running) accent else if (enabled) V2Soft else V2Muted,
+                weight = if (running) FontWeight.Bold else FontWeight.SemiBold,
+                align = TextAlign.Center,
+                maxLines = 1,
+            )
+        }
     }
 }
 

@@ -136,6 +136,27 @@ private val ProLightColors = lightColorScheme(
     error = ProLightError,
 )
 
+/**
+ * Porcelain day scheme for Material surfaces (dialogs, sheets, text fields).
+ * The V2 chrome paints its own day world; this keeps every Material component
+ * legible on porcelain instead of falling back to the night panel colors.
+ */
+val KnouxDayColorScheme = lightColorScheme(
+    primary = Color(0xFF6D28D9),
+    onPrimary = Color.White,
+    secondary = Color(0xFF0E7490),
+    onSecondary = Color.White,
+    tertiary = Color(0xFFD6246E),
+    background = Color(0xFFF7F4FF),
+    onBackground = Color(0xFF241740),
+    surface = Color(0xFFFFFFFF),
+    onSurface = Color(0xFF241740),
+    surfaceVariant = Color(0xFFF4F0FC),
+    onSurfaceVariant = Color(0xFF4A3B6B),
+    outline = Color(0xFFB9A6DE),
+    error = Color(0xFFC81E4A),
+)
+
 private val KnouxType = Typography(
     displayLarge = TextStyle(
         fontFamily = KnouxArabic, fontWeight = FontWeight.Black,

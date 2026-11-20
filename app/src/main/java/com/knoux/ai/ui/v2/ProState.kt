@@ -46,3 +46,43 @@ object KnouxProState {
  * release it stays false until a verified entitlement is supplied by billing.
  */
 val LocalProActive = staticCompositionLocalOf { false }
+
+/* ------------------------------------------------------------------ *
+ * Day mode — a professional porcelain-light world.
+ *
+ * The chrome (background, cards, bars, text) turns light; the cosmic
+ * service stage, the K orb jewel and the gradient CTAs deliberately stay
+ * night-lit so the approved neon identity keeps its contrast. Components
+ * that draw light-on-dark content wrap it in LocalKnouxOnDark so KText
+ * never darkens text that sits on a dark surface.
+ * ------------------------------------------------------------------ */
+
+private const val DAY_PREFS = "knoux_day_v1"
+private const val DAY_KEY = "day_mode"
+
+object KnouxDayState {
+    var enabled by mutableStateOf(false)
+        private set
+
+    fun load(context: Context, debugOverride: Boolean? = null) {
+        enabled = debugOverride ?: context.applicationContext
+            .getSharedPreferences(DAY_PREFS, Context.MODE_PRIVATE)
+            .getBoolean(DAY_KEY, false)
+    }
+
+    fun setEnabled(context: Context, value: Boolean) {
+        enabled = value
+        context.applicationContext
+            .getSharedPreferences(DAY_PREFS, Context.MODE_PRIVATE)
+            .edit().putBoolean(DAY_KEY, value).apply()
+    }
+}
+
+/** True when the porcelain day world is active. */
+val LocalDayMode = staticCompositionLocalOf { false }
+
+/**
+ * True inside a deliberately dark island (cosmic stage, orb jewel, gradient
+ * CTA, splash/auth art). KText keeps Color.White white there even in day mode.
+ */
+val LocalKnouxOnDark = staticCompositionLocalOf { false }

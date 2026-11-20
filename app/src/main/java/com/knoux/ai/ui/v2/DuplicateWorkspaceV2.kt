@@ -112,7 +112,12 @@ internal fun V2DuplicatesWorkspace(
         } catch (_: Exception) { viewerError = "لا يوجد عارض متاح لهذا الملف. يمكنك مراجعة صورته وبياناته هنا." }
     }
 
-    Column(Modifier.fillMaxSize().background(V2Deep).windowInsetsPadding(WindowInsets.statusBars)) {
+    // Day world lets the porcelain shell show through; night keeps its own sky.
+    Column(
+        Modifier.fillMaxSize()
+            .background(if (LocalDayMode.current) Color.Transparent else V2Deep)
+            .windowInsetsPadding(WindowInsets.statusBars)
+    ) {
         V2TopBar(V2TopMode.INTERIOR, onBack = onBack, onPro = onPro)
         LazyColumn(
             modifier = Modifier.weight(1f),

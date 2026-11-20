@@ -371,10 +371,12 @@ private fun MiniTag(text: String, accent: Color) {
     }
 }
 
-private fun captionColor(accent: Color): Color = when (accent) {
-    V2Cyan -> V2Cyan
-    V2Violet -> Color(0xFFD5ACFF)
-    V2Pink -> Color(0xFFFFA4DF)
+@Composable
+private fun captionColor(accent: Color): Color = when {
+    LocalDayMode.current -> dayAccent(accent)
+    accent == V2Cyan -> V2Cyan
+    accent == V2Violet -> Color(0xFFD5ACFF)
+    accent == V2Pink -> Color(0xFFFFA4DF)
     else -> V2Soft
 }
 
@@ -935,7 +937,7 @@ fun V2SmartCleanScreen(onBack: () -> Unit, onOpenDeepScan: () -> Unit, onPro: ()
     if (cleanState.gate == OperationGate.AWAITING_CONSENT) {
         AlertDialog(
             onDismissRequest = { cleaner.cancelClearOwnCache() },
-            title = { KText("تنظيف كاش KNOUX", size = 16.sp, weight = FontWeight.Bold, color = Color.White) },
+            title = { KText("تنظيف كاش KNOUX", size = 16.sp, weight = FontWeight.Bold) },
             text = {
                 KText(
                     "الكاش المقاس قبل الطلب: ${formatBytes(cleanState.measuredBefore)}. " +
@@ -1259,11 +1261,11 @@ fun V2ProScreen(onBack: () -> Unit, onNavigate: (String) -> Unit) {
             ) {
                 item {
                     Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                        CrownGold(size = 62.dp)
+                        CrownGold(size = 62.dp, color = if (LocalDayMode.current) DayGold else V2GoldText)
                         androidx.compose.material3.Text(
                             buildAnnotatedString {
-                                withStyle(SpanStyle(color = Color.White)) { append("KNOUX AI ") }
-                                withStyle(SpanStyle(color = V2GoldText)) { append("Pro") }
+                                withStyle(SpanStyle(color = if (LocalDayMode.current) DayInk else Color.White)) { append("KNOUX AI ") }
+                                withStyle(SpanStyle(color = if (LocalDayMode.current) DayGold else V2GoldText)) { append("Pro") }
                             },
                             style = TextStyle(fontFamily = V2Font, fontWeight = FontWeight.Black, fontSize = 30.sp),
                         )

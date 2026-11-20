@@ -64,6 +64,7 @@ import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Key
 import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Layers
+import androidx.compose.material.icons.rounded.LightMode
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Memory
 import androidx.compose.material.icons.rounded.Notifications
@@ -195,15 +196,17 @@ private fun PageHeading(
         if (trailing != null) {
             trailing()
         } else {
+            val day = LocalDayMode.current
+            val tint = if (day) dayAccent(accent) else accent
             Box(
                 Modifier
                     .size(46.dp)
                     .clip(RoundedCornerShape(16.dp))
-                    .background(Brush.linearGradient(listOf(accent.withAlpha( .34f), V2Violet.withAlpha( .22f))))
-                    .border(1.dp, accent.withAlpha( .52f), RoundedCornerShape(16.dp)),
+                    .background(Brush.linearGradient(listOf(tint.withAlpha( if (day) .16f else .34f), (if (day) DayViolet else V2Violet).withAlpha( if (day) .12f else .22f))))
+                    .border(1.dp, tint.withAlpha( if (day) .45f else .52f), RoundedCornerShape(16.dp)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(icon, null, tint = Color.White, modifier = Modifier.size(24.dp))
+                Icon(icon, null, tint = if (day) tint else Color.White, modifier = Modifier.size(24.dp))
             }
         }
     }
@@ -305,7 +308,7 @@ private fun HairLine() {
         Modifier
             .fillMaxWidth()
             .height(1.dp)
-            .background(Color.White.withAlpha( .08f))
+            .background(if (LocalDayMode.current) DayCardSeam.withAlpha(.55f) else Color.White.withAlpha( .08f))
     )
 }
 
@@ -324,15 +327,17 @@ internal fun PreviewNote(text: String) {
 
 @Composable
 internal fun V2Toggle(checked: Boolean, onChange: (Boolean) -> Unit, accent: Color = V2Cyan) {
+    val day = LocalDayMode.current
     Box(
         Modifier
             .size(width = 42.dp, height = 24.dp)
             .clip(RoundedCornerShape(50))
             .background(
-                if (checked) Brush.horizontalGradient(listOf(accent.withAlpha( .90f), V2Violet))
+                if (checked) Brush.horizontalGradient(listOf((if (day) dayAccent(accent) else accent).withAlpha( .90f), if (day) DayViolet else V2Violet))
+                else if (day) Brush.horizontalGradient(listOf(Color(0xFFE6DEF5), Color(0xFFDDD2F0)))
                 else Brush.horizontalGradient(listOf(Color.White.withAlpha( .10f), Color.White.withAlpha( .06f)))
             )
-            .border(1.dp, if (checked) Color.White.withAlpha( .28f) else Color.White.withAlpha( .18f), RoundedCornerShape(50))
+            .border(1.dp, if (checked) Color.White.withAlpha( .28f) else if (day) DayBorderSoft else Color.White.withAlpha( .18f), RoundedCornerShape(50))
             .clickable { onChange(!checked) }
             .padding(3.dp),
         contentAlignment = if (checked) Alignment.CenterEnd else Alignment.CenterStart,
@@ -342,6 +347,7 @@ internal fun V2Toggle(checked: Boolean, onChange: (Boolean) -> Unit, accent: Col
                 .size(18.dp)
                 .clip(CircleShape)
                 .background(Color.White)
+                .then(if (day && !checked) Modifier.border(1.dp, DayBorderSoft, CircleShape) else Modifier)
         )
     }
 }
@@ -1897,6 +1903,8 @@ private fun AiImpactStat(
 
 @Composable
 fun V2SettingsScreenV2(onBack: () -> Unit) {
+    val context = LocalContext.current
+    val dayMode = KnouxDayState.enabled
     var notifications by remember { mutableStateOf(true) }
     var weekly by remember { mutableStateOf(true) }
     var haptics by remember { mutableStateOf(true) }
@@ -1940,7 +1948,13 @@ fun V2SettingsScreenV2(onBack: () -> Unit) {
                         Column {
                             SettingNavRow(Icons.Rounded.Language, "اللغة", "العربية", V2Cyan)
                             HairLine()
-                            SettingNavRow(Icons.Rounded.DarkMode, "المظهر", "الوضع الداكن", V2Violet)
+                            SettingToggleRow(
+                                if (dayMode) Icons.Rounded.LightMode else Icons.Rounded.DarkMode,
+                                "المظهر",
+                                if (dayMode) "الوضع النهاري · بورسلين فاتح" else "الوضع الليلي · نيون كوني",
+                                dayMode,
+                                V2Violet,
+                            ) { KnouxDayState.setEnabled(context, it) }
                             HairLine()
                             SettingNavRow(Icons.Rounded.Palette, "جودة العرض", if (highQuality) "عالية" else "موفرة", V2Pink)
                             HairLine()
@@ -2446,7 +2460,7 @@ fun V2StorageBreakdownScreen(onBack: () -> Unit, onPro: () -> Unit) {
 private fun FolderBreakdownRow(title: String, size: String, fraction: Float, accent: Color) {
     V2GlassCard(Modifier.fillMaxWidth(), padding = 10.dp, radius = 15.dp, glow = accent, borderAlpha = .24f) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Rounded.Folder, null, tint = accent, modifier = Modifier.size(18.dp))
+            Icon(Icons.Rounded.Folder, null, tint = if (LocalDayMode.current) dayAccent(accent) else accent, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(8.dp))
             Column(Modifier.weight(1f)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {

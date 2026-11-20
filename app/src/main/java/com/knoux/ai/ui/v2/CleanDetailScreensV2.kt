@@ -860,14 +860,18 @@ fun V2Check(
     onToggle: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
+    val day = LocalDayMode.current
     Box(
         modifier
             .size(21.dp)
             .clip(RoundedCornerShape(8.dp))
             .then(
                 if (checked) {
-                    Modifier.background(Brush.linearGradient(listOf(accent, V2Violet)))
+                    Modifier.background(Brush.linearGradient(listOf(if (day) dayAccent(accent) else accent, if (day) DayViolet else V2Violet)))
                         .border(1.dp, Color.White.copy(alpha = .30f), RoundedCornerShape(8.dp))
+                } else if (day) {
+                    Modifier.background(Color.White.copy(alpha = .85f))
+                        .border(1.dp, DayBorderSoft.copy(alpha = .80f), RoundedCornerShape(8.dp))
                 } else {
                     Modifier.background(Color.Black.copy(alpha = .20f))
                         .border(1.dp, Color.White.copy(alpha = .38f), RoundedCornerShape(8.dp))
@@ -907,7 +911,7 @@ fun V2ResidueScreen(onBack: () -> Unit, onReview: () -> Unit, onPro: () -> Unit)
     if (confirm) {
         androidx.compose.material3.AlertDialog(
             onDismissRequest = { confirm = false },
-            title = { KText("تنظيف بقايا KNOUX", size = 16.sp, weight = FontWeight.Bold, color = Color.White) },
+            title = { KText("تنظيف بقايا KNOUX", size = 16.sp, weight = FontWeight.Bold) },
             text = {
                 KText(
                     "سيُحذف $cacheText من الكاش والملفات المؤقتة الخاصة بـ KNOUX فقط " +
@@ -1101,16 +1105,17 @@ fun V2ResidueScreen(onBack: () -> Unit, onReview: () -> Unit, onPro: () -> Unit)
 
 @Composable
 private fun ResidueTitle() {
+    val day = LocalDayMode.current
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Box(
             Modifier
                 .size(43.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .background(Brush.linearGradient(listOf(V2Cyan.copy(alpha = .28f), V2Violet.copy(alpha = .30f))))
-                .border(1.dp, V2Cyan.copy(alpha = .42f), RoundedCornerShape(16.dp)),
+                .background(Brush.linearGradient(listOf((if (day) DayCyan else V2Cyan).copy(alpha = .28f), (if (day) DayViolet else V2Violet).copy(alpha = .30f))))
+                .border(1.dp, (if (day) DayCyan else V2Cyan).copy(alpha = .42f), RoundedCornerShape(16.dp)),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Icons.Rounded.Layers, null, tint = Color.White, modifier = Modifier.size(23.dp))
+            Icon(Icons.Rounded.Layers, null, tint = if (day) DayViolet else Color.White, modifier = Modifier.size(23.dp))
         }
         Spacer(Modifier.width(9.dp))
         Column(Modifier.weight(1f)) {
@@ -1468,13 +1473,14 @@ fun V2PrivacyScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> U
 
 @Composable
 private fun PrivacyTitle() {
+    val day = LocalDayMode.current
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Box(
             Modifier
                 .width(4.dp)
                 .height(46.dp)
                 .clip(RoundedCornerShape(50))
-                .background(Brush.verticalGradient(listOf(V2Violet, V2Pink)))
+                .background(Brush.verticalGradient(listOf(if (day) DayViolet else V2Violet, if (day) DayPink else V2Pink)))
         )
         Spacer(Modifier.width(9.dp))
         Column(Modifier.weight(1f)) {
