@@ -1,21 +1,27 @@
 package com.knoux.ai.ui.v2
 
 import android.os.BatteryManager
+import android.os.Build
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.AccountTree
 import androidx.compose.material.icons.rounded.AdminPanelSettings
+import androidx.compose.material.icons.rounded.Android
 import androidx.compose.material.icons.rounded.Apps
+import androidx.compose.material.icons.rounded.Backup
 import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.BatteryChargingFull
 import androidx.compose.material.icons.rounded.BatteryFull
 import androidx.compose.material.icons.rounded.BatterySaver
 import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.Bolt
+import androidx.compose.material.icons.rounded.Build
 import androidx.compose.material.icons.rounded.Cached
 import androidx.compose.material.icons.rounded.Calculate
 import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.Checklist
 import androidx.compose.material.icons.rounded.CleaningServices
+import androidx.compose.material.icons.rounded.CloudOff
 import androidx.compose.material.icons.rounded.Compare
 import androidx.compose.material.icons.rounded.CompareArrows
 import androidx.compose.material.icons.rounded.ContactPhone
@@ -28,20 +34,24 @@ import androidx.compose.material.icons.rounded.FilterAlt
 import androidx.compose.material.icons.rounded.Fingerprint
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.FolderCopy
+import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material.icons.rounded.FolderShared
 import androidx.compose.material.icons.rounded.FolderZip
 import androidx.compose.material.icons.rounded.HealthAndSafety
+import androidx.compose.material.icons.rounded.HelpOutline
 import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Inventory
 import androidx.compose.material.icons.rounded.Layers
+import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.LockPerson
 import androidx.compose.material.icons.rounded.ManageAccounts
 import androidx.compose.material.icons.rounded.Memory
 import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.Movie
+import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.NotificationsActive
 import androidx.compose.material.icons.rounded.PermMedia
 import androidx.compose.material.icons.rounded.Person
@@ -54,8 +64,11 @@ import androidx.compose.material.icons.rounded.Policy
 import androidx.compose.material.icons.rounded.Power
 import androidx.compose.material.icons.rounded.ReceiptLong
 import androidx.compose.material.icons.rounded.Recycling
+import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material.icons.rounded.Rule
 import androidx.compose.material.icons.rounded.Savings
+import androidx.compose.material.icons.rounded.Security
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material.icons.rounded.Storage
@@ -70,9 +83,11 @@ import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material.icons.rounded.Verified
 import androidx.compose.material.icons.rounded.VideoFile
 import androidx.compose.material.icons.rounded.VideoLibrary
+import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import com.knoux.ai.BuildConfig
 import java.util.Locale
 import kotlin.math.abs
 
@@ -985,8 +1000,317 @@ internal object SectionToolsExpansion {
         ),
     )
 
+    /* -------------------------------------------------------------- *
+     * Owner-requested extra sections: developer tools, Google services,
+     * advanced security and backup/restore. Every value below is read
+     * from this device through the same DeviceFacts providers.
+     * -------------------------------------------------------------- */
+
+    private val developerTools = listOf(
+        x(
+            "developer", "dev-build", "11.1", "تفاصيل البناء", "BUILD DETAILS",
+            "إصدار النظام والمستوى والمعمارية والطراز", Icons.Rounded.Build, V2Cyan,
+            metric = { f, _ -> if (f.computedAt > 0L) "Build ${Build.VERSION.SDK_INT}" else "جاري القراءة" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.Android, "إصدار النظام", Build.VERSION.RELEASE, V2Cyan),
+                    ToolRow(Icons.Rounded.Build, "مستوى API", Build.VERSION.SDK_INT.toString(), V2Violet),
+                    ToolRow(Icons.Rounded.DeveloperMode, "المعمارية", Build.SUPPORTED_ABIS.firstOrNull() ?: "—", V2Pink),
+                    ToolRow(Icons.Rounded.Apps, "تطبيقات مرئية", formatCount(f.installedCount), V2Green),
+                )
+            },
+            note = "كل القيم من android.os.Build على هذا الجهاز. لا يوجد أي رقم مُصطنع.",
+        ),
+        x(
+            "developer", "dev-log", "11.2", "سجل العمليات", "OPERATION JOURNAL",
+            "آخر الفحوص المسجلة محليًا في Room", Icons.Rounded.History, V2Violet,
+            metric = { _, h -> "${formatCount(h.size)} سجل" },
+            rows = { _, h ->
+                val recent = h.take(3)
+                if (recent.isEmpty()) {
+                    listOf(ToolRow(Icons.Rounded.Info, "السجل", "لا عمليات مسجلة بعد", V2Soft))
+                } else {
+                    recent.map { entry ->
+                        ToolRow(Icons.Rounded.Timeline, "فحص مسجل", formatScanTime(entry.timestamp), V2Cyan)
+                    }
+                }
+            },
+            note = "السجل محلي على الجهاز فقط ولا يُرفع لأي خادم.",
+            list = ToolList.HISTORY,
+        ),
+        x(
+            "developer", "dev-packages", "11.3", "حزم النظام", "SYSTEM PACKAGES",
+            "تطبيقات النظام المرئية عبر PackageManager", Icons.Rounded.Apps, V2Cyan,
+            metric = { f, _ -> "${formatCount(f.installedCount - f.userAppCount)} نظامي" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.Apps, "كل الحزم", formatCount(f.installedCount), V2Cyan),
+                    ToolRow(Icons.Rounded.Person, "تطبيقات المستخدم", formatCount(f.userAppCount), V2Pink),
+                    ToolRow(Icons.Rounded.Android, "تطبيقات النظام", formatCount(f.installedCount - f.userAppCount), V2Violet),
+                    ToolRow(Icons.Rounded.Shield, "تطبيقات حساسة", formatCount(f.sensitiveAppCount), V2Amber),
+                )
+            },
+            note = "ن PackageManager يعرض الحزم الظاهرة لهذا الهاتف فقط، بلا أي صلاحية إضافية.",
+            list = ToolList.APPS,
+        ),
+        x(
+            "developer", "dev-memory", "11.4", "قراءة الذاكرة", "MEMORY READINGS",
+            "حجم الذاكرة المتاحة كما تراه النظام", Icons.Rounded.Memory, V2Violet,
+            metric = { f, _ -> formatBytes(f.storage.freeBytes) },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.Storage, "سعة التخزين", formatBytes(f.storage.totalBytes), V2Cyan),
+                    ToolRow(Icons.Rounded.Memory, "متاح", formatBytes(f.storage.freeBytes), V2Green),
+                    ToolRow(Icons.Rounded.PieChart, "مستخدم", formatBytes(f.storage.usedBytes), V2Pink),
+                    ToolRow(Icons.Rounded.Cached, "كاش KNOUX", formatBytes(f.ownCacheBytes), V2Amber),
+                )
+            },
+            note = "StatFs يقرأ مساحة الملفات. الذاكرة الفعلية للعمليات تحتاج UsageStats.",
+        ),
+        x(
+            "developer", "developer-info", "11.5", "معلومات المطور", "ABOUT THE BUILD",
+            "هوية التطبيق والإصدار وال版权", Icons.Rounded.Info, V2Cyan,
+            metric = { f, _ -> if (f.computedAt > 0L) "إصدار مثبت" else "جاري القراءة" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.Verified, "الحزمة", "com.knoux.ai", V2Cyan),
+                    ToolRow(Icons.Rounded.Build, "إصدار التطبيق", BuildConfig.VERSION_NAME, V2Violet),
+                    ToolRow(Icons.Rounded.Build, "كود البناء", BuildConfig.VERSION_CODE.toString(), V2Pink),
+                    ToolRow(Icons.Rounded.Android, "النظام", "Android ${Build.VERSION.RELEASE}", V2Green),
+                )
+            },
+            note = "معلومات الحزمة من BuildConfig المثبت في هذا الـ APK.",
+        ),
+    )
+
+    private val googleServices = listOf(
+        x(
+            "googleservices", "gsc-apps", "12.1", "تطبيقات Google", "GOOGLE APPS",
+            "حزم Google المرئية على هذا الجهاز", Icons.Rounded.AccountCircle, V2Cyan,
+            metric = { f, _ -> "${formatCount(googleAppCount(f))} تطبيق" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.AccountCircle, "تطبيقات Google", formatCount(googleAppCount(f)), V2Cyan),
+                    ToolRow(Icons.Rounded.Apps, "كل التطبيقات", formatCount(f.installedCount), V2Violet),
+                    ToolRow(Icons.Rounded.Memory, "حجم الكاش", formatBytes(f.ownCacheBytes), V2Pink),
+                    ToolRow(Icons.Rounded.Storage, "مساحة متاحة", formatBytes(f.storage.freeBytes), V2Green),
+                )
+            },
+            note = "العد يتم على أسماء الحزم التي تبدأ بـ com.google. أو com.android.vending فقط.",
+            list = ToolList.APPS,
+        ),
+        x(
+            "googleservices", "gsc-settings", "12.2", "إعدادات Play", "PLAY SETTINGS",
+            "فتح إعدادات Google Play في النظام", Icons.Rounded.Settings, V2Violet,
+            metric = { f, _ -> if (f.computedAt > 0L) "إجراء النظام" else "جاري القراءة" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.Apps, "تطبيقات مثبتة", formatCount(f.installedCount), V2Cyan),
+                    ToolRow(Icons.Rounded.AccountCircle, "حزم Google", formatCount(googleAppCount(f)), V2Violet),
+                    ToolRow(Icons.Rounded.Notifications, "الإشعارات", "من إعدادات النظام", V2Pink),
+                    ToolRow(Icons.Rounded.Security, "Play Protect", "من إعدادات النظام", V2Green),
+                )
+            },
+            note = "الزر يفتح إعدادات Google Play الرسمية في النظام. KNOUX لا يغيّر إعدادات Protection.",
+            handoff = ToolHandoff.NONE,
+        ),
+        x(
+            "googleservices", "gsc-notifications", "12.3", "قنوات الإشعارات", "NOTIFICATION CHANNELS",
+            "ما يعرضه النظام عن قنوات الإشعارات", Icons.Rounded.NotificationsActive, V2Cyan,
+            metric = { f, _ -> if (f.computedAt > 0L) "قراءة النظام" else "جاري القراءة" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.NotificationsActive, "إشعارات KNOUX", "من إعدادات التطبيق", V2Cyan),
+                    ToolRow(Icons.Rounded.Apps, "تطبيقات مرئية", formatCount(f.installedCount), V2Violet),
+                    ToolRow(Icons.Rounded.Shield, "تطبيقات حساسة", formatCount(f.sensitiveAppCount), V2Pink),
+                    ToolRow(Icons.Rounded.Storage, "مساحة متاحة", formatBytes(f.storage.freeBytes), V2Green),
+                )
+            },
+            note = "إدارة القنوات تتم من إعدادات نظام Android. KNOUX لا تتلاعب بإشعارات تطبيقات أخرى.",
+        ),
+        x(
+            "googleservices", "gsc-account", "12.4", "حالة الحساب", "ACCOUNT STATE",
+            "تسجيل الدخول ومزامنة الحساب كما تراها KNOUX", Icons.Rounded.ManageAccounts, V2Violet,
+            metric = { f, _ -> if (f.computedAt > 0L) "محلي" else "جاري القراءة" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.AccountCircle, "تسجيل الدخول", "من بوابة KNOUX", V2Cyan),
+                    ToolRow(Icons.Rounded.Lock, "الجلسات", "محلية على الجهاز", V2Violet),
+                    ToolRow(Icons.Rounded.Apps, "تطبيقات مثبتة", formatCount(f.installedCount), V2Pink),
+                    ToolRow(Icons.Rounded.Storage, "مساحة متاحة", formatBytes(f.storage.freeBytes), V2Green),
+                )
+            },
+            note = "لا تُخزّن كلمات مرور. الجلسة في Keystore عبر طبقة المصادقة المعتمدة.",
+        ),
+        x(
+            "googleservices", "google-services", "12.5", "دعم Google", "GOOGLE SUPPORT",
+            "فتح روابط الدعم الرسمية داخل الجهاز", Icons.Rounded.HelpOutline, V2Cyan,
+            metric = { f, _ -> if (f.computedAt > 0L) "روابط النظام" else "جاري القراءة" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.HelpOutline, "مركز مساعدة Google", "فتح في المتصفح", V2Cyan),
+                    ToolRow(Icons.Rounded.AccountCircle, "حزم Google", formatCount(googleAppCount(f)), V2Violet),
+                    ToolRow(Icons.Rounded.Apps, "تطبيقات مثبتة", formatCount(f.installedCount), V2Pink),
+                    ToolRow(Icons.Rounded.Shield, "تطبيقات حساسة", formatCount(f.sensitiveAppCount), V2Green),
+                )
+            },
+            note = "روابط الدعم تفتح في المتصفح النظامي. KNOUX لا يعترض أي اتصال.",
+        ),
+    )
+
+    private val advancedSecurity = listOf(
+        x(
+            "security", "sec-lock", "13.1", "قفل الشاشة", "SCREEN LOCK",
+            "إعدادات قفل الجهاز والمصادقة", Icons.Rounded.Lock, V2Green,
+            metric = { f, _ -> if (f.computedAt > 0L) "إعداد النظام" else "جاري القراءة" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.Lock, "قفل الشاشة", "من إعدادات النظام", V2Cyan),
+                    ToolRow(Icons.Rounded.Fingerprint, "المصادقة البيومترية", "من إعدادات النظام", V2Violet),
+                    ToolRow(Icons.Rounded.Shield, "تطبيقات حساسة", formatCount(f.sensitiveAppCount), V2Pink),
+                    ToolRow(Icons.Rounded.Apps, "تطبيقات مثبتة", formatCount(f.installedCount), V2Green),
+                )
+            },
+            note = "KNOUX لا يقرأ بصمة ولا يتجاوز القفل. الزر يفتح إعدادات الأمان الرسمية.",
+        ),
+        x(
+            "security", "sec-accounts", "13.2", "حسابات الجهاز", "DEVICE ACCOUNTS",
+            "الحسابات التي يراها Android على هذا الهاتف", Icons.Rounded.ManageAccounts, V2Cyan,
+            metric = { f, _ -> if (f.computedAt > 0L) "من النظام" else "جاري القراءة" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.AccountCircle, "حسابات النظام", "من إعدادات الحسابات", V2Cyan),
+                    ToolRow(Icons.Rounded.Person, "تطبيقات المستخدم", formatCount(f.userAppCount), V2Violet),
+                    ToolRow(Icons.Rounded.Shield, "تطبيقات حساسة", formatCount(f.sensitiveAppCount), V2Pink),
+                    ToolRow(Icons.Rounded.Storage, "مساحة متاحة", formatBytes(f.storage.freeBytes), V2Green),
+                )
+            },
+            note = "لا نطلب بيانات حساب. كل ما يظهر هو ما يسمح به Android بعرضه.",
+        ),
+        x(
+            "security", "sec-permissions", "13.3", "مراجعة الأذونات", "PERMISSION REVIEW",
+            "كل الأذونات الحساسة والتطبيقات التي طلبتها", Icons.Rounded.Security, V2Violet,
+            metric = { f, _ -> "${formatCount(f.sensitiveAppCount)} تطبيق حساس" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.Shield, "تطبيقات حساسة", formatCount(f.sensitiveAppCount), V2Cyan),
+                    ToolRow(Icons.Rounded.Lock, "مجموعات الأذونات", "${f.privacyGroups.size} مجموعة", V2Violet),
+                    ToolRow(Icons.Rounded.Visibility, "وصول الاستخدام", if (f.usageAccessGranted) "ممنوح" else "غير ممنوح", V2Pink),
+                    ToolRow(Icons.Rounded.Apps, "تطبيقات مثبتة", formatCount(f.installedCount), V2Green),
+                )
+            },
+            note = "المراجعة من PackageManager مباشرة. لا نطلب صلاحية إضافية لعرض القائمة.",
+            list = ToolList.PERMISSIONS,
+        ),
+        x(
+            "security", "sec-privacy-links", "13.4", "روابط الخصوصية", "PRIVACY SHORTCUTS",
+            "إعدادات الخصوصية السريعة في النظام", Icons.Rounded.LockPerson, V2Cyan,
+            metric = { f, _ -> if (f.computedAt > 0L) "إعداد النظام" else "جاري القراءة" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.LockPerson, "قفل الجهاز", "من إعدادات النظام", V2Cyan),
+                    ToolRow(Icons.Rounded.LocationOn, "الموقع", "من إعدادات الموقع", V2Violet),
+                    ToolRow(Icons.Rounded.Shield, "تطبيقات حساسة", formatCount(f.sensitiveAppCount), V2Pink),
+                    ToolRow(Icons.Rounded.Storage, "مساحة متاحة", formatBytes(f.storage.freeBytes), V2Green),
+                )
+            },
+            note = "كل الاختصارات تفتح إعدادات Android الرسمية فقط.",
+        ),
+        x(
+            "security", "advanced-security", "13.5", "ملخص الأمان", "SECURITY SUMMARY",
+            "ملخص واحد للحالة الأمنية من القراءات الحقيقية", Icons.Rounded.HealthAndSafety, V2Green,
+            metric = { f, _ -> if (f.computedAt > 0L) "${f.healthEstimate}% صحة" else "جاري القراءة" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.HealthAndSafety, "تقدير الجهاز", if (f.healthEstimate > 0) "${f.healthEstimate}%" else "—", V2Cyan),
+                    ToolRow(Icons.Rounded.Shield, "تطبيقات حساسة", formatCount(f.sensitiveAppCount), V2Violet),
+                    ToolRow(Icons.Rounded.Visibility, "وصول الاستخدام", if (f.usageAccessGranted) "ممنوح" else "غير ممنوح", V2Pink),
+                    ToolRow(Icons.Rounded.Storage, "مساحة متاحة", formatBytes(f.storage.freeBytes), V2Green),
+                )
+            },
+            note = "تقدير مبني على قراءات الجهاز فقط. ليس تقييم اختراق ولا كشف برمجيات خبيثة.",
+        ),
+    )
+
+    private val backupTools = listOf(
+        x(
+            "backup", "bkp-pick", "14.1", "اختيار مجلد الوجهة", "PICK DESTINATION",
+            "تختار مجلدًا عبر منتقي SAF بنفسك", Icons.Rounded.FolderOpen, V2Amber,
+            metric = { f, _ -> if (f.computedAt > 0L) formatBytes(f.storage.freeBytes) + " متاحة" else "جاري القراءة" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.FolderOpen, "متاح", formatBytes(f.storage.freeBytes), V2Cyan),
+                    ToolRow(Icons.Rounded.Storage, "سعة", formatBytes(f.storage.totalBytes), V2Violet),
+                    ToolRow(Icons.Rounded.Cached, "كاش KNOUX", formatBytes(f.ownCacheBytes), V2Pink),
+                    ToolRow(Icons.Rounded.Description, "ملفات KNOUX", "${formatCount(f.ownCacheFiles)} ملف", V2Green),
+                )
+            },
+            note = "الاختيار عبر ACTION_OPEN_DOCUMENT_TREE. لا يُكتب أي ملف قبل موافقتك.",
+        ),
+        x(
+            "backup", "bkp-inventory", "14.2", "جرد ما将被 نسخ", "BACKUP INVENTORY",
+            "قائمة صريحة بالملفات المرشحة قبل النسخ", Icons.Rounded.Inventory, V2Cyan,
+            metric = { f, _ -> "${formatCount(f.ownCacheFiles)} ملف" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.Cached, "كاش KNOUX", formatBytes(f.ownCacheBytes), V2Cyan),
+                    ToolRow(Icons.Rounded.Description, "ملفات", formatCount(f.ownCacheFiles), V2Violet),
+                    ToolRow(Icons.Rounded.PermMedia, "وسائط", if (f.media.permissionGranted) formatCount(f.media.images + f.media.videos) else "بعد المنح", V2Pink),
+                    ToolRow(Icons.Rounded.Storage, "مساحة متاحة", formatBytes(f.storage.freeBytes), V2Green),
+                )
+            },
+            note = "الجرد فقط. لا يتم نسخ أو حذف أي ملف من هذه الشاشة.",
+        ),
+        x(
+            "backup", "bkp-log", "14.3", "سجل النسخ", "BACKUP JOURNAL",
+            "آخر عمليات النسخ والاستعادة المسجلة", Icons.Rounded.History, V2Violet,
+            metric = { _, h -> "${formatCount(h.size)} سجل" },
+            rows = { _, h ->
+                val recent = h.take(3)
+                if (recent.isEmpty()) {
+                    listOf(ToolRow(Icons.Rounded.Info, "السجل", "لا عمليات بعد", V2Soft))
+                } else {
+                    recent.map { entry ->
+                        ToolRow(Icons.Rounded.Timeline, "عملية مسجلة", formatScanTime(entry.timestamp), V2Cyan)
+                    }
+                }
+            },
+            note = "السجل محلي في Room ويمكن تصديره كـ CSV عند طلبك.",
+            list = ToolList.HISTORY,
+        ),
+        x(
+            "backup", "bkp-restore", "14.4", "الاستعادة", "RESTORE FROM SAF",
+            "استرجاع نسخة من مجلد تختاره", Icons.Rounded.Restore, V2Cyan,
+            metric = { f, _ -> if (f.computedAt > 0L) "اختيار صريح" else "جاري القراءة" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.Restore, "المصدر", "من مجلد تختاره", V2Cyan),
+                    ToolRow(Icons.Rounded.Storage, "سعة الجهاز", formatBytes(f.storage.totalBytes), V2Violet),
+                    ToolRow(Icons.Rounded.FolderOpen, "متاح", formatBytes(f.storage.freeBytes), V2Pink),
+                    ToolRow(Icons.Rounded.Shield, "الحماية", "كاش KNOUX فقط", V2Green),
+                )
+            },
+            note = "الاستعادة تلمس ملفات KNOUX فقط، وتطلب تأكيدًا قبل الكتابة.",
+        ),
+        x(
+            "backup", "backup-restore", "14.5", "إدارة النسخ", "BACKUP MANAGEMENT",
+            "كل مسارات النسخ والاستعادة في مكان واحد", Icons.Rounded.Backup, V2Amber,
+            metric = { f, _ -> if (f.computedAt > 0L) "محلي بالكامل" else "جاري القراءة" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.Backup, "الوجهة", "SAF · تختارها أنت", V2Cyan),
+                    ToolRow(Icons.Rounded.CloudOff, "السحابة", "غير مستخدمة", V2Violet),
+                    ToolRow(Icons.Rounded.Cached, "كاش KNOUX", formatBytes(f.ownCacheBytes), V2Pink),
+                    ToolRow(Icons.Rounded.Storage, "مساحة متاحة", formatBytes(f.storage.freeBytes), V2Green),
+                )
+            },
+            note = "لا يوجد رفع سحابي تلقائي. كل شيء يبقى بين تطبيقك والمجلد الذي تختاره.",
+        ),
+    )
+
     val defs: List<SectionToolDef> =
-        duplicates + residue + privacy + deepScan + reports + appManager + storage + battery + ai
+        duplicates + residue + privacy + deepScan + reports + appManager + storage + battery + ai +
+            developerTools + googleServices + advancedSecurity + backupTools
 }
 
 /* ------------------------------------------------------------------ *

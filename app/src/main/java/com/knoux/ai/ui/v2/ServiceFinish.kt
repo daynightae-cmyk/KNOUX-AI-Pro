@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Apps
+import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Backup
 import androidx.compose.material.icons.rounded.BarChart
@@ -37,7 +38,9 @@ import androidx.compose.material.icons.rounded.BatteryFull
 import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material.icons.rounded.CleaningServices
 import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.DeveloperMode
 import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.Fingerprint
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.Info
@@ -286,6 +289,64 @@ object ServiceSpecs {
         chips = listOf("توصيات محلية", "تنفيذ يدوي"),
         subItems = SectionTools.items("ai"),
         artwork = R.drawable.knoux_svc_ai,
+    )
+
+    /* ---- Four owner-requested extra hubs, same luxury language ---- */
+
+    val developer = KnouxServiceSpec(
+        key = "developer",
+        order = "11",
+        title = "أدوات المطورين",
+        english = "DEVELOPER TOOLS",
+        tagline = "معلومات البناء والنظام وسجل التشغيل على هذا الهاتف",
+        accent = V2Cyan,
+        accent2 = V2Blue,
+        glyph = Icons.Rounded.DeveloperMode,
+        chips = listOf("Build.VERSION", "قراءة مباشرة"),
+        subItems = SectionTools.items("developer"),
+        artwork = R.drawable.knoux_svc_deepscan,
+    )
+
+    val googleServices = KnouxServiceSpec(
+        key = "googleservices",
+        order = "12",
+        title = "خدمات جوجل",
+        english = "GOOGLE SERVICES",
+        tagline = "Google Play Services والإشعارات وتسجيل الدخول على الجهاز",
+        accent = V2Violet,
+        accent2 = V2Cyan,
+        glyph = Icons.Rounded.AccountCircle,
+        chips = listOf("PackageManager", "لا صلاحية تلقائية"),
+        subItems = SectionTools.items("googleservices"),
+        artwork = R.drawable.knoux_svc_apps,
+    )
+
+    val advancedSecurity = KnouxServiceSpec(
+        key = "security",
+        order = "13",
+        title = "الأمان المتقدم",
+        english = "ADVANCED SECURITY",
+        tagline = "قفل الجهاز والمصادقة البيومترية وحسابات الجهاز",
+        accent = V2Green,
+        accent2 = V2Cyan,
+        glyph = Icons.Rounded.Fingerprint,
+        chips = listOf("قفل الشاشة", "إعدادات النظام"),
+        subItems = SectionTools.items("security"),
+        artwork = R.drawable.knoux_svc_privacy,
+    )
+
+    val backupRestore = KnouxServiceSpec(
+        key = "backup",
+        order = "14",
+        title = "النسخ والاستعادة",
+        english = "BACKUP & RESTORE",
+        tagline = "نسخ احتياطي صريح إلى مجلد تختاره أنت عبر SAF",
+        accent = V2Amber,
+        accent2 = V2Violet,
+        glyph = Icons.Rounded.Backup,
+        chips = listOf("اختيار صريح", "بدون رفع سحابي"),
+        subItems = SectionTools.items("backup"),
+        artwork = R.drawable.knoux_svc_residue,
     )
 }
 
@@ -872,55 +933,7 @@ fun ServiceSubGrid(
             KText("${spec.subItems.size} أدوات", size = 10.sp, color = V2Muted)
         }
         Spacer(Modifier.height(7.dp))
-        // Exactly the Home grid rhythm: five services per row, 91.dp tall.
-        spec.subItems.chunked(5).forEach { row ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                row.forEach { item ->
-                    SectionServiceTile(item, Modifier.weight(1f)) { navigate(item.route) }
-                }
-                repeat(5 - row.size) { Spacer(Modifier.weight(1f)) }
-            }
-            Spacer(Modifier.height(6.dp))
-        }
-    }
-}
-
-@Composable
-private fun SectionServiceTile(item: ServiceSubItem, modifier: Modifier, onClick: () -> Unit) {
-    val proActive = LocalProActive.current
-    V2GlassCard(
-        modifier = modifier
-            .height(91.dp)
-            .clickable(onClick = onClick),
-        padding = 5.dp,
-        radius = 15.dp,
-        glow = item.accent,
-        borderAlpha = .36f,
-    ) {
-        Column(
-            Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            if (item.art != null) {
-                V2RasterTile(image = item.art, size = 52.dp, accent = item.accent)
-            } else {
-                V2NeonGlyph(item.icon, item.accent, size = 50.dp)
-            }
-            Spacer(Modifier.height(2.dp))
-            KText(
-                item.title,
-                size = 8.2.sp,
-                weight = FontWeight.SemiBold,
-                color = Color.White,
-                lineHeight = 10.5.sp,
-                align = TextAlign.Center,
-                maxLines = 2,
-            )
-        }
-        if (proActive && item.proOnly) {
-            ProBadge(Modifier.align(Alignment.TopEnd))
-        }
+        V2LuxuryServiceGrid(spec.subItems, navigate)
     }
 }
 
@@ -965,7 +978,7 @@ fun ServiceCapabilityCard(
             Spacer(Modifier.width(8.dp))
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    KText(title, size = 9.6.sp, weight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    KText(title, size = 10.4.sp, weight = FontWeight.Bold, modifier = Modifier.weight(1f))
                     Spacer(Modifier.width(5.dp))
                     Box(
                         Modifier
@@ -973,11 +986,11 @@ fun ServiceCapabilityCard(
                             .background(accent.withAlpha(.12f))
                             .padding(horizontal = 5.dp, vertical = 1.dp)
                     ) {
-                        KText(stateText, size = 6.4.sp, weight = FontWeight.Bold, color = accent)
+                        KText(stateText, size = 7.2.sp, weight = FontWeight.Bold, color = accent)
                     }
                 }
                 Spacer(Modifier.height(2.dp))
-                KText(body, size = 7.6.sp, lineHeight = 11.sp, color = V2Soft)
+                KText(body, size = 8.6.sp, lineHeight = 12.5.sp, color = V2Soft)
                 if (actionLabel != null && onAction != null) {
                     Spacer(Modifier.height(8.dp))
                     Box(
@@ -988,7 +1001,7 @@ fun ServiceCapabilityCard(
                             .clickable(onClick = onAction)
                             .padding(horizontal = 12.dp, vertical = 9.dp)
                     ) {
-                        KText(actionLabel, size = 9.sp, weight = FontWeight.Bold, color = accent)
+                        KText(actionLabel, size = 9.6.sp, weight = FontWeight.Bold, color = accent)
                     }
                 }
             }

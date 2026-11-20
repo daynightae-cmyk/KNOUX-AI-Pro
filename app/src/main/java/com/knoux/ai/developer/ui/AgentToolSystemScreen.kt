@@ -2,16 +2,15 @@ package com.knoux.ai.developer.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -24,6 +23,7 @@ import androidx.compose.material.icons.rounded.Code
 import androidx.compose.material.icons.rounded.DocumentScanner
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Terminal
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -34,25 +34,28 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.knoux.ai.developer.model.AgentTool
 import com.knoux.ai.ui.v2.KText
 import com.knoux.ai.ui.v2.V2Amber
-import com.knoux.ai.ui.v2.V2Background
 import com.knoux.ai.ui.v2.V2Blue
 import com.knoux.ai.ui.v2.V2Cyan
-import com.knoux.ai.ui.v2.V2Deep
+import com.knoux.ai.ui.v2.V2GlassCard
 import com.knoux.ai.ui.v2.V2GoldText
 import com.knoux.ai.ui.v2.V2Green
+import com.knoux.ai.ui.v2.V2LuxuryIdentity
 import com.knoux.ai.ui.v2.V2Pink
 import com.knoux.ai.ui.v2.V2Red
 import com.knoux.ai.ui.v2.V2Soft
 import com.knoux.ai.ui.v2.V2Violet
-import com.knoux.ai.ui.v2.V2LuxuryIdentity
-import com.knoux.ai.ui.v2.V2GlassCard
+
+private data class ToolStatus(
+    val available: Boolean,
+    val label: String,
+    val detail: String,
+)
 
 private fun agentToolColor(tool: AgentTool): Color = when (tool) {
     AgentTool.ReadFile, AgentTool.ListDirectory, AgentTool.SearchFiles -> V2Cyan
@@ -81,9 +84,66 @@ private fun agentToolText(tool: AgentTool): String = when (tool) {
 }
 
 /**
+ * Exact capabilities, not marketing text. Android apps cannot fork arbitrary
+ * shell/git/test processes from their sandbox; those entries stay visibly
+ * unavailable rather than showing a button that does nothing.
+ */
+private fun toolStatus(tool: AgentTool): ToolStatus = when (tool) {
+    AgentTool.ReadFile, AgentTool.ListDirectory, AgentTool.SearchFiles,
+    AgentTool.CreateFile, AgentTool.EditFile -> ToolStatus(
+        available = true,
+        label = "متاح عبر SAF",
+        detail = "ينفَّذ داخل مجلد يمنحه المستخدم عبر Storage Access Framework. " +
+            "لا وصول خارج شجرة المجلد، والحفظ يتطلب إذن كتابة صالحًا. " +
+            "افتح «مساحة عمل المطور» لمنح المجلد وتشغيل الأداة.",
+    )
+    AgentTool.ApplyPatch -> ToolStatus(
+        available = false,
+        label = "غير منفذ",
+        detail = "تطبيق patch ثنائي غير موصول. التعديل النصي متاح يدويًا عبر محرر مساحة العمل فقط.",
+    )
+    AgentTool.CompareDiff -> ToolStatus(
+        available = false,
+        label = "غير منفذ",
+        detail = "لا توجد واجهة diff في هذه النسخة. لا تُعرض فروقات وهمية.",
+    )
+    AgentTool.GitStatus, AgentTool.GitDiff, AgentTool.GitLog -> ToolStatus(
+        available = false,
+        label = "غير متاح على Android",
+        detail = "لا يوجد git binary داخل sandbox التطبيق، وتشغيله يتطلب Termux أو جهازًا بصلاحيات root أو خادم بناء. " +
+            "لن تُعاد نتائج Git مُختلقة.",
+    )
+    AgentTool.RunTests -> ToolStatus(
+        available = false,
+        label = "غير متاح على Android",
+        detail = "تشغيل Gradle/الاختبارات يحتاج JDK وبناء كامل خارج التطبيق. نفّذها على CI أو جهاز التطوير.",
+    )
+    AgentTool.TerminalExecution -> ToolStatus(
+        available = false,
+        label = "غير متاح على Android",
+        detail = "Android لا يسمح لتطبيق عادي بتنفيذ shell عشوائي. الأوامر المدعومة فقط هي واجهات SAF أعلاه.",
+    )
+    AgentTool.BuildMonitoring -> ToolStatus(
+        available = false,
+        label = "غير متاح على Android",
+        detail = "مراقبة بناء Gradle تتطلب عملية بناء حقيقية على مضيف التطوير أو CI؛ لا مصدر بيانات داخل التطبيق.",
+    )
+    AgentTool.FetchDocumentation -> ToolStatus(
+        available = false,
+        label = "غير منفذ",
+        detail = "لا يوجد جالب توثيق موصول. لن يُرسل طلب شبكة وهمي.",
+    )
+    AgentTool.ProjectDiagnostics -> ToolStatus(
+        available = false,
+        label = "غير منفذ",
+        detail = "تشخيص المشروع يحتاج محلل بناء؛ غير موصول في هذه النسخة.",
+    )
+}
+
+/**
  * Agent Tool System (DEV-07).
- * Tool registry with clear permissions: workspace scope, path traversal protection,
- * read/write checks, timeout, cancellation, and audit history.
+ * Shows the real availability of every tool. File tools are backed by the SAF
+ * workspace; Git/terminal/test/build tools disclose the exact Android limits.
  */
 @Composable
 fun AgentToolSystemScreen(
@@ -91,29 +151,73 @@ fun AgentToolSystemScreen(
     onPro: () -> Unit,
 ) {
     var tools by remember { mutableStateOf(listOf<AgentTool>()) }
+    var detail by remember { mutableStateOf<Pair<AgentTool, ToolStatus>?>(null) }
 
     androidx.compose.runtime.LaunchedEffect(Unit) {
         tools = AgentTool.values().toList()
+    }
+
+    detail?.let { (tool, status) ->
+        AlertDialog(
+            onDismissRequest = { detail = null },
+            title = {
+                KText(
+                    agentToolText(tool),
+                    size = 14.sp,
+                    weight = FontWeight.Bold,
+                    color = Color.White,
+                )
+            },
+            text = {
+                Column {
+                    KText(status.label, size = 10.sp, weight = FontWeight.Bold, color = if (status.available) V2Green else V2Amber)
+                    Spacer(Modifier.height(6.dp))
+                    KText(status.detail, size = 9.6.sp, color = V2Soft, maxLines = 8)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { detail = null }) { KText("إغلاق", size = 10.sp, color = V2Cyan) }
+            },
+        )
     }
 
     Column(Modifier.fillMaxSize()) {
         V2LuxuryIdentity(
             title = "نظام أدوات الوكيل",
             english = "AGENT TOOL SYSTEM",
-            subtitle = "سجل أدوات مع صلاحيات واضحة ومسار تدقيق",
+            subtitle = "قدرات فعلية وحدود Android معلنة — دون أزرار ميتة",
             accent = V2Amber,
         )
 
         LazyColumn(
             Modifier.weight(1f),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                start = 16.dp, end = 16.dp, bottom = 12.dp
-            ),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 12.dp),
             verticalArrangement = Arrangement.spacedBy(9.dp),
         ) {
-            items(tools) { tool ->
+            item {
+                V2GlassCard(
+                    Modifier.fillMaxWidth(),
+                    padding = 11.dp,
+                    radius = 14.dp,
+                    glow = V2Amber,
+                    borderAlpha = .28f,
+                ) {
+                    KText(
+                        "أدوات الملفات تعمل فقط داخل مجلد SAF يمنحه المستخدم. " +
+                            "Git والمحطة والاختبارات والبناء غير قابلة للتنفيذ داخل تطبيق Android عادي، " +
+                            "وتظهر هنا كغير متاحة بدلًا من محاكاة نتائج.",
+                        size = 9.2.sp,
+                        color = V2GoldText,
+                        maxLines = 5,
+                    )
+                }
+            }
+
+            items(tools, key = { it.name }) { tool ->
                 ToolCard(
                     tool = tool,
+                    status = toolStatus(tool),
+                    onClick = { detail = tool to toolStatus(tool) },
                 )
             }
         }
@@ -123,8 +227,11 @@ fun AgentToolSystemScreen(
 @Composable
 private fun ToolCard(
     tool: AgentTool,
+    status: ToolStatus,
+    onClick: () -> Unit,
 ) {
     val toolColor = agentToolColor(tool)
+    val stateColor = if (status.available) V2Green else V2Amber
 
     V2GlassCard(
         Modifier.fillMaxWidth(),
@@ -134,10 +241,7 @@ private fun ToolCard(
         borderAlpha = .38f,
     ) {
         Column {
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     Modifier.size(36.dp).clip(RoundedCornerShape(12.dp))
                         .background(toolColor.copy(alpha = .16f))
@@ -148,51 +252,42 @@ private fun ToolCard(
                         imageVector = toolIcon(tool),
                         contentDescription = null,
                         tint = toolColor,
-                        modifier = androidx.compose.ui.Modifier.size(18.dp),
+                        modifier = Modifier.size(18.dp),
                     )
                 }
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     KText(agentToolText(tool), size = 13.sp, weight = FontWeight.Bold, color = Color.White)
-                    KText(
-                        toolPermissionText(tool),
-                        size = 8.6.sp,
-                        color = V2Soft,
-                        maxLines = 2,
-                    )
+                    KText(status.label, size = 8.6.sp, color = stateColor, maxLines = 1)
                 }
                 Spacer(Modifier.weight(1f))
-                TextButton(onClick = { /* execute tool */ }) {
-                    KText("تشغيل", size = 9.4.sp, color = V2Cyan)
+                TextButton(onClick = onClick) {
+                    KText("التفاصيل", size = 9.4.sp, color = V2Cyan)
                 }
             }
 
             Spacer(Modifier.height(8.dp))
 
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
                     KText("النطاق", size = 10.4.sp, weight = FontWeight.Bold, color = Color.White)
                     Spacer(Modifier.height(4.dp))
                     KText(
-                        "مساحة العمل المصرح بها",
+                        if (status.available) "مجلد SAF مصرح به" else "غير قابل للتنفيذ هنا",
                         size = 10.4.sp,
                         weight = FontWeight.SemiBold,
                         color = V2GoldText,
                         maxLines = 1,
                     )
                 }
-                Spacer(Modifier.weight(1f))
-                Column {
-                    KText("الحماية", size = 10.4.sp, weight = FontWeight.Bold, color = Color.White)
+                Column(Modifier.weight(1f)) {
+                    KText("الحالة", size = 10.4.sp, weight = FontWeight.Bold, color = Color.White)
                     Spacer(Modifier.height(4.dp))
                     KText(
-                        "عابر للمسار محمي",
+                        status.label,
                         size = 10.4.sp,
                         weight = FontWeight.SemiBold,
-                        color = V2Green,
+                        color = stateColor,
                         maxLines = 1,
                     )
                 }
@@ -217,12 +312,4 @@ private fun toolIcon(tool: AgentTool): androidx.compose.ui.graphics.vector.Image
     AgentTool.FetchDocumentation -> Icons.Rounded.DocumentScanner
     AgentTool.ProjectDiagnostics -> Icons.Rounded.BugReport
     AgentTool.BuildMonitoring -> Icons.Rounded.Terminal
-}
-
-private fun toolPermissionText(tool: AgentTool): String = when (tool) {
-    AgentTool.ReadFile, AgentTool.ListDirectory, AgentTool.SearchFiles -> "قراءة فقط ضمن مساحة العمل"
-    AgentTool.CreateFile, AgentTool.EditFile, AgentTool.ApplyPatch -> "كتابة تتطلب موافقة المستخدم"
-    AgentTool.CompareDiff, AgentTool.GitStatus, AgentTool.GitDiff, AgentTool.GitLog -> "قراءة فقط (Git)"
-    AgentTool.RunTests, AgentTool.TerminalExecution, AgentTool.BuildMonitoring -> "تنفيذ مراقب مع مهلة انتهاء"
-    AgentTool.FetchDocumentation, AgentTool.ProjectDiagnostics -> "قراءة فقط (تشخيص)"
 }

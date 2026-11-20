@@ -27,8 +27,8 @@ import java.util.TreeMap
 import kotlin.math.floor
 import kotlin.math.ln
 
-internal enum class DuplicateScanMode { EXACT, VISUAL }
-internal enum class DuplicateMatchKind { EXACT, VISUAL }
+internal enum class DuplicateScanMode { EXACT, VISUAL, NAME }
+internal enum class DuplicateMatchKind { EXACT, VISUAL, NAME }
 
 internal data class DuplicateScanFile(
     val uriString: String,
@@ -802,6 +802,60 @@ private suspend fun compareDuplicateVisualMedia(
     )
 }
 
+/**
+ * Name-only grouping: files that share the same normalized display name,
+ * regardless of folder, size or content. This is a review aid, not a proof of
+ * equality, and the result carries that warning explicitly.
+ */
+private fun compareDuplicateNames(
+    files: List<DuplicateScanFile>,
+    onProgress: (DuplicateScanProgress) -> Unit,
+): DuplicateScanResult {
+    onProgress(
+        DuplicateScanProgress(
+            phase = "مقارنة أسماء الملفات",
+            completedFiles = 0,
+            totalFiles = files.size,
+            bytesRead = 0,
+        )
+    )
+    val groups = files
+        .groupBy { it.name.trim().lowercase() }
+        .values
+        .filter { it.size > 1 }
+        .map { matches ->
+            val ordered = matches.sortedWith(duplicateKeeperOrder)
+            DuplicateScanGroup(
+                id = "name:" + ordered.first().uriString,
+                files = ordered,
+                kind = DuplicateMatchKind.NAME,
+            )
+        }
+        .sortedWith(
+            compareByDescending<DuplicateScanGroup> { group ->
+                group.files.sumOf { it.sizeBytes }
+            }.thenBy { it.id }
+        )
+    onProgress(
+        DuplicateScanProgress(
+            phase = "اكتملت مقارنة الأسماء",
+            completedFiles = files.size,
+            totalFiles = files.size,
+            bytesRead = 0,
+        )
+    )
+    return DuplicateScanResult(
+        groups = groups,
+        filesDiscovered = files.size,
+        filesCompared = files.size,
+        unreadableFiles = 0,
+        bytesRead = 0,
+        partialAccess = false,
+        completedAt = System.currentTimeMillis(),
+        warnings = listOf("تطابق الاسم لا يعني تطابق المحتوى. راجع كل ملف قبل أي حذف."),
+    )
+}
+
 /** Local, read-only full scan of mounted provider-visible image/video collections.
  * No network, no deletion, no AI confidence, no hard scan-budget truncation.
  * Callbacks run on Dispatchers.IO; callers must marshal UI updates themselves.
@@ -818,6 +872,7 @@ internal suspend fun scanDuplicates(
             context.contentResolver.openInputStream(Uri.parse(file.uriString))
         }, onProgress)
         DuplicateScanMode.VISUAL -> compareDuplicateVisualMedia(context, discovery.files, onProgress)
+        DuplicateScanMode.NAME -> compareDuplicateNames(discovery.files, onProgress)
     }
     ensureActive()
     compared.copy(

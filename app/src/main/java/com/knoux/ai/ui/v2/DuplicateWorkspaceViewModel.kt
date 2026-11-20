@@ -84,7 +84,11 @@ internal class DuplicateWorkspaceViewModel : ViewModel() {
                 val sessionId = withContext(Dispatchers.IO) {
                     repository.createScanSession(
                         serviceId = SERVICE_ID,
-                        serviceName = if (mode == DuplicateScanMode.EXACT) "Exact duplicate scan" else "Visual similarity review",
+                        serviceName = when (mode) {
+                            DuplicateScanMode.EXACT -> "Exact duplicate scan"
+                            DuplicateScanMode.VISUAL -> "Visual similarity review"
+                            DuplicateScanMode.NAME -> "File name duplicate scan"
+                        },
                         deviceModel = android.os.Build.MODEL,
                         apiLevel = android.os.Build.VERSION.SDK_INT,
                     )
@@ -143,6 +147,19 @@ internal class DuplicateWorkspaceViewModel : ViewModel() {
 
     fun cancelScan() { scanJob?.cancel() }
 
+    /**
+     * Mode selection is not a run command. Switching mode drops a result from
+     * the previous mode so it can never be mistaken for a scan of the new one;
+     * the user still has to press the K orb.
+     */
+    fun selectMode(mode: DuplicateScanMode) {
+        if (state.value.busy || state.value.mode == mode) return
+        mutableState.update {
+            it.copy(mode = mode, result = null, sessionId = null, deletion = null,
+                scanCancelled = false, progress = null, message = null, error = null)
+        }
+    }
+
     fun prepareDelete(
         context: Context,
         selected: Set<String>,
@@ -171,7 +188,11 @@ internal class DuplicateWorkspaceViewModel : ViewModel() {
                     repository.createOperationRequest(
                         scanSessionId = sessionId,
                         serviceId = SERVICE_ID,
-                        requestedAction = if (plan.groups.any { it.kind == DuplicateMatchKind.VISUAL }) "delete_reviewed_similar_media" else "delete_exact_duplicate_media",
+                        requestedAction = when {
+                            plan.groups.any { it.kind == DuplicateMatchKind.VISUAL } -> "delete_reviewed_similar_media"
+                            plan.groups.any { it.kind == DuplicateMatchKind.NAME } -> "delete_name_matched_media"
+                            else -> "delete_exact_duplicate_media"
+                        },
                         selectionCount = plan.files.size,
                         keeperIds = plan.keepers.map { it.uriString },
                         exclusionIds = null,

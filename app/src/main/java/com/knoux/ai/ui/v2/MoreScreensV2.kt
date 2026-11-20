@@ -120,17 +120,36 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.knoux.ai.R
+import com.knoux.ai.ui.v2.V2LuxuryIdentity
+import com.knoux.ai.ui.v2.V2LuxuryStage
+import com.knoux.ai.ui.v2.V2LuxuryServiceGrid
 
 /* ------------------------------------------------------------------ *
- * Shared interior scaffold
+ * Shared interior scaffold — replaced by V2LuxuryStage
  * ------------------------------------------------------------------ */
 
+@Composable
+private fun V2PageHeading(
+    title: String,
+    subtitle: String,
+    accent: Color,
+) {
+    V2LuxuryIdentity(
+        title = title,
+        english = title.uppercase().replaceFirstChar { it.lowercase() },
+        subtitle = subtitle,
+        accent = accent,
+    )
+}
+
+/** Legacy wrapper - uses InteriorScaffold for backward compatibility with existing screens. */
 @Composable
 private fun InteriorScaffold(
     onBack: () -> Unit,
     onPro: () -> Unit,
     bottomBar: (@Composable () -> Unit)? = null,
-    content: LazyListScope.() -> Unit,
+    content: androidx.compose.foundation.lazy.LazyListScope.() -> Unit,
 ) {
     Box(
         Modifier
@@ -154,25 +173,22 @@ private fun InteriorScaffold(
     }
 }
 
+/** Legacy wrapper - uses PageHeading for backward compatibility. */
 @Composable
 private fun PageHeading(
     title: String,
     subtitle: String,
-    icon: ImageVector,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     accent: Color,
     trailing: (@Composable () -> Unit)? = null,
 ) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
-            Text(
+            KText(
                 title,
-                style = TextStyle(
-                    fontFamily = V2Font,
-                    fontWeight = FontWeight.Black,
-                    fontSize = 27.sp,
-                    lineHeight = 34.sp,
-                    color = Color.White,
-                )
+                size = 20.sp,
+                weight = FontWeight.Black,
+                color = Color.White,
             )
             KText(subtitle, size = 10.sp, color = V2Soft)
         }
@@ -231,6 +247,7 @@ private data class ScopedDocument(
     val bytes: Long?,
     val mime: String,
     val isDirectory: Boolean = false,
+    val lastModified: Long? = null,
 )
 
 private fun readSelectedDocument(context: Context, uri: Uri): ScopedDocument {
@@ -249,7 +266,8 @@ private fun readSelectedDocument(context: Context, uri: Uri): ScopedDocument {
 private fun readScopedFolder(context: Context, tree: Uri, documentId: String): List<ScopedDocument> {
     val children = DocumentsContract.buildChildDocumentsUriUsingTree(tree, documentId)
     val projection = arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID, DocumentsContract.Document.COLUMN_DISPLAY_NAME,
-        DocumentsContract.Document.COLUMN_SIZE, DocumentsContract.Document.COLUMN_MIME_TYPE)
+        DocumentsContract.Document.COLUMN_SIZE, DocumentsContract.Document.COLUMN_MIME_TYPE,
+        DocumentsContract.Document.COLUMN_LAST_MODIFIED)
     val cursor = context.contentResolver.query(children, projection, null, null, null)
         ?: error("موفر المجلد لم يُعد بيانات")
     return cursor.use {
@@ -258,7 +276,8 @@ private fun readScopedFolder(context: Context, tree: Uri, documentId: String): L
             val mime = it.getString(3) ?: "نوع غير معلن"
             result += ScopedDocument(DocumentsContract.buildDocumentUriUsingTree(tree, it.getString(0)),
                 it.getString(1) ?: "اسم غير معلن", if (it.isNull(2)) null else it.getLong(2).takeIf { bytes -> bytes >= 0L },
-                mime, mime == DocumentsContract.Document.MIME_TYPE_DIR)
+                mime, mime == DocumentsContract.Document.MIME_TYPE_DIR,
+                if (it.isNull(4)) null else it.getLong(4).takeIf { millis -> millis > 0L })
         }
         result.sortedWith(compareByDescending<ScopedDocument> { entry -> entry.isDirectory }.thenBy { entry -> entry.name })
     }
@@ -297,9 +316,9 @@ internal fun PreviewNote(text: String) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
     ) {
-        Icon(Icons.Rounded.Info, null, tint = V2Muted, modifier = Modifier.size(11.dp))
+        Icon(Icons.Rounded.Info, null, tint = V2Muted, modifier = Modifier.size(13.dp))
         Spacer(Modifier.width(4.dp))
-        KText(text, size = 7.4.sp, color = V2Muted, align = TextAlign.Center)
+        KText(text, size = 8.4.sp, lineHeight = 11.5.sp, color = V2Muted, align = TextAlign.Center)
     }
 }
 
@@ -383,6 +402,10 @@ fun V2AppManagerScreen(
     val (refresh, bump) = rememberRefreshCounter()
     val facts = rememberDeviceFacts(refresh)
     var filter by remember { mutableStateOf(1) }
+    // The orb drives the read; the flag keeps its ring animating until the
+    // PackageManager pass publishes fresh facts.
+    var refreshing by remember { mutableStateOf(false) }
+    LaunchedEffect(facts.computedAt) { if (refreshing) refreshing = false }
 
     val apps = remember(facts, filter) {
         val base = when (filter) {
@@ -471,6 +494,31 @@ fun V2AppManagerScreen(
                 status = if (facts.computedAt > 0L) "PackageManager" else "جاري القراءة",
                 statusColor = if (facts.computedAt > 0L) V2Green else V2Amber,
                 metric = "${formatCount(facts.installedCount)} تطبيق",
+            )
+        }
+        item {
+            // The universal K orb: the only way this service starts.
+            KnouxRunOrbBlock(
+                progress = when {
+                    refreshing -> null
+                    facts.computedAt > 0L -> 1f
+                    else -> 0f
+                },
+                running = refreshing,
+                enabled = !refreshing,
+                label = when {
+                    refreshing -> "جارٍ قراءة التطبيقات…"
+                    facts.computedAt > 0L -> "اضغط لإعادة قراءة التطبيقات"
+                    else -> "اضغط لتشغيل الخدمة"
+                },
+                accent = V2Pink,
+                accent2 = V2Violet,
+                onTap = {
+                    if (!refreshing) {
+                        refreshing = true
+                        bump()
+                    }
+                },
             )
         }
         item { AppManagerRealSummary(facts) }
@@ -931,7 +979,6 @@ private val storageCategories = listOf(
 @Composable
 fun V2StorageScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> Unit) {
     val context = LocalContext.current
-    val (refresh, bump) = rememberRefreshCounter()
 
     val application = context.applicationContext as Application
     val storageDatabase = remember(application) { AppDatabase.getDatabase(application) }
@@ -940,7 +987,6 @@ fun V2StorageScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> U
         key = "storage-analyzer",
         initializer = { StorageAnalyzerViewModel(application, storageRepository) },
     )
-    LaunchedEffect(refresh) { storageViewModel.scanStorage(refresh) }
 
     val storageState = storageViewModel.state
     val facts = storageState.facts
@@ -956,19 +1002,47 @@ fun V2StorageScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> U
         item {
             ServiceBanner(
                 spec = ServiceSpecs.storage,
-                status = if (storage.totalBytes > 0L) "StatFs مقروء" else "جاري القراءة",
-                statusColor = if (storage.totalBytes > 0L) V2Green else V2Amber,
-                metric = "${(storage.usedFraction * 100).toInt()}% مستخدم",
+                status = when {
+                    storageState.isScanning -> "جاري القراءة"
+                    storage.totalBytes > 0L -> "StatFs مقروء"
+                    else -> "جاهز للتشغيل"
+                },
+                statusColor = when {
+                    storageState.isScanning -> V2Amber
+                    storage.totalBytes > 0L -> V2Green
+                    else -> V2Violet
+                },
+                metric = if (storage.totalBytes > 0L) "${(storage.usedFraction * 100).toInt()}% مستخدم" else "اضغط الزر الدائري لبدء الخدمة",
             )
         }
-        item { StorageHeroCard(storage, facts.ownCacheBytes, onRefresh = bump) }
+        item {
+            // The universal K orb: the only way this service starts.
+            KnouxRunOrbBlock(
+                progress = when {
+                    storageState.isScanning -> null
+                    storageState.loaded -> 1f
+                    else -> 0f
+                },
+                running = storageState.isScanning,
+                enabled = !storageState.isScanning && storageState.gate != OperationGate.RUNNING,
+                label = when {
+                    storageState.isScanning -> "جارٍ قراءة التخزين…"
+                    storageState.loaded -> "اضغط لإعادة قراءة التخزين"
+                    else -> "اضغط لتشغيل الخدمة"
+                },
+                accent = V2Cyan,
+                accent2 = V2Violet,
+                onTap = { storageViewModel.rescan() },
+            )
+        }
+        item { StorageHeroCard(storage, facts.ownCacheBytes) }
         item {
             StorageCacheActionCard(
                 state = storageState,
                 onPrepare = { storageViewModel.prepareClearOwnCache() },
                 onConfirm = { storageViewModel.confirmClearOwnCache() },
                 onCancel = { storageViewModel.cancelClearOwnCache() },
-                onRescan = { bump() },
+                onRescan = { storageViewModel.rescan() },
             )
         }
         item { V2SectionLabel("القراءة الفعلية", trailing = "من الجهاز") }
@@ -1013,7 +1087,7 @@ fun V2StorageScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> U
 }
 
 @Composable
-private fun StorageHeroCard(storage: StorageFacts, cacheBytes: Long, onRefresh: () -> Unit) {
+private fun StorageHeroCard(storage: StorageFacts, cacheBytes: Long) {
     val progress = storage.usedFraction.coerceIn(0f, 1f)
     V2GlassCard(
         Modifier.fillMaxWidth(),
@@ -1046,17 +1120,6 @@ private fun StorageHeroCard(storage: StorageFacts, cacheBytes: Long, onRefresh: 
                 }
                 Spacer(Modifier.height(5.dp))
                 KText("كاش KNOUX المقروء: ${formatBytes(cacheBytes)} · يُحذف بتأكيدك فقط.", size = 7.8.sp, color = V2Muted)
-                Spacer(Modifier.height(5.dp))
-                Box(
-                    Modifier
-                        .clip(RoundedCornerShape(9.dp))
-                        .background(V2Cyan.withAlpha(.12f))
-                        .border(1.dp, V2Cyan.withAlpha(.30f), RoundedCornerShape(9.dp))
-                        .clickable(onClick = onRefresh)
-                        .padding(horizontal = 9.dp, vertical = 4.dp)
-                ) {
-                    KText("تحديث القراءة", size = 7.4.sp, weight = FontWeight.Bold, color = V2Cyan)
-                }
             }
         }
     }
@@ -1185,6 +1248,8 @@ fun V2BatteryScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> U
     val repository = remember(database) { KnouxRepository(database) }
     val scope = rememberCoroutineScope()
     val openUsagePermission: () -> Unit = { openUsageAccessSettings(context) }
+    var refreshing by remember { mutableStateOf(false) }
+    LaunchedEffect(facts.computedAt) { if (refreshing) refreshing = false }
 
     LaunchedEffect(
         refresh,
@@ -1217,19 +1282,12 @@ fun V2BatteryScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> U
         onBack = onBack,
         onPro = onPro,
         bottomBar = {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                Box(Modifier.weight(1f)) {
-                    V2GhostButton("تحديث", onClick = bump, icon = Icons.Rounded.Refresh, height = 47.dp)
-                }
-                Box(Modifier.weight(1f)) {
-                    V2GhostButton(
-                        "إعدادات البطارية",
-                        onClick = { openBatterySaverSettings(context) },
-                        icon = Icons.Rounded.Settings,
-                        height = 47.dp,
-                    )
-                }
-            }
+            V2GhostButton(
+                "إعدادات البطارية",
+                onClick = { openBatterySaverSettings(context) },
+                icon = Icons.Rounded.Settings,
+                height = 47.dp,
+            )
         },
     ) {
         item {
@@ -1238,6 +1296,31 @@ fun V2BatteryScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> U
                 status = if (battery.levelPercent != null) "BatteryManager" else "جاري القراءة",
                 statusColor = if (battery.levelPercent != null) V2Green else V2Amber,
                 metric = battery.levelPercent?.let { "$it% · ${battery.statusLabel}" } ?: "غير متاح",
+            )
+        }
+        item {
+            // The universal K orb: the only way this service starts.
+            KnouxRunOrbBlock(
+                progress = when {
+                    refreshing -> null
+                    battery.levelPercent != null -> 1f
+                    else -> 0f
+                },
+                running = refreshing,
+                enabled = !refreshing,
+                label = when {
+                    refreshing -> "جارٍ قراءة البطارية…"
+                    battery.levelPercent != null -> "اضغط لإعادة قراءة البطارية"
+                    else -> "اضغط لتشغيل الخدمة"
+                },
+                accent = V2Green,
+                accent2 = V2Cyan,
+                onTap = {
+                    if (!refreshing) {
+                        refreshing = true
+                        bump()
+                    }
+                },
             )
         }
         item { BatteryHeroCard(battery) }
@@ -1578,6 +1661,8 @@ fun V2AiScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> Unit) 
     val facts = rememberDeviceFacts(refresh)
     val storage = facts.storage
     val battery = facts.battery
+    var refreshing by remember { mutableStateOf(false) }
+    LaunchedEffect(facts.computedAt) { if (refreshing) refreshing = false }
 
     val recommendations = remember(facts) { buildLiveRecommendations(facts) }
 
@@ -1596,14 +1681,6 @@ fun V2AiScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> Unit) 
     InteriorScaffold(
         onBack = onBack,
         onPro = onPro,
-        bottomBar = {
-            V2GradientButton(
-                "تحديث التوصيات",
-                bump,
-                icon = Icons.Rounded.Refresh,
-                trailingChevron = true,
-            )
-        },
     ) {
         item {
             ServiceBanner(
@@ -1611,6 +1688,31 @@ fun V2AiScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> Unit) 
                 status = if (facts.computedAt > 0L) "قراءة مباشرة" else "جاري القراءة",
                 statusColor = if (facts.computedAt > 0L) V2Green else V2Amber,
                 metric = "${recommendations.size} توصية",
+            )
+        }
+        item {
+            // The universal K orb: the only way this service starts.
+            KnouxRunOrbBlock(
+                progress = when {
+                    refreshing -> null
+                    facts.computedAt > 0L -> 1f
+                    else -> 0f
+                },
+                running = refreshing,
+                enabled = !refreshing,
+                label = when {
+                    refreshing -> "جارٍ تحديث التوصيات…"
+                    facts.computedAt > 0L -> "اضغط لتحديث التوصيات"
+                    else -> "اضغط لتشغيل الخدمة"
+                },
+                accent = V2Violet,
+                accent2 = V2Cyan,
+                onTap = {
+                    if (!refreshing) {
+                        refreshing = true
+                        bump()
+                    }
+                },
             )
         }
         item {
@@ -2091,6 +2193,27 @@ fun V2DuplicateGroupScreen(onBack: () -> Unit, onPro: () -> Unit) {
         },
     ) {
         item { PageHeading("مراجعة مجموعة مكررة", "4 نسخ من الصورة نفسها", Icons.Rounded.PhotoLibrary, V2Violet) }
+        item {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(
+                    onClick = {
+                        selected.value = if (selected.value.size >= 3) emptySet() else setOf(1, 2, 3)
+                    },
+                    modifier = Modifier.heightIn(min = 48.dp),
+                ) {
+                    KText(
+                        if (selected.value.size >= 3) "إلغاء تحديد الكل" else "تحديد الكل",
+                        size = 13.sp,
+                        weight = FontWeight.Bold,
+                        color = V2Cyan,
+                    )
+                }
+            }
+        }
         item {
             V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 22.dp, glow = V2Violet, borderAlpha = .48f) {
                 Column {
@@ -2733,10 +2856,37 @@ fun V2LargeFilesScreen(onBack: () -> Unit, onPro: () -> Unit) {
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         message = if (uri == null) "أُلغي اختيار الملف؛ لم يتغير شيء" else viewGrantedDocument(context, uri)
     }
+    var refreshing by remember { mutableStateOf(false) }
+    LaunchedEffect(facts.computedAt) { if (refreshing) refreshing = false }
     InteriorScaffold(onBack, onPro, bottomBar = {
         V2GradientButton("اختيار ملف وفتحه", { picker.launch(arrayOf("*/*")) }, icon = Icons.Rounded.OpenInNew, height = 48.dp)
     }) {
         item { PageHeading("الملفات الكبيرة", "أكبر وسائط في القراءة المتاحة فقط", Icons.Rounded.Storage, V2Amber) }
+        item {
+            // The universal K orb: the only way this service starts.
+            KnouxRunOrbBlock(
+                progress = when {
+                    refreshing -> null
+                    facts.computedAt > 0L -> 1f
+                    else -> 0f
+                },
+                running = refreshing,
+                enabled = !refreshing,
+                label = when {
+                    refreshing -> "جارٍ قراءة وسائط الجهاز…"
+                    facts.computedAt > 0L -> "اضغط لإعادة قراءة الوسائط"
+                    else -> "اضغط لبدء قراءة الوسائط"
+                },
+                accent = V2Amber,
+                accent2 = V2Violet,
+                onTap = {
+                    if (!refreshing) {
+                        refreshing = true
+                        bump()
+                    }
+                },
+            )
+        }
         item { ScopedNotice("تعرض القائمة حتى 8 وسائط من فهرس الصور والفيديو المصرح به، وليست مسحاً لجميع الملفات. اضغط لفتح العارض الرسمي. الحذف العام غير مدعوم هنا؛ لا وعد باستعادة أو مساحة محررة.") }
         message?.let { item { ScopedNotice(it, V2Amber) } }
         if (facts.computedAt == 0L) item { ScopedNotice("جاري قراءة الوسائط…") }
@@ -2753,7 +2903,6 @@ fun V2LargeFilesScreen(onBack: () -> Unit, onPro: () -> Unit) {
                 }
             }
         }
-        item { V2GhostButton("تحديث القائمة", bump, icon = Icons.Rounded.Refresh, height = 48.dp) }
     }
 }
 
@@ -2787,6 +2936,27 @@ fun V2OldBackupsScreen(onBack: () -> Unit, onPro: () -> Unit) {
     ) {
         item { PageHeading("النسخ الاحتياطية القديمة", "مراجعة وحذف النسخ غير المستخدمة", Icons.Rounded.Backup, V2Amber) }
         item { V2SectionLabel("النسخ المتاحة", trailing = "${oldBackups.size} نسخة") }
+        item {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                TextButton(
+                    onClick = {
+                        selected = if (selected.size == oldBackups.size) emptySet() else oldBackups.indices.toSet()
+                    },
+                    modifier = Modifier.heightIn(min = 48.dp),
+                ) {
+                    KText(
+                        if (selected.size == oldBackups.size) "إلغاء تحديد الكل" else "تحديد الكل",
+                        size = 13.sp,
+                        weight = FontWeight.Bold,
+                        color = V2Cyan,
+                    )
+                }
+            }
+        }
         items(oldBackups.size) { index ->
             val item = oldBackups[index]
             val checked = selected.contains(index)

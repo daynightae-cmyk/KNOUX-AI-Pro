@@ -206,7 +206,7 @@ fun KnouxSplashScreen(
         ) {
             // --- authentic K raster, revealed stroke by stroke with a light tip ---
             Canvas(Modifier.size(width = 200.dp, height = 171.dp)) {
-                val androidBmp = requireNotNull(kBitmapState.value)
+                val androidBmp = kBitmapState.value ?: return@Canvas
                 val bmp = androidBmp.asImageBitmap()
                 val dst = Size(size.width, size.height)
                 if (calm || t >= 1120f) {
@@ -235,7 +235,7 @@ fun KnouxSplashScreen(
 
             // --- lowercase wordmark write-on ---
             Canvas(Modifier.fillMaxWidth().height(52.dp)) {
-                val androidBmp = requireNotNull(wordBitmapState.value)
+                val androidBmp = wordBitmapState.value ?: return@Canvas
                 val bmp = androidBmp.asImageBitmap()
                 val h = size.height * 0.88f
                 val w = h * (androidBmp.width.toFloat() / androidBmp.height.toFloat())

@@ -3,6 +3,7 @@ package com.knoux.ai.microsoft.outlook
 import android.content.Context
 import com.knoux.ai.cloud.model.CleanupCandidate
 import com.knoux.ai.cloud.model.CleanupCategory
+import com.knoux.ai.cloud.model.CloudScanOutcome
 import com.knoux.ai.cloud.model.ScanResult
 import com.knoux.ai.cloud.model.ScanStatus
 import com.knoux.ai.cloud.model.CloudProvider
@@ -33,7 +34,9 @@ class OutlookConnector(
     /**
      * Scan an Outlook account for cleanup candidates.
      */
-    suspend fun scanAccount(accountId: String): ScanResult {
+    suspend fun scanAccount(accountId: String): ScanResult = scanWithCandidates(accountId).result
+
+    suspend fun scanWithCandidates(accountId: String): CloudScanOutcome {
         return withContext(Dispatchers.IO) {
             val scanId = java.util.UUID.randomUUID().toString()
 
@@ -41,22 +44,26 @@ class OutlookConnector(
                 val account = accountManager.getConnectedAccounts()
                     .firstOrNull { it.id == accountId }
                 if (account == null) {
-                    return@withContext ScanResult(
-                        scanId = scanId,
-                        provider = CloudProvider.Outlook,
-                        accountId = accountId,
-                        status = ScanStatus.Failed,
-                        error = "Account not found",
+                    return@withContext CloudScanOutcome(
+                        result = ScanResult(
+                            scanId = scanId,
+                            provider = CloudProvider.Outlook,
+                            accountId = accountId,
+                            status = ScanStatus.Failed,
+                            error = "Account not found",
+                        ),
                     )
                 }
 
                 val accessToken = accountManager.getValidAccessToken(account)
-                    ?: return@withContext ScanResult(
-                        scanId = scanId,
-                        provider = CloudProvider.Outlook,
-                        accountId = accountId,
-                        status = ScanStatus.Failed,
-                        error = "No valid access token",
+                    ?: return@withContext CloudScanOutcome(
+                        result = ScanResult(
+                            scanId = scanId,
+                            provider = CloudProvider.Outlook,
+                            accountId = accountId,
+                            status = ScanStatus.Failed,
+                            error = "No valid access token",
+                        ),
                     )
 
                 var itemsFound = 0
@@ -117,23 +124,28 @@ class OutlookConnector(
                     ))
                 }
 
-                ScanResult(
-                    scanId = scanId,
-                    provider = CloudProvider.Outlook,
-                    accountId = accountId,
-                    status = ScanStatus.Completed,
-                    itemsFound = itemsFound,
-                    bytesFound = bytesFound,
-                    bytesReclaimable = bytesFound,
-                    completedAt = System.currentTimeMillis(),
+                CloudScanOutcome(
+                    result = ScanResult(
+                        scanId = scanId,
+                        provider = CloudProvider.Outlook,
+                        accountId = accountId,
+                        status = ScanStatus.Completed,
+                        itemsFound = itemsFound,
+                        bytesFound = bytesFound,
+                        bytesReclaimable = bytesFound,
+                        completedAt = System.currentTimeMillis(),
+                    ),
+                    candidates = candidates.toList(),
                 )
             } catch (e: Exception) {
-                ScanResult(
-                    scanId = scanId,
-                    provider = CloudProvider.Outlook,
-                    accountId = accountId,
-                    status = ScanStatus.Failed,
-                    error = e.message ?: "Unknown error",
+                CloudScanOutcome(
+                    result = ScanResult(
+                        scanId = scanId,
+                        provider = CloudProvider.Outlook,
+                        accountId = accountId,
+                        status = ScanStatus.Failed,
+                        error = e.message ?: "Unknown error",
+                    ),
                 )
             }
         }
@@ -230,6 +242,55 @@ class OutlookConnector(
                 }
             }
             moved
+        }
+    }
+
+    /**
+     * Re-query the provider after a move request. true = in Deleted Items or
+     * gone, false = still live, null = provider unreachable (never success).
+     */
+    suspend fun isInDeletedItems(accountId: String, messageId: String): Boolean? {
+        return withContext(Dispatchers.IO) {
+            val account = accountManager.getConnectedAccounts()
+                .firstOrNull { it.id == accountId } ?: return@withContext null
+            val accessToken = accountManager.getValidAccessToken(account) ?: return@withContext null
+            try {
+                val (folderStatus, folderPayload) = graphGet(
+                    "$GRAPH_BASE/me/mailFolders/deleteditems?%24select=id",
+                    accessToken,
+                )
+                if (folderStatus !in 200..299) return@withContext null
+                val deletedFolderId = org.json.JSONObject(folderPayload)
+                    .optString("id").takeIf { it.isNotEmpty() } ?: return@withContext null
+
+                val (status, payload) = graphGet(
+                    "$GRAPH_BASE/me/messages/$messageId?%24select=parentFolderId",
+                    accessToken,
+                )
+                when {
+                    status == 404 -> true
+                    status !in 200..299 -> null
+                    else -> org.json.JSONObject(payload).optString("parentFolderId") == deletedFolderId
+                }
+            } catch (_: Exception) {
+                null
+            }
+        }
+    }
+
+    private fun graphGet(url: String, accessToken: String): Pair<Int, String> {
+        val connection = java.net.URL(url).openConnection() as java.net.HttpURLConnection
+        return try {
+            connection.requestMethod = "GET"
+            connection.connectTimeout = 15_000
+            connection.readTimeout = 20_000
+            connection.setRequestProperty("Authorization", "Bearer $accessToken")
+            val status = connection.responseCode
+            val payload = (if (status in 200..299) connection.inputStream else connection.errorStream)
+                ?.bufferedReader(java.nio.charset.StandardCharsets.UTF_8)?.use { it.readText() }.orEmpty()
+            status to payload
+        } finally {
+            connection.disconnect()
         }
     }
 }

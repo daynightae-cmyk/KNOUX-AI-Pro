@@ -124,17 +124,33 @@ fun V2DeepScanScreen(onBack: () -> Unit, onOpenSummary: () -> Unit, onPro: () ->
                 scene = { modifier -> DeepScanSonar(state, modifier) },
                 listState = listState,
                 action = {
-                    DeepScanPrimaryAction(
-                        state = state,
-                        onStart = {
-                            if (!mediaGranted) {
+                    // The universal K orb: the only way this service starts.
+                    KnouxRunOrbBlock(
+                        progress = when (val current = state) {
+                            is DeepScanUiState.Running -> current.completed / 6f
+                            is DeepScanUiState.Completed -> 1f
+                            else -> 0f
+                        },
+                        running = state.isRunning(),
+                        enabled = true,
+                        label = when (state) {
+                            is DeepScanUiState.Running -> "جارٍ الفحص · ${(state.completed / 6f * 100).toInt()}%"
+                            is DeepScanUiState.Completed -> "اضغط لإعادة الفحص"
+                            else -> "اضغط لبدء الفحص"
+                        },
+                        accent = V2Cyan,
+                        accent2 = V2Violet,
+                        size = 118.dp,
+                        onTap = {
+                            if (state.isRunning()) {
+                                controller.cancel()
+                            } else if (!mediaGranted) {
                                 permissionDenied = true
                             } else {
                                 permissionDenied = false
                                 controller.start(context)
                             }
                         },
-                        onCancel = { controller.cancel() },
                     )
                 },
             ) {

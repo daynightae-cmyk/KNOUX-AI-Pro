@@ -70,9 +70,10 @@ internal fun V2DuplicatesWorkspace(
     LaunchedEffect(model) { model.attach(context) }
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
         permissionRevision++
+        // Granting media access only opens the gate; the K orb is still the
+        // only control that starts a scan.
         if (grants.any { it.value }) {
             selected.clear(); keepers.clear()
-            model.start(context, mode)
         }
     }
     val deleteLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartIntentSenderForResult()) { result ->
@@ -119,35 +120,72 @@ internal fun V2DuplicatesWorkspace(
             verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
             item {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    KText("الملفات المكررة", size = 28.sp, weight = FontWeight.Bold)
-                    KText("احتفظ بالأفضل. راجع الباقي. واحذف بقرارك.", size = 14.sp, color = V2Soft)
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Icon(Icons.Rounded.Shield, null, tint = V2Green, modifier = Modifier.size(18.dp))
-                        KText("تحليل على جهازك · صورك لا تُرفع لأي خادم", size = 12.sp, color = V2Soft)
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    V2LuxuryIdentity(
+                        title = "الملفات المكررة",
+                        english = "DUPLICATE FINDER",
+                        subtitle = "احتفظ بالأفضل. راجع الباقي. واحذف بقرارك.",
+                        accent = V2Cyan,
+                    )
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(Icons.Rounded.Shield, null, tint = V2Green, modifier = Modifier.size(15.dp))
+                        Spacer(Modifier.width(5.dp))
+                        KText("تحليل على جهازك · صورك لا تُرفع لأي خادم", size = 10.sp, color = V2Soft)
                     }
                 }
             }
             item {
+                // The universal K orb: the only way this service starts.
+                val progress = state.progress
+                KnouxRunOrbBlock(
+                    progress = when {
+                        state.scanning && progress != null && progress.totalFiles > 0 ->
+                            (progress.completedFiles.toFloat() / progress.totalFiles).coerceIn(0f, 1f)
+                        state.scanning -> null
+                        state.result != null -> 1f
+                        else -> 0f
+                    },
+                    running = state.scanning,
+                    enabled = !state.busy,
+                    label = when {
+                        state.scanning -> progress?.phase ?: "جارٍ الفحص…"
+                        state.result != null -> "اضغط لفحص جديد"
+                        else -> if (!mediaAllowed) "اضغط للسماح بالوسائط" else "اضغط لبدء الفحص"
+                    },
+                    accent = V2Cyan,
+                    accent2 = V2Violet,
+                    size = 148.dp,
+                    onTap = { if (!state.busy) startScan() },
+                )
+            }
+            item {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    DuplicateModeButton("تطابق المحتوى", Icons.Rounded.ContentCopy, mode == DuplicateScanMode.EXACT,
+                    DuplicateModeButton("المحتوى", Icons.Rounded.ContentCopy, mode == DuplicateScanMode.EXACT,
                         enabled = !state.busy, modifier = Modifier.weight(1f)) {
                         mode = DuplicateScanMode.EXACT
-                        if (state.result != null && state.mode != mode) {
-                            selected.clear(); keepers.clear(); model.start(context, mode)
-                        }
+                        model.selectMode(mode)
                     }
-                    DuplicateModeButton("تشابه الصور", Icons.Rounded.ImageSearch, mode == DuplicateScanMode.VISUAL,
+                    DuplicateModeButton("الصور", Icons.Rounded.ImageSearch, mode == DuplicateScanMode.VISUAL,
                         enabled = !state.busy, modifier = Modifier.weight(1f)) {
                         mode = DuplicateScanMode.VISUAL
-                        if (state.result != null && state.mode != mode) {
-                            selected.clear(); keepers.clear(); model.start(context, mode)
-                        }
+                        model.selectMode(mode)
+                    }
+                    DuplicateModeButton("الأسماء", Icons.Rounded.TextFields, mode == DuplicateScanMode.NAME,
+                        enabled = !state.busy, modifier = Modifier.weight(1f)) {
+                        mode = DuplicateScanMode.NAME
+                        model.selectMode(mode)
                     }
                 }
             }
             if (mode == DuplicateScanMode.VISUAL) item {
                 DuplicateNotice("التشابه مش تطابق", "تحليل بصري محلي، وليس إثباتًا لتكرار المحتوى. راجع كل صورة بنفسك؛ لا يوجد تحديد تلقائي هنا.", V2Amber)
+            }
+            if (mode == DuplicateScanMode.NAME) item {
+                DuplicateNotice("نفس الاسم مش نفس المحتوى", "المجموعات هنا ملفات تشترك في الاسم فقط. افتح كل ملف وقارن قبل ما تحدد أي حذف.", V2Violet)
             }
             if (state.scanning || state.operating || state.restoring) item {
                 DuplicateProgressPanel(state)
@@ -184,11 +222,19 @@ internal fun V2DuplicatesWorkspace(
                             }
                         }
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            if (state.mode == DuplicateScanMode.EXACT) TextButton(
+                            if (state.mode != DuplicateScanMode.VISUAL) TextButton(
                                 enabled = !state.busy,
-                                onClick = { exactDuplicateExtras(visible, keepers).forEach { selected[it] = true } },
+                                onClick = {
+                                    // Select every non-keeper copy across all visible groups.
+                                    visible.forEach { group ->
+                                        val keeper = duplicateKeeper(group, keepers)
+                                        group.files.forEach { file ->
+                                            if (file.uriString != keeper) selected[file.uriString] = true
+                                        }
+                                    }
+                                },
                                 modifier = Modifier.heightIn(min = 48.dp),
-                            ) { KText("تحديد النسخ الزائدة", size = 13.sp, color = V2Cyan) }
+                            ) { KText("تحديد الكل", size = 13.sp, weight = FontWeight.Bold, color = V2Cyan) }
                             if (selectedUris.isNotEmpty()) TextButton(onClick = { selected.clear() }, enabled = !state.busy,
                                 modifier = Modifier.heightIn(min = 48.dp)) { KText("إلغاء التحديد", size = 13.sp, color = V2Soft) }
                         }
@@ -200,8 +246,11 @@ internal fun V2DuplicatesWorkspace(
                 } else item {
                     DuplicateNotice(
                         if (result.warnings.isEmpty() && !result.partialAccess) "لا مجموعات في النطاق المفحوص" else "لم تظهر مجموعات في الملفات المقروءة",
-                        if (state.mode == DuplicateScanMode.EXACT) "لم نجد بصمات محتوى متطابقة بين الملفات التي أمكن مقارنتها. الملفات غير المقروءة لا تدخل في هذا الحكم."
-                        else "لم تظهر مجموعات تشابه بالمعيار المحافظ الحالي؛ ده مش حكم على جودة الصور.", V2Green,
+                        when (state.mode) {
+                            DuplicateScanMode.EXACT -> "لم نجد بصمات محتوى متطابقة بين الملفات التي أمكن مقارنتها. الملفات غير المقروءة لا تدخل في هذا الحكم."
+                            DuplicateScanMode.NAME -> "لم نجد ملفات تشترك في نفس الاسم داخل النطاق المفحوص. ده مش حكم على وجود تكرار بمحتوى مختلف."
+                            DuplicateScanMode.VISUAL -> "لم تظهر مجموعات تشابه بالمعيار المحافظ الحالي؛ ده مش حكم على جودة الصور."
+                        }, V2Green,
                     )
                 }
             } else if (!state.scanning && !state.scanCancelled && !state.operating) item {
@@ -236,13 +285,12 @@ internal fun V2DuplicatesWorkspace(
                         Icon(Icons.Rounded.DeleteOutline, null, modifier = Modifier.size(20.dp)); Spacer(Modifier.width(8.dp))
                         KText("مراجعة وحذف المحدد", size = 15.sp, weight = FontWeight.Bold, color = V2Deep)
                     }
-                    else -> Button(onClick = ::startScan, enabled = !state.busy,
-                        colors = ButtonDefaults.buttonColors(containerColor = V2Cyan, contentColor = V2Deep),
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp), shape = RoundedCornerShape(16.dp)) {
-                        Icon(Icons.Rounded.Search, null, modifier = Modifier.size(20.dp)); Spacer(Modifier.width(8.dp))
-                        KText(if (!mediaAllowed) "السماح بالوسائط وبدء الفحص" else if (state.result != null) "فحص جديد" else "ابدأ الفحص", size = 15.sp,
-                            weight = FontWeight.Bold, color = V2Deep)
-                    }
+                    else -> KText(
+                        "ابدأ الخدمة من زر K الدائري بالأعلى",
+                        size = 13.sp,
+                        color = V2Soft,
+                        modifier = Modifier.align(Alignment.CenterHorizontally).padding(vertical = 14.dp),
+                    )
                 }
             }
         }
@@ -274,6 +322,7 @@ internal fun V2DuplicatesWorkspace(
             KText("${formatCount(selectedUris.size)} نسخة · ${formatBytes(selectedBytes)}", size = 16.sp, color = V2Cyan, weight = FontWeight.Bold)
             KText("هنعيد التحقق من الملفات والنسخة المحفوظة، وبعدها Android هيطلب موافقتك. الحذف ده مش سلة استرجاع؛ احتفظ بنسخة احتياطية لو الملفات مهمة.", size = 14.sp, color = V2Soft)
             if (state.mode == DuplicateScanMode.VISUAL) KText("دي صور متشابهة، وممكن يكون بينها تفاصيل مختلفة. تأكيدك يعني إنك راجعتها واخترت حذفها.", size = 14.sp, color = V2Amber)
+            if (state.mode == DuplicateScanMode.NAME) KText("دي ملفات بنفس الاسم، ومحتواها ممكن يختلف. تأكيدك يعني إنك راجعت كل ملف قبل الحذف.", size = 14.sp, color = V2Amber)
             if (selectedUris.size > 2000) KText("هنطلب موافقة النظام على أول 2000 نسخة في الدفعة. الباقي يفضل محدد للدفعة التالية.", size = 13.sp, color = V2Amber)
         } },
         dismissButton = { TextButton(onClick = { confirmDeletion = false }) { KText("رجوع للمراجعة", size = 14.sp, color = V2Soft) } },
@@ -331,14 +380,42 @@ private fun DuplicateResultHeader(result: DuplicateScanResult, mode: DuplicateSc
     val extras = result.groups.sumOf { (it.files.size - 1).coerceAtLeast(0) }
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Icon(if (mode == DuplicateScanMode.EXACT) Icons.Rounded.Verified else Icons.Rounded.Compare,
-                null, tint = if (mode == DuplicateScanMode.EXACT) V2Green else V2Amber, modifier = Modifier.size(28.dp))
-            KText("${formatCount(result.groups.size)} مجموعة ${if (mode == DuplicateScanMode.EXACT) "متطابقة" else "للمراجعة"}", size = 23.sp, weight = FontWeight.Bold)
+            Icon(
+                when (mode) {
+                    DuplicateScanMode.EXACT -> Icons.Rounded.Verified
+                    DuplicateScanMode.VISUAL -> Icons.Rounded.Compare
+                    DuplicateScanMode.NAME -> Icons.Rounded.TextFields
+                },
+                null,
+                tint = when (mode) {
+                    DuplicateScanMode.EXACT -> V2Green
+                    DuplicateScanMode.VISUAL -> V2Amber
+                    DuplicateScanMode.NAME -> V2Violet
+                },
+                modifier = Modifier.size(28.dp),
+            )
+            KText(
+                "${formatCount(result.groups.size)} مجموعة " + when (mode) {
+                    DuplicateScanMode.EXACT -> "متطابقة"
+                    DuplicateScanMode.VISUAL -> "للمراجعة"
+                    DuplicateScanMode.NAME -> "بأسماء مكررة"
+                },
+                size = 23.sp,
+                weight = FontWeight.Bold,
+            )
         }
         if (mode == DuplicateScanMode.EXACT) KText("$extras نسخة زائدة · ${formatBytes(result.groups.sumOf { it.files.drop(1).sumOf { file -> file.sizeBytes } })} حجم النسخ الممكن حذفها",
             size = 15.sp, color = V2Cyan, weight = FontWeight.Medium)
         KText("الفهرس: ${formatCount(result.filesDiscovered)} ملف · قورنت ${formatCount(result.filesCompared)} ملفات · تعذّرت قراءة ${formatCount(result.unreadableFiles)}", size = 12.sp, color = V2Soft)
-        KText("${formatScanTime(result.completedAt)} · ${if (mode == DuplicateScanMode.EXACT) "إثبات ببصمة SHA-256" else "تحليل تشابه بصري محلي"}", size = 12.sp, color = V2Soft)
+        KText(
+            "${formatScanTime(result.completedAt)} · " + when (mode) {
+                DuplicateScanMode.EXACT -> "إثبات ببصمة SHA-256"
+                DuplicateScanMode.VISUAL -> "تحليل تشابه بصري محلي"
+                DuplicateScanMode.NAME -> "مطابقة أسماء محلية بدون قراءة المحتوى"
+            },
+            size = 12.sp,
+            color = V2Soft,
+        )
         HorizontalDivider(color = V2Soft.copy(alpha = .18f))
     }
 }
@@ -346,16 +423,30 @@ private fun DuplicateResultHeader(result: DuplicateScanResult, mode: DuplicateSc
 @Composable
 private fun DuplicateReviewCard(group: DuplicateScanGroup, keeper: String, selected: Set<String>, enabled: Boolean,
     onReview: () -> Unit, onToggle: (DuplicateScanFile) -> Unit, onPreview: (DuplicateScanFile) -> Unit) {
-    val exact = group.kind == DuplicateMatchKind.EXACT
-    val tint = if (exact) V2Cyan else V2Amber
+    val kind = group.kind
+    val tint = when (kind) {
+        DuplicateMatchKind.EXACT -> V2Cyan
+        DuplicateMatchKind.VISUAL -> V2Amber
+        DuplicateMatchKind.NAME -> V2Violet
+    }
+    val subtitle = when (kind) {
+        DuplicateMatchKind.EXACT -> "محتوى متطابق"
+        DuplicateMatchKind.VISUAL -> "تشابه يحتاج مراجعتك"
+        DuplicateMatchKind.NAME -> "نفس الاسم · راجع المحتوى"
+    }
+    val icon = when (kind) {
+        DuplicateMatchKind.EXACT -> Icons.Rounded.ContentCopy
+        DuplicateMatchKind.VISUAL -> Icons.Rounded.Compare
+        DuplicateMatchKind.NAME -> Icons.Rounded.TextFields
+    }
     Surface(color = V2Panel2, shape = RoundedCornerShape(22.dp), border = BorderStroke(1.dp, tint.copy(alpha = .26f))) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     KText(group.files.first().name, size = 15.sp, weight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    KText("${group.files.size} نسخ · ${if (exact) "محتوى متطابق" else "تشابه يحتاج مراجعتك"}", size = 12.sp, color = tint)
+                    KText("${group.files.size} نسخ · $subtitle", size = 12.sp, color = tint)
                 }
-                Icon(if (exact) Icons.Rounded.ContentCopy else Icons.Rounded.Compare, null, tint = tint, modifier = Modifier.size(23.dp))
+                Icon(icon, null, tint = tint, modifier = Modifier.size(23.dp))
             }
             val displayed = listOfNotNull(group.files.firstOrNull { it.uriString == keeper }) + group.files.filterNot { it.uriString == keeper }.take(2)
             displayed.forEach { file ->

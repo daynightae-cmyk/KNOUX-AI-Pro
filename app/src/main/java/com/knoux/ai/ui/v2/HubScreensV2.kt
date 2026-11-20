@@ -28,17 +28,21 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Apps
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.BarChart
+import androidx.compose.material.icons.rounded.BatteryFull
 import androidx.compose.material.icons.rounded.Bolt
+import androidx.compose.material.icons.rounded.Build
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.ChevronLeft
 import androidx.compose.material.icons.rounded.CleaningServices
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.Radar
 import androidx.compose.material.icons.rounded.RocketLaunch
 import androidx.compose.material.icons.rounded.Shield
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.Storage
@@ -78,6 +82,14 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.knoux.ai.R
+import com.knoux.ai.ui.v2.V2LuxuryIdentity
+import com.knoux.ai.ui.v2.V2LuxuryStage
+import com.knoux.ai.ui.v2.V2LuxuryServiceGrid
+import com.knoux.ai.ui.v2.V2LuxuryStatStrip
+import com.knoux.ai.ui.v2.V2LuxuryIdentity
+import com.knoux.ai.ui.v2.V2LuxuryStage
+import com.knoux.ai.ui.v2.V2LuxuryServiceGrid
+import com.knoux.ai.ui.v2.V2LuxuryStatStrip
 
 private data class HubV2(
     val title: String,
@@ -179,33 +191,46 @@ fun V2CleanHubScreen(
     Box(
         Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)
     ) {
-        Column(Modifier.fillMaxSize()) {
-            V2TopBar(
-                V2TopMode.HOME,
-                onMenu = onMenu,
-                onPro = onPro,
-                onProfile = onProfile,
-                onNotifications = onNotifications,
-            )
-            LazyColumn(
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                item { TabTitle("التنظيف الذكي", "كل ما يحتاجه جهازك في مكان واحد") }
-                item {
-                    CleanHeroCard(
-                        cacheBytes = facts.ownCacheBytes,
-                        cacheFiles = facts.ownCacheFiles,
-                        storageFree = facts.storage.freeBytes,
-                        health = facts.healthEstimate,
-                        onStart = { onNavigate("deepscan") },
-                    )
-                }
-                item { ServiceSubGrid(ServiceSpecs.smartClean, title = "خدمات التنظيف الذكي") }
-                item { BestNextAction(onClick = { onNavigate("smartclean") }) }
-                item { SmartHint() }
-            }
-        }
+        V2TopBar(
+            V2TopMode.HOME,
+            onMenu = onMenu,
+            onPro = onPro,
+            onProfile = onProfile,
+            onNotifications = onNotifications,
+        )
+        V2LuxuryIdentity(
+            title = "التنظيف الذكي",
+            english = "SMART CLEAN HUB",
+            subtitle = "كل ما يحتاجه جهازك في مكان واحد",
+            accent = V2Cyan,
+        )
+        V2LuxuryServiceGrid(
+            items = cleanServices.map { s ->
+                ServiceSubItem(
+                    title = s.title,
+                    subtitle = s.subtitle,
+                    route = s.route,
+                    icon = Icons.Rounded.CleaningServices,
+                    accent = s.accent,
+                    art = s.art,
+                )
+            },
+            onNavigate = onNavigate,
+        )
+        V2LuxuryStatStrip(
+            stats = listOf(
+                SectionStat(Icons.Rounded.Verified, "قراءة مباشرة", facts.healthEstimate.toString() + "%", V2Green),
+                SectionStat(Icons.Rounded.CleaningServices, formatBytes(facts.ownCacheBytes), "${facts.ownCacheFiles} ملف", V2Pink),
+                SectionStat(Icons.Rounded.Storage, formatBytes(facts.storage.freeBytes), "متاحة", V2Cyan),
+                SectionStat(Icons.Rounded.Info, formatBytes(facts.storage.totalBytes), "المجموع", V2Amber),
+            ),
+        )
+        V2LuxuryIdentity(
+            title = "الخطوة التالية",
+            english = "BEST NEXT",
+            subtitle = "ابدأ بمراجعة كاش KNOUX والملفات المؤقتة قبل أي حذف.",
+            accent = V2Amber,
+        )
     }
 }
 
@@ -221,25 +246,46 @@ fun V2ToolsHubScreen(
     Box(
         Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)
     ) {
-        Column(Modifier.fillMaxSize()) {
-            V2TopBar(
-                V2TopMode.HOME,
-                onMenu = onMenu,
-                onPro = onPro,
-                onProfile = onProfile,
-                onNotifications = onNotifications,
-            )
-            LazyColumn(
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                item { TabTitle("أدوات الجهاز", "تحكم كامل في الأداء والخصوصية والمساحة") }
-                item { ToolsSummaryCard(facts.storage, facts.installedCount) }
-                item { V2SectionLabel("كل الأدوات", trailing = "10 أدوات") }
-                item { ToolsGrid(toolServices, onNavigate) }
-                item { ToolsTip() }
-            }
-        }
+        V2TopBar(
+            V2TopMode.HOME,
+            onMenu = onMenu,
+            onPro = onPro,
+            onProfile = onProfile,
+            onNotifications = onNotifications,
+        )
+        V2LuxuryIdentity(
+            title = "أدوات الجهاز",
+            english = "DEVICE TOOLS HUB",
+            subtitle = "تحكم كامل في الأداء والخصوصية والمساحة",
+            accent = V2Violet,
+        )
+        V2LuxuryServiceGrid(
+            items = toolServices.map { s ->
+                ServiceSubItem(
+                    title = s.title,
+                    subtitle = s.subtitle,
+                    route = s.route,
+                    icon = Icons.Rounded.Build,
+                    accent = s.accent,
+                    art = s.art,
+                )
+            },
+            onNavigate = onNavigate,
+        )
+        V2LuxuryStatStrip(
+            stats = listOf(
+                SectionStat(Icons.Rounded.Storage, "StatFs", "مباشر", V2Green),
+                SectionStat(Icons.Rounded.BatteryFull, "BatteryManager", "مباشر", V2Cyan),
+                SectionStat(Icons.Rounded.Apps, facts.installedCount.toString(), "تطبيقات", V2Pink),
+                SectionStat(Icons.Rounded.Settings, "PackageManager", "مباشر", V2Amber),
+            ),
+        )
+        V2LuxuryIdentity(
+            title = "نصيحة الأداء",
+            english = "PERFORMANCE TIP",
+            subtitle = "أغلق التطبيقات الثقيلة غير المستخدمة لتحرير الذاكرة وتحسين الاستجابة.",
+            accent = V2Amber,
+        )
     }
 }
 
@@ -874,14 +920,14 @@ private data class CleanCategory(val name: String, val sub: String, val size: St
 @Composable
 fun V2SmartCleanScreen(onBack: () -> Unit, onOpenDeepScan: () -> Unit, onPro: () -> Unit) {
     val context = LocalContext.current
-    val (refresh, bump) = rememberRefreshCounter()
+    val (_, bump) = rememberRefreshCounter()
     val application = context.applicationContext as Application
     val repository = remember(application) { KnouxRepository(AppDatabase.getDatabase(application)) }
     val cleaner: StorageAnalyzerViewModel = viewModel(
         key = "smart-clean-storage",
         initializer = { StorageAnalyzerViewModel(application, repository) },
     )
-    LaunchedEffect(refresh) { cleaner.scanStorage(refresh) }
+    // No automatic start: the K orb is the single entry point.
     val cleanState = cleaner.state
     val facts = cleanState.facts
     val busy = cleanState.isScanning || cleanState.gate == OperationGate.RUNNING || cleanState.gate == OperationGate.AWAITING_CONSENT
@@ -927,9 +973,39 @@ fun V2SmartCleanScreen(onBack: () -> Unit, onOpenDeepScan: () -> Unit, onPro: ()
                 item {
                     ServiceBanner(
                         spec = ServiceSpecs.smartClean,
-                        status = if (!cleanState.loaded) "جاري القراءة" else if (cacheBytes > 0L) "كاش مقروء" else "لا كاش الآن",
-                        statusColor = if (!cleanState.loaded) V2Amber else if (cacheBytes > 0L) V2Green else V2Muted,
-                        metric = "$cacheText · ${formatCount(facts.ownCacheFiles)} ملف",
+                        status = when {
+                            cleanState.isScanning -> "جاري القراءة"
+                            !cleanState.loaded -> "جاهز للتشغيل"
+                            cacheBytes > 0L -> "كاش مقروء"
+                            else -> "لا كاش الآن"
+                        },
+                        statusColor = when {
+                            cleanState.isScanning -> V2Amber
+                            !cleanState.loaded -> V2Violet
+                            cacheBytes > 0L -> V2Green
+                            else -> V2Muted
+                        },
+                        metric = if (cleanState.loaded) "$cacheText · ${formatCount(facts.ownCacheFiles)} ملف" else "اضغط الزر الدائري لبدء الخدمة",
+                    )
+                }
+                item {
+                    // The universal K orb: the only way this service starts.
+                    KnouxRunOrbBlock(
+                        progress = when {
+                            cleanState.isScanning -> null
+                            cleanState.loaded -> 1f
+                            else -> 0f
+                        },
+                        running = cleanState.isScanning,
+                        enabled = !busy,
+                        label = when {
+                            cleanState.isScanning -> "جارٍ قراءة كاش KNOUX…"
+                            !cleanState.loaded -> "اضغط لتشغيل الخدمة"
+                            else -> "اضغط لإعادة قراءة الكاش"
+                        },
+                        accent = V2Cyan,
+                        accent2 = V2Violet,
+                        onTap = { if (!busy) cleaner.rescan() },
                     )
                 }
                 item {
@@ -999,12 +1075,6 @@ fun V2SmartCleanScreen(onBack: () -> Unit, onOpenDeepScan: () -> Unit, onPro: ()
                                         color = V2Soft,
                                     )
                                 }
-                                Icon(
-                                    Icons.Rounded.Refresh,
-                                    null,
-                                    tint = V2Cyan,
-                                    modifier = Modifier.size(20.dp).clickable { bump() },
-                                )
                             }
                         }
                     }
@@ -1018,22 +1088,14 @@ fun V2SmartCleanScreen(onBack: () -> Unit, onOpenDeepScan: () -> Unit, onPro: ()
                     )
                 }
             }
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Box(Modifier.weight(.82f)) {
-                    V2GhostButton(
-                        "تحديث",
-                        onClick = { bump() },
-                        icon = Icons.Rounded.Refresh,
-                        height = 46.dp,
-                    )
-                }
-                Box(Modifier.weight(1.18f)) {
+            if (cacheBytes > 0L) {
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
                     V2GradientButton(
-                        if (cacheBytes > 0L) "تنظيف $cacheText" else "لا يوجد كاش",
-                        onClick = { if (cacheBytes > 0L) cleaner.prepareClearOwnCache() else bump() },
+                        "تنظيف $cacheText",
+                        onClick = { cleaner.prepareClearOwnCache() },
                         icon = Icons.Rounded.CleaningServices,
                         height = 46.dp,
                     )

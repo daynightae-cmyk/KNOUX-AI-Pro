@@ -47,5 +47,42 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- OAuth redirect targets. Exported only for the registered custom
+             scheme; no app data is exposed and each redirect is validated by
+             the random `state` value held in the originating provider. -->
+        <activity
+            android:name=".google.auth.GoogleAuthRedirectActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.NoDisplay">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="${googleOAuthScheme}"
+                    android:path="/oauth2redirect" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".microsoft.auth.MicrosoftAuthRedirectActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.NoDisplay">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="com.knoux.ai.pro"
+                    android:path="/oauth2redirect/ms" />
+            </intent-filter>
+        </activity>
     </application>
 </manifest>

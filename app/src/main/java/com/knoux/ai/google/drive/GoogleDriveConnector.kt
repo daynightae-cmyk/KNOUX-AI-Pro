@@ -3,6 +3,7 @@ package com.knoux.ai.google.drive
 import android.content.Context
 import com.knoux.ai.cloud.model.CleanupCandidate
 import com.knoux.ai.cloud.model.CleanupCategory
+import com.knoux.ai.cloud.model.CloudScanOutcome
 import com.knoux.ai.cloud.model.ScanResult
 import com.knoux.ai.cloud.model.ScanStatus
 import com.knoux.ai.cloud.model.CloudProvider
@@ -34,7 +35,9 @@ class GoogleDriveConnector(
     /**
      * Scan Google Drive for cleanup candidates.
      */
-    suspend fun scanAccount(accountId: String): ScanResult {
+    suspend fun scanAccount(accountId: String): ScanResult = scanWithCandidates(accountId).result
+
+    suspend fun scanWithCandidates(accountId: String): CloudScanOutcome {
         return withContext(Dispatchers.IO) {
             val scanId = java.util.UUID.randomUUID().toString()
 
@@ -42,22 +45,26 @@ class GoogleDriveConnector(
                 val account = accountManager.getConnectedAccounts()
                     .firstOrNull { it.id == accountId }
                 if (account == null) {
-                    return@withContext ScanResult(
-                        scanId = scanId,
-                        provider = CloudProvider.GoogleDrive,
-                        accountId = accountId,
-                        status = ScanStatus.Failed,
-                        error = "Account not found",
+                    return@withContext CloudScanOutcome(
+                        result = ScanResult(
+                            scanId = scanId,
+                            provider = CloudProvider.GoogleDrive,
+                            accountId = accountId,
+                            status = ScanStatus.Failed,
+                            error = "Account not found",
+                        ),
                     )
                 }
 
                 val accessToken = accountManager.getValidAccessToken(account)
-                    ?: return@withContext ScanResult(
-                        scanId = scanId,
-                        provider = CloudProvider.GoogleDrive,
-                        accountId = accountId,
-                        status = ScanStatus.Failed,
-                        error = "No valid access token",
+                    ?: return@withContext CloudScanOutcome(
+                        result = ScanResult(
+                            scanId = scanId,
+                            provider = CloudProvider.GoogleDrive,
+                            accountId = accountId,
+                            status = ScanStatus.Failed,
+                            error = "No valid access token",
+                        ),
                     )
 
                 var itemsFound = 0
@@ -65,7 +72,7 @@ class GoogleDriveConnector(
                 val candidates = mutableListOf<CleanupCandidate>()
 
                 // 1. Large files (> 10MB)
-                val largeFiles = listFiles(accessToken, "size > 10485760", maxResults = 100)
+                val largeFiles = listFiles(accessToken, "size > 10485760 and trashed = false", maxResults = 100)
                 itemsFound += largeFiles.size
                 for (file in largeFiles) {
                     bytesFound += file.sizeBytes
@@ -83,7 +90,14 @@ class GoogleDriveConnector(
                 }
 
                 // 2. Old files (older than 1 year)
-                val oldFiles = listFiles(accessToken, "modifiedTime < '2025-01-01T00:00:00Z'", maxResults = 100)
+                val cutoff = java.time.Instant.now()
+                    .minus(365, java.time.temporal.ChronoUnit.DAYS)
+                    .toString()
+                val oldFiles = listFiles(
+                    accessToken,
+                    "modifiedTime < '$cutoff' and trashed = false",
+                    maxResults = 100,
+                )
                 itemsFound += oldFiles.size
                 for (file in oldFiles) {
                     bytesFound += file.sizeBytes
@@ -118,23 +132,28 @@ class GoogleDriveConnector(
                     ))
                 }
 
-                ScanResult(
-                    scanId = scanId,
-                    provider = CloudProvider.GoogleDrive,
-                    accountId = accountId,
-                    status = ScanStatus.Completed,
-                    itemsFound = itemsFound,
-                    bytesFound = bytesFound,
-                    bytesReclaimable = bytesFound,
-                    completedAt = System.currentTimeMillis(),
+                CloudScanOutcome(
+                    result = ScanResult(
+                        scanId = scanId,
+                        provider = CloudProvider.GoogleDrive,
+                        accountId = accountId,
+                        status = ScanStatus.Completed,
+                        itemsFound = itemsFound,
+                        bytesFound = bytesFound,
+                        bytesReclaimable = bytesFound,
+                        completedAt = System.currentTimeMillis(),
+                    ),
+                    candidates = candidates.toList(),
                 )
             } catch (e: Exception) {
-                ScanResult(
-                    scanId = scanId,
-                    provider = CloudProvider.GoogleDrive,
-                    accountId = accountId,
-                    status = ScanStatus.Failed,
-                    error = e.message ?: "Unknown error",
+                CloudScanOutcome(
+                    result = ScanResult(
+                        scanId = scanId,
+                        provider = CloudProvider.GoogleDrive,
+                        accountId = accountId,
+                        status = ScanStatus.Failed,
+                        error = e.message ?: "Unknown error",
+                    ),
                 )
             }
         }
@@ -212,7 +231,8 @@ class GoogleDriveConnector(
         return withContext(Dispatchers.IO) {
             try {
                 // List all files with checksums
-                val url = java.net.URL("$DRIVE_API_BASE/files?maxResults=1000&fields=files(id,name,size,md5Checksum)")
+                val query = java.net.URLEncoder.encode("trashed = false", "UTF-8")
+                val url = java.net.URL("$DRIVE_API_BASE/files?q=$query&maxResults=1000&fields=files(id,name,size,md5Checksum)")
                 val connection = url.openConnection() as java.net.HttpURLConnection
                 connection.requestMethod = "GET"
                 connection.setRequestProperty("Authorization", "Bearer $accessToken")
@@ -275,6 +295,35 @@ class GoogleDriveConnector(
                 }
             }
             trashed
+        }
+    }
+
+    /**
+     * Re-query the provider after a trash request. true = trashed/gone,
+     * false = still live, null = provider unreachable (never success).
+     */
+    suspend fun isTrashed(accountId: String, fileId: String): Boolean? {
+        return withContext(Dispatchers.IO) {
+            val account = accountManager.getConnectedAccounts()
+                .firstOrNull { it.id == accountId } ?: return@withContext null
+            val accessToken = accountManager.getValidAccessToken(account) ?: return@withContext null
+            try {
+                val url = java.net.URL("$DRIVE_API_BASE/files/$fileId?fields=trashed")
+                val connection = url.openConnection() as java.net.HttpURLConnection
+                connection.requestMethod = "GET"
+                connection.connectTimeout = 15_000
+                connection.readTimeout = 20_000
+                connection.setRequestProperty("Authorization", "Bearer $accessToken")
+                val status = connection.responseCode
+                val payload = (if (status in 200..299) connection.inputStream else connection.errorStream)
+                    ?.bufferedReader(java.nio.charset.StandardCharsets.UTF_8)?.use { it.readText() }.orEmpty()
+                connection.disconnect()
+                if (status == 404) return@withContext true
+                if (status !in 200..299) return@withContext null
+                org.json.JSONObject(payload).optBoolean("trashed", false)
+            } catch (_: Exception) {
+                null
+            }
         }
     }
 

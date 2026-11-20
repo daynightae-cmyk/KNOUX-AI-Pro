@@ -98,7 +98,6 @@ import com.knoux.ai.ui.v2.V2NotificationManagerScreen
 import com.knoux.ai.ui.v2.V2ToolsHubScreen
 import com.knoux.ai.ui.v2.V2DeveloperToolsScreen
 import com.knoux.ai.ui.v2.V2GoogleServicesScreen
-import com.knoux.ai.security.ProductionSecurity
 import com.knoux.ai.ui.v2.V2AdvancedSecurityScreen
 import com.knoux.ai.ui.v2.V2BackupRestoreScreen
 import com.knoux.ai.developer.ui.DeveloperStudioScreen
@@ -115,8 +114,8 @@ import com.knoux.ai.microsoft.ui.MicrosoftStorageDashboardScreen
 class MainActivity : androidx.fragment.app.FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Initialize SSL pinning for Supabase host before any network requests.
-        ProductionSecurity.initializeSslPinning()
+        // TLS uses the Android platform defaults. No process-wide SSL factory or
+        // hostname verifier is replaced; provider connections stay isolated.
         enableEdgeToEdge()
         // Debug-only route injection so every screen can be inspected directly with adb.
         val debugRoute = if (BuildConfig.DEBUG) intent?.getStringExtra("route") else null
@@ -189,13 +188,10 @@ fun KnouxApp(startRoute: String? = null) {
             }
         }
     }
-    // If the destination resolves after the animation already finished, still
-    // hand off once (and only once) so there is no extra wait on a slow device.
-    LaunchedEffect(destination) {
-        if (destination != null && entryStage == EntryStage.Splash && !splashFinished) {
-            splashFinished = true
-        }
-    }
+    // `splashFinished` is set ONLY by KnouxSplashScreen's real animation-completion
+    // callback. Destination readiness alone must never terminate the animation:
+    // the effect above fires once, when BOTH inputs are ready, so there is no
+    // destination-driven early cut and no duplicate navigation.
     var signedIn by rememberSaveable { mutableStateOf(false) }
     var accountInfoVisible by remember { mutableStateOf(false) }
     val nav = rememberNavController()
@@ -318,7 +314,13 @@ fun KnouxApp(startRoute: String? = null) {
 // These catalog routes use dedicated screens below, not the generic section screen.
 internal fun sectionToolNavigationRoutes(): List<String> =
     SectionTools.defs.map { it.route }
-        .filterNot { it == "bat-readings" || it == "ai-recommendations" }
+        // Dedicated destinations already registered individually below; generic
+        // section rendering would duplicate the route and lose their real UI.
+        .filterNot {
+            it == "bat-readings" || it == "ai-recommendations" ||
+                it == "developer-info" || it == "google-services" ||
+                it == "advanced-security" || it == "backup-restore"
+        }
 
 @Composable
 private fun AppNavHost(

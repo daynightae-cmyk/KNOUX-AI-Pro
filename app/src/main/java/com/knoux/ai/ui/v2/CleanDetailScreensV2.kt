@@ -898,6 +898,8 @@ fun V2ResidueScreen(onBack: () -> Unit, onReview: () -> Unit, onPro: () -> Unit)
     var lastFreed by remember { mutableStateOf<Long?>(null) }
     val cacheFiles = remember(refresh) { largestOwnCacheFiles(context) }
     val filesStats = remember(refresh) { ownFilesStats(context) }
+    var refreshing by remember { mutableStateOf(false) }
+    LaunchedEffect(facts.computedAt) { if (refreshing) refreshing = false }
 
     val cacheBytes = facts.ownCacheBytes
     val cacheText = formatBytes(cacheBytes)
@@ -976,6 +978,31 @@ fun V2ResidueScreen(onBack: () -> Unit, onReview: () -> Unit, onPro: () -> Unit)
                         status = "كاش KNOUX مقروء",
                         statusColor = V2Green,
                         metric = "$cacheText · ${formatCount(facts.ownCacheFiles)} ملف",
+                    )
+                }
+                item {
+                    // The universal K orb: the only way this service starts.
+                    KnouxRunOrbBlock(
+                        progress = when {
+                            refreshing -> null
+                            facts.computedAt > 0L -> 1f
+                            else -> 0f
+                        },
+                        running = refreshing,
+                        enabled = !refreshing,
+                        label = when {
+                            refreshing -> "جارٍ قراءة البقايا…"
+                            facts.computedAt > 0L -> "اضغط لإعادة قراءة البقايا"
+                            else -> "اضغط لتشغيل الخدمة"
+                        },
+                        accent = V2Violet,
+                        accent2 = V2Cyan,
+                        onTap = {
+                            if (!refreshing) {
+                                refreshing = true
+                                bump()
+                            }
+                        },
                     )
                 }
                 item {
@@ -1302,6 +1329,8 @@ fun V2PrivacyScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> U
     var noteSaved by remember { mutableStateOf(false) }
     val granted = groups.sumOf { it.grantedCount }
     val score = if (declared > 0) (100 - (granted * 100 / declared)).coerceIn(0, 100) else 100
+    var refreshing by remember { mutableStateOf(false) }
+    LaunchedEffect(facts.computedAt) { if (refreshing) refreshing = false }
     val sensitiveApps = remember(facts) {
         facts.installedApps
             .filter { it.sensitivePermissions.isNotEmpty() }
@@ -1334,6 +1363,31 @@ fun V2PrivacyScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> U
                     )
                 }
                 item {
+                    // The universal K orb: the only way this service starts.
+                    KnouxRunOrbBlock(
+                        progress = when {
+                            refreshing -> null
+                            facts.computedAt > 0L -> 1f
+                            else -> 0f
+                        },
+                        running = refreshing,
+                        enabled = !refreshing,
+                        label = when {
+                            refreshing -> "جارٍ قراءة الصلاحيات…"
+                            facts.computedAt > 0L -> "اضغط لإعادة قراءة الصلاحيات"
+                            else -> "اضغط لتشغيل الخدمة"
+                        },
+                        accent = V2Violet,
+                        accent2 = V2Cyan,
+                        onTap = {
+                            if (!refreshing) {
+                                refreshing = true
+                                bump()
+                            }
+                        },
+                    )
+                }
+                item {
                     PrivacyHeroCard(
                         score = score,
                         sensitiveApps = facts.sensitiveAppCount,
@@ -1345,12 +1399,7 @@ fun V2PrivacyScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> U
                 item { PrivacyDomainGrid(groups) { openAllAppSettings(context) } }
                 item { SensitiveAppsCard(sensitiveApps) { packageName -> openAppInfo(context, packageName) } }
                 item {
-                    V2GradientButton(
-                        "إعادة قراءة الصلاحيات",
-                        { bump() },
-                        icon = Icons.Rounded.Refresh,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp),
-                    )
+                    V2SectionLabel("ملاحظة الخصوصية", trailing = "محلية")
                 }
                 item {
                     V2GlassCard(

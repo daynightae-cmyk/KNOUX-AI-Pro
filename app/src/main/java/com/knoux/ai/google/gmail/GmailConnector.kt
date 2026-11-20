@@ -3,6 +3,7 @@ package com.knoux.ai.google.gmail
 import android.content.Context
 import com.knoux.ai.cloud.model.CleanupCandidate
 import com.knoux.ai.cloud.model.CleanupCategory
+import com.knoux.ai.cloud.model.CloudScanOutcome
 import com.knoux.ai.cloud.model.ScanResult
 import com.knoux.ai.cloud.model.ScanStatus
 import com.knoux.ai.google.auth.GoogleAccountManager
@@ -34,7 +35,9 @@ class GmailConnector(
      * Scan a Gmail account for cleanup candidates.
      * Returns a ScanResult with found items.
      */
-    suspend fun scanAccount(accountId: String): ScanResult {
+    suspend fun scanAccount(accountId: String): ScanResult = scanWithCandidates(accountId).result
+
+    suspend fun scanWithCandidates(accountId: String): CloudScanOutcome {
         return withContext(Dispatchers.IO) {
             val scanId = java.util.UUID.randomUUID().toString()
             val startTime = System.currentTimeMillis()
@@ -43,22 +46,26 @@ class GmailConnector(
                 val account = accountManager.getConnectedAccounts()
                     .firstOrNull { it.id == accountId }
                 if (account == null) {
-                    return@withContext ScanResult(
-                        scanId = scanId,
-                        provider = com.knoux.ai.cloud.model.CloudProvider.Gmail,
-                        accountId = accountId,
-                        status = ScanStatus.Failed,
-                        error = "Account not found",
+                    return@withContext CloudScanOutcome(
+                        result = ScanResult(
+                            scanId = scanId,
+                            provider = com.knoux.ai.cloud.model.CloudProvider.Gmail,
+                            accountId = accountId,
+                            status = ScanStatus.Failed,
+                            error = "Account not found",
+                        ),
                     )
                 }
 
                 val accessToken = accountManager.getValidAccessToken(account)
-                    ?: return@withContext ScanResult(
-                        scanId = scanId,
-                        provider = com.knoux.ai.cloud.model.CloudProvider.Gmail,
-                        accountId = accountId,
-                        status = ScanStatus.Failed,
-                        error = "No valid access token",
+                    ?: return@withContext CloudScanOutcome(
+                        result = ScanResult(
+                            scanId = scanId,
+                            provider = com.knoux.ai.cloud.model.CloudProvider.Gmail,
+                            accountId = accountId,
+                            status = ScanStatus.Failed,
+                            error = "No valid access token",
+                        ),
                     )
 
                 var itemsFound = 0
@@ -162,23 +169,28 @@ class GmailConnector(
                     }
                 }
 
-                ScanResult(
-                    scanId = scanId,
-                    provider = com.knoux.ai.cloud.model.CloudProvider.Gmail,
-                    accountId = accountId,
-                    status = ScanStatus.Completed,
-                    itemsFound = itemsFound,
-                    bytesFound = bytesFound,
-                    bytesReclaimable = bytesFound,
-                    completedAt = System.currentTimeMillis(),
+                CloudScanOutcome(
+                    result = ScanResult(
+                        scanId = scanId,
+                        provider = com.knoux.ai.cloud.model.CloudProvider.Gmail,
+                        accountId = accountId,
+                        status = ScanStatus.Completed,
+                        itemsFound = itemsFound,
+                        bytesFound = bytesFound,
+                        bytesReclaimable = bytesFound,
+                        completedAt = System.currentTimeMillis(),
+                    ),
+                    candidates = candidates.toList(),
                 )
             } catch (e: Exception) {
-                ScanResult(
-                    scanId = scanId,
-                    provider = com.knoux.ai.cloud.model.CloudProvider.Gmail,
-                    accountId = accountId,
-                    status = ScanStatus.Failed,
-                    error = e.message ?: "Unknown error",
+                CloudScanOutcome(
+                    result = ScanResult(
+                        scanId = scanId,
+                        provider = com.knoux.ai.cloud.model.CloudProvider.Gmail,
+                        accountId = accountId,
+                        status = ScanStatus.Failed,
+                        error = e.message ?: "Unknown error",
+                    ),
                 )
             }
         }
@@ -282,6 +294,38 @@ class GmailConnector(
                 }
             }
             trashed
+        }
+    }
+
+    /**
+     * Re-query the provider after a trash request. Returns true only when the
+     * API confirms the message is in Trash (404 also means it no longer exists
+     * in the mailbox), false when it is still live, and null when the provider
+     * cannot be reached — null is never treated as success.
+     */
+    suspend fun isTrashed(accountId: String, messageId: String): Boolean? {
+        return withContext(Dispatchers.IO) {
+            val account = accountManager.getConnectedAccounts()
+                .firstOrNull { it.id == accountId } ?: return@withContext null
+            val accessToken = accountManager.getValidAccessToken(account) ?: return@withContext null
+            try {
+                val url = java.net.URL("$GMAIL_API_BASE/users/me/messages/$messageId?format=minimal")
+                val connection = url.openConnection() as java.net.HttpURLConnection
+                connection.requestMethod = "GET"
+                connection.connectTimeout = 15_000
+                connection.readTimeout = 20_000
+                connection.setRequestProperty("Authorization", "Bearer $accessToken")
+                val status = connection.responseCode
+                val payload = (if (status in 200..299) connection.inputStream else connection.errorStream)
+                    ?.bufferedReader(java.nio.charset.StandardCharsets.UTF_8)?.use { it.readText() }.orEmpty()
+                connection.disconnect()
+                if (status == 404) return@withContext true
+                if (status !in 200..299) return@withContext null
+                val labels = org.json.JSONObject(payload).optJSONArray("labelIds") ?: return@withContext false
+                (0 until labels.length()).any { labels.optString(it) == "TRASH" }
+            } catch (_: Exception) {
+                null
+            }
         }
     }
 

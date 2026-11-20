@@ -26,6 +26,8 @@ data class SectionUiState(
     val itemsLogged: Int = 0,
     val operationsLogged: Int = 0,
     val capabilityStatus: String = "UNKNOWN",
+    val progress: Float = 0f,
+    val stageLabel: String = "",
 ) {
     val loaded: Boolean get() = facts.computedAt > 0L
 }
@@ -47,12 +49,19 @@ class SectionServiceViewModel(
     fun scanSection(trigger: Int = 0) {
         if (trigger == lastTrigger && (_state.lastScanId != null || _state.isScanning)) return
         lastTrigger = trigger
-        _state = _state.copy(isScanning = true, scanError = null)
+        _state = _state.copy(
+            isScanning = true,
+            scanError = null,
+            progress = 0.04f,
+            stageLabel = "بدء الخدمة",
+        )
         launchLatest {
             try {
                 val ctx = appContext
+                _state = _state.copy(progress = 0.14f, stageLabel = "قراءة التخزين والوسائط")
                 val facts = withContext(Dispatchers.IO) { readDeviceFacts(ctx) }
                 DeviceFactsCache.publish(facts)
+                _state = _state.copy(progress = 0.58f, stageLabel = "تحليل التطبيقات والأذونات")
 
                 val mediaBytes = facts.media.imagesBytes + facts.media.videosBytes
                 val cacheBytes = facts.ownCacheBytes
@@ -65,6 +74,7 @@ class SectionServiceViewModel(
                 }
 
                 val sessionId = withContext(Dispatchers.IO) {
+                    _state = _state.copy(progress = 0.66f, stageLabel = "حفظ جلسة الفحص")
                     val id = repository.createScanSession(
                         serviceId = sectionKey,
                         serviceName = serviceName,
@@ -134,6 +144,7 @@ class SectionServiceViewModel(
                 }
 
                 val sessions = withContext(Dispatchers.IO) {
+                    _state = _state.copy(progress = 0.92f, stageLabel = "تحديث سجل الخدمة")
                     repository.countSessions(sectionKey)
                 }
                 val items = withContext(Dispatchers.IO) {
@@ -152,6 +163,8 @@ class SectionServiceViewModel(
                     itemsLogged = items,
                     operationsLogged = operations,
                     capabilityStatus = capability,
+                    progress = 1f,
+                    stageLabel = "اكتملت القراءة",
                 )
             } catch (e: Exception) {
                 _state = _state.copy(

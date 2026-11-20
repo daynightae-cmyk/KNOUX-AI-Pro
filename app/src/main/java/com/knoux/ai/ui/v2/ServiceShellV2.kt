@@ -372,7 +372,7 @@ fun ServiceHero(
                 Column(Modifier.weight(1f)) {
                     KText(
                         "${spec.order} · ${spec.english}",
-                        size = if (compact) 6.6.sp else 7.4.sp,
+                        size = if (compact) 7.2.sp else 8.sp,
                         weight = FontWeight.Bold,
                         color = spec.accent2,
                         letterSpacing = 1.8.sp,
@@ -426,8 +426,8 @@ fun ServiceHero(
                     Spacer(Modifier.height(2.dp))
                     KText(
                         spec.tagline,
-                        size = 9.sp,
-                        lineHeight = 12.sp,
+                        size = 9.8.sp,
+                        lineHeight = 12.5.sp,
                         color = V2Soft.copy(alpha = .94f),
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
@@ -653,7 +653,7 @@ private fun HeroStatusRibbon(
         Spacer(Modifier.width(7.dp))
         KText(
             status,
-            size = if (compact) 8.sp else 8.8.sp,
+            size = if (compact) 8.4.sp else 8.8.sp,
             weight = FontWeight.Bold,
             color = statusColor,
             maxLines = 1,
@@ -669,7 +669,7 @@ private fun HeroStatusRibbon(
         ) {
             KText(
                 metric ?: "قراءة محلية",
-                size = if (compact) 6.8.sp else 7.4.sp,
+                size = if (compact) 7.2.sp else 7.6.sp,
                 weight = FontWeight.SemiBold,
                 color = statusColor.copy(alpha = .95f),
                 maxLines = 1,

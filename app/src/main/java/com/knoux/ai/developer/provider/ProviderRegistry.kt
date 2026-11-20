@@ -1,5 +1,6 @@
 package com.knoux.ai.developer.provider
 
+import android.content.Context
 import com.knoux.ai.developer.model.AiModel
 import com.knoux.ai.developer.model.AiProvider
 import com.knoux.ai.developer.model.ProviderConnectionState
@@ -103,10 +104,21 @@ object ProviderRegistryHolder {
         }
     }
 
-    fun registerBuiltInAdapters() {
-        val reg = init() ?: return
-        // Built-in adapters are registered by the DI module / startup.
-        // Each adapter is registered via registerBuiltInAdapter() calls.
+    /**
+     * Register every adapter shipped with the app exactly once. Safe to call
+     * from any screen; later calls are no-ops.
+     */
+    fun registerBuiltInAdapters(context: Context) {
+        val reg = init()
+        if (reg.allProviders.isNotEmpty()) return
+        synchronized(this) {
+            if (reg.allProviders.isNotEmpty()) return
+            reg.register(OpenAIAdapter(context))
+            reg.register(OpenRouterAdapter(context))
+            reg.register(OllamaAdapter(context))
+            reg.register(NvidiaAdapter(context))
+            reg.register(GeminiAdapter(context))
+        }
     }
 }
 

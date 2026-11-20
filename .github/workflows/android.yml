@@ -14,10 +14,16 @@ concurrency:
   group: android-${{ github.ref }}
   cancel-in-progress: false
 
+env:
+  GRADLE_OPTS: >-
+    -Dorg.gradle.daemon=false
+    -Dorg.gradle.parallel=false
+    -Dorg.gradle.workers.max=2
+
 jobs:
   debug:
     runs-on: ubuntu-24.04
-    timeout-minutes: 35
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -30,22 +36,118 @@ jobs:
         with:
           cache-read-only: ${{ github.event_name == 'pull_request' }}
       - name: Install required Android SDK packages
-        run: sdkmanager 'platforms;android-36' 'build-tools;36.0.0'
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/lib/android/sdk}}"
+          echo "ANDROID_SDK_ROOT=$SDK_ROOT" >> "$GITHUB_ENV"
+          echo "ANDROID_HOME=$SDK_ROOT" >> "$GITHUB_ENV"
+          CMDLINE_TOOLS="$SDK_ROOT/cmdline-tools/latest/bin"
+          if [ ! -x "$CMDLINE_TOOLS/sdkmanager" ]; then
+            echo "sdkmanager not found at $CMDLINE_TOOLS; installing official command-line tools"
+            TMP_ZIP="$RUNNER_TEMP/commandlinetools.zip"
+            curl --fail --location --retry 3 --output "$TMP_ZIP" \
+              https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+            mkdir -p "$SDK_ROOT/cmdline-tools"
+            rm -rf "$SDK_ROOT/cmdline-tools/latest"
+            unzip -q "$TMP_ZIP" -d "$SDK_ROOT/cmdline-tools"
+            mv "$SDK_ROOT/cmdline-tools/cmdline-tools" "$SDK_ROOT/cmdline-tools/latest"
+          fi
+          echo "$CMDLINE_TOOLS" >> "$GITHUB_PATH"
+          echo "$SDK_ROOT/platform-tools" >> "$GITHUB_PATH"
+          "$CMDLINE_TOOLS/sdkmanager" --version
+          yes | "$CMDLINE_TOOLS/sdkmanager" --licenses > /dev/null
+          "$CMDLINE_TOOLS/sdkmanager" --install \
+            "platform-tools" \
+            "platforms;android-36" \
+            "build-tools;36.0.0"
+          "$CMDLINE_TOOLS/sdkmanager" --list_installed
+      - name: Verify toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          java -version
+          bash ./gradlew --version
+          test -d "$ANDROID_SDK_ROOT/platforms/android-36"
+          test -d "$ANDROID_SDK_ROOT/build-tools/36.0.0"
       - name: Generate Room implementations
         run: bash ./gradlew :app:kspDebugKotlin --no-parallel --max-workers=1 --no-daemon --stacktrace
-      - name: Compile Kotlin
-        run: bash ./gradlew :app:compileDebugKotlin --no-parallel --max-workers=1 --no-daemon --stacktrace
+      - name: Compile Kotlin and instrumentation sources
+        run: |
+          bash ./gradlew :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin \
+            --no-parallel --max-workers=1 --no-daemon --stacktrace
       - name: Run unit tests
         run: bash ./gradlew :app:testDebugUnitTest --no-parallel --max-workers=1 --no-daemon --stacktrace
+      - name: Run Android lint
+        run: bash ./gradlew :app:lintDebug --no-parallel --max-workers=1 --no-daemon --stacktrace
       - name: Assemble isolated debug application
         run: bash ./gradlew :app:assembleDebug --no-parallel --max-workers=1 --no-daemon --stacktrace
+      - name: Verify release configuration assembles
+        run: bash ./gradlew :app:assembleRelease --no-parallel --max-workers=1 --no-daemon --stacktrace
+      - name: Record artifact hashes
+        shell: bash
+        run: |
+          set -euo pipefail
+          find app/build/outputs/apk -name '*.apk' -print0 | while IFS= read -r -d '' apk; do
+            sha256sum "$apk"
+          done | tee apk-sha256.txt
       - name: Preserve test results
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: debug-junit-${{ github.sha }}
+          name: debug-verification-${{ github.sha }}
           path: |
             app/build/test-results/testDebugUnitTest/TEST-*.xml
             app/build/reports/tests/testDebugUnitTest/
+            app/build/reports/lint-results-debug.html
+            app/build/reports/lint-results-debug.xml
+            apk-sha256.txt
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Preserve APKs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: apks-${{ github.sha }}
+          path: app/build/outputs/apk/**/*.apk
+          if-no-files-found: warn
+          retention-days: 14
+
+  instrumented:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
+        with:
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Run instrumentation tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 30
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          script: bash ./gradlew :app:connectedDebugAndroidTest --no-parallel --max-workers=1 --no-daemon --stacktrace
+      - name: Preserve instrumentation results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: instrumented-results-${{ github.sha }}
+          path: |
+            app/build/outputs/androidTest-results/
+            app/build/reports/androidTests/
           if-no-files-found: warn
           retention-days: 14

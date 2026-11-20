@@ -159,10 +159,6 @@ fun WelcomeScreen(
     }
 
     LaunchedEffect(Unit) { appeared = true }
-    LaunchedEffect(Unit) {
-        val valid = controller.resumeIfVerified()
-        if (valid) onSignedIn()
-    }
 
     val scanning = state == AuthVisualState.Scanning
     val heading = if (isVerification) "أكد هويتك" else "مرحبًا بك في KNOUX AI"

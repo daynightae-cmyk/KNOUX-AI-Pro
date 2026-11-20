@@ -140,6 +140,9 @@ class StorageAnalyzerViewModel(
         }
     }
 
+    /** Explicit rescan triggered by the shared K run orb. */
+    fun rescan() = scanStorage(lastTrigger + 1)
+
     /** Step 1 - records the intent and waits for the user's confirmation. */
     fun prepareClearOwnCache() {
         if (_state.gate == OperationGate.RUNNING || _state.gate == OperationGate.AWAITING_CONSENT) return

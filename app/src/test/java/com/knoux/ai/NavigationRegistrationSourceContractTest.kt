@@ -47,8 +47,11 @@ class NavigationRegistrationSourceContractTest {
     }
 
     @Test
-    fun dedicatedBatteryAndRecommendationScreensAreExcludedFromGenericRegistration() {
-        val dedicated = setOf("bat-readings", "ai-recommendations")
+    fun dedicatedBatteryRecommendationAndEcosystemScreensAreExcludedFromGenericRegistration() {
+        val dedicated = setOf(
+            "bat-readings", "ai-recommendations",
+            "developer-info", "google-services", "advanced-security", "backup-restore",
+        )
         assertEquals(
             SectionTools.defs.map { it.route }.filterNot { it in dedicated },
             sectionToolNavigationRoutes(),

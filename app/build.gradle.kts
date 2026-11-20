@@ -2,8 +2,22 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
-    id("androidx.room")
+    id("androidx.room") version "2.7.2"
     id("com.google.devtools.ksp")
+}
+
+// OAuth client IDs are public identifiers, never secrets. Supply the real
+// values at build time (gradle.properties / -P) so no placeholder is shipped.
+// GOOGLE_ANDROID_CLIENT_ID is the installed-app client used for the
+// authorization-code + PKCE flow; GOOGLE_WEB_CLIENT_ID is only for ID tokens.
+val googleAndroidClientId = (project.findProperty("knoux.googleAndroidClientId") as String?)
+    ?.trim().orEmpty()
+val microsoftClientId = (project.findProperty("knoux.microsoftClientId") as String?)
+    ?.trim().orEmpty()
+val googleOAuthScheme = if (googleAndroidClientId.isNotBlank()) {
+    "com.googleusercontent.apps.${googleAndroidClientId.removeSuffix(".apps.googleusercontent.com")}"
+} else {
+    "knoux.oauth.unconfigured"
 }
 
 android {
@@ -17,11 +31,15 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "1.0.0"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         resourceConfigurations += listOf("en", "ar")
 
         buildConfigField("String", "SUPABASE_URL", "\"https://tduofkizwkjtqcbklfah.supabase.co\"")
         buildConfigField("String", "SUPABASE_PUBLISHABLE_KEY", "\"sb_publishable_19JCfWlBOdUng5LHAoMfRg_hlFl7YnC\"")
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"966864797292-6gqjaebu6n3il0777g3jf0q0mc22jr29.apps.googleusercontent.com\"")
+        buildConfigField("String", "GOOGLE_ANDROID_CLIENT_ID", "\"$googleAndroidClientId\"")
+        buildConfigField("String", "MICROSOFT_CLIENT_ID", "\"$microsoftClientId\"")
+        manifestPlaceholders["googleOAuthScheme"] = googleOAuthScheme
     }
 
     buildTypes {
@@ -84,4 +102,9 @@ dependencies {
     ksp("androidx.room:room-compiler:$roomVersion")
     debugImplementation("androidx.compose.ui:ui-tooling")
     testImplementation("junit:junit:4.13.2")
+    // Test-only TLS fixtures: real certificate chains for hostname/trust tests.
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
+    testImplementation("com.squareup.okhttp3:okhttp-tls:4.12.0")
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test:runner:1.6.2")
 }

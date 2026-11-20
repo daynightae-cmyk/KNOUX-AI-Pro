@@ -98,6 +98,15 @@ fun ScanStatus.displayName(): String = when (this) {
 }
 
 /**
+ * A scan result together with the concrete candidates it found. Callers must
+ * use these candidates for review/selection; counts alone are not actionable.
+ */
+data class CloudScanOutcome(
+    val result: ScanResult,
+    val candidates: List<CleanupCandidate> = emptyList(),
+)
+
+/**
  * Result of a cleanup operation.
  */
 data class CleanupOperation(

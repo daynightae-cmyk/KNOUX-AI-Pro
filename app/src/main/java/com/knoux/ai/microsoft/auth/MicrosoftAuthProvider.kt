@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.result.contract.ActivityResultContract
+import com.knoux.ai.auth.OAuthRedirectRelay
 import com.knoux.ai.cloud.model.CloudAccount
 import com.knoux.ai.cloud.model.CloudProvider
 import kotlinx.coroutines.CoroutineScope
@@ -59,6 +60,7 @@ class MicrosoftAuthProvider(
         authCallback = onResult
         state = generateState()
         codeVerifier = generateCodeVerifier()
+        OAuthRedirectRelay.register(state!!) { redirect -> handleRedirect(redirect) }
 
         val scopeString = scopes.joinToString(" ")
         val challenge = generateCodeChallenge(codeVerifier!!)
@@ -238,6 +240,41 @@ class MicrosoftAuthProvider(
         val expiresAtMs: Long get() = obtainedAtMs + (expiresInSeconds * 1000)
     }
 
+    /**
+     * Read the signed-in account identity from Microsoft Graph. Returns null
+     * on failure; callers must not invent an email.
+     */
+    suspend fun fetchUserInfo(accessToken: String): MicrosoftUserInfo? = withContext(Dispatchers.IO) {
+        var connection: java.net.HttpURLConnection? = null
+        try {
+            connection = (java.net.URL("$GRAPH_BASE/me?%24select=mail,userPrincipalName,displayName")
+                .openConnection() as java.net.HttpURLConnection).apply {
+                requestMethod = "GET"
+                connectTimeout = 15_000
+                readTimeout = 20_000
+                instanceFollowRedirects = false
+                setRequestProperty("Authorization", "Bearer $accessToken")
+                setRequestProperty("Accept", "application/json")
+            }
+            if (connection.responseCode !in 200..299) return@withContext null
+            val payload = connection.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+            val json = org.json.JSONObject(payload)
+            val email = json.optString("mail").takeIf { it.isNotBlank() }
+                ?: json.optString("userPrincipalName").takeIf { it.isNotBlank() }
+                ?: return@withContext null
+            MicrosoftUserInfo(
+                email = email,
+                displayName = json.optString("displayName").takeIf { it.isNotBlank() },
+            )
+        } catch (_: Exception) {
+            null
+        } finally {
+            connection?.disconnect()
+        }
+    }
+
+    data class MicrosoftUserInfo(val email: String, val displayName: String?)
+
     /** Convert auth result to CloudAccount. */
     fun accountFromResult(
         email: String,
@@ -271,6 +308,14 @@ class MicrosoftAuthResultContract : ActivityResultContract<Unit, Intent?>() {
 class MicrosoftAuthRedirectActivity : Activity() {
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
+        OAuthRedirectRelay.dispatch(intent)
+        setResult(Activity.RESULT_OK, intent)
+        finish()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        OAuthRedirectRelay.dispatch(intent)
         setResult(Activity.RESULT_OK, intent)
         finish()
     }

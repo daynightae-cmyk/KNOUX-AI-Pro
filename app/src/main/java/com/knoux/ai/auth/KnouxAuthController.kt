@@ -23,6 +23,9 @@ class KnouxAuthController(context:Context, config:KnouxAuthConfig) {
     suspend fun biometric(activity:FragmentActivity):Boolean=biometric.unlock(activity)
     suspend fun currentUser():JSONObject=api.currentUserVerified()
     suspend fun resumeIfVerified():Boolean=api.restoreIfValid()
+
+    /** Fast local-only session validity used for the post-splash entry decision. No network. */
+    suspend fun localSessionValid():Boolean=api.localSessionValid()
     suspend fun signOut()=api.signOut()
     suspend fun listPasskeys():JSONObject=api.listPasskeys()
     // Guest mode is deliberately not exposed as a Supabase Auth success.

@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.activity.result.contract.ActivityResultContract
+import com.knoux.ai.auth.OAuthRedirectRelay
 import com.knoux.ai.cloud.model.CloudAccount
 import com.knoux.ai.cloud.model.CloudProvider
 import kotlinx.coroutines.CoroutineScope
@@ -63,6 +64,7 @@ class GoogleAuthProvider(
         authCallback = onResult
         state = generateState()
         codeVerifier = generateCodeVerifier()
+        OAuthRedirectRelay.register(state!!) { redirect -> handleRedirect(redirect) }
 
         val scopeString = scopes.joinToString(" ")
         val challenge = generateCodeChallenge(codeVerifier!!)
@@ -242,6 +244,39 @@ class GoogleAuthProvider(
         val expiresAtMs: Long get() = obtainedAtMs + (expiresInSeconds * 1000)
     }
 
+    /**
+     * Read the signed-in account identity from the OIDC userinfo endpoint.
+     * Returns null on any failure; callers must not invent an email.
+     */
+    suspend fun fetchUserInfo(accessToken: String): GoogleUserInfo? = withContext(Dispatchers.IO) {
+        var connection: java.net.HttpURLConnection? = null
+        try {
+            connection = (java.net.URL("https://openidconnect.googleapis.com/v1/userinfo")
+                .openConnection() as java.net.HttpURLConnection).apply {
+                requestMethod = "GET"
+                connectTimeout = 15_000
+                readTimeout = 20_000
+                instanceFollowRedirects = false
+                setRequestProperty("Authorization", "Bearer $accessToken")
+                setRequestProperty("Accept", "application/json")
+            }
+            if (connection.responseCode !in 200..299) return@withContext null
+            val payload = connection.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
+            val json = org.json.JSONObject(payload)
+            val email = json.optString("email").takeIf { it.isNotBlank() } ?: return@withContext null
+            GoogleUserInfo(
+                email = email,
+                displayName = json.optString("name").takeIf { it.isNotBlank() },
+            )
+        } catch (_: Exception) {
+            null
+        } finally {
+            connection?.disconnect()
+        }
+    }
+
+    data class GoogleUserInfo(val email: String, val displayName: String?)
+
     /** Convert a successful auth result to a CloudAccount entity. */
     fun accountFromResult(
         email: String,
@@ -278,6 +313,14 @@ class GoogleAuthResultContract : ActivityResultContract<Unit, Intent?>() {
 class GoogleAuthRedirectActivity : Activity() {
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
+        OAuthRedirectRelay.dispatch(intent)
+        setResult(RESULT_OK, intent)
+        finish()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        OAuthRedirectRelay.dispatch(intent)
         setResult(RESULT_OK, intent)
         finish()
     }

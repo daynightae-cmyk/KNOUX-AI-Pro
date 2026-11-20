@@ -1,6 +1,7 @@
 package com.knoux.ai.ui.v2
 
 import android.app.Application
+import android.os.Build
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -28,11 +29,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.Android
 import androidx.compose.material.icons.rounded.Apps
 import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Backup
 import androidx.compose.material.icons.rounded.BatteryChargingFull
 import androidx.compose.material.icons.rounded.Bolt
+import androidx.compose.material.icons.rounded.Build
 import androidx.compose.material.icons.rounded.CleaningServices
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.DataUsage
@@ -40,14 +44,19 @@ import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.DeleteSweep
 import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.DeveloperMode
 import androidx.compose.material.icons.rounded.ElectricalServices
 import androidx.compose.material.icons.rounded.FactCheck
 import androidx.compose.material.icons.rounded.FileCopy
 import androidx.compose.material.icons.rounded.FilterAlt
+import androidx.compose.material.icons.rounded.Fingerprint
 import androidx.compose.material.icons.rounded.FolderOpen
+import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.ManageSearch
+import androidx.compose.material.icons.rounded.Memory
+import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.PermMedia
 import androidx.compose.material.icons.rounded.Person
@@ -105,6 +114,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.knoux.ai.database.AppDatabase
 import com.knoux.ai.database.KnouxRepository
+import com.knoux.ai.ui.v2.V2LuxuryIdentity
+import com.knoux.ai.ui.v2.V2LuxuryStage
 import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
@@ -207,6 +218,10 @@ internal object SectionArt {
         "storage" to com.knoux.ai.R.drawable.knoux_svc_storage,
         "battery" to com.knoux.ai.R.drawable.knoux_svc_battery,
         "ai" to com.knoux.ai.R.drawable.knoux_svc_ai,
+        "developer" to com.knoux.ai.R.drawable.knoux_svc_deepscan,
+        "googleservices" to com.knoux.ai.R.drawable.knoux_svc_apps,
+        "security" to com.knoux.ai.R.drawable.knoux_svc_privacy,
+        "backup" to com.knoux.ai.R.drawable.knoux_svc_residue,
     )
 
     /** The section emblem used by the Home-style centerpiece orb. */
@@ -278,6 +293,10 @@ internal object SectionTools {
         "smartclean" -> "smart_clean"
         "reports" -> "reports"
         "ai" -> "ai_optimization"
+        "developer" -> "developer_tools"
+        "googleservices" -> "google_services"
+        "security" -> "advanced_security"
+        "backup" -> "backup_restore"
         else -> section
     }
 
@@ -293,6 +312,10 @@ internal object SectionTools {
         "storage" -> V2Green
         "battery" -> V2Cyan
         "ai" -> V2Cyan
+        "developer" -> V2Blue
+        "googleservices" -> V2Cyan
+        "security" -> V2Violet
+        "backup" -> V2Pink
         else -> V2Violet
     }
 
@@ -341,7 +364,7 @@ fun V2SectionToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
     }
     val context = LocalContext.current
     val navigate = LocalServiceNavigate.current
-    val (refresh, bump) = rememberRefreshCounter()
+    val (refresh, _) = rememberRefreshCounter()
 
     val application = context.applicationContext as Application
     val appDatabase = remember(application) { AppDatabase.getDatabase(application) }
@@ -358,8 +381,8 @@ fun V2SectionToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
             )
         },
     )
-    LaunchedEffect(refresh) { sectionViewModel.scanSection(refresh) }
-
+    // No automatic start: the K orb is the single entry point for every
+    // service. A screen never scans until the user presses the orb.
     val sectionState = sectionViewModel.state
     val facts = sectionState.facts
     val history = remember(refresh) { readScanHistory(context) }
@@ -391,24 +414,38 @@ fun V2SectionToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
     ) {
         Column(Modifier.fillMaxSize()) {
             V2TopBar(V2TopMode.INTERIOR, onBack = onBack, onPro = onPro)
+            V2LuxuryIdentity(
+                title = def.title,
+                english = def.english,
+                subtitle = def.tagline,
+                accent = def.accent,
+            )
             LazyColumn(
                 Modifier.weight(1f),
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 item {
-                    ServiceBanner(
-                        spec = SectionTools.bannerSpec(def, availability),
-                        status = when {
-                            !loaded -> "جاري القراءة"
-                            missingMedia -> "صلاحية مطلوبة"
-                            else -> "قراءة مباشرة"
+                    // K orb as the centerpiece - universal service start control
+                    KnouxRunOrbBlock(
+                        progress = when {
+                            sectionState.isScanning -> sectionState.progress
+                            loaded -> 1f
+                            else -> 0f
                         },
-                        statusColor = if (loaded && !missingMedia) V2Green else V2Amber,
-                        metric = when {
-                            !loaded -> "بانتظار قراءة الجهاز"
-                            missingMedia -> "الوسائط غير متاحة"
-                            else -> def.metric(facts, history)
+                        running = sectionState.isScanning,
+                        enabled = !sectionState.isScanning,
+                        label = when {
+                            sectionState.isScanning -> sectionState.stageLabel.ifBlank { "جارٍ التنفيذ…" } +
+                                " · ${(sectionState.progress * 100).roundToInt()}%"
+                            loaded -> "اضغط لإعادة تشغيل الخدمة"
+                            else -> "اضغط لتشغيل الخدمة"
+                        },
+                        accent = def.accent,
+                        accent2 = SectionTools.accent2For(def.section),
+                        size = 148.dp,
+                        onTap = {
+                            if (!sectionState.isScanning) sectionViewModel.rescan()
                         },
                     )
                 }
@@ -427,7 +464,7 @@ fun V2SectionToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
                             body = sectionState.scanError,
                             state = ServiceState.PERMISSION,
                             actionLabel = "إعادة القراءة",
-                            onAction = { bump() },
+                            onAction = { sectionViewModel.rescan() },
                         )
                     }
                 }
@@ -534,11 +571,11 @@ fun V2SectionToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
                         Icon(Icons.Rounded.Verified, null, tint = V2Green, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(7.dp))
                         Column {
-                            KText("مراجعة قبل التنفيذ", size = 8.6.sp, weight = FontWeight.Bold, color = V2Green)
+                            KText("مراجعة قبل التنفيذ", size = 9.6.sp, weight = FontWeight.Bold, color = V2Green)
                             KText(
                                 "هذه الشاشة تقرأ وتوضح فقط. لا تغيير على النظام من دون تأكيد صريح منك.",
-                                size = 7.2.sp,
-                                lineHeight = 10.sp,
+                                size = 8.4.sp,
+                                lineHeight = 11.8.sp,
                                 color = V2Soft,
                             )
                         }
@@ -563,13 +600,13 @@ fun V2SectionToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
                                     horizontalAlignment = Alignment.CenterHorizontally,
                                     verticalArrangement = Arrangement.Center,
                                 ) {
-                                    Icon(related.icon, null, tint = related.accent, modifier = Modifier.size(21.dp))
+                                    Icon(related.icon, null, tint = related.accent, modifier = Modifier.size(22.dp))
                                     Spacer(Modifier.height(3.dp))
                                     KText(
                                         related.title,
-                                        size = 7.8.sp,
+                                        size = 8.6.sp,
                                         weight = FontWeight.SemiBold,
-                                        lineHeight = 10.sp,
+                                        lineHeight = 11.sp,
                                         align = TextAlign.Center,
                                         maxLines = 2,
                                     )
@@ -580,13 +617,6 @@ fun V2SectionToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
                     }
                 }
             }
-            V2GradientButton(
-                "تحديث القراءة",
-                bump,
-                icon = Icons.Rounded.Refresh,
-                trailingChevron = true,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 5.dp),
-            )
         }
     }
 }
@@ -1161,6 +1191,11 @@ internal object SectionHub {
         Entry("storage", ServiceSpecs.storage, "storage", "فتح تحليل التخزين"),
         Entry("battery", ServiceSpecs.battery, "battery", "فتح شاشة البطارية"),
         Entry("ai", ServiceSpecs.ai, "ai", "فتح التحسين الذكي"),
+        // Four owner-requested extra hubs, rendered with the same luxury language.
+        Entry("developer", ServiceSpecs.developer, "developer-info", "فتح أدوات المطورين"),
+        Entry("googleservices", ServiceSpecs.googleServices, "google-services", "فتح خدمات جوجل"),
+        Entry("security", ServiceSpecs.advancedSecurity, "advanced-security", "فتح الأمان المتقدم"),
+        Entry("backup", ServiceSpecs.backupRestore, "backup-restore", "فتح النسخ والاستعادة"),
     )
 
     val routes: List<String> get() = entries.map { "hub-${it.key}" }
@@ -1182,18 +1217,11 @@ fun V2SectionHubScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
     val entry = SectionHub.byRoute(route) ?: return
     val navigate = LocalServiceNavigate.current
     val facts = rememberDeviceFacts()
-    val proActive = LocalProActive.current
     val spec = entry.spec
     val identity = remember(facts.computedAt, entry.key) { sectionIdentity(entry.key, facts) }
 
-    Box(
-        Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.statusBars)
-    ) {
-        SectionAura(spec.accent, spec.accent2, Modifier.align(Alignment.TopStart))
-        V2HeaderMascot(Modifier.align(Alignment.TopStart))
-
+    Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)) {
+        V2LuxuryHeaderScenery(spec.accent, Modifier.align(Alignment.TopStart))
         Column(Modifier.fillMaxSize()) {
             V2TopBar(
                 mode = V2TopMode.INTERIOR,
@@ -1201,72 +1229,20 @@ fun V2SectionHubScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
                 onPro = onPro,
                 onMenu = { navigate("settings") },
             )
-
             LazyColumn(
                 Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 18.dp),
+                contentPadding = PaddingValues(start = 14.dp, end = 14.dp, bottom = 18.dp),
+                verticalArrangement = Arrangement.spacedBy(9.dp),
             ) {
                 item {
-                    Spacer(Modifier.height(2.dp))
-                    // Reserve the mascot's side of the header instead of painting
-                    // long Arabic titles and descriptions underneath its artwork.
-                    Row(
-                        Modifier.fillMaxWidth().padding(start = 86.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.Bottom,
-                    ) {
-                        androidx.compose.material3.Text(
-                            buildAnnotatedString {
-                                withStyle(SpanStyle(color = Color.White)) { append(spec.title) }
-                                if (proActive) {
-                                    withStyle(
-                                        SpanStyle(
-                                            brush = Brush.horizontalGradient(
-                                                listOf(Color(0xFFFFE7AA), V2Amber, Color(0xFFFFB043))
-                                            )
-                                        )
-                                    ) { append(" Pro") }
-                                }
-                            },
-                            style = TextStyle(
-                                fontFamily = V2Font,
-                                fontWeight = FontWeight.Black,
-                                fontSize = 23.sp,
-                                lineHeight = 29.sp,
-                            ),
-                            modifier = Modifier.padding(top = 2.dp),
-                        )
-                    }
-                    KText(
-                        spec.english,
-                        size = 9.sp,
-                        weight = FontWeight.Bold,
-                        color = spec.accent2,
-                        align = TextAlign.Center,
-                        letterSpacing = 1.4.sp,
-                        modifier = Modifier.fillMaxWidth().padding(start = 86.dp, top = 2.dp),
+                    V2LuxuryIdentity(
+                        title = spec.title,
+                        english = spec.english,
+                        subtitle = spec.tagline,
+                        accent = spec.accent,
                     )
-                    KText(
-                        spec.tagline,
-                        size = 11.sp,
-                        color = V2Soft,
-                        align = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth().padding(start = 86.dp, top = 2.dp),
-                    )
-                    if (proActive && spec.hasProServices) {
-                        Spacer(Modifier.height(5.dp))
-                        Row(
-                            Modifier.fillMaxWidth().padding(start = 86.dp),
-                            horizontalArrangement = Arrangement.Center,
-                        ) {
-                            ProBadge(label = "قسم PRO")
-                        }
-                    }
-                    Spacer(Modifier.height(9.dp))
                 }
-
                 item { SectionHealthPanel(spec, identity) }
-                item { Spacer(Modifier.height(10.dp)) }
                 item {
                     SectionCenterpiece(
                         spec = spec,
@@ -1279,68 +1255,19 @@ fun V2SectionHubScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
                         onRight = { navigate(identity.right.route) },
                     )
                 }
-                item { Spacer(Modifier.height(11.dp)) }
                 item {
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        KText("خدمات ${spec.title}", size = 14.sp, weight = FontWeight.Bold)
-                        Spacer(Modifier.weight(1f))
-                        if (proActive && spec.hasProServices) {
-                            ProBadge(label = "PRO ${spec.subItems.count { it.proOnly }}")
-                            Spacer(Modifier.width(5.dp))
-                        }
-                        KText("${spec.subItems.size} خدمة", size = 10.sp, color = V2Muted)
-                    }
-                    Spacer(Modifier.height(7.dp))
+                    V2LuxurySectionTitle("خدمات ${spec.title}", "${spec.subItems.size} خدمة", spec.accent)
                 }
-                spec.subItems.chunked(5).forEach { row ->
-                    item {
-                        Row(
-                            Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        ) {
-                            row.forEach { service ->
-                                SectionHomeTile(service, Modifier.weight(1f)) { navigate(service.route) }
-                            }
-                            repeat(5 - row.size) { Spacer(Modifier.weight(1f)) }
-                        }
-                        Spacer(Modifier.height(7.dp))
-                    }
-                }
-                item { Spacer(Modifier.height(4.dp)) }
-                item { ProBanner(onClick = onPro) }
-                item { Spacer(Modifier.height(9.dp)) }
+                item { V2LuxuryServiceGrid(spec.subItems, navigate) }
                 item {
-                    V2GlassCard(
-                        Modifier.fillMaxWidth(),
-                        padding = 9.dp,
-                        radius = 16.dp,
-                        glow = spec.accent,
-                        borderAlpha = .22f,
-                    ) {
-                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            identity.stats.forEachIndexed { index, stat ->
-                                if (index > 0) StatDivider()
-                                HomeStat(stat.icon, stat.value, stat.label, stat.accent, Modifier.weight(1f))
-                            }
-                        }
-                    }
+                    V2LuxuryProBanner(
+                        onClick = onPro,
+                        title = "مزايا ${spec.title}",
+                        subtitle = "مزايا أوسع · كل تنفيذ يظل بموافقتك",
+                    )
                 }
-                item {
-                    Spacer(Modifier.height(6.dp))
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(Icons.Rounded.Verified, null, tint = V2Green, modifier = Modifier.size(11.dp))
-                        Spacer(Modifier.width(4.dp))
-                        KText(
-                            "كل خدمة تفتح واجهتها المستقلة. القراءات حسب المصادر والأذونات المتاحة.",
-                            size = 7.2.sp,
-                            color = V2Muted,
-                        )
-                    }
-                }
+                item { V2LuxuryStatStrip(identity.stats) }
+                item { LiveReadNotice() }
             }
         }
     }
@@ -1348,39 +1275,13 @@ fun V2SectionHubScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
 
 @Composable
 private fun SectionHealthPanel(spec: KnouxServiceSpec, identity: SectionIdentity) {
-    V2GlassCard(
-        modifier = Modifier.fillMaxWidth(),
-        padding = 11.dp,
-        radius = 22.dp,
-        glow = spec.accent,
-        borderAlpha = .52f,
-    ) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                identity.lines.forEach { line ->
-                    HealthLine(line.icon, line.label, line.value, line.progress, line.accent)
-                }
-            }
-            Spacer(Modifier.width(10.dp))
-            V2NeonRing(
-                progress = identity.gaugePercent / 100f,
-                size = 88.dp,
-                stroke = 7.dp,
-                colors = listOf(spec.accent, spec.accent2, V2Blue, V2Cyan),
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    KText(
-                        if (identity.gaugePercent > 0) "${identity.gaugePercent}%" else "—",
-                        size = 26.sp,
-                        weight = FontWeight.Black,
-                    )
-                    KText(identity.gaugeLabel, size = 8.sp, color = V2Soft, align = TextAlign.Center)
-                    Spacer(Modifier.height(2.dp))
-                    Icon(Icons.Rounded.Verified, null, tint = V2Green, modifier = Modifier.size(11.dp))
-                }
-            }
-        }
-    }
+    V2LuxuryHealthPanel(
+        gaugeLabel = identity.gaugeLabel,
+        gaugePercent = identity.gaugePercent,
+        lines = identity.lines,
+        accent = spec.accent,
+        accent2 = spec.accent2,
+    )
 }
 
 /**
@@ -1426,59 +1327,15 @@ private fun SectionCenterpiece(
     onLeft: () -> Unit,
     onRight: () -> Unit,
 ) {
-    Box(Modifier.fillMaxWidth().height(186.dp)) {
-        Canvas(Modifier.fillMaxSize()) {
-            drawCircle(
-                brush = Brush.radialGradient(
-                    listOf(spec.accent.copy(alpha = .30f), spec.accent2.copy(alpha = .08f), Color.Transparent),
-                    center = Offset(size.width * .5f, size.height * .52f),
-                    radius = size.width * .44f,
-                ),
-                radius = size.width * .44f,
-                center = Offset(size.width * .5f, size.height * .52f),
-            )
-            drawOval(
-                brush = Brush.horizontalGradient(
-                    listOf(Color.Transparent, spec.accent2.copy(alpha = .48f), spec.accent.copy(alpha = .52f), Color.Transparent)
-                ),
-                topLeft = Offset(size.width * .22f, size.height * .80f),
-                size = Size(size.width * .56f, 1.5.dp.toPx()),
-            )
-        }
-
-        SideActionCard(
-            title = right.title,
-            subtitle = right.subtitle,
-            icon = right.icon,
-            accent = spec.accent2,
-            modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .offset(x = 2.dp, y = 21.dp)
-                .graphicsLayer { rotationZ = -3f },
-            onClick = onRight,
-        )
-        SideActionCard(
-            title = left.title,
-            subtitle = left.subtitle,
-            icon = left.icon,
-            accent = spec.accent,
-            modifier = Modifier
-                .align(Alignment.CenterStart)
-                .offset(x = (-2).dp, y = 21.dp)
-                .graphicsLayer { rotationZ = 3f },
-            onClick = onLeft,
-        )
-
-        SectionOrb(
-            spec = spec,
-            status = status,
-            progress = progress,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 1.dp)
-                .clickable(onClick = onOpen),
-        )
-    }
+    V2LuxuryStage(
+        spec = spec,
+        actionLabel = "دخول القسم",
+        left = left,
+        right = right,
+        onPrimary = onOpen,
+        onLeft = onLeft,
+        onRight = onRight,
+    )
 }
 
 @Composable
@@ -1794,51 +1651,9 @@ private fun SectionOrb(
     }
 }
 
-/** The Home tile rhythm, carried into every section: 91.dp, 15.dp radius, rows of five. */
 @Composable
 private fun SectionHomeTile(item: ServiceSubItem, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    val proActive = LocalProActive.current
-    Box(modifier) {
-        V2GlassCard(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(91.dp)
-                .clickable(onClick = onClick),
-            padding = 5.dp,
-            radius = 15.dp,
-            glow = item.accent,
-            borderAlpha = .36f,
-        ) {
-            Column(
-                Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                if (item.art != null) {
-                    V2RasterTile(image = item.art, size = 52.dp, accent = item.accent)
-                } else {
-                    V2NeonGlyph(item.icon, item.accent, size = 50.dp)
-                }
-                Spacer(Modifier.height(2.dp))
-                KText(
-                    item.title,
-                    size = 8.2.sp,
-                    weight = FontWeight.SemiBold,
-                    color = Color.White,
-                    lineHeight = 10.5.sp,
-                    align = TextAlign.Center,
-                    maxLines = 2,
-                )
-            }
-        }
-        if (proActive && item.proOnly) {
-            ProBadge(
-                Modifier
-                    .align(Alignment.TopEnd)
-                    .offset(x = 3.dp, y = (-3).dp)
-            )
-        }
-    }
+    V2LuxuryServiceTile(item, modifier, onClick)
 }
 
 /* ------------------------------------------------------------------ *
@@ -1883,6 +1698,12 @@ private fun ratio(part: Long, whole: Long): Float =
 
 private fun ratioInt(part: Int, whole: Int): Float =
     if (whole <= 0) 0f else (part.toFloat() / whole.toFloat()).coerceIn(0f, 1f)
+
+/** Counts the Google-branded packages actually visible through PackageManager. */
+internal fun googleAppCount(facts: DeviceFacts): Int =
+    facts.installedApps.count { app ->
+        app.packageName.startsWith("com.google.") || app.packageName.startsWith("com.android.vending")
+    }
 
 internal fun sectionIdentity(key: String, facts: DeviceFacts): SectionIdentity {
     val storage = facts.storage
@@ -2067,6 +1888,78 @@ internal fun sectionIdentity(key: String, facts: DeviceFacts): SectionIdentity {
                 SectionStat(Icons.Rounded.Apps, formatCount(facts.installedCount), "تطبيق مثبت", V2Pink),
                 SectionStat(Icons.Rounded.Storage, formatBytes(storage.freeBytes), "مساحة متاحة", V2Cyan),
                 SectionStat(Icons.Rounded.Bolt, batteryValue, "مستوى البطارية", V2Green),
+            ),
+        )
+        "developer" -> SectionIdentity(
+            gaugeLabel = "معلومات البناء",
+            gaugePercent = 100,
+            lines = listOf(
+                SectionLine(Icons.Rounded.Build, "إصدار النظام", Build.VERSION.RELEASE, 1f, V2Cyan),
+                SectionLine(Icons.Rounded.Android, "مستوى API", Build.VERSION.SDK_INT.toString(), ratioInt(Build.VERSION.SDK_INT, 36), V2Violet),
+                SectionLine(Icons.Rounded.Memory, "تطبيقات مرئية", formatCount(facts.installedCount), if (live) 1f else 0f, V2Pink),
+            ),
+            left = SectionSide("تفاصيل الجهاز", "Build Details", Icons.Rounded.Build, V2Cyan, "dev-build"),
+            right = SectionSide("سجل التشغيل", "Runtime Log", Icons.Rounded.Timeline, V2Cyan, "dev-log"),
+            orbStatus = if (live) "Build ${Build.VERSION.SDK_INT} · ${formatCount(facts.installedCount)} تطبيق" else "جاري القراءة",
+            stats = listOf(
+                SectionStat(Icons.Rounded.Android, Build.VERSION.RELEASE, "إصدار النظام", V2Cyan),
+                SectionStat(Icons.Rounded.Build, Build.VERSION.SDK_INT.toString(), "مستوى API", V2Violet),
+                SectionStat(Icons.Rounded.Apps, formatCount(facts.installedCount), "تطبيق مثبت", V2Pink),
+                SectionStat(Icons.Rounded.Memory, formatBytes(facts.ownCacheBytes), "كاش KNOUX", V2Green),
+            ),
+        )
+        "googleservices" -> SectionIdentity(
+            gaugeLabel = "خدمات جوجل",
+            gaugePercent = (ratioInt(googleAppCount(facts), facts.installedCount.coerceAtLeast(1)) * 100).toInt(),
+            lines = listOf(
+                SectionLine(Icons.Rounded.AccountCircle, "تطبيقات Google", formatCount(googleAppCount(facts)), ratioInt(googleAppCount(facts), facts.installedCount), V2Cyan),
+                SectionLine(Icons.Rounded.Notifications, "الإشعارات", if (live) "نشطة" else "قيد القراءة", if (live) 1f else 0f, V2Violet),
+                SectionLine(Icons.Rounded.Shield, "Play Protect", if (live) "من.settings" else "—", if (live) .5f else 0f, V2Pink),
+            ),
+            left = SectionSide("تطبيقات Google", "Google Apps", Icons.Rounded.AccountCircle, V2Cyan, "gsc-apps"),
+            right = SectionSide("إعدادات Play", "Play Settings", Icons.Rounded.Settings, V2Cyan, "gsc-settings"),
+            orbStatus = if (live) "${formatCount(googleAppCount(facts))} تطبيق Google" else "جاري القراءة",
+            stats = listOf(
+                SectionStat(Icons.Rounded.AccountCircle, formatCount(googleAppCount(facts)), "تطبيق Google", V2Cyan),
+                SectionStat(Icons.Rounded.Notifications, if (live) "مفعّل" else "—", "الإشعارات", V2Violet),
+                SectionStat(Icons.Rounded.Apps, formatCount(facts.installedCount), "تطبيق مثبت", V2Pink),
+                SectionStat(Icons.Rounded.Storage, formatBytes(storage.freeBytes), "مساحة متاحة", V2Green),
+            ),
+        )
+        "security" -> SectionIdentity(
+            gaugeLabel = "حالة القفل",
+            gaugePercent = 100,
+            lines = listOf(
+                SectionLine(Icons.Rounded.Lock, "قفل الشاشة", if (live) "متاح" else "—", if (live) 1f else 0f, V2Cyan),
+                SectionLine(Icons.Rounded.Fingerprint, "المصادقة", "إعدادات النظام", .5f, V2Violet),
+                SectionLine(Icons.Rounded.Shield, "أذونات حساسة", formatCount(facts.sensitiveAppCount), ratioInt(facts.sensitiveAppCount, facts.installedCount), V2Pink),
+            ),
+            left = SectionSide("قفل الجهاز", "Screen Lock", Icons.Rounded.Lock, V2Cyan, "sec-lock"),
+            right = SectionSide("حسابات الجهاز", "Device Accounts", Icons.Rounded.Person, V2Cyan, "sec-accounts"),
+            orbStatus = if (live) "${formatCount(facts.sensitiveAppCount)} تطبيق حساس" else "جاري القراءة",
+            stats = listOf(
+                SectionStat(Icons.Rounded.Lock, if (live) "متاح" else "—", "قفل الشاشة", V2Cyan),
+                SectionStat(Icons.Rounded.Shield, formatCount(facts.sensitiveAppCount), "تطبيق حساس", V2Violet),
+                SectionStat(Icons.Rounded.Apps, formatCount(facts.installedCount), "تطبيق مثبت", V2Pink),
+                SectionStat(Icons.Rounded.Storage, formatBytes(storage.freeBytes), "مساحة متاحة", V2Green),
+            ),
+        )
+        "backup" -> SectionIdentity(
+            gaugeLabel = "سعة التخزين",
+            gaugePercent = (storage.usedFraction * 100).toInt(),
+            lines = listOf(
+                SectionLine(Icons.Rounded.FolderOpen, "متاح للنسخ", formatBytes(storage.freeBytes), 1f - storage.usedFraction, V2Cyan),
+                SectionLine(Icons.Rounded.Storage, "سعة الجهاز", formatBytes(storage.totalBytes), 1f, V2Violet),
+                SectionLine(Icons.Rounded.Description, "ملفات KNOUX", "${formatCount(facts.ownCacheFiles)} ملف", ratioInt(facts.ownCacheFiles, 1000), V2Pink),
+            ),
+            left = SectionSide("اختيار مجلد", "Pick Folder", Icons.Rounded.FolderOpen, V2Cyan, "bkp-pick"),
+            right = SectionSide("سجل النسخ", "Backup Log", Icons.Rounded.History, V2Cyan, "bkp-log"),
+            orbStatus = if (live) "${formatBytes(storage.freeBytes)} متاحة" else "جاري القراءة",
+            stats = listOf(
+                SectionStat(Icons.Rounded.FolderOpen, formatBytes(storage.freeBytes), "مساحة متاحة", V2Cyan),
+                SectionStat(Icons.Rounded.Storage, formatBytes(storage.totalBytes), "سعة التخزين", V2Pink),
+                SectionStat(Icons.Rounded.Description, formatCount(facts.ownCacheFiles), "ملف KNOUX", V2Violet),
+                SectionStat(Icons.Rounded.Apps, formatCount(facts.installedCount), "تطبيق مثبت", V2Green),
             ),
         )
         else -> SectionIdentity(

@@ -3,4 +3,10 @@
     <!-- Privacy notes are app-private local reminders; never include them in
          Android cloud backup even though allowBackup is enabled. -->
     <exclude domain="sharedpref" path="knoux_privacy_notes_v1" />
+    <!-- Credentials and OAuth tokens are encrypted with an Android Keystore
+         key that is never backed up. Restoring the ciphertext alone would be
+         useless and could leave stale secrets on a new device. -->
+    <exclude domain="sharedpref" path="knoux_developer_vault" />
+    <exclude domain="sharedpref" path="knoux_google_accounts" />
+    <exclude domain="sharedpref" path="knoux_microsoft_accounts" />
 </full-backup-content>
