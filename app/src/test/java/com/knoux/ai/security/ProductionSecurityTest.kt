@@ -74,9 +74,10 @@ class ProductionSecurityTest {
 
     @Test
     fun `publishable key validation rejects secrets`() {
-        assertTrue(ProductionSecurity.validatePublishableKey("sb_publishable_19JCfWlBOdUng5LHAoMfRg_hlFl7YnC"))
-        assertFalse(ProductionSecurity.validatePublishableKey("sb_secret_19JCfWlBOdUng5LHAoMfRg_hlFl7YnC"))
-        assertFalse(ProductionSecurity.validatePublishableKey("service_role_19JCfWlBOdUng5LHAoMfRg"))
+        // Synthetic fixtures only - never derive test vectors from live build-config key material.
+        assertTrue(ProductionSecurity.validatePublishableKey("sb_publishable_TEST_FIXTURE_ONLY_0000000000"))
+        assertFalse(ProductionSecurity.validatePublishableKey("sb_secret_TEST_FIXTURE_ONLY_0000000000"))
+        assertFalse(ProductionSecurity.validatePublishableKey("service_role_TEST_FIXTURE_ONLY_0000000000"))
         assertFalse(ProductionSecurity.validatePublishableKey("short"))
     }
 
