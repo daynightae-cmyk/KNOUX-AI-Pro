@@ -83,6 +83,12 @@ internal fun V2LuxuryIdentity(
         modifier.fillMaxWidth().padding(start = 76.dp, top = 2.dp, bottom = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        if (home) {
+            // The official seal crowns the home wordmark like the reference
+            // hub: pearl disc, breathing halo, gold laurels below.
+            com.knoux.ai.ui.components.BrandSeal(size = 44.dp, haloColor = accent)
+            Spacer(Modifier.height(4.dp))
+        }
         Row(verticalAlignment = Alignment.CenterVertically) {
             LuxuryLaurel(V2GoldText, mirror = false)
             Spacer(Modifier.width(7.dp))
@@ -464,7 +470,9 @@ private fun V2LuxuryOrb(spec: KnouxServiceSpec, actionLabel: String, onClick: ()
             // The orb jewel is a night-lit island in every world.
             CompositionLocalProvider(LocalKnouxOnDark provides true) {
             if (spec.key == "deepscan" && spec.artwork == R.drawable.knoux_svc_deepscan) {
-                Image(painterResource(R.drawable.knoux_symbol_alpha), null, modifier = Modifier.size(29.dp))
+                // The home orb jewel is the official company seal, breathing
+                // inside its night-lit island in every world.
+                com.knoux.ai.ui.components.BrandSeal(size = 40.dp, haloColor = spec.accent)
             } else {
                 V2RasterTile(SectionArt.emblem(spec.key), size = 33.dp, accent = spec.accent)
             }

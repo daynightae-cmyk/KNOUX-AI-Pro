@@ -91,10 +91,7 @@ internal fun OnboardingEcosystemPage() {
         Spacer(Modifier.height(12.dp))
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Box(Modifier.size(36.dp), contentAlignment = Alignment.Center) {
-                    HeaderHalo(Modifier.matchParentSize(), color = V2Pink)
-                    BrandSymbol(size = 36.dp)
-                }
+                com.knoux.ai.ui.components.BrandSeal(size = 38.dp, haloColor = V2Pink)
                 BrandWordmark(height = 24.dp)
                 Box(
                     Modifier

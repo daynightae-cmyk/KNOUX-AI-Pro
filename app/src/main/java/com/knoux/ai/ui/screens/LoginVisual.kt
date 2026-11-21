@@ -82,10 +82,8 @@ internal fun LoginBrand() {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
-        Box(Modifier.size(51.dp), contentAlignment = Alignment.Center) {
-            HeaderHalo(Modifier.matchParentSize(), color = NeonViolet)
-            BrandSymbol(size = 51.dp)
-        }
+        // The official company seal opens the login brand, halo breathing.
+        com.knoux.ai.ui.components.BrandSeal(size = 56.dp, haloColor = NeonViolet)
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 BrandWordmark(height = 26.dp)

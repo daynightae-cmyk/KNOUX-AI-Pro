@@ -124,14 +124,7 @@ fun KnouxOnboarding(onFinish: () -> Unit) {
                     KText("رجوع  →", size = 14.sp, color = Color.White)
                 }
             } else {
-                Box(Modifier.size(26.dp), contentAlignment = Alignment.Center) {
-                    HeaderHalo(Modifier.matchParentSize(), color = V2Cyan)
-                    androidx.compose.foundation.Image(
-                        painter = painterResource(R.drawable.knoux_symbol_alpha),
-                        contentDescription = "KNOUX AI",
-                        modifier = Modifier.matchParentSize(),
-                    )
-                }
+                com.knoux.ai.ui.components.BrandSeal(size = 28.dp, haloColor = V2Cyan)
                 Spacer(Modifier.width(6.dp))
                 androidx.compose.foundation.Image(
                     painter = painterResource(R.drawable.knoux_wordmark_alpha),
@@ -294,8 +287,7 @@ private fun OnboardingCompanyPage() {
                 Modifier.align(Alignment.CenterStart).padding(start = 6.dp).size(124.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                HeaderHalo(Modifier.matchParentSize(), color = V2Cyan)
-                BrandSymbol(size = 86.dp)
+                com.knoux.ai.ui.components.BrandSeal(size = 116.dp, haloColor = V2Cyan)
             }
         }
         OnboardingCompanyDetails()

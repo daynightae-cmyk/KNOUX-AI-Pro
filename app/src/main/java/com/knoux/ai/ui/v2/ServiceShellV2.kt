@@ -59,6 +59,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -125,6 +126,29 @@ internal fun compactServiceTitleSize(titleLength: Int): Float =
     serviceTitleSize(titleLength) - 3f
 
 /**
+ * One measured slot of the board-01 status ribbon: icon, live value and the
+ * promise underneath. Values always come from a real local read — the ribbon
+ * never invents a number to fill a slot.
+ */
+data class HeroRibbonSlot(
+    val icon: ImageVector,
+    val value: String,
+    val label: String,
+    val accent: Color,
+)
+
+/**
+ * Vertical lane the pinned ribbon reserves at the stage floor. The three-slot
+ * board ribbon is taller than the legacy strip, so the instrument column must
+ * leave it more room; the compact lane folds slots to one line.
+ */
+internal fun serviceRibbonLane(compact: Boolean, hasSlots: Boolean): Dp = when {
+    compact -> 28.dp
+    hasSlots -> 64.dp
+    else -> 40.dp
+}
+
+/**
  * The shared service page — the reference structure. The royal stage is
  * fixed under the app bar; the primary action is pinned directly beneath it
  * (never at the bottom of the screen), so the run/cancel control always sits
@@ -139,6 +163,7 @@ fun FixedServiceScreen(
     scene: @Composable (Modifier) -> Unit,
     modifier: Modifier = Modifier,
     action: (@Composable () -> Unit)? = null,
+    ribbonSlots: List<HeroRibbonSlot>? = null,
     listState: LazyListState = rememberLazyListState(),
     content: @Composable ColumnScope.() -> Unit,
 ) {
@@ -156,6 +181,7 @@ fun FixedServiceScreen(
                 statusColor = statusColor,
                 metric = metric,
                 compact = compact,
+                ribbonSlots = ribbonSlots,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(headerHeight)
@@ -207,6 +233,7 @@ fun ServiceHero(
     metric: String?,
     modifier: Modifier = Modifier,
     compact: Boolean = false,
+    ribbonSlots: List<HeroRibbonSlot>? = null,
     scene: @Composable (Modifier) -> Unit,
 ) {
     val motion = rememberMotionEnabled()
@@ -272,10 +299,11 @@ fun ServiceHero(
         val stagSize = serviceStagSize(maxHeight, maxWidth)
         // The instrument keeps stage scale but never eats the identity lane
         // or the ribbon lane: cap it by what the column actually has left.
+        val ribbonLane = serviceRibbonLane(compact, ribbonSlots != null)
         val sceneSize = if (compact) 44.dp else minOf(
             maxHeight * .52f,
             maxWidth * .50f,
-            maxHeight - 165.dp,
+            maxHeight - 165.dp - (ribbonLane - 40.dp),
         )
         val glowScale = 1.04f + breath * .035f
 
@@ -348,7 +376,7 @@ fun ServiceHero(
                     // The ribbon is pinned to the stage floor outside this
                     // column; reserve its lane so the instrument can never
                     // push it past the clip edge and slice its glyphs.
-                    bottom = if (compact) 28.dp else 40.dp,
+                    bottom = ribbonLane,
                 ),
         ) {
             // Identity line — order number and the wordmark, PRO badge when earned.
@@ -356,6 +384,14 @@ fun ServiceHero(
                 Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
+                // The official seal opens the stage like board 01: the original
+                // logo above the scene, breathing softly on the night sky.
+                com.knoux.ai.ui.components.BrandSeal(
+                    size = if (compact) 24.dp else 32.dp,
+                    haloColor = spec.accent,
+                    contentDescription = null,
+                )
+                Spacer(Modifier.width(if (compact) 6.dp else 8.dp))
                 Column(Modifier.weight(1f)) {
                     KText(
                         "${spec.order} · ${spec.english}",
@@ -483,6 +519,7 @@ fun ServiceHero(
             statusColor = statusColor,
             metric = metric,
             compact = compact,
+            slots = ribbonSlots,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(
@@ -661,6 +698,7 @@ private fun HeroStatusRibbon(
     metric: String?,
     compact: Boolean,
     modifier: Modifier = Modifier,
+    slots: List<HeroRibbonSlot>? = null,
 ) {
     val motion = rememberMotionEnabled()
     val pulse by rememberInfiniteTransition(label = "serviceStatusPulse").animateFloat(
@@ -671,19 +709,67 @@ private fun HeroStatusRibbon(
             repeatMode = RepeatMode.Reverse,
         ),
     )
-    Row(
-        modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(if (compact) 9.dp else 10.dp))
-            .background(Color.Black.copy(alpha = .40f))
-            .border(
-                1.dp,
-                statusColor.copy(alpha = .28f + pulse * .16f),
-                RoundedCornerShape(if (compact) 9.dp else 10.dp),
-            )
-            .padding(horizontal = if (compact) 8.dp else 10.dp, vertical = if (compact) 4.dp else 5.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
+    val shape = RoundedCornerShape(if (compact) 9.dp else 10.dp)
+    val frame = modifier
+        .fillMaxWidth()
+        .clip(shape)
+        .background(Color.Black.copy(alpha = .40f))
+        .border(1.dp, statusColor.copy(alpha = .28f + pulse * .16f), shape)
+        .padding(horizontal = if (compact) 8.dp else 10.dp, vertical = if (compact) 4.dp else 5.dp)
+    if (slots != null) {
+        // Board 01: three measured slots — icon, live value, promise — split
+        // by hairlines. Every value is a real local read, never a fixture.
+        Row(frame.testTag("service_status_ribbon"), verticalAlignment = Alignment.CenterVertically) {
+            slots.take(3).forEachIndexed { index, slot ->
+                if (index > 0) {
+                    Box(
+                        Modifier
+                            .width(1.dp)
+                            .height(if (compact) 14.dp else 26.dp)
+                            .background(Color.White.copy(alpha = .14f)),
+                    )
+                }
+                Row(
+                    Modifier
+                        .weight(1f)
+                        .padding(horizontal = if (compact) 4.dp else 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    Icon(
+                        slot.icon,
+                        null,
+                        tint = slot.accent,
+                        modifier = Modifier
+                            .size(if (compact) 11.dp else 15.dp)
+                            .graphicsLayer { alpha = .8f + pulse * .2f },
+                    )
+                    Spacer(Modifier.width(if (compact) 4.dp else 6.dp))
+                    Column(Modifier.weight(1f, fill = false)) {
+                        KText(
+                            slot.value,
+                            size = if (compact) 8.6.sp else 10.5.sp,
+                            weight = FontWeight.Black,
+                            color = Color.White,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        if (!compact) {
+                            KText(
+                                slot.label,
+                                size = 7.4.sp,
+                                color = V2Soft,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        return
+    }
+    Row(frame, verticalAlignment = Alignment.CenterVertically) {
         Box(
             Modifier
                 .size(if (compact) 6.dp else 7.dp)
@@ -1292,10 +1378,13 @@ internal fun DeepScanSonar(state: DeepScanUiState, modifier: Modifier = Modifier
                 .border(1.dp, accent.copy(alpha = .55f), CircleShape),
             contentAlignment = Alignment.Center,
         ) {
-            Image(
-                painter = painterResource(R.drawable.knoux_symbol_alpha),
+            // The sonar hub carries the official company seal; the sweep
+            // around it is the only moving part while a scan runs.
+            com.knoux.ai.ui.components.BrandSeal(
+                size = if (running) 52.dp else 46.dp,
+                haloColor = accent,
+                animated = false,
                 contentDescription = null,
-                modifier = Modifier.fillMaxSize().padding(6.dp),
             )
         }
     }

@@ -94,6 +94,7 @@ fun KnouxSplashScreen(
     // convert to Compose ImageBitmap only at draw time.
     val kBitmapState = remember { mutableStateOf<android.graphics.Bitmap?>(null) }
     val wordBitmapState = remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+    val sealBitmapState = remember { mutableStateOf<android.graphics.Bitmap?>(null) }
     LaunchedEffect(R.drawable.knoux_symbol_alpha) {
         withContext(kotlinx.coroutines.Dispatchers.IO) {
             val bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.knoux_symbol_alpha)
@@ -104,6 +105,12 @@ fun KnouxSplashScreen(
         withContext(kotlinx.coroutines.Dispatchers.IO) {
             val bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.knoux_wordmark_alpha)
             wordBitmapState.value = bitmap
+        }
+    }
+    LaunchedEffect(R.drawable.knoux_seal_official) {
+        withContext(kotlinx.coroutines.Dispatchers.IO) {
+            val bitmap = BitmapFactory.decodeResource(context.resources, R.drawable.knoux_seal_official)
+            sealBitmapState.value = bitmap
         }
     }
 
@@ -204,6 +211,38 @@ fun KnouxSplashScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            // --- official white company seal: bloom, then one settling ring ---
+            Canvas(Modifier.size(78.dp)) {
+                val seal = sealBitmapState.value ?: return@Canvas
+                val p = if (calm) 1f else seg(t, 60f, 760f)
+                if (p <= 0f) return@Canvas
+                val bmp = seal.asImageBitmap()
+                val r = size.minDimension / 2f
+                // A single ring closes around the disc while it blooms in;
+                // it never spins after the reveal so the mark rests calm.
+                drawArc(
+                    color = ProArcticCyan.copy(alpha = .55f * p),
+                    startAngle = -90f,
+                    sweepAngle = 360f * p,
+                    useCenter = false,
+                    topLeft = Offset(center.x - r * .98f, center.y - r * .98f),
+                    size = Size(r * 1.96f, r * 1.96f),
+                    style = Stroke(width = 1.6.dp.toPx(), cap = StrokeCap.Round),
+                )
+                val disc = r * .84f * (0.90f + 0.10f * p)
+                val off = center - Offset(disc, disc)
+                drawImage(
+                    image = bmp,
+                    srcOffset = IntOffset.Zero,
+                    srcSize = IntSize(seal.width, seal.height),
+                    dstOffset = IntOffset(off.x.toInt(), off.y.toInt()),
+                    dstSize = IntSize((disc * 2f).toInt(), (disc * 2f).toInt()),
+                    alpha = p,
+                )
+            }
+
+            Spacer(Modifier.height(8.dp))
+
             // --- authentic K raster, revealed stroke by stroke with a light tip ---
             Canvas(Modifier.size(width = 200.dp, height = 171.dp)) {
                 val androidBmp = kBitmapState.value ?: return@Canvas

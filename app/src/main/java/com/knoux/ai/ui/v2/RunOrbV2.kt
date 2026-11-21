@@ -33,7 +33,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -115,6 +114,26 @@ internal fun KnouxRunOrb(
         ),
         label = "orb-spark",
     )
+    // The purple K jewel turns in 3D inside the sphere: a slow yaw sway plus a
+    // gentle float, so it reads as a sculpted object, not a flat sticker.
+    val jewelYaw by transition.animateFloat(
+        initialValue = -26f,
+        targetValue = 26f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(if (running) 1500 else 3400, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "orb-jewel-yaw",
+    )
+    val jewelFloat by transition.animateFloat(
+        initialValue = -1f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(if (running) 1100 else 2400, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "orb-jewel-float",
+    )
     val pulse = if (running) breath else 1f
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
@@ -172,8 +191,19 @@ internal fun KnouxRunOrb(
             val r = this.size.minDimension / 2f
             drawHalo(r, running, accent, accent2)
             drawOrbits(r, spin, counterSpin, running, accent, accent2)
-            drawCore(r * .62f, accent, accent2)
-            drawKMark(r * .62f, accent, accent2)
+            // No glass sphere anymore: the purple K emblem IS the control.
+            // A soft violet cushion of light seats it in space instead.
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        accent2.copy(alpha = if (running) .30f else .18f),
+                        Color.Transparent,
+                    ),
+                    center = center,
+                    radius = r * .66f,
+                ),
+                radius = r * .66f,
+            )
             drawSpark(r * .92f, spark, accent)
             if (pressGlow > 0f) {
                 // A light bloom under the finger while pressed.
@@ -189,6 +219,28 @@ internal fun KnouxRunOrb(
             if (running && progress != null) drawProgress(r, progress, accent)
             if (running && progress == null) drawIndeterminate(r, spin, accent)
         }
+        // The purple K mark IS the start button — it replaced the circular
+        // orb in every service. A press tilts it into the screen (3D push)
+        // and the whole control springs back; the rim arc still reports real
+        // progress. The app's launcher identity keeps its original logo.
+        val jewelMotion = rememberMotionEnabled()
+        androidx.compose.foundation.Image(
+            painter = androidx.compose.ui.res.painterResource(com.knoux.ai.R.drawable.knoux_symbol_alpha),
+            contentDescription = null,
+            modifier = Modifier
+                .size(size * .74f)
+                .graphicsLayer {
+                    if (jewelMotion) {
+                        rotationY = jewelYaw
+                        rotationX = 6f * jewelFloat + 16f * pressGlow
+                        translationY = jewelFloat * size.toPx() * .022f
+                        cameraDistance = 10f * density
+                        val depth = 1f + .04f * jewelFloat
+                        scaleX = depth
+                        scaleY = depth
+                    }
+                },
+        )
     }
 }
 
@@ -404,62 +456,6 @@ private fun DrawScope.drawCore(radius: Float, accent: Color, accent2: Color) {
         ),
         radius = radius * .58f,
         center = Offset(center.x - radius * .34f, center.y - radius * .40f),
-    )
-}
-
-/**
- * The K mark: two angled strokes and a leg, drawn as filled paths so it stays
- * crisp at every orb size instead of depending on a font glyph.
- */
-private fun DrawScope.drawKMark(radius: Float, accent: Color, accent2: Color) {
-    val w = radius * .30f          // stroke width
-    val h = radius * .98f          // full height
-    val cx = center.x
-    val cy = center.y
-    val top = cy - h / 2f
-    val bottom = cy + h / 2f
-
-    // The reference mark runs magenta at the top into violet and finishes cyan
-    // at the lower leg, so the three-stop gradient reads as one lit solid.
-    val brush = Brush.linearGradient(
-        colors = listOf(V2Pink, accent2, accent),
-        start = Offset(cx - w * 1.4f, top),
-        end = Offset(cx + w * 1.9f, bottom),
-    )
-
-    // Vertical spine, slightly slanted like the reference mark.
-    val spine = Path().apply {
-        moveTo(cx - w * .55f, top)
-        lineTo(cx + w * .45f, top)
-        lineTo(cx + w * .05f, bottom)
-        lineTo(cx - w * .95f, bottom)
-        close()
-    }
-    // Upper arm.
-    val upper = Path().apply {
-        moveTo(cx + w * .10f, cy - h * .06f)
-        lineTo(cx + w * 1.25f, top)
-        lineTo(cx + w * 1.85f, top + h * .20f)
-        lineTo(cx + w * .52f, cy + h * .02f)
-        close()
-    }
-    // Lower leg.
-    val lower = Path().apply {
-        moveTo(cx + w * .16f, cy + h * .02f)
-        lineTo(cx + w * 1.55f, bottom)
-        lineTo(cx + w * .92f, bottom)
-        lineTo(cx - w * .20f, cy + h * .30f)
-        close()
-    }
-    drawPath(spine, brush)
-    drawPath(upper, brush)
-    drawPath(lower, brush)
-
-    // Inner glow edge.
-    drawPath(
-        spine,
-        Brush.linearGradient(listOf(Color.White.copy(alpha = .38f), Color.Transparent)),
-        style = Stroke(width = radius * .012f),
     )
 }
 

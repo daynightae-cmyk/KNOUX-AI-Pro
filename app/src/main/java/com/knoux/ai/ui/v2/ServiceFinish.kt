@@ -552,6 +552,7 @@ fun ServiceBanner(
     statusColor: Color,
     modifier: Modifier = Modifier,
     metric: String? = null,
+    ribbonSlots: List<HeroRibbonSlot>? = null,
 ) {
     BoxWithConstraints(modifier.fillMaxWidth()) {
         val window = androidx.compose.ui.platform.LocalConfiguration.current
@@ -563,6 +564,7 @@ fun ServiceBanner(
             statusColor = statusColor,
             metric = metric,
             compact = compact,
+            ribbonSlots = ribbonSlots,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(headerHeight),

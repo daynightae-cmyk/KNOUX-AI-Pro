@@ -836,14 +836,12 @@ fun BrandLockupV2() {
     val day = LocalDayMode.current
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.size(28.dp), contentAlignment = Alignment.Center) {
-                HeaderHalo(Modifier.matchParentSize(), color = V2Violet)
-                Image(
-                    painter = painterResource(R.drawable.knoux_symbol_alpha),
-                    contentDescription = "KNOUX AI",
-                    modifier = Modifier.matchParentSize(),
-                )
-            }
+            // The official white company seal leads the lockup on every V2
+            // screen; its halo breathes and orbits, the pearl disc stays lit.
+            com.knoux.ai.ui.components.BrandSeal(
+                size = 30.dp,
+                haloColor = if (day) DayViolet else V2Violet,
+            )
             Spacer(Modifier.width(6.dp))
             Image(
                 painter = painterResource(R.drawable.knoux_wordmark_alpha),

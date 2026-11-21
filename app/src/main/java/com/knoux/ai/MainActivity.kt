@@ -47,6 +47,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.knoux.ai.splash.KnouxLoadingScreen
 import com.knoux.ai.splash.KnouxSplashScreen
 import com.knoux.ai.ui.theme.KnouxDayColorScheme
 import com.knoux.ai.ui.theme.KnouxTheme
@@ -151,14 +152,14 @@ private const val SETTINGS_ROUTE = "settings"
 
 private const val ROUTE_APP_DETAIL = "app-detail"
 
-private enum class EntryStage { Splash, Onboarding, Auth, Shell }
+private enum class EntryStage { Splash, Loading, Onboarding, Auth, Shell }
 
 @Composable
 fun KnouxApp(startRoute: String? = null, startDayMode: Boolean? = null) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val entryDebugRoute = startRoute?.takeIf { it == "onboarding" || it == "auth" }
-    val shellStartRoute = startRoute?.takeUnless { it == "onboarding" || it == "auth" }
+    val entryDebugRoute = startRoute?.takeIf { it == "onboarding" || it == "auth" || it == "loading" }
+    val shellStartRoute = startRoute?.takeUnless { it == "onboarding" || it == "auth" || it == "loading" }
     // Resolve the post-splash destination once, off the main thread, while the
     // approved splash artwork and sound timeline run unchanged.
     val coordinator = remember {
@@ -170,6 +171,7 @@ fun KnouxApp(startRoute: String? = null, startDayMode: Boolean? = null) {
             when {
                 entryDebugRoute == "onboarding" -> EntryStage.Onboarding
                 entryDebugRoute == "auth" -> EntryStage.Auth
+                entryDebugRoute == "loading" -> EntryStage.Loading
                 !startRoute.isNullOrBlank() -> EntryStage.Shell
                 else -> EntryStage.Splash
             }
@@ -209,16 +211,23 @@ fun KnouxApp(startRoute: String? = null, startDayMode: Boolean? = null) {
             dayActive && !nightStage
     }
 
-    // Leave splash exactly once: after the animation finishes AND the local
-    // session decision is ready. Returning users with a valid local session go
-    // straight to Shell; no login flash, no forced Auth detour.
-    LaunchedEffect(splashFinished, destination) {
-        if (entryStage == EntryStage.Splash && splashFinished && destination != null) {
+    // Leave splash exactly once, into the initialization stage: the approved
+    // loading art runs its showcase window while StartupCoordinator finishes.
+    // The loading stage itself hands off to the real destination when ready.
+    LaunchedEffect(splashFinished) {
+        if (entryStage == EntryStage.Splash && splashFinished) {
+            entryStage = EntryStage.Loading
+        }
+    }
+    // Returning users with a valid local session go straight to Shell after
+    // loading; no login flash, no forced Auth detour.
+    val advanceFromLoading: () -> Unit = {
+        if (entryStage == EntryStage.Loading) {
             entryStage = when (destination) {
                 StartDestination.Onboarding -> EntryStage.Onboarding
                 StartDestination.Shell -> EntryStage.Shell
                 StartDestination.Auth -> EntryStage.Auth
-                else -> EntryStage.Splash
+                else -> EntryStage.Shell
             }
         }
     }
@@ -270,6 +279,11 @@ fun KnouxApp(startRoute: String? = null, startDayMode: Boolean? = null) {
             when (stage) {
                 EntryStage.Splash -> KnouxSplashScreen(
                     onFinished = { splashFinished = true }
+                )
+                EntryStage.Loading -> KnouxLoadingScreen(
+                    // The debug inspection route parks on this stage forever.
+                    ready = destination != null && entryDebugRoute != "loading",
+                    onFinished = advanceFromLoading,
                 )
                 EntryStage.Onboarding -> CompositionLocalProvider(
                     LocalDayMode provides false,

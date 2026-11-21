@@ -242,7 +242,7 @@ fun BrandWordmark(modifier: Modifier = Modifier, height: Dp = 17.dp) {
 @Composable
 fun BrandLockup(modifier: Modifier = Modifier, symbolSize: Dp = 28.dp, wordmarkHeight: Dp = 15.dp) {
     Row(modifier, verticalAlignment = Alignment.CenterVertically) {
-        BrandSymbol(size = symbolSize)
+        BrandSeal(size = symbolSize + 4.dp)
         Spacer(Modifier.width(7.dp))
         BrandWordmark(height = wordmarkHeight)
     }
