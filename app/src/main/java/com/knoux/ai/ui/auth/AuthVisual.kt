@@ -45,6 +45,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
@@ -63,7 +64,18 @@ import com.knoux.ai.ui.theme.ProTextSecondary
 import com.knoux.ai.ui.theme.ProTextPrimary
 import com.knoux.ai.ui.theme.ProBlue
 
-/** The visual states the identity gateway can present. */
+/**
+ * The visual states the identity gateway can present.
+ *
+ * Scanning palette follows the approved biometric reference: magenta ridges
+ * on the upper half melting into cyan on the lower half, inside a violet→cyan
+ * halo ring. Green is reserved exclusively for real verified success.
+ */
+private val ScanMagenta = Color(0xFFE879F9)
+private val ScanViolet = Color(0xFFC084FC)
+private val ScanCyan = Color(0xFF22D3EE)
+private val VerifiedGreen = Color(0xFF3DFFB0)
+
 enum class AuthVisualState {
     /** Ready — the sensor is available and waiting for the user. */
     Idle,
@@ -143,15 +155,15 @@ fun FingerprintOrb(
         label = "orb-press",
     )
     val coreColor = when (state) {
-        AuthVisualState.Success -> Color(0xFF3DFFB0)
+        AuthVisualState.Success -> VerifiedGreen
         AuthVisualState.Unavailable -> ProWarning
-        AuthVisualState.Scanning -> ProArcticCyan
-        AuthVisualState.Idle -> ProArcticCyan
+        AuthVisualState.Scanning -> ScanMagenta
+        AuthVisualState.Idle -> ScanViolet
     }
     val ringColor = when (state) {
-        AuthVisualState.Success -> ProArcticCyan
+        AuthVisualState.Success -> VerifiedGreen
         AuthVisualState.Unavailable -> ProWarning
-        else -> ProArcticCyan
+        else -> ScanCyan
     }
 
     Box(
@@ -186,13 +198,16 @@ fun FingerprintOrb(
                 radius = radius * 0.98f,
             )
 
-            // two holographic orbit rings, counter-rotating
+            // two holographic orbit rings, counter-rotating — violet→cyan per
+            // the approved scanner reference (green only after real success).
+            val orbitA = if (state == AuthVisualState.Success) VerifiedGreen else ScanCyan
+            val orbitB = if (state == AuthVisualState.Success) VerifiedGreen else ScanViolet
             drawArc(
                 brush = Brush.sweepGradient(
                     listOf(
                         Color.Transparent,
-                        ProArcticCyan.copy(alpha = 0.85f),
-                        ProArcticCyan.copy(alpha = 0.75f),
+                        orbitA.copy(alpha = 0.85f),
+                        orbitB.copy(alpha = 0.75f),
                         Color.Transparent,
                     ),
                     center = center,
@@ -208,8 +223,8 @@ fun FingerprintOrb(
                 brush = Brush.sweepGradient(
                     listOf(
                         Color.Transparent,
-                        ProArcticCyan.copy(alpha = 0.70f),
-                        ProArcticCyan.copy(alpha = 0.70f),
+                        orbitB.copy(alpha = 0.70f),
+                        orbitA.copy(alpha = 0.70f),
                         Color.Transparent,
                     ),
                     center = center,
@@ -259,7 +274,9 @@ fun FingerprintOrb(
                 style = Stroke(width = 1.2.dp.toPx()),
             )
 
-            // fingerprint ridges — realistic nested arcs with a core whorl
+            // fingerprint ridges — magenta on the upper half melting into cyan
+            // below, exactly like the reference scanner dome. Success keeps the
+            // ridges violet so the green check reads as the verified overlay.
             val ridges = 9
             for (index in 0 until ridges) {
                 val t = index / (ridges - 1f)
@@ -267,15 +284,25 @@ fun FingerprintOrb(
                 val start = 128f + (index % 3) * 5f
                 val arcSweep = 286f - (index % 4) * 16f
                 val alpha = (0.95f - 0.42f * t).coerceIn(0.22f, 0.95f)
+                val ridgeTop = when (state) {
+                    AuthVisualState.Success -> ScanViolet
+                    AuthVisualState.Unavailable -> ProWarning
+                    else -> ScanMagenta
+                }
+                val ridgeBottom = when (state) {
+                    AuthVisualState.Success -> ScanViolet.copy(alpha = 0.8f)
+                    AuthVisualState.Unavailable -> ProWarning.copy(alpha = 0.8f)
+                    else -> ScanCyan
+                }
                 drawArc(
-                    brush = Brush.linearGradient(
+                    brush = Brush.verticalGradient(
                         listOf(
-                            ProArcticCyan.copy(alpha = alpha),
-                            ProArcticCyan.copy(alpha = alpha * 0.92f),
-                            ProBlue.copy(alpha = alpha * 0.80f),
+                            ridgeTop.copy(alpha = alpha),
+                            ridgeTop.copy(alpha = alpha * 0.92f),
+                            ridgeBottom.copy(alpha = alpha * 0.88f),
                         ),
-                        start = Offset(center.x - ridgeRadius, center.y - ridgeRadius),
-                        end = Offset(center.x + ridgeRadius, center.y + ridgeRadius),
+                        startY = center.y - ridgeRadius,
+                        endY = center.y + ridgeRadius,
                     ),
                     startAngle = start,
                     sweepAngle = arcSweep,
@@ -289,7 +316,10 @@ fun FingerprintOrb(
             // the core whorl
             drawArc(
                 brush = Brush.sweepGradient(
-                    listOf(ProArcticCyan, ProArcticCyan, ProBlue, ProArcticCyan)
+                    when (state) {
+                        AuthVisualState.Success -> listOf(VerifiedGreen, VerifiedGreen, ScanViolet, VerifiedGreen)
+                        else -> listOf(ScanCyan, ScanMagenta, ScanViolet, ScanCyan)
+                    }
                 ),
                 startAngle = 40f,
                 sweepAngle = 300f,
@@ -321,6 +351,33 @@ fun FingerprintOrb(
                     radius = radius * (0.72f + 0.26f * halo),
                     center = center,
                     style = Stroke(width = 3.dp.toPx()),
+                )
+
+                // The verified overlay: a thick green check drawn over the
+                // ridges, per the success reference. Only reachable after a
+                // real BiometricPrompt confirmation + live session.
+                val check = Path().apply {
+                    moveTo(center.x - radius * 0.30f, center.y + radius * 0.02f)
+                    lineTo(center.x - radius * 0.08f, center.y + radius * 0.24f)
+                    lineTo(center.x + radius * 0.34f, center.y - radius * 0.22f)
+                }
+                drawPath(
+                    check,
+                    VerifiedGreen.copy(alpha = 0.35f),
+                    style = Stroke(
+                        width = 13.dp.toPx(),
+                        cap = StrokeCap.Round,
+                        join = androidx.compose.ui.graphics.StrokeJoin.Round,
+                    ),
+                )
+                drawPath(
+                    check,
+                    VerifiedGreen,
+                    style = Stroke(
+                        width = 7.dp.toPx(),
+                        cap = StrokeCap.Round,
+                        join = androidx.compose.ui.graphics.StrokeJoin.Round,
+                    ),
                 )
             }
         }

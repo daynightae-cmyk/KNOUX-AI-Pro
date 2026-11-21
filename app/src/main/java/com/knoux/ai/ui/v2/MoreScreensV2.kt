@@ -52,6 +52,7 @@ import androidx.compose.material.icons.rounded.BatteryFull
 import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.ChevronLeft
+import androidx.compose.material.icons.rounded.Logout
 import androidx.compose.material.icons.rounded.CleaningServices
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.CloudOff
@@ -1902,7 +1903,11 @@ private fun AiImpactStat(
  * ------------------------------------------------------------------ */
 
 @Composable
-fun V2SettingsScreenV2(onBack: () -> Unit) {
+fun V2SettingsScreenV2(
+    onBack: () -> Unit,
+    signedIn: Boolean = false,
+    onSignOut: () -> Unit = {},
+) {
     val context = LocalContext.current
     val dayMode = KnouxDayState.enabled
     var notifications by remember { mutableStateOf(true) }
@@ -1936,9 +1941,32 @@ fun V2SettingsScreenV2(onBack: () -> Unit) {
                             Spacer(Modifier.width(10.dp))
                             Column(Modifier.weight(1f)) {
                                 KText("KNOUX ID", size = 11.sp, weight = FontWeight.Bold)
-                                KText("وضع الضيف · كل الأدوات محلية", size = 9.sp, color = V2Soft)
+                                KText(
+                                    if (signedIn) "حساب متصل · جلسة مشفّرة على الجهاز"
+                                    else "غير مسجل · كل الأدوات تعمل محليًا",
+                                    size = 9.sp,
+                                    color = V2Soft,
+                                )
                             }
-                            SummaryPill("ضيف", V2Cyan)
+                            SummaryPill(if (signedIn) "متصل" else "ضيف", if (signedIn) V2Green else V2Cyan)
+                        }
+                    }
+                }
+                item {
+                    V2GlassCard(Modifier.fillMaxWidth(), padding = 11.dp, radius = 18.dp, glow = V2Amber, borderAlpha = .30f) {
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(14.dp))
+                                .clickable(onClick = onSignOut)
+                                .padding(vertical = 2.dp),
+                        ) {
+                            SettingNavRow(
+                                Icons.Rounded.Logout,
+                                if (signedIn) "تسجيل الخروج" else "فتح شاشة الدخول",
+                                if (signedIn) "ينهي الجلسة ويعيدك لشاشة الدخول" else "Google · Passkeys · البريد · البصمة",
+                                V2Amber,
+                            )
                         }
                     }
                 }

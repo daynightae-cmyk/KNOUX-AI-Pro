@@ -27,6 +27,8 @@ class KnouxAuthController(context:Context, config:KnouxAuthConfig) {
     /** Fast local-only session validity used for the post-splash entry decision. No network. */
     suspend fun localSessionValid():Boolean=api.localSessionValid()
     suspend fun signOut()=api.signOut()
+    /** True when an encrypted session token is stored on this device. */
+    fun hasSession():Boolean=api.hasSession()
     suspend fun listPasskeys():JSONObject=api.listPasskeys()
     // Guest mode is deliberately not exposed as a Supabase Auth success.
 }

@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -78,15 +80,17 @@ private val ValleyRidges = listOf(
 @Composable
 internal fun LoginBrand() {
     Column(
-        Modifier.fillMaxWidth().zIndex(1f).padding(top = 9.dp, bottom = 5.dp),
+        Modifier.fillMaxWidth().zIndex(1f).padding(top = 4.dp, bottom = 2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(2.dp),
+        verticalArrangement = Arrangement.spacedBy(1.dp),
     ) {
+        // Reference: the gold crown floats above the header wordmark.
+        CrownGold(size = 24.dp, color = ProEditionGold)
         // The official company seal opens the login brand, halo breathing.
-        com.knoux.ai.ui.components.BrandSeal(size = 56.dp, haloColor = NeonViolet)
+        com.knoux.ai.ui.components.BrandSeal(size = 44.dp, haloColor = NeonViolet)
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                BrandWordmark(height = 26.dp)
+                BrandWordmark(height = 22.dp)
                 Spacer(Modifier.width(9.dp))
                 Row(
                     Modifier.border(1.dp, ProEditionGold, RoundedCornerShape(50))
@@ -102,7 +106,7 @@ internal fun LoginBrand() {
         Text(
             "مساعدك الذكي لإدارة الجهاز وتنظيفه",
             color = ProTextPrimary,
-            fontSize = 12.sp,
+            fontSize = 11.sp,
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .background(
@@ -110,7 +114,13 @@ internal fun LoginBrand() {
                         listOf(Color.Transparent, Color(0xEC07051C), Color(0xEC07051C), Color.Transparent),
                     ),
                 )
-                .padding(horizontal = 18.dp, vertical = 2.dp),
+                .padding(horizontal = 18.dp, vertical = 1.dp),
+        )
+        Text(
+            "Smart Management & AI Cleaning",
+            color = ProTextSecondary,
+            fontSize = 9.sp,
+            textAlign = TextAlign.Center,
         )
     }
 }
@@ -163,7 +173,7 @@ internal fun LoginLaurel(mirror: Boolean, modifier: Modifier = Modifier) {
 @Composable
 internal fun LoginOrDivider(modifier: Modifier = Modifier) {
     Row(
-        modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 1.dp),
+        modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -339,6 +349,26 @@ internal fun Modifier.loginGlass(): Modifier =
             GlassShape,
         )
 
+/** One of the three trust pillars under the login panel, per reference (7). */
+@Composable
+internal fun LoginTrustPillar(
+    icon: ImageVector,
+    arabic: String,
+    english: String,
+    accent: Color,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier.padding(horizontal = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(3.dp),
+    ) {
+        Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(19.dp))
+        Text(arabic, color = ProTextPrimary, fontSize = 11.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+        Text(english, color = ProTextSecondary, fontSize = 8.sp, textAlign = TextAlign.Center, maxLines = 1)
+    }
+}
+
 @Composable
 internal fun NeonLoginButton(
     label: String,
@@ -346,6 +376,8 @@ internal fun NeonLoginButton(
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     bright: Boolean = false,
+    gold: Boolean = false,
+    green: Boolean = false,
     enabled: Boolean = true,
     onClick: () -> Unit,
 ) {
@@ -353,31 +385,41 @@ internal fun NeonLoginButton(
     val background = when {
         !enabled -> listOf(Color(0xFF1A1632), Color(0xFF0D1029))
         bright -> listOf(Color.White, Color.White)
+        gold -> listOf(Color(0xFFF5B93E), Color(0xFFE8940A), Color(0xFFD97706))
+        green -> listOf(Color(0xFF0BA572), Color(0xFF067A55), Color(0xFF065F46))
         else -> listOf(Color(0xFF351B77), Color(0xFF120D36), Color(0xFF241153))
     }
+    val borderBrush = when {
+        gold -> Brush.horizontalGradient(listOf(Color(0xFFFFE29A), Color(0xFFFFCF68), Color(0xFFFF9D2E)))
+        green -> Brush.horizontalGradient(listOf(Color(0xFF7CFFCE), Color(0xFF3DFFB0), Color(0xFF10B981)))
+        bright -> Brush.horizontalGradient(listOf(Color(0xFF747775), Color(0xFF747775)))
+        else -> Brush.horizontalGradient(listOf(ElectricBlue, NeonViolet, ProArcticCyan))
+    }
+    // Reference: leading icon, centred label, trailing chevron — pinned LTR so
+    // the icon never flips to the right in the Arabic RTL layout.
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
     Row(
         modifier
             .fillMaxWidth()
-            .heightIn(min = 49.dp)
+            .heightIn(min = 46.dp)
             .clip(shape)
             .background(Brush.verticalGradient(background))
-            .border(
-                1.dp,
-                Brush.horizontalGradient(
-                    if (bright) listOf(Color(0xFF747775), Color(0xFF747775))
-                    else listOf(ElectricBlue, NeonViolet, ProArcticCyan),
-                ),
-                shape,
-            )
+            .border(1.dp, borderBrush, shape)
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .padding(horizontal = 13.dp, vertical = 4.dp),
+            .padding(horizontal = 13.dp, vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        if (bright) {
-            Image(painterResource(R.drawable.knoux_google_g), null, Modifier.size(20.dp))
-        } else {
-            Icon(icon, null, tint = ProArcticCyan, modifier = Modifier.size(20.dp))
+        when {
+            bright -> Image(painterResource(R.drawable.knoux_google_g), null, Modifier.size(20.dp))
+            gold -> Box(
+                Modifier.size(26.dp).clip(RoundedCornerShape(50)).background(Color.White),
+                contentAlignment = Alignment.Center,
+            ) {
+                Image(painterResource(R.drawable.knoux_google_g), null, Modifier.size(17.dp))
+            }
+            green -> Icon(icon, null, tint = Color.White, modifier = Modifier.size(20.dp))
+            else -> Icon(icon, null, tint = ProArcticCyan, modifier = Modifier.size(20.dp))
         }
         Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
@@ -385,17 +427,38 @@ internal fun NeonLoginButton(
                 color = when {
                     !enabled -> ProTextSecondary
                     bright -> Color(0xFF1F1F1F)
+                    gold -> Color(0xFF241300)
                     else -> ProTextPrimary
                 },
                 fontSize = 14.sp,
                 lineHeight = 18.sp,
-                fontWeight = FontWeight.SemiBold,
+                fontWeight = if (gold || green) FontWeight.Bold else FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
             )
             if (subtitle != null) {
-                Text(subtitle, color = ProTextSecondary, fontSize = 10.sp, lineHeight = 14.sp, textAlign = TextAlign.Center)
+                Text(
+                    subtitle,
+                    color = when {
+                        gold -> Color(0xFF3A2404).copy(alpha = .85f)
+                        green -> Color.White.copy(alpha = .8f)
+                        else -> ProTextSecondary
+                    },
+                    fontSize = 10.sp, lineHeight = 14.sp, textAlign = TextAlign.Center,
+                )
             }
         }
-        Spacer(Modifier.width(20.dp))
+        Icon(
+            Icons.Rounded.ChevronRight,
+            contentDescription = null,
+            tint = when {
+                !enabled -> ProTextSecondary
+                gold -> Color(0xFF241300)
+                green -> Color.White
+                bright -> Color(0xFF1F1F1F)
+                else -> ProTextPrimary.copy(alpha = .85f)
+            },
+            modifier = Modifier.size(20.dp),
+        )
+    }
     }
 }

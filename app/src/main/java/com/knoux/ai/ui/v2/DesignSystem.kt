@@ -37,6 +37,7 @@ import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.ChevronLeft
+import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.CleaningServices
 import androidx.compose.material.icons.rounded.GridView
 import androidx.compose.material.icons.rounded.Home
@@ -1342,6 +1343,7 @@ fun V2GradientButton(
     height: Dp = 48.dp,
     contentColor: Color = Color.White,
     trailingChevron: Boolean = false,
+    chevronRight: Boolean = false,
 ) {
     val proTheme = LocalProTheme.current
     val isPro = proTheme.isPro
@@ -1373,8 +1375,13 @@ fun V2GradientButton(
         if (trailingChevron) {
             Spacer(Modifier.width(8.dp))
             // RTL shell: "forward" reads to the left; use the same chevron the
-            // luxury surfaces use instead of a back-arrow glyph.
-            Icon(Icons.Rounded.ChevronLeft, null, tint = contentColor, modifier = Modifier.size(17.dp))
+            // luxury surfaces use instead of a back-arrow glyph. The approved
+            // onboarding reference shows a literal right chevron, so callers
+            // can pin that direction explicitly.
+            Icon(
+                if (chevronRight) Icons.Rounded.ChevronRight else Icons.Rounded.ChevronLeft,
+                null, tint = contentColor, modifier = Modifier.size(17.dp),
+            )
         }
         }
     }

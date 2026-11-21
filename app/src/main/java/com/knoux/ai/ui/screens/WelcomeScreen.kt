@@ -34,6 +34,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Email
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.ChevronLeft
+import androidx.compose.material.icons.rounded.Shield
+import androidx.compose.material.icons.rounded.Bolt
+import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.Fingerprint
 import androidx.compose.material.icons.rounded.PersonAdd
@@ -183,8 +187,11 @@ fun WelcomeScreen(
         biometricJob = scope.launch {
             try {
                 if (controller.biometric(activity)) {
+                    // Real BiometricPrompt success + live session confirmed by the
+                    // controller: hold the green verified state until the user
+                    // taps "المتابعة" (reference 2), then enter the app.
                     state = AuthVisualState.Success
-                    onSignedIn()
+                    message = null
                 } else {
                     state = AuthVisualState.Idle
                     message = "لم يكتمل التحقق بالبصمة."
@@ -223,7 +230,7 @@ fun WelcomeScreen(
             .navigationBarsPadding().imePadding(),
         contentAlignment = Alignment.TopCenter,
     ) {
-        val heroHeight = (maxHeight * if (scanning) 0.26f else 0.33f).coerceIn(192.dp, 316.dp)
+        val heroHeight = (maxHeight * if (scanning) 0.16f else 0.17f).coerceIn(128.dp, 184.dp)
         Column(
             Modifier.widthIn(max = 520.dp).fillMaxWidth().verticalScroll(scroll),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -237,7 +244,8 @@ fun WelcomeScreen(
             }
         }
 
-        if (scanning) {
+        if (scanning || state == AuthVisualState.Success) {
+            val verified = state == AuthVisualState.Success
             Column(
                 Modifier.fillMaxWidth().padding(horizontal = 20.dp).loginGlass().padding(12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -247,16 +255,61 @@ fun WelcomeScreen(
                     state = state,
                     onClick = {},
                     enabled = false,
-                    size = 218.dp,
-                    accessibilityLabel = "جارٍ التحقق من بصمتك",
+                    size = 186.dp,
+                    accessibilityLabel = if (verified) "تم التحقق بنجاح" else "جارٍ التحقق من بصمتك",
                     showStateBadge = false,
                 )
-                Text(
-                    "جارٍ التحقق من بصمتك…",
-                    color = ProTextPrimary, fontSize = 21.sp, fontWeight = FontWeight.Bold,
-                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-                )
-                NeonLoginButton("إلغاء", Icons.Rounded.Close, onClick = ::cancelBiometric)
+                if (verified) {
+                    // Green success pill flanked by gold laurels — reference (2).
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        LoginLaurel(mirror = false)
+                        Box(
+                            Modifier
+                                .clip(RoundedCornerShape(50))
+                                .background(
+                                    Brush.horizontalGradient(
+                                        listOf(Color(0xFF059669), Color(0xFF10B981)),
+                                    )
+                                )
+                                .border(1.dp, Color(0xFF3DFFB0).copy(alpha = .8f), RoundedCornerShape(50))
+                                .padding(horizontal = 22.dp, vertical = 9.dp),
+                        ) {
+                            Text(
+                                "تم التحقق بنجاح",
+                                color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold,
+                                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                            )
+                        }
+                        LoginLaurel(mirror = true)
+                    }
+                    Text(
+                        "مرحبًا بك إلى KNOUX AI Pro",
+                        color = ProTextPrimary, fontSize = 14.sp, textAlign = TextAlign.Center,
+                    )
+                    Box(
+                        Modifier.width(120.dp).height(1.5.dp).background(
+                            Brush.horizontalGradient(
+                                listOf(Color.Transparent, ProEditionGoldLogin.copy(alpha = .8f), Color(0xFF3DFFB0).copy(alpha = .8f), Color.Transparent)
+                            )
+                        )
+                    )
+                    NeonLoginButton(
+                        label = "المتابعة",
+                        icon = Icons.Rounded.ChevronLeft,
+                        green = true,
+                        onClick = onSignedIn,
+                    )
+                } else {
+                    Text(
+                        "جارٍ التحقق من بصمتك…",
+                        color = ProTextPrimary, fontSize = 21.sp, fontWeight = FontWeight.Bold,
+                        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                    )
+                    NeonLoginButton("إلغاء", Icons.Rounded.Close, onClick = ::cancelBiometric)
+                }
             }
             return@Column
         }
@@ -283,14 +336,31 @@ fun WelcomeScreen(
         if (isFingerprintEntry) {
             Box(Modifier.fillMaxWidth().padding(horizontal = 14.dp)) {
                 Column(
-                    modifier = Modifier.fillMaxWidth().padding(top = 15.dp)
+                    modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
                         .loginGlass()
-                        .padding(horizontal = 16.dp, vertical = 13.dp),
+                        .padding(horizontal = 14.dp, vertical = 11.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(7.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    Text("تسجيل الدخول إلى", color = ProTextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                    LoginEditionTitle()
+                    Box(
+                        Modifier
+                            .size(34.dp)
+                            .clip(RoundedCornerShape(50))
+                            .background(Color(0xFF241A57).copy(alpha = .8f))
+                            .border(1.dp, ProArcticCyan.copy(alpha = .45f), RoundedCornerShape(50)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(Icons.Rounded.Person, null, tint = ProArcticCyan, modifier = Modifier.size(18.dp))
+                    }
+                    Text("تسجيل الدخول", color = ProTextPrimary, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text("Login to KNOUX AI Pro", color = ProTextSecondary, fontSize = 10.sp)
+                    Box(
+                        Modifier.width(150.dp).height(1.dp).background(
+                            Brush.horizontalGradient(
+                                listOf(Color.Transparent, ProEditionGoldLogin.copy(alpha = .75f), Color.Transparent)
+                            )
+                        )
+                    )
                     GoogleButton(scope, inProgress, googleConfigured, controller, activity, hero = true) { result ->
                         inProgress = result.first
                         message = result.second
@@ -303,9 +373,9 @@ fun WelcomeScreen(
                     }
                     LoginOrDivider()
                     NeonLoginButton(
-                        label = "البريد الإلكتروني / رمز التحقق",
+                        label = "الدخول بالبريد الإلكتروني أو رمز التحقق",
                         icon = Icons.Rounded.Email,
-                        subtitle = "استخدم بريدك أو رمزًا لمرة واحدة",
+                        subtitle = "Email / OTP Login",
                         enabled = !inProgress,
                         onClick = { section = AuthSection.EmailLogin; message = null },
                     )
@@ -313,23 +383,21 @@ fun WelcomeScreen(
                         FingerprintOrb(
                             state = state,
                             onClick = ::unlockWithBiometric,
-                            size = 64.dp,
+                            size = 58.dp,
                             enabled = !inProgress,
                             accessibilityLabel = "تسجيل الدخول بالبصمة",
                             showStateBadge = false,
                         )
-                        FingerprintBrackets(Modifier.size(86.dp))
+                        FingerprintBrackets(Modifier.size(78.dp))
                     }
-                    Text("تسجيل الدخول بالبصمة", color = ProTextPrimary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                }
-                Box(Modifier.align(Alignment.TopCenter).offset(y = (-2).dp)) {
-                    CrownGold(size = 30.dp)
+                    Text("تسجيل الدخول باستخدام البصمة", color = ProTextPrimary, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    Text("Login with Biometrics", color = ProTextSecondary, fontSize = 9.sp)
                 }
             }
             Spacer(Modifier.height(12.dp))
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(9.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Text("ليس لديك حساب؟", color = ProTextSecondary, fontSize = 13.sp)
                 Row(
@@ -339,7 +407,7 @@ fun WelcomeScreen(
                         .clickable(enabled = !inProgress, role = Role.Button) {
                             section = AuthSection.EmailSignup; message = null
                         }
-                        .padding(horizontal = 14.dp, vertical = 7.dp),
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(5.dp),
                 ) {
@@ -487,6 +555,8 @@ fun WelcomeScreen(
         }
 
         Spacer(Modifier.height(14.dp))
+        // Reference (7): three trust pillars — آمن ومحمي / سريع وفعال / بياناتك
+        // خاصة. Tapping the band still opens the real account & privacy info.
         Row(
             Modifier
                 .fillMaxWidth()
@@ -499,20 +569,17 @@ fun WelcomeScreen(
                 )
                 .border(1.dp, ProBlue.copy(alpha = 0.48f), RoundedCornerShape(18.dp))
                 .clickable(onClick = onOpenAccountInfo)
-                .padding(horizontal = 14.dp, vertical = 11.dp),
+                .padding(horizontal = 8.dp, vertical = 11.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(Icons.Rounded.Info, contentDescription = null, tint = ProArcticCyan, modifier = Modifier.size(21.dp))
-            Spacer(Modifier.width(10.dp))
-            Text(
-                "خصوصية بالتصميم — أدوات على الجهاز، وصول شفاف، وبدون فحص خفي.",
-                style = TextStyle(fontSize = 10.sp, lineHeight = 14.sp, color = ProTextPrimary),
-                modifier = Modifier.weight(1f),
-            )
+            LoginTrustPillar(Icons.Rounded.Shield, "آمن ومحمي", "Secure & Protected", ProArcticCyan, Modifier.weight(1f))
+            Box(Modifier.width(1.dp).height(34.dp).background(Color(0xFF5226B5).copy(alpha = .6f)))
+            LoginTrustPillar(Icons.Rounded.Bolt, "سريع وفعال", "Fast & Efficient", ProEditionGoldLogin, Modifier.weight(1f))
+            Box(Modifier.width(1.dp).height(34.dp).background(Color(0xFF5226B5).copy(alpha = .6f)))
+            LoginTrustPillar(Icons.Rounded.Layers, "بياناتك خاصة", "Your Data is Private", ProArcticCyan, Modifier.weight(1f))
         }
 
         Spacer(Modifier.height(14.dp))
-        Spacer(Modifier.height(12.dp))
       }
     }
 }
@@ -544,9 +611,9 @@ private fun PasskeyButton(
     }
     if (hero) {
         NeonLoginButton(
-            label = "تسجيل الدخول عبر Passkeys",
+            label = "تسجيل الدخول باستخدام مفاتيح المرور",
             icon = Icons.Rounded.Key,
-            subtitle = "آمن وسريع بدون كلمة مرور",
+            subtitle = "Continue with Passkeys",
             enabled = !inProgress,
             onClick = onClick,
         )
@@ -589,9 +656,10 @@ private fun GoogleButton(
     }
     if (hero) {
         NeonLoginButton(
-            label = "المتابعة بحساب Google",
+            label = "المتابعة باستخدام جوجل",
             icon = Icons.Rounded.Person,
-            bright = true,
+            subtitle = "Continue with Google",
+            gold = true,
             enabled = configured && !inProgress,
             onClick = onClick,
         )

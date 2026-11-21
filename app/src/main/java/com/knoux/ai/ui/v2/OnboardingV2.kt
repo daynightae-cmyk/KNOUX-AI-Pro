@@ -145,18 +145,6 @@ fun KnouxOnboarding(onFinish: () -> Unit) {
             Spacer(Modifier.weight(1f))
             if (!ecosystem) {
                 KText("${page + 1} / ${steps.size}", size = 11.sp, color = V2Cyan)
-                Spacer(Modifier.width(8.dp))
-            }
-            Box(
-                Modifier
-                    .heightIn(min = 44.dp)
-                    .clip(RoundedCornerShape(50))
-                    .border(1.dp, V2Cyan.copy(alpha = .40f), RoundedCornerShape(50))
-                    .clickable(onClick = onFinish)
-                    .padding(horizontal = 11.dp, vertical = 6.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                KText("تخطي", size = if (ecosystem) 14.sp else 10.sp, color = V2Soft)
             }
         }
 
@@ -181,40 +169,59 @@ fun KnouxOnboarding(onFinish: () -> Unit) {
             }
 
             Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(7.dp), verticalAlignment = Alignment.CenterVertically) {
                 repeat(steps.size) { index ->
+                    val active = index == page
                     Box(
                         Modifier
-                            .height(6.dp)
-                            .width(if (index == page) 22.dp else 6.dp)
+                            .height(if (active) 7.dp else 6.dp)
+                            .width(if (active) 20.dp else 6.dp)
                             .clip(CircleShape)
                             .background(
-                                if (index == page) V2Cyan
-                                else Color.White.copy(alpha = .18f)
+                                if (active) {
+                                    Brush.horizontalGradient(listOf(V2GoldText, V2Amber))
+                                } else {
+                                    Brush.horizontalGradient(
+                                        listOf(V2Violet.withAlpha(.35f), V2Violet.withAlpha(.35f))
+                                    )
+                                }
                             )
                     )
                 }
             }
             Spacer(Modifier.height(14.dp))
             V2GradientButton(
-                text = if (page < steps.lastIndex) "التالي" else "ابدأ الآن",
+                text = if (page == 0 || page == steps.lastIndex) "ابدأ الآن" else "التالي",
                 onClick = { if (page < steps.lastIndex) page++ else onFinish() },
-                icon = if (ecosystem) Icons.Rounded.ChevronRight else null,
+                trailingChevron = true,
+                chevronRight = true,
             )
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(6.dp))
+            // Reference: a slim outlined "تخطي" pill sits under the primary CTA.
             Box(
                 Modifier
                     .clip(RoundedCornerShape(50))
-                    .clickable(enabled = page > 0) { if (page > 0) page-- }
-                    .heightIn(min = 36.dp)
-                    .padding(horizontal = 14.dp, vertical = 6.dp),
+                    .background(Color(0xFF120D30).withAlpha(.72f))
+                    .border(1.dp, V2Violet.copy(alpha = .45f), RoundedCornerShape(50))
+                    .clickable(onClick = onFinish)
+                    .heightIn(min = 38.dp)
+                    .padding(horizontal = 26.dp, vertical = 7.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                KText(
-                    if (page > 0) "رجوع" else " ",
-                    size = 10.5.sp,
-                    color = if (page > 0) V2Soft else Color.Transparent,
-                )
+                KText("تخطي", size = 12.sp, weight = FontWeight.SemiBold, color = Color.White)
+            }
+            if (page > 0) {
+                Spacer(Modifier.height(2.dp))
+                Box(
+                    Modifier
+                        .clip(RoundedCornerShape(50))
+                        .clickable { page-- }
+                        .heightIn(min = 34.dp)
+                        .padding(horizontal = 14.dp, vertical = 4.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    KText("رجوع", size = 10.5.sp, color = V2Soft)
+                }
             }
         }
     }
@@ -228,43 +235,56 @@ private fun OnboardingWelcomePage() {
     ) {
         LoginCosmicScene(232.dp, reveal = 1f)
         Spacer(Modifier.height(2.dp))
-        KText("مرحبًا بك في", size = 12.sp, color = V2Cyan, align = TextAlign.Center)
+        KText("مرحبًا بك في", size = 16.sp, weight = FontWeight.Bold, color = Color.White, align = TextAlign.Center)
         Spacer(Modifier.height(2.dp))
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             LoginLaurel(mirror = false)
             Text(
                 buildAnnotatedString {
-                    withStyle(SpanStyle(color = Color.White)) { append("KNOUX AI ") }
+                    withStyle(SpanStyle(color = Color.White)) { append("KNOUX ") }
                     withStyle(
                         SpanStyle(
                             brush = Brush.horizontalGradient(
                                 listOf(V2GoldText, V2Amber, Color(0xFFFFB043))
                             )
                         )
-                    ) { append("Pro") }
+                    ) { append("AI") }
                 },
                 style = TextStyle(fontFamily = V2Font, fontWeight = FontWeight.Black, fontSize = 28.sp),
             )
             LoginLaurel(mirror = true)
         }
-        Spacer(Modifier.height(2.dp))
+        Spacer(Modifier.height(3.dp))
+        // Gold diamond accent under the edition title, per the welcome reference.
+        Box(
+            Modifier
+                .size(7.dp)
+                .graphicsLayer { rotationZ = 45f }
+                .background(
+                    Brush.linearGradient(listOf(V2GoldText, V2Amber)),
+                    RoundedCornerShape(1.5.dp),
+                )
+        )
+        Spacer(Modifier.height(5.dp))
         KText(
-            "مساعدك العربي لإدارة جهازك بأمان وكفاءة أعلى",
+            "مساعداتك الذكية لإدارة أجهزتك",
+            size = 12.sp,
+            weight = FontWeight.SemiBold,
+            color = Color.White,
+            align = TextAlign.Center,
+        )
+        Spacer(Modifier.height(1.dp))
+        KText(
+            "بأمان وكفاءة وجودة عالية",
             size = 11.sp,
             color = V2Soft,
             align = TextAlign.Center,
         )
         Spacer(Modifier.height(12.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            OnboardingFeature(Icons.Rounded.Shield, "حماية أذكى", V2Cyan)
-            OnboardingFeature(Icons.Rounded.Bolt, "أداء أعلى", V2Pink)
-            OnboardingFeature(Icons.Rounded.Layers, "إدارة شاملة", V2Violet)
-        }
-        Spacer(Modifier.height(7.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            OnboardingChip(Icons.Rounded.Language, "عربي أولًا")
-            OnboardingChip(Icons.Rounded.PersonOff, "ضيف اختياري")
-            OnboardingChip(Icons.Rounded.CloudOff, "أدوات محلية")
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OnboardingFeature(Icons.Rounded.Shield, "حماية أجهزتك", V2Cyan, Modifier.weight(1f))
+            OnboardingFeature(Icons.Rounded.Bolt, "أداء أسرع", V2Amber, Modifier.weight(1f))
+            OnboardingFeature(Icons.Rounded.Layers, "إدارة شاملة", V2Violet, Modifier.weight(1f))
         }
         Spacer(Modifier.height(11.dp))
         OnboardingPromiseCard()
@@ -411,19 +431,24 @@ private fun OnboardingFounderPage() {
 }
 
 @Composable
-private fun OnboardingFeature(icon: ImageVector, label: String, accent: Color) {
+private fun OnboardingFeature(icon: ImageVector, label: String, accent: Color, modifier: Modifier = Modifier) {
     Column(
-        Modifier
-            .width(96.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(Brush.verticalGradient(listOf(accent.withAlpha(.13f), Color.White.withAlpha(.02f))))
-            .border(1.dp, accent.withAlpha(.36f), RoundedCornerShape(16.dp))
-            .padding(horizontal = 6.dp, vertical = 9.dp),
+        modifier
+            .heightIn(min = 86.dp)
+            .clip(RoundedCornerShape(18.dp))
+            .background(Brush.verticalGradient(listOf(accent.withAlpha(.15f), Color(0xFF141033).withAlpha(.72f))))
+            .border(
+                1.dp,
+                Brush.verticalGradient(listOf(accent.withAlpha(.55f), accent.withAlpha(.20f))),
+                RoundedCornerShape(18.dp),
+            )
+            .padding(horizontal = 6.dp, vertical = 11.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
     ) {
-        V2IconTile(icon, accent, size = 30.dp, iconSize = 16.dp)
-        Spacer(Modifier.height(5.dp))
-        KText(label, size = 9.sp, weight = FontWeight.Bold, color = Color.White, align = TextAlign.Center)
+        V2IconTile(icon, accent, size = 34.dp, iconSize = 18.dp)
+        Spacer(Modifier.height(6.dp))
+        KText(label, size = 10.sp, weight = FontWeight.Bold, color = Color.White, align = TextAlign.Center)
     }
 }
 

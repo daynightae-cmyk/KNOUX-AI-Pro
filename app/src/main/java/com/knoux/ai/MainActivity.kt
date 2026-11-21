@@ -31,7 +31,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import com.knoux.ai.auth.KnouxAuthConfig
+import com.knoux.ai.auth.KnouxAuthController
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -178,6 +181,18 @@ fun KnouxApp(startRoute: String? = null, startDayMode: Boolean? = null) {
         )
     }
     var splashFinished by remember { mutableStateOf(false) }
+
+    // A debug inspection route must win over a restored entry stage: after a
+    // task restore, rememberSaveable brings back the last stage (usually Shell)
+    // and the new intent extra would otherwise be ignored.
+    LaunchedEffect(entryDebugRoute) {
+        entryStage = when (entryDebugRoute) {
+            "onboarding" -> EntryStage.Onboarding
+            "auth" -> EntryStage.Auth
+            "loading" -> EntryStage.Loading
+            else -> entryStage
+        }
+    }
 
     // Resolve Pro preview identity off the main thread: read SharedPreferences on
     // Dispatchers.IO so the first frame is not blocked by disk I/O.
@@ -355,6 +370,10 @@ fun KnouxApp(startRoute: String? = null, startDayMode: Boolean? = null) {
                         open = open,
                         goBack = goBack,
                         onAccount = { accountInfoVisible = true },
+                        onSignedOut = {
+                            entryStage = EntryStage.Auth
+                            signedIn = false
+                        },
                     )
                 }
                 }
@@ -410,6 +429,7 @@ private fun AppNavHost(
     open: (String) -> Unit,
     goBack: () -> Unit,
     onAccount: () -> Unit,
+    onSignedOut: () -> Unit = {},
 ) {
     NavHost(
         navController = nav,
@@ -568,7 +588,32 @@ private fun AppNavHost(
             }
         }
         composable(SETTINGS_ROUTE) {
-            V2SettingsScreenV2(onBack = goBack)
+            // The account row is wired to the real Supabase session: sign-out
+            // clears the encrypted token and returns to the Auth stage, so the
+            // login screen is always reachable — and never bypassed silently.
+            val ctx = androidx.compose.ui.platform.LocalContext.current
+            val authConfig = remember {
+                KnouxAuthConfig(
+                    supabaseUrl = BuildConfig.SUPABASE_URL,
+                    supabasePublishableKey = BuildConfig.SUPABASE_PUBLISHABLE_KEY,
+                    googleWebClientId = BuildConfig.GOOGLE_WEB_CLIENT_ID,
+                )
+            }
+            val auth = remember { KnouxAuthController(ctx, authConfig) }
+            var hasSessionNow by remember { mutableStateOf(auth.hasSession()) }
+            val authScope = rememberCoroutineScope()
+            V2SettingsScreenV2(
+                onBack = goBack,
+                signedIn = hasSessionNow,
+                onSignOut = {
+                    authScope.launch {
+                        runCatching { auth.signOut() }
+                        hasSessionNow = auth.hasSession()
+                        nav.popBackStack(ROUTE_HOME, inclusive = false)
+                        onSignedOut()
+                    }
+                },
+            )
         }
         composable("privacy-risk") {
             V2PrivacyRiskScreen(onBack = goBack, onPro = { open(ROUTE_PRO) })
