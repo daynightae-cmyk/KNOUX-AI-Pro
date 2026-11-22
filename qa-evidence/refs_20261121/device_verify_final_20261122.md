@@ -140,6 +140,17 @@
   installed via `adb install -r -d` → Success; cold launch Status: ok, COLD;
   `FINAL2_owner_login.png/.xml` — identical reference login stack on owner user 0.
 
+## FINAL CI result — VERIFIED GREEN
+- Commit `2c0a0d03dceb2affe446deaa7341eb4efbb0bf31` (lint fixes + evidence),
+  pushed fast-forward `5472062..2c0a0d0`, `git ls-remote` == local HEAD.
+- CI run 44981849950 for exact SHA 2c0a0d0: **conclusion=success**, both jobs
+  (`debug`: SDK → compile → unit tests → lint → assembleDebug → release-config check;
+  `instrumented`: emulator instrumentation tests) success, zero failed steps. CI_EXIT=0.
+- Local re-verification after fix: `:app:testDebugUnitTest` BUILD SUCCESSFUL 4m42s EXIT=0,
+  12 suites / 105 tests / 0 failures / 0 skipped.
+- Final device state: owner user 0 on NEW login screen, APK SHA
+  5A863B64B34BB27B609AB45A97417042795301AE6BA8485E73B0A50634D55521 installed.
+
 ## Cleanup / hygiene
 - `$dst` junk directory (148 files, 263.3 MB, duplicate reference copies from old script bug)
   MOVED (not deleted) to `D:\Temp\opencode\knoux_dst_archive_20261122`; working tree clean.
