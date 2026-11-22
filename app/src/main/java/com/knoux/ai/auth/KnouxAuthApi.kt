@@ -157,9 +157,24 @@ class KnouxAuthApi(context: Context, val config: KnouxAuthConfig) {
         }
     }
     suspend fun restoreIfValid():Boolean = try {currentUserVerified();true} catch(_:Exception){false}
-    suspend fun signOut() {
+    /**
+     * Clears the encrypted local session and asks Supabase to revoke the
+     * refresh token. Returns true only when the server revocation succeeded;
+     * the local token is always cleared because a local sign-out must not be
+     * held hostage by a network failure. Callers must re-read [hasSession]
+     * before claiming the user is signed out.
+     */
+    suspend fun signOut():Boolean {
         val token=store.read()?.accessToken
-        try {if(token!=null) request("POST","/logout",JSONObject(),token)} finally {store.clear()}
+        var revoked=false
+        try {
+            if(token!=null){ request("POST","/logout",JSONObject(),token); revoked=true } else revoked=true
+        } catch(_:Exception) {
+            revoked=false
+        } finally {
+            store.clear()
+        }
+        return revoked
     }
 
     /** Experimental Supabase Auth passkey routes; server provides challenge and verifies WebAuthn. */

@@ -230,9 +230,9 @@ fun WelcomeScreen(
             .navigationBarsPadding().imePadding(),
         contentAlignment = Alignment.TopCenter,
     ) {
-        val heroHeight = (maxHeight * if (scanning) 0.16f else 0.17f).coerceIn(128.dp, 184.dp)
+        val heroHeight = (maxHeight * if (scanning) 0.16f else 0.235f).coerceIn(150.dp, 210.dp)
         Column(
-            Modifier.widthIn(max = 520.dp).fillMaxWidth().verticalScroll(scroll),
+            Modifier.widthIn(max = 520.dp).fillMaxWidth().verticalScroll(scroll).padding(bottom = 18.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
         LoginBrand()
@@ -338,9 +338,9 @@ fun WelcomeScreen(
                 Column(
                     modifier = Modifier.fillMaxWidth().padding(top = 10.dp)
                         .loginGlass()
-                        .padding(horizontal = 14.dp, vertical = 11.dp),
+                        .padding(horizontal = 14.dp, vertical = 9.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Box(
                         Modifier
@@ -372,13 +372,6 @@ fun WelcomeScreen(
                         if (result.third) onSignedIn()
                     }
                     LoginOrDivider()
-                    NeonLoginButton(
-                        label = "الدخول بالبريد الإلكتروني أو رمز التحقق",
-                        icon = Icons.Rounded.Email,
-                        subtitle = "Email / OTP Login",
-                        enabled = !inProgress,
-                        onClick = { section = AuthSection.EmailLogin; message = null },
-                    )
                     Box(contentAlignment = Alignment.Center) {
                         FingerprintOrb(
                             state = state,
@@ -394,28 +387,6 @@ fun WelcomeScreen(
                     Text("Login with Biometrics", color = ProTextSecondary, fontSize = 9.sp)
                 }
             }
-            Spacer(Modifier.height(12.dp))
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Text("ليس لديك حساب؟", color = ProTextSecondary, fontSize = 13.sp)
-                Row(
-                    Modifier
-                        .clip(RoundedCornerShape(50))
-                        .border(1.2.dp, ProEditionGoldLogin, RoundedCornerShape(50))
-                        .clickable(enabled = !inProgress, role = Role.Button) {
-                            section = AuthSection.EmailSignup; message = null
-                        }
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(5.dp),
-                ) {
-                    Icon(Icons.Rounded.PersonAdd, null, tint = ProEditionGoldLogin, modifier = Modifier.size(16.dp))
-                    Text("إنشاء حساب جديد", color = ProEditionGoldLogin, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                }
-            }
-            TextButton("المتابعة كضيف", enabled = !inProgress, onClick = onContinueAsGuest)
         } else {
             Column(
                 Modifier
@@ -577,6 +548,43 @@ fun WelcomeScreen(
             LoginTrustPillar(Icons.Rounded.Bolt, "سريع وفعال", "Fast & Efficient", ProEditionGoldLogin, Modifier.weight(1f))
             Box(Modifier.width(1.dp).height(34.dp).background(Color(0xFF5226B5).copy(alpha = .6f)))
             LoginTrustPillar(Icons.Rounded.Layers, "بياناتك خاصة", "Your Data is Private", ProArcticCyan, Modifier.weight(1f))
+        }
+
+        if (isFingerprintEntry) {
+            // Secondary entry points sit below the reference stack: the first
+            // screen keeps the approved composition, while email/OTP, sign-up
+            // and guest access stay reachable by scrolling.
+            Spacer(Modifier.height(10.dp))
+            NeonLoginButton(
+                label = "الدخول بالبريد الإلكتروني أو رمز التحقق",
+                icon = Icons.Rounded.Email,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                subtitle = "Email / OTP Login",
+                enabled = !inProgress,
+                onClick = { section = AuthSection.EmailLogin; message = null },
+            )
+            Spacer(Modifier.height(6.dp))
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Text("ليس لديك حساب؟", color = ProTextSecondary, fontSize = 13.sp)
+                Row(
+                    Modifier
+                        .clip(RoundedCornerShape(50))
+                        .border(1.2.dp, ProEditionGoldLogin, RoundedCornerShape(50))
+                        .clickable(enabled = !inProgress, role = Role.Button) {
+                            section = AuthSection.EmailSignup; message = null
+                        }
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                ) {
+                    Icon(Icons.Rounded.PersonAdd, null, tint = ProEditionGoldLogin, modifier = Modifier.size(16.dp))
+                    Text("إنشاء حساب جديد", color = ProEditionGoldLogin, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+            TextButton("المتابعة كضيف", enabled = !inProgress, onClick = onContinueAsGuest)
         }
 
         Spacer(Modifier.height(14.dp))

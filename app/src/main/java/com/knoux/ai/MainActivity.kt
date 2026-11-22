@@ -601,16 +601,40 @@ private fun AppNavHost(
             }
             val auth = remember { KnouxAuthController(ctx, authConfig) }
             var hasSessionNow by remember { mutableStateOf(auth.hasSession()) }
+            var signOutBusy by remember { mutableStateOf(false) }
+            var accountNotice by remember { mutableStateOf<String?>(null) }
             val authScope = rememberCoroutineScope()
             V2SettingsScreenV2(
                 onBack = goBack,
                 signedIn = hasSessionNow,
+                signOutBusy = signOutBusy,
+                accountNotice = accountNotice,
                 onSignOut = {
-                    authScope.launch {
-                        runCatching { auth.signOut() }
-                        hasSessionNow = auth.hasSession()
-                        nav.popBackStack(ROUTE_HOME, inclusive = false)
-                        onSignedOut()
+                    if (!signOutBusy) {
+                        authScope.launch {
+                            signOutBusy = true
+                            accountNotice = null
+                            // Never claim a logout that did not happen: the server
+                            // revoke may fail, but the encrypted local session is
+                            // always cleared by signOut(). We re-read hasSession()
+                            // and only leave Settings once it is genuinely false.
+                            val revoked = runCatching { auth.signOut() }.getOrDefault(false)
+                            hasSessionNow = auth.hasSession()
+                            signOutBusy = false
+                            if (!hasSessionNow) {
+                                if (!revoked) {
+                                    android.widget.Toast.makeText(
+                                        ctx,
+                                        "تم إنهاء الجلسة على الجهاز، لكن تعذر إبلاغ الخادم. سجّل الدخول من جديد.",
+                                        android.widget.Toast.LENGTH_LONG,
+                                    ).show()
+                                }
+                                nav.popBackStack(ROUTE_HOME, inclusive = false)
+                                onSignedOut()
+                            } else {
+                                accountNotice = "تعذر إنهاء الجلسة. تحقق من الاتصال وحاول مرة أخرى."
+                            }
+                        }
                     }
                 },
             )

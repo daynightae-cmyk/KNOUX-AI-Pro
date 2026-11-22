@@ -114,6 +114,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -1907,6 +1910,8 @@ fun V2SettingsScreenV2(
     onBack: () -> Unit,
     signedIn: Boolean = false,
     onSignOut: () -> Unit = {},
+    signOutBusy: Boolean = false,
+    accountNotice: String? = null,
 ) {
     val context = LocalContext.current
     val dayMode = KnouxDayState.enabled
@@ -1958,14 +1963,32 @@ fun V2SettingsScreenV2(
                             Modifier
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(14.dp))
-                                .clickable(onClick = onSignOut)
+                                .clickable(enabled = !signOutBusy, onClick = onSignOut)
                                 .padding(vertical = 2.dp),
                         ) {
                             SettingNavRow(
                                 Icons.Rounded.Logout,
-                                if (signedIn) "تسجيل الخروج" else "فتح شاشة الدخول",
+                                when {
+                                    signOutBusy -> "جارٍ إنهاء الجلسة…"
+                                    signedIn -> "تسجيل الخروج"
+                                    else -> "فتح شاشة الدخول"
+                                },
                                 if (signedIn) "ينهي الجلسة ويعيدك لشاشة الدخول" else "Google · Passkeys · البريد · البصمة",
                                 V2Amber,
+                            )
+                        }
+                    }
+                }
+                if (accountNotice != null) {
+                    item {
+                        // Real outcome of the sign-out attempt: shown only when the
+                        // session could not be confirmed as cleared.
+                        V2GlassCard(Modifier.fillMaxWidth(), padding = 11.dp, radius = 16.dp, glow = V2Amber, borderAlpha = .55f) {
+                            KText(
+                                accountNotice,
+                                size = 10.sp,
+                                color = V2Amber,
+                                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
                             )
                         }
                     }
