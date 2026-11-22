@@ -123,6 +123,23 @@
 - Fix in `.github/workflows/android.yml`: wrap license acceptance with `set +o pipefail` / restore.
   Committed + pushed; CI re-run result for the fix SHA recorded below when available.
 
+## Lint failure root-cause fix (post-5472062)
+- CI run 44978967644 (SHA 5472062): SDK step fixed → unit tests + Kotlin compile PASS in CI,
+  emulator instrumentation job PASS in CI (all steps success). Only `lintDebug` failed:
+  3 errors / 113 warnings, reproduced locally (`:app:lintDebug` BUILD FAILED, EXIT=1).
+- Fixes (real, no baseline):
+  1. `ProductionSecurity.kt` calculateBackoffMs used `RandomGenerator.nextLong(bound)` —
+     API 35 only, minSdk 26 → would crash on the owner's Android 12 device on any retry.
+     Replaced with `(random.nextLong() and Long.MAX_VALUE) % jitterBound` (API 1+, same
+     bounded non-negative jitter contract; SecureRandom unchanged).
+  2. Two OAuth custom-scheme intent filters flagged AppLinkUrlError ("host required").
+     These are `scheme:/path` custom-scheme redirects, not http(s) app links; added
+     documented `tools:ignore="AppLinkUrlError"` — redirect matching behavior unchanged.
+- `:app:lintDebug :app:assembleDebug` → BUILD SUCCESSFUL in 13m 9s, EXIT=0.
+- New APK SHA-256: `5A863B64B34BB27B609AB45A97417042795301AE6BA8485E73B0A50634D55521`
+  installed via `adb install -r -d` → Success; cold launch Status: ok, COLD;
+  `FINAL2_owner_login.png/.xml` — identical reference login stack on owner user 0.
+
 ## Cleanup / hygiene
 - `$dst` junk directory (148 files, 263.3 MB, duplicate reference copies from old script bug)
   MOVED (not deleted) to `D:\Temp\opencode\knoux_dst_archive_20261122`; working tree clean.

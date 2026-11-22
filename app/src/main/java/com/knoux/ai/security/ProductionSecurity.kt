@@ -163,7 +163,9 @@ object ProductionSecurity {
         val exponential = BASE_BACKOFF_MS * (1L shl retryCount.coerceIn(0, 5))
         val capped = exponential.coerceAtMost(MAX_BACKOFF_MS)
         val jitterBound = (capped / 4).coerceAtLeast(1)
-        val jitter = random.nextLong(jitterBound)
+        // RandomGenerator.nextLong(bound) requires API 35; minSdk is 26.
+        // SecureRandom.nextLong() exists since API 1 — mask sign bit, then bound.
+        val jitter = (random.nextLong() and Long.MAX_VALUE) % jitterBound
         return (capped + jitter).coerceAtMost(MAX_BACKOFF_MS)
     }
 
