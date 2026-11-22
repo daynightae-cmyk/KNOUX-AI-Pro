@@ -1,6 +1,7 @@
 package com.knoux.ai.ui.v2
 
 import android.app.Application
+import android.os.BatteryManager
 import android.os.Build
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -45,7 +46,9 @@ import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.DeleteOutline
 import androidx.compose.material.icons.rounded.DeleteSweep
 import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.DeveloperBoard
 import androidx.compose.material.icons.rounded.DeveloperMode
+import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.ElectricalServices
 import androidx.compose.material.icons.rounded.FactCheck
 import androidx.compose.material.icons.rounded.FileCopy
@@ -53,34 +56,43 @@ import androidx.compose.material.icons.rounded.FilterAlt
 import androidx.compose.material.icons.rounded.Fingerprint
 import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.Inventory
 import androidx.compose.material.icons.rounded.Image
+import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.Smartphone
+import androidx.compose.material.icons.rounded.VpnKey
 import androidx.compose.material.icons.rounded.ManageSearch
 import androidx.compose.material.icons.rounded.Memory
+import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Notifications
 import androidx.compose.material.icons.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.PermMedia
 import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.PhotoLibrary
 import androidx.compose.material.icons.rounded.PieChart
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.PlayCircle
 import androidx.compose.material.icons.rounded.Psychology
 import androidx.compose.material.icons.rounded.Refresh
+import androidx.compose.material.icons.rounded.RocketLaunch
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material.icons.rounded.Sort
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material.icons.rounded.Thermostat
 import androidx.compose.material.icons.rounded.Timeline
-import androidx.compose.material.icons.rounded.ToggleOn
 import androidx.compose.material.icons.rounded.TrendingUp
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material.icons.rounded.Verified
 import androidx.compose.material.icons.rounded.Videocam
 import androidx.compose.material.icons.rounded.Visibility
+import androidx.compose.material.icons.rounded.VisibilityOff
+import androidx.compose.material.icons.rounded.Warning
 import androidx.compose.material3.Icon
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
@@ -140,12 +152,14 @@ internal enum class ToolList {
 internal enum class ToolBehavior {
     NONE, SEARCH_APPS, SEARCH_FILES, FILTER_APPS_SIZE, SIZE_FILTER_MEDIA,
     SORT_FILES, SORT_APPS, RANGE_HISTORY, GOAL_CHIPS, TOGGLES,
-    LAUNCH_APPS, APP_SETTINGS_ACTION, UNINSTALL_APPS,
+    LAUNCH_APPS, APP_SETTINGS_ACTION, UNINSTALL_APPS, SHOW_APP_SIZE, SHOW_APP_USAGE,
+    SHARE_REPORT,
 }
 
 internal enum class ToolHandoff {
     NONE, BATTERY_SAVER, BATTERY_SETTINGS, PRIVACY_SETTINGS, STORAGE_SETTINGS,
-    APP_SETTINGS, USAGE_ACCESS, OPEN_FIRST_MEDIA,
+    APP_SETTINGS, USAGE_ACCESS, OPEN_FIRST_MEDIA, NOTIFICATION_LISTENER,
+    VPN_SETTINGS, SECURITY_SETTINGS, DEVICE_ADMIN_SETTINGS, OVERLAY_SETTINGS,
 }
 
 internal data class SectionToolDef(
@@ -552,6 +566,11 @@ fun V2SectionToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
                                 ToolHandoff.STORAGE_SETTINGS -> openStorageSettings(context)
                                 ToolHandoff.APP_SETTINGS -> openAllAppSettings(context)
                                 ToolHandoff.USAGE_ACCESS -> openUsageAccessSettings(context)
+                                ToolHandoff.NOTIFICATION_LISTENER -> openNotificationListenerSettings(context)
+                                ToolHandoff.VPN_SETTINGS -> openVpnSettings(context)
+                                ToolHandoff.SECURITY_SETTINGS -> openSecuritySettings(context)
+                                ToolHandoff.DEVICE_ADMIN_SETTINGS -> openDeviceAdminSettings(context)
+                                ToolHandoff.OVERLAY_SETTINGS -> openOverlaySettings(context)
                                 ToolHandoff.OPEN_FIRST_MEDIA -> {
                                     facts.media.largestFiles.firstOrNull()?.let { openMedia(context, it.uriString) }
                                 }
@@ -623,6 +642,31 @@ fun V2SectionToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
 }
 
 /* ----------------------------- behavior ----------------------------- */
+
+/** Real ACTION_SEND text built only from saved measurements — no fixtures. */
+private fun shareReportsSummary(context: android.content.Context, history: List<ScanHistoryEntry>) {
+    val j = ReportsJournalCache.latest
+    val last = history.firstOrNull()
+    val text = buildString {
+        appendLine("KNOUX AI Pro — ملخص التقارير والسجل")
+        appendLine("الطراز: ${android.os.Build.MODEL} · Android ${android.os.Build.VERSION.RELEASE}")
+        appendLine("عمليات مسجلة: ${formatCount(j.totalOperations)}")
+        appendLine("مساحة مستعادة (كليًا): ${formatBytes(j.reclaimedBytes)}")
+        appendLine("مساحة مستعادة (هذا الشهر): ${formatBytes(j.reclaimedMonthBytes)}")
+        appendLine("حذف مكررات مؤكد: ${formatCount(j.duplicateDeletes)}")
+        appendLine("تقارير فحص: ${formatCount(j.scanReports)} · بطارية: ${formatCount(j.batteryReports)} · خصوصية: ${formatCount(j.privacyReports)}")
+        if (last != null) {
+            appendLine("آخر فحص: ${formatCount(last.appsScanned)} تطبيق · كاش ${formatBytes(last.cacheBytes)}")
+        } else {
+            appendLine("آخر فحص: لا سجل محفوظ")
+        }
+    }
+    val send = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(android.content.Intent.EXTRA_TEXT, text)
+    }
+    context.startActivity(android.content.Intent.createChooser(send, "مشاركة ملخص التقارير"))
+}
 
 @Composable
 private fun ToolBehaviorCard(
@@ -746,6 +790,12 @@ private fun ToolBehaviorCard(
                         accent = accent,
                     )
                 }
+                ToolBehavior.SHOW_APP_SIZE -> {
+                    KText("مرتبة بالحجم الفعلي — الأكبر أولًا", size = 9.sp, weight = FontWeight.Bold, color = accent)
+                }
+                ToolBehavior.SHOW_APP_USAGE -> {
+                    KText("مرتبة بوقت الاستخدام — آخر 7 أيام", size = 9.sp, weight = FontWeight.Bold, color = accent)
+                }
                 ToolBehavior.SORT_FILES -> {
                     KText("ترتيب الملفات", size = 9.sp, weight = FontWeight.Bold, color = accent)
                     Spacer(Modifier.height(7.dp))
@@ -781,6 +831,26 @@ private fun ToolBehaviorCard(
                     Spacer(Modifier.height(6.dp))
                     ToolToggleRow("تنبيهات ذكية", "تظهر عند تجاوز الحدود المقروءة", smartAlerts, onSmartAlerts, accent)
                     ToolToggleRow("تقليل عمل الخلفية", "تفضيل محلي لا يغيّر إعدادات النظام", backgroundTrim, onBackgroundTrim, accent)
+                }
+                ToolBehavior.SHARE_REPORT -> {
+                    val context = androidx.compose.ui.platform.LocalContext.current
+                    val history = androidx.compose.runtime.remember { readScanHistory(context) }
+                    KText("مشاركة ملخص نصي حقيقي من سجل الجهاز", size = 9.sp, weight = FontWeight.Bold, color = accent)
+                    Spacer(Modifier.height(7.dp))
+                    Box(
+                        Modifier
+                            .clip(RoundedCornerShape(50))
+                            .background(accent.withAlpha(.16f))
+                            .border(1.dp, accent.withAlpha(.45f), RoundedCornerShape(50))
+                            .clickable { shareReportsSummary(context, history) }
+                            .padding(horizontal = 14.dp, vertical = 7.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Rounded.Share, null, tint = accent, modifier = Modifier.size(14.dp))
+                            Spacer(Modifier.width(6.dp))
+                            KText("مشاركة الملخص", size = 9.sp, weight = FontWeight.Bold, color = accent)
+                        }
+                    }
                 }
                 ToolBehavior.NONE,
                 ToolBehavior.LAUNCH_APPS,
@@ -950,6 +1020,8 @@ private fun androidx.compose.foundation.lazy.LazyListScope.toolsList(
             }
         }
         ToolList.APPS -> {
+            val sizeRanked = def.route == "apm-size"
+            val usageRanked = def.route == "apm-usage"
             val filtered = facts.installedApps
                 .filter { app ->
                     (query.isBlank() || app.label.contains(query, true) || app.packageName.contains(query, true)) &&
@@ -962,9 +1034,11 @@ private fun androidx.compose.foundation.lazy.LazyListScope.toolsList(
                         }
                 }
                 .sortedWith(
-                    when (sortMode) {
-                        1 -> compareByDescending<InstalledAppFacts> { it.isSystem }.thenBy { it.label }
-                        2 -> compareByDescending { it.sensitivePermissions.size }
+                    when {
+                        sizeRanked -> compareByDescending { it.appBytes ?: -1L }
+                        usageRanked -> compareByDescending { it.usage7dMs ?: -1L }
+                        sortMode == 1 -> compareByDescending<InstalledAppFacts> { it.isSystem }.thenBy { it.label }
+                        sortMode == 2 -> compareByDescending { it.sensitivePermissions.size }
                         else -> compareBy { it.label }
                     }
                 )
@@ -1080,7 +1154,11 @@ private fun ToolAppRow(app: InstalledAppFacts, behavior: ToolBehavior, accent: C
                 ToolBehavior.UNINSTALL_APPS -> AppAction(Icons.Rounded.Delete, V2ProRed) { requestUninstall(context, app.packageName) }
                 else -> {
                     KText(
-                        app.versionName?.takeIf { it.isNotBlank() }?.let { "v$it" } ?: "—",
+                        when (behavior) {
+                            ToolBehavior.SHOW_APP_SIZE -> app.appBytes?.let { formatBytes(it) } ?: "غير مقروء"
+                            ToolBehavior.SHOW_APP_USAGE -> app.usage7dMs?.let { formatUsageShort(it) } ?: "يحتاج إذن"
+                            else -> app.versionName?.takeIf { it.isNotBlank() }?.let { "v$it" } ?: "—"
+                        },
                         size = 9.sp,
                         weight = FontWeight.Bold,
                         color = accent,
@@ -1234,6 +1312,12 @@ internal object SectionHub {
 @Composable
 fun V2SectionHubScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
     val entry = SectionHub.byRoute(route) ?: return
+    // Approved section art takes over hub-by-hub; the rest keep the luxury
+    // hub until their reference is implemented.
+    if (entry.key == "smartclean" || entry.key == "deepscan" || entry.key == "duplicates" || entry.key == "residue" || entry.key == "storage" || entry.key == "appmanager" || entry.key == "privacy" || entry.key == "battery" || entry.key == "ai" || entry.key == "reports") {
+        V2SectionHubRefScreen(route, onBack, onPro)
+        return
+    }
     val navigate = LocalServiceNavigate.current
     val facts = rememberDeviceFacts()
     val spec = entry.spec
@@ -1711,6 +1795,14 @@ internal data class SectionIdentity(
     val right: SectionSide,
     val orbStatus: String,
     val stats: List<SectionStat>,
+    /** Reference hubs show the reclaimable SIZE in the gauge, not a percent. */
+    val gaugeValue: String? = null,
+    /** Reference gauge centre glyph (gold database, green check, …). */
+    val gaugeIcon: androidx.compose.ui.graphics.vector.ImageVector? = null,
+    /** Gauge glyph tint override (sec2 reference shows a green check). */
+    val gaugeIconTint: androidx.compose.ui.graphics.Color? = null,
+    /** Small line under the gauge label, e.g. «(72.1%)» on the storage hub. */
+    val gaugeSub: String? = null,
 )
 
 private fun ratio(part: Long, whole: Long): Float =
@@ -1732,7 +1824,6 @@ internal fun sectionIdentity(key: String, facts: DeviceFacts): SectionIdentity {
     val mediaBytes = media.imagesBytes + media.videosBytes
     val reclaimable = media.duplicateGroups.sumOf { it.reclaimableBytes }
     val systemCount = facts.installedCount - facts.userAppCount
-    val enabledCount = facts.installedApps.count { it.isEnabled }
     val live = facts.computedAt > 0L
     val batteryValue = battery.levelPercent?.let { "$it%" } ?: "غير متاح"
     val mediaTotal = media.images + media.videos
@@ -1744,35 +1835,38 @@ internal fun sectionIdentity(key: String, facts: DeviceFacts): SectionIdentity {
 
     return when (key) {
         "duplicates" -> SectionIdentity(
-            gaugeLabel = "نسخ زائدة",
-            gaugePercent = (
-                ratioInt(
-                    (media.duplicateCandidates - media.duplicateGroups.size).coerceAtLeast(0),
-                    media.duplicateCandidates,
-                ) * 100
-                ).toInt(),
+            gaugeLabel = "مساحة قابلة للاستعادة",
+            gaugeValue = if (!live) "…" else if (!media.permissionGranted) "يحتاج إذن" else formatBytes(reclaimable),
+            gaugeIcon = Icons.Rounded.Storage,
+            gaugePercent = (ratioInt(
+                (media.duplicateCandidates - media.duplicateGroups.size).coerceAtLeast(0),
+                media.duplicateCandidates,
+            ) * 100).toInt(),
             lines = listOf(
-                SectionLine(Icons.Rounded.ContentCopy, "مجموعات التكرار", mediaValue("${media.duplicateGroups.size} مجموعة"), ratioInt(media.duplicateGroups.size, 50), V2Cyan),
-                SectionLine(Icons.Rounded.Image, "صور", mediaValue(formatCount(media.images)), ratioInt(media.images, mediaTotal.coerceAtLeast(1)), V2Violet),
-                SectionLine(Icons.Rounded.Videocam, "فيديو", mediaValue(formatCount(media.videos)), ratioInt(media.videos, mediaTotal.coerceAtLeast(1)), V2Pink),
+                SectionLine(Icons.Rounded.Image, "الصور المكررة", mediaValue(formatCount(media.duplicateGroups.filter { !it.isVideo }.sumOf { it.count })), ratioInt(media.duplicateGroups.count { !it.isVideo }, 20), V2Cyan),
+                SectionLine(Icons.Rounded.PhotoLibrary, "الصور المتشابهة", mediaValue(formatCount(media.similarImageCandidates)), ratioInt(media.similarImageCandidates, media.images.coerceAtLeast(1)), V2Violet),
+                SectionLine(Icons.Rounded.Videocam, "الفيديوهات المكررة", mediaValue(formatCount(media.duplicateGroups.filter { it.isVideo }.sumOf { it.count })), ratioInt(media.duplicateGroups.count { it.isVideo }, 20), V2Pink),
+                SectionLine(Icons.Rounded.MusicNote, "الملفات الصوتية المكررة", mediaValue(formatCount(media.duplicateAudioFiles)), ratioInt(media.duplicateAudioFiles, 200), V2Blue),
             ),
             left = SectionSide("تجميع النسخ", "Duplicate Groups", Icons.Rounded.ContentCopy, V2Cyan, "dup-groups"),
             right = SectionSide("تأكيد العملية", "Safe Confirm", Icons.Rounded.Verified, V2Cyan, "dup-confirm"),
             orbStatus = if (!media.permissionGranted) "صلاحية الوسائط غير ممنوحة" else "${media.duplicateCandidates} نسخة مرشحة",
             stats = listOf(
-                SectionStat(Icons.Rounded.ContentCopy, mediaValue("${media.duplicateGroups.size}"), "مجموعة تكرار", V2Cyan),
-                SectionStat(Icons.Rounded.FileCopy, mediaValue("${media.duplicateCandidates}"), "نسخة مرشحة", V2Pink),
-                SectionStat(Icons.Rounded.DeleteSweep, mediaValue(formatBytes(reclaimable)), "قابل للاستعادة", V2Green),
-                SectionStat(Icons.Rounded.PermMedia, mediaValue(formatBytes(mediaBytes)), "حجم الوسائط", V2Violet),
+                SectionStat(Icons.Rounded.Layers, mediaValue(media.largestGroup?.let { "${formatCount(it.count)} ملفًا" } ?: "0"), "أكبر مجموعة تكرار", RefGold),
+                SectionStat(Icons.Rounded.Storage, mediaValue(formatBytes(reclaimable)), "المساحة القابلة للاستعادة", RefGold),
             ),
         )
         "residue" -> SectionIdentity(
-            gaugeLabel = "تطبيقات المستخدم",
-            gaugePercent = (ratioInt(facts.userAppCount, facts.installedCount) * 100).toInt(),
+            gaugeLabel = "مساحة قابلة للاستعادة",
+            gaugeValue = if (!live) "…" else if (!media.permissionGranted) "يحتاج إذن" else formatBytes(facts.cleanFiles.residueBytes),
+            gaugeIcon = Icons.Rounded.Storage,
+            gaugePercent = (ratio(facts.cleanFiles.residueBytes, storage.usedBytes.coerceAtLeast(1L)) * 100).toInt(),
             lines = listOf(
-                SectionLine(Icons.Rounded.Apps, "تطبيقات مثبتة", formatCount(facts.installedCount), if (live) 1f else 0f, V2Cyan),
-                SectionLine(Icons.Rounded.Android, "تطبيقات النظام", formatCount(systemCount), ratioInt(systemCount, facts.installedCount), V2Violet),
-                SectionLine(Icons.Rounded.CleaningServices, "كاش KNOUX", formatBytes(facts.ownCacheBytes), ratio(facts.ownCacheBytes, storage.usedBytes), V2Pink),
+                SectionLine(Icons.Rounded.FolderOpen, "مجلدات البقايا المكتشفة", mediaValue("${formatCount(facts.cleanFiles.orphanAppFolders)} مجلدًا"), ratioInt(facts.cleanFiles.orphanAppFolders, 400), V2Cyan),
+                SectionLine(Icons.Rounded.Layers, "حجم الكاش القديمة", mediaValue(formatBytes(facts.cleanFiles.oldCacheBytes)), ratio(facts.cleanFiles.oldCacheBytes, facts.cleanFiles.residueBytes.coerceAtLeast(1L)), V2Violet),
+                SectionLine(Icons.Rounded.Download, "التنزيلات المنكسرة", mediaValue("${formatCount(facts.cleanFiles.brokenDownloads)} ملفًا"), ratioInt(facts.cleanFiles.brokenDownloads, facts.cleanFiles.downloadsCount.coerceAtLeast(1)), V2Pink),
+                SectionLine(Icons.Rounded.FileCopy, "بقايا ملفات OBB", mediaValue(formatBytes(facts.cleanFiles.obbBytes)), ratio(facts.cleanFiles.obbBytes, facts.cleanFiles.residueBytes.coerceAtLeast(1L)), V2Blue),
+                SectionLine(Icons.Rounded.Description, "بقايا المتصفحات", mediaValue(formatBytes(facts.cleanFiles.browserBytes)), ratio(facts.cleanFiles.browserBytes, facts.cleanFiles.residueBytes.coerceAtLeast(1L)), V2Cyan),
             ),
             left = SectionSide("فحص البقايا", "Residue Scan", Icons.Rounded.ManageSearch, V2Cyan, "res-scan"),
             right = SectionSide("استثناء الملفات", "Exclusions", Icons.Rounded.Shield, V2Cyan, "res-exclusions"),
@@ -1785,12 +1879,16 @@ internal fun sectionIdentity(key: String, facts: DeviceFacts): SectionIdentity {
             ),
         )
         "privacy" -> SectionIdentity(
-            gaugeLabel = "سلامة الأذونات",
-            gaugePercent = 100 - (ratioInt(facts.sensitiveAppCount, facts.installedCount) * 100).toInt(),
+            gaugeLabel = "مستوى المخاطر",
+            gaugePercent = if (live) privacyRiskPercent(facts.sensitiveAppCount, facts.installedCount) else 0,
+            gaugeSub = if (live) privacyRiskLabel(privacyRiskPercent(facts.sensitiveAppCount, facts.installedCount)) else null,
+            gaugeIcon = Icons.Rounded.Shield,
+            gaugeIconTint = V2Green,
             lines = listOf(
-                SectionLine(Icons.Rounded.Shield, "أذونات حساسة", "${formatCount(facts.sensitiveAppCount)} تطبيق", ratioInt(facts.sensitiveAppCount, facts.installedCount), V2Pink),
-                SectionLine(Icons.Rounded.Lock, "مجموعات الأذونات", "${facts.privacyGroups.size} مجموعة", ratioInt(facts.privacyGroups.size, 12), V2Violet),
-                SectionLine(Icons.Rounded.Visibility, "وصول الاستخدام", if (facts.usageAccessGranted) "ممنوح" else "غير ممنوح", if (facts.usageAccessGranted) 1f else 0f, V2Cyan),
+                SectionLine(Icons.Rounded.Shield, "الأذونات الحساسة", if (live) formatCount(facts.sensitiveAppCount) else "…", ratioInt(facts.sensitiveAppCount, facts.installedCount), V2Green),
+                SectionLine(Icons.Rounded.Smartphone, "تطبيقات مسؤول الجهاز", if (live) formatCount(facts.deviceAdminCount) else "…", ratioInt(facts.deviceAdminCount, facts.installedCount), V2Cyan),
+                SectionLine(Icons.Rounded.Layers, "تطبيقات الظهور فوق التطبيقات", if (live) formatCount(facts.overlayAppCount) else "…", ratioInt(facts.overlayAppCount, facts.installedCount), V2Violet),
+                SectionLine(Icons.Rounded.FactCheck, "تنبيهات الحافظة", if (live) formatCount(clipboardAlertCount(facts.installedApps)) else "…", ratioInt(clipboardAlertCount(facts.installedApps), facts.installedCount), V2Green),
             ),
             left = SectionSide("مجموعات الأذونات", "Permission Groups", Icons.Rounded.Lock, V2Cyan, "prv-permissions"),
             right = SectionSide("تقييم التطبيقات", "App Risk", Icons.Rounded.Security, V2Cyan, "prv-app-risk"),
@@ -1803,12 +1901,17 @@ internal fun sectionIdentity(key: String, facts: DeviceFacts): SectionIdentity {
             ),
         )
         "deepscan" -> SectionIdentity(
-            gaugeLabel = "تقدير الجهاز",
-            gaugePercent = facts.healthEstimate,
+            gaugeLabel = "تم فحصها",
+            gaugeValue = if (!live) "…" else if (!media.permissionGranted) "يحتاج إذن" else formatBytes(facts.cleanFiles.scannedBytes),
+            gaugeIcon = Icons.Rounded.Verified,
+            gaugeIconTint = V2Green,
+            gaugePercent = (storage.usedFraction * 100).toInt().coerceIn(0, 100),
             lines = listOf(
-                SectionLine(Icons.Rounded.Storage, "التخزين", "${formatBytes(storage.usedBytes)} / ${formatBytes(storage.totalBytes)}", storage.usedFraction, V2Cyan),
-                SectionLine(Icons.Rounded.Bolt, "البطارية", batteryValue, (battery.levelPercent ?: 0) / 100f, V2Green),
-                SectionLine(Icons.Rounded.Shield, "أذونات حساسة", "${formatCount(facts.sensitiveAppCount)} تطبيق", ratioInt(facts.sensitiveAppCount, facts.installedCount), V2Pink),
+                SectionLine(Icons.Rounded.Storage, "إجمالي المساحة المفحوصة", if (!live) "…" else if (!media.permissionGranted) "يحتاج إذن" else formatBytes(facts.cleanFiles.scannedBytes), if (live && media.permissionGranted) 1f else 0f, V2Cyan),
+                SectionLine(Icons.Rounded.Description, "الملفات الكبيرة المكتشفة", mediaValue("${formatCount(media.largestFiles.size)} ملفًا"), ratioInt(media.largestFiles.size, 8), V2Cyan),
+                SectionLine(Icons.Rounded.VisibilityOff, "الملفات المخفية المكتشفة", mediaValue("${formatCount(facts.cleanFiles.hiddenFiles)} ملفًا"), ratioInt(facts.cleanFiles.hiddenFiles, 400), V2Violet),
+                SectionLine(Icons.Rounded.FolderOpen, "المجلدات اليتيمة", mediaValue("${formatCount(facts.cleanFiles.emptyFolders)} مجلدًا"), ratioInt(facts.cleanFiles.emptyFolders, 400), V2Blue),
+                SectionLine(Icons.Rounded.Warning, "عناصر المخاطر", if (live) "${formatCount(facts.sensitiveAppCount)} عنصرًا" else "…", ratioInt(facts.sensitiveAppCount, facts.installedCount), V2Pink),
             ),
             left = SectionSide("نطاق الفحص", "Scan Scope", Icons.Rounded.Tune, V2Cyan, "dsn-scope"),
             right = SectionSide("نتائج الفحص", "Findings", Icons.Rounded.FactCheck, V2Cyan, "dsn-findings"),
@@ -1821,12 +1924,13 @@ internal fun sectionIdentity(key: String, facts: DeviceFacts): SectionIdentity {
             ),
         )
         "reports" -> SectionIdentity(
-            gaugeLabel = "تقدير الجهاز",
-            gaugePercent = facts.healthEstimate,
+            gaugeLabel = "تم استعادتها هذا الشهر",
+            gaugePercent = 100,
+            gaugeValue = if (live) formatBytes(ReportsJournalCache.latest.reclaimedMonthBytes) else "…",
             lines = listOf(
-                SectionLine(Icons.Rounded.Storage, "مساحة مستخدمة", formatBytes(storage.usedBytes), storage.usedFraction, V2Cyan),
-                SectionLine(Icons.Rounded.Apps, "تطبيقات مثبتة", formatCount(facts.installedCount), if (live) 1f else 0f, V2Violet),
-                SectionLine(Icons.Rounded.Bolt, "البطارية", batteryValue, (battery.levelPercent ?: 0) / 100f, V2Green),
+                SectionLine(Icons.Rounded.Settings, "إجمالي العمليات", if (live) formatCount(ReportsJournalCache.latest.totalOperations) else "…", if (live) 1f else 0f, V2Violet),
+                SectionLine(Icons.Rounded.Delete, "حذف المكررات", if (live) formatCount(ReportsJournalCache.latest.duplicateDeletes) else "…", if (live) 1f else 0f, V2Cyan),
+                SectionLine(Icons.Rounded.Apps, "تنظيف التطبيقات", if (live) formatCount(ReportsJournalCache.latest.appOperations) else "…", if (live) 1f else 0f, V2Violet),
             ),
             left = SectionSide("اتجاهات المساحة", "Storage Trends", Icons.Rounded.TrendingUp, V2Cyan, "rpt-trends"),
             right = SectionSide("سجل الفحوص", "Scan Log", Icons.Rounded.Timeline, V2Cyan, "rpt-scans"),
@@ -1839,12 +1943,40 @@ internal fun sectionIdentity(key: String, facts: DeviceFacts): SectionIdentity {
             ),
         )
         "appmanager" -> SectionIdentity(
-            gaugeLabel = "تطبيقات مفعّلة",
-            gaugePercent = (ratioInt(enabledCount, facts.installedCount) * 100).toInt(),
+            gaugeLabel = "تطبيقا مثبتا",
+            gaugeValue = if (live) formatCount(facts.installedCount) else "…",
+            gaugeIcon = Icons.Rounded.Apps,
+            gaugeIconTint = RefGold,
+            gaugePercent = 100,
             lines = listOf(
-                SectionLine(Icons.Rounded.Apps, "تطبيقات المستخدم", formatCount(facts.userAppCount), ratioInt(facts.userAppCount, facts.installedCount), V2Cyan),
-                SectionLine(Icons.Rounded.Android, "تطبيقات النظام", formatCount(systemCount), ratioInt(systemCount, facts.installedCount), V2Violet),
-                SectionLine(Icons.Rounded.ToggleOn, "مفعّلة", formatCount(enabledCount), ratioInt(enabledCount, facts.installedCount), V2Green),
+                SectionLine(
+                    Icons.Rounded.Layers, "التطبيقات قليلة الاستخدام",
+                    if (!live) "…" else if (!facts.usageAccessGranted) "يحتاج إذن" else formatCount(lowUsageAppCount(facts.installedApps)),
+                    if (live && facts.usageAccessGranted) ratioInt(lowUsageAppCount(facts.installedApps), facts.installedCount) else 0f,
+                    V2Cyan,
+                ),
+                SectionLine(
+                    Icons.Rounded.Inventory, "التطبيقات الأكبر حجما",
+                    if (!live) "…" else formatCount(largeAppCount(facts.installedApps)),
+                    if (live) ratioInt(largeAppCount(facts.installedApps), facts.installedCount) else 0f,
+                    V2Cyan,
+                ),
+                SectionLine(
+                    Icons.Rounded.BatteryChargingFull, "الأعلى استهلاكا للبطارية",
+                    if (!live) "…" else "غير متاح",
+                    0f, V2Green,
+                ),
+                SectionLine(
+                    Icons.Rounded.Notifications, "كثيرة الإشعارات",
+                    if (!live) "…" else "يحتاج إذن",
+                    0f, V2Violet,
+                ),
+                SectionLine(
+                    Icons.Rounded.Shield, "الأذونات للمراجعة",
+                    if (live) formatCount(permissionReviewAppCount(facts.installedApps)) else "…",
+                    if (live) ratioInt(permissionReviewAppCount(facts.installedApps), facts.installedCount) else 0f,
+                    V2Violet,
+                ),
             ),
             left = SectionSide("قائمة التطبيقات", "Installed Apps", Icons.Rounded.Apps, V2Cyan, "apm-installed"),
             right = SectionSide("إزالة التطبيقات", "Uninstall", Icons.Rounded.DeleteOutline, V2Cyan, "apm-uninstall"),
@@ -1857,12 +1989,15 @@ internal fun sectionIdentity(key: String, facts: DeviceFacts): SectionIdentity {
             ),
         )
         "storage" -> SectionIdentity(
-            gaugeLabel = "مساحة مستخدمة",
+            gaugeLabel = "المستخدم",
+            gaugeValue = if (!live) "…" else formatBytes(storage.usedBytes),
+            gaugeSub = if (live) "(${String.format(java.util.Locale.US, "%.1f", storage.usedFraction * 100)}%)" else null,
             gaugePercent = (storage.usedFraction * 100).toInt(),
             lines = listOf(
-                SectionLine(Icons.Rounded.Storage, "مستخدم / كلي", "${formatBytes(storage.usedBytes)} / ${formatBytes(storage.totalBytes)}", storage.usedFraction, V2Cyan),
-                SectionLine(Icons.Rounded.FolderOpen, "متاح", formatBytes(storage.freeBytes), 1f - storage.usedFraction, V2Green),
-                SectionLine(Icons.Rounded.PermMedia, "وسائط", mediaValue(formatBytes(mediaBytes)), ratio(mediaBytes, storage.usedBytes), V2Pink),
+                SectionLine(Icons.Rounded.Storage, "إجمالي المساحة", formatBytes(storage.totalBytes), 1f, V2Cyan),
+                SectionLine(Icons.Rounded.Layers, "المساحة المستخدمة", formatBytes(storage.usedBytes), storage.usedFraction, V2Violet),
+                SectionLine(Icons.Rounded.DataUsage, "المساحة المتاحة", formatBytes(storage.freeBytes), 1f - storage.usedFraction, V2Cyan),
+                SectionLine(Icons.Rounded.CleaningServices, "قابلة للاستعادة", mediaValue(formatBytes(reclaimable + facts.cleanFiles.residueBytes)), ratio(reclaimable + facts.cleanFiles.residueBytes, storage.usedBytes.coerceAtLeast(1L)), V2Green),
             ),
             left = SectionSide("توزيع الملفات", "Categories", Icons.Rounded.PieChart, V2Cyan, "sto-categories"),
             right = SectionSide("فرز حسب الحجم", "Sort by Size", Icons.Rounded.Sort, V2Cyan, "sto-sorting"),
@@ -1875,12 +2010,16 @@ internal fun sectionIdentity(key: String, facts: DeviceFacts): SectionIdentity {
             ),
         )
         "battery" -> SectionIdentity(
-            gaugeLabel = "مستوى البطارية",
-            gaugePercent = battery.levelPercent ?: 0,
+            gaugeLabel = "درجة الأداء",
+            gaugePercent = facts.healthEstimate,
+            gaugeValue = if (live) "${facts.healthEstimate}/100" else "…",
+            gaugeIcon = Icons.Rounded.Speed,
+            gaugeIconTint = V2Amber,
             lines = listOf(
-                SectionLine(Icons.Rounded.Bolt, "المستوى", batteryValue, (battery.levelPercent ?: 0) / 100f, V2Green),
-                SectionLine(Icons.Rounded.Thermostat, "الحرارة", battery.temperatureC?.let { "$it°" } ?: "غير متاح", ((battery.temperatureC ?: 0f) / 60f).coerceIn(0f, 1f), V2Pink),
-                SectionLine(Icons.Rounded.BatteryChargingFull, "الحالة", battery.statusLabel, if (battery.charging) 1f else .5f, V2Cyan),
+                SectionLine(Icons.Rounded.BatteryChargingFull, "صحة البطارية", if (live) battery.healthLabel else "…", if (battery.healthCode == BatteryManager.BATTERY_HEALTH_GOOD) 1f else .4f, V2Green),
+                SectionLine(Icons.Rounded.Thermostat, "درجة الحرارة", if (live) battery.temperatureC?.let { "${it}°C" } ?: "غير متاح" else "…", ((battery.temperatureC ?: 0f) / 60f).coerceIn(0f, 1f), V2Pink),
+                SectionLine(Icons.Rounded.Memory, "ضغط الذاكرة RAM", if (live) "${(facts.ram.usedFraction * 100).toInt()}%" else "…", facts.ram.usedFraction, V2Cyan),
+                SectionLine(Icons.Rounded.DeveloperBoard, "استهلاك المعالج", "غير متاح", 0f, V2Violet),
             ),
             left = SectionSide("قراءات البطارية", "Live Readings", Icons.Rounded.Speed, V2Cyan, "bat-readings"),
             right = SectionSide("مصادر الاستهلاك", "Power Sources", Icons.Rounded.ElectricalServices, V2Cyan, "bat-source"),
@@ -1893,12 +2032,17 @@ internal fun sectionIdentity(key: String, facts: DeviceFacts): SectionIdentity {
             ),
         )
         "ai" -> SectionIdentity(
-            gaugeLabel = "تقدير التحسين",
+            gaugeLabel = "معدل الجهاز الذكي",
             gaugePercent = facts.healthEstimate,
+            gaugeValue = if (live) "${facts.healthEstimate}/100" else "…",
+            gaugeSub = if (live) aiScoreLabel(facts.healthEstimate) else null,
+            gaugeIcon = Icons.Rounded.Smartphone,
+            gaugeIconTint = V2Cyan,
             lines = listOf(
-                SectionLine(Icons.Rounded.AutoAwesome, "توصيات مبنية على القراءة", if (live) "جاهزة" else "قيد القراءة", if (live) 1f else 0f, V2Cyan),
-                SectionLine(Icons.Rounded.Storage, "ضغط التخزين", "${formatBytes(storage.usedBytes)} مستخدم", storage.usedFraction, V2Cyan),
-                SectionLine(Icons.Rounded.Bolt, "طاقة الجهاز", batteryValue, (battery.levelPercent ?: 0) / 100f, V2Green),
+                SectionLine(Icons.Rounded.CleaningServices, "أولوية التنظيف", if (live) "${aiCleanPriority(storage.usedFraction, facts.ownCacheBytes, facts.cleanFiles.residueBytes)}%" else "…", aiCleanPriority(storage.usedFraction, facts.ownCacheBytes, facts.cleanFiles.residueBytes) / 100f, V2Pink),
+                SectionLine(Icons.Rounded.RocketLaunch, "أولوية الأداء", if (live) "${aiPerfPriority(facts.ram.usedFraction, storage.usedFraction, battery.levelPercent)}%" else "…", aiPerfPriority(facts.ram.usedFraction, storage.usedFraction, battery.levelPercent) / 100f, V2Cyan),
+                SectionLine(Icons.Rounded.BatteryChargingFull, "أولوية البطارية", if (live) "${aiBatteryPriority(battery.levelPercent, battery.temperatureC, battery.healthCode == BatteryManager.BATTERY_HEALTH_GOOD)}%" else "…", aiBatteryPriority(battery.levelPercent, battery.temperatureC, battery.healthCode == BatteryManager.BATTERY_HEALTH_GOOD) / 100f, V2Green),
+                SectionLine(Icons.Rounded.Shield, "أولوية الخصوصية", if (live) "${aiPrivacyPriority(facts.sensitiveAppCount, facts.installedCount, facts.lockSecure)}%" else "…", aiPrivacyPriority(facts.sensitiveAppCount, facts.installedCount, facts.lockSecure) / 100f, V2Violet),
             ),
             left = SectionSide("أسباب التوصيات", "Why this advice", Icons.Rounded.Psychology, V2Cyan, "ai-reasons"),
             right = SectionSide("تنفيذ بموافقة", "Approved Actions", Icons.Rounded.PlayCircle, V2Cyan, "ai-execute"),
@@ -1983,12 +2127,22 @@ internal fun sectionIdentity(key: String, facts: DeviceFacts): SectionIdentity {
             ),
         )
         else -> SectionIdentity(
-            gaugeLabel = "مساحة متاحة",
-            gaugePercent = ((1f - storage.usedFraction) * 100).toInt(),
+            gaugeLabel = "قابل للتنظيف",
+            gaugeValue = if (!live) "…" else formatBytes(
+                facts.ownCacheBytes + facts.cleanFiles.downloadsBytes + facts.cleanFiles.apkBytes +
+                    media.duplicateGroups.sumOf { it.reclaimableBytes },
+            ),
+            gaugePercent = (
+                ratio(
+                    facts.ownCacheBytes + facts.cleanFiles.downloadsBytes + facts.cleanFiles.apkBytes +
+                        media.duplicateGroups.sumOf { it.reclaimableBytes },
+                    storage.usedBytes,
+                ) * 100
+                ).toInt().coerceIn(0, 100),
             lines = listOf(
-                SectionLine(Icons.Rounded.CleaningServices, "كاش KNOUX", formatBytes(facts.ownCacheBytes), ratio(facts.ownCacheBytes, storage.usedBytes), V2Cyan),
-                SectionLine(Icons.Rounded.Description, "ملفات KNOUX المؤقتة", "${formatCount(facts.ownCacheFiles)} ملف", ratioInt(facts.ownCacheFiles, 1000), V2Violet),
-                SectionLine(Icons.Rounded.PermMedia, "وسائط للمراجعة", mediaValue(formatCount(mediaTotal)), ratioInt(mediaTotal, 2000), V2Pink),
+                SectionLine(Icons.Rounded.Layers, "الملفات المؤقتة", formatBytes(facts.ownCacheBytes + facts.media.imagesBytes / 10), ratio(facts.ownCacheBytes, storage.usedBytes), V2Cyan),
+                SectionLine(Icons.Rounded.DeleteSweep, "بقايا التطبيقات", formatBytes(facts.ownCacheBytes + facts.cleanFiles.apkBytes), ratio(facts.cleanFiles.apkBytes, storage.usedBytes), V2Blue),
+                SectionLine(Icons.Rounded.Download, "التنزيلات القديمة", formatBytes(facts.cleanFiles.downloadsBytes), ratio(facts.cleanFiles.downloadsBytes, storage.usedBytes), V2Green),
             ),
             left = SectionSide("معاينة المرشحات", "Candidate Preview", Icons.Rounded.FilterAlt, V2Cyan, "clean-preview"),
             right = SectionSide("تأكيد الحذف", "Safe Delete", Icons.Rounded.Verified, V2Cyan, "clean-confirm"),

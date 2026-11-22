@@ -71,6 +71,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -1022,6 +1024,37 @@ val V2Tabs = listOf(
     V2Tab("reports", "التقارير", Icons.Rounded.BarChart),
 )
 
+/** Approved bottom-bar home glyph: outline house, no fill. */
+@Composable
+fun V2HomeOutlineGlyph(modifier: Modifier = Modifier, color: Color = V2Pink) {
+    Canvas(modifier) {
+        val w = size.width
+        val h = size.height
+        val stroke = 1.9.dp.toPx()
+        val pink = color
+        val roof = Path().apply {
+            moveTo(w * .06f, h * .46f)
+            lineTo(w * .5f, h * .06f)
+            lineTo(w * .94f, h * .46f)
+        }
+        drawPath(roof, pink, style = Stroke(stroke, cap = StrokeCap.Round, join = StrokeJoin.Round))
+        val body = Path().apply {
+            moveTo(w * .16f, h * .40f)
+            lineTo(w * .16f, h * .92f)
+            lineTo(w * .84f, h * .92f)
+            lineTo(w * .84f, h * .40f)
+        }
+        drawPath(body, pink, style = Stroke(stroke, cap = StrokeCap.Round, join = StrokeJoin.Round))
+        val door = Path().apply {
+            moveTo(w * .40f, h * .92f)
+            lineTo(w * .40f, h * .62f)
+            lineTo(w * .60f, h * .62f)
+            lineTo(w * .60f, h * .92f)
+        }
+        drawPath(door, pink, style = Stroke(stroke * .85f, cap = StrokeCap.Round, join = StrokeJoin.Round))
+    }
+}
+
 /**
  * Catalog-driven bottom-bar lane for routes without an explicit mapping.
  * Section hubs, catalog tools and the dev/cloud dashboards all highlight the
@@ -1090,7 +1123,18 @@ fun V2BottomBar(
             val accentColor = if (day) DayCyan else if (isPro) proTheme.cyan else V2Cyan
             
             drawPath(shape, Brush.verticalGradient(listOf(bgColor1, bgColor2)))
-            drawPath(shape, borderColor.withAlpha(.48f), style = Stroke(1.dp.toPx()))
+            // Approved bar edge: violet→cyan→gold luminous sweep (night only).
+            if (!day) {
+                drawPath(
+                    shape,
+                    Brush.horizontalGradient(
+                        listOf(V2Violet.withAlpha(.75f), V2Cyan.withAlpha(.6f), V2Amber.withAlpha(.55f), V2Violet.withAlpha(.75f))
+                    ),
+                    style = Stroke(1.2.dp.toPx()),
+                )
+            } else {
+                drawPath(shape, borderColor.withAlpha(.48f), style = Stroke(1.dp.toPx()))
+            }
             drawPath(
                 shape,
                 Brush.verticalGradient(
@@ -1099,6 +1143,17 @@ fun V2BottomBar(
                     size.height,
                 )
             )
+            // Aurora crest above the bar — soft violet/cyan ribbons like the
+            // approved art, drawn in the gap above the capsule.
+            if (!day) {
+                val crest = Path().apply {
+                    moveTo(0f, top * .55f)
+                    cubicTo(size.width * .22f, top * .05f, size.width * .40f, top * .95f, size.width * .62f, top * .35f)
+                    cubicTo(size.width * .80f, top * .02f, size.width * .92f, top * .7f, size.width, top * .4f)
+                }
+                drawPath(crest, Brush.horizontalGradient(listOf(Color.Transparent, V2Violet.withAlpha(.40f), V2Cyan.withAlpha(.30f), Color.Transparent)), style = Stroke(2.2.dp.toPx(), cap = StrokeCap.Round))
+                drawPath(crest, Brush.horizontalGradient(listOf(Color.Transparent, V2Cyan.withAlpha(.16f), V2Pink.withAlpha(.14f), Color.Transparent)), style = Stroke(5.dp.toPx(), cap = StrokeCap.Round))
+            }
         }
 
         Row(
@@ -1109,6 +1164,8 @@ fun V2BottomBar(
                 .padding(horizontal = 8.dp, vertical = 5.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // Approved bar reads RTL: الرئيسية RIGHT → التقارير LEFT.
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
             V2Tabs.forEach { tab ->
                 if (tab.route == "pro") {
                     Spacer(Modifier.weight(1f))
@@ -1120,6 +1177,7 @@ fun V2BottomBar(
                         modifier = Modifier.weight(1f),
                     )
                 }
+            }
             }
         }
 
@@ -1134,9 +1192,10 @@ fun V2BottomBar(
             contentAlignment = Alignment.Center,
         ) {
             Canvas(Modifier.fillMaxSize()) {
+                // Approved art: hot gold bloom spilling well past the ring.
                 drawCircle(
                     brush = Brush.radialGradient(
-                        listOf(proTheme.amber.withAlpha( .38f), Color.Transparent),
+                        listOf(proTheme.amber.withAlpha(.55f), proTheme.amber.withAlpha(.22f), Color.Transparent),
                         radius = size.minDimension * .5f,
                     ),
                     radius = size.minDimension * .5f,
@@ -1156,14 +1215,25 @@ fun V2BottomBar(
                             // gold-accented, but the orb no longer clashes brown.
                             Brush.verticalGradient(listOf(proTheme.panel, proTheme.panel2))
                     )
-                    .border(2.dp, if (day) DayGold.withAlpha(.9f) else if (isPro) proTheme.goldBright.withAlpha( .9f) else V2Amber.withAlpha( .9f), CircleShape)
-                    .border(1.dp, if (day) Color.White.withAlpha(.30f) else if (isPro) proTheme.soft.withAlpha( .3f) else Color.White.withAlpha( .22f), CircleShape),
+                    .border(
+                        2.4.dp,
+                        Brush.sweepGradient(
+                            listOf(
+                                if (day) DayGold else Color(0xFFFFE9A8),
+                                if (day) DayGold.withAlpha(.7f) else V2Amber,
+                                if (day) DayGold else Color(0xFFB87A1E),
+                                if (day) DayGold else Color(0xFFFFE9A8),
+                            )
+                        ),
+                        CircleShape,
+                    )
+                    .border(1.dp, if (day) Color.White.withAlpha(.30f) else Color.White.withAlpha(.28f), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    CrownGold(size = 24.dp, color = if (day) V2GoldText else if (isPro) proTheme.gold else V2Amber)
+                    CrownGold(size = 26.dp, color = if (day) V2GoldText else V2Amber)
                     CompositionLocalProvider(LocalKnouxOnDark provides true) {
-                        KText("Pro", size = 10.sp, weight = FontWeight.Bold, color = if (day) V2GoldText else proTheme.gold)
+                        KText("Pro", size = 11.sp, weight = FontWeight.Black, color = if (day) V2GoldText else proTheme.gold)
                     }
                 }
             }
@@ -1181,9 +1251,9 @@ private fun RowScope.BottomItem(
     val proTheme = LocalProTheme.current
     val isPro = proTheme.isPro
     val day = LocalDayMode.current
-    val activeTop = if (day) DayViolet else if (isPro) proTheme.amber else V2Blue
-    val activeBottom = if (day) DayBlue else if (isPro) proTheme.deep2 else proTheme.panel2
-    val activeBorder = if (day) DayGold else if (isPro) proTheme.gold else V2Cyan
+    val activeTop = if (day) DayViolet else if (isPro) proTheme.amber else V2Violet
+    val activeBottom = if (day) DayBlue else if (isPro) proTheme.deep2 else Color(0xFF3A1670)
+    val activeBorder = if (day) DayGold else if (isPro) proTheme.gold else V2Pink
     Box(
         modifier
             .fillMaxSize()
@@ -1199,17 +1269,26 @@ private fun RowScope.BottomItem(
                         .border(1.dp, activeBorder.withAlpha(.52f), RoundedCornerShape(20.dp))
                 } else Modifier
             )
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            .semantics { contentDescription = tab.label },
         contentAlignment = Alignment.Center,
     ) {
         CompositionLocalProvider(LocalKnouxOnDark provides active) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(
-                tab.icon ?: return@Column,
-                contentDescription = tab.label,
-                tint = if (active) Color.White else if (day) DayInkSoft else proTheme.soft.withAlpha(.82f),
-                modifier = Modifier.size(22.dp),
-            )
+            val iconTint = if (active) Color.White else if (day) DayInkSoft else proTheme.soft.withAlpha(.82f)
+            if (tab.route == "home") {
+                // Approved art: outline house, not the filled Material glyph.
+                Box(Modifier.size(22.dp), contentAlignment = Alignment.Center) {
+                    V2HomeOutlineGlyph(Modifier.size(21.dp), color = iconTint)
+                }
+            } else {
+                Icon(
+                    tab.icon ?: return@Column,
+                    contentDescription = tab.label,
+                    tint = iconTint,
+                    modifier = Modifier.size(22.dp),
+                )
+            }
             Spacer(Modifier.height(2.dp))
             KText(
                 tab.label,

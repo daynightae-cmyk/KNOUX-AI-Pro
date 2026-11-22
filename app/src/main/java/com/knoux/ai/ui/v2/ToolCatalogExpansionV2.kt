@@ -11,6 +11,7 @@ import androidx.compose.material.icons.rounded.Apps
 import androidx.compose.material.icons.rounded.Backup
 import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.BatteryChargingFull
+import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.BatteryFull
 import androidx.compose.material.icons.rounded.BatterySaver
 import androidx.compose.material.icons.rounded.Block
@@ -18,6 +19,7 @@ import androidx.compose.material.icons.rounded.Bolt
 import androidx.compose.material.icons.rounded.Build
 import androidx.compose.material.icons.rounded.Cached
 import androidx.compose.material.icons.rounded.Calculate
+import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Category
 import androidx.compose.material.icons.rounded.Checklist
 import androidx.compose.material.icons.rounded.CleaningServices
@@ -26,7 +28,10 @@ import androidx.compose.material.icons.rounded.Compare
 import androidx.compose.material.icons.rounded.CompareArrows
 import androidx.compose.material.icons.rounded.ContactPhone
 import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.DeleteSweep
 import androidx.compose.material.icons.rounded.Description
+import androidx.compose.material.icons.rounded.DeveloperBoard
 import androidx.compose.material.icons.rounded.DeveloperMode
 import androidx.compose.material.icons.rounded.DeviceThermostat
 import androidx.compose.material.icons.rounded.ElectricBolt
@@ -34,6 +39,7 @@ import androidx.compose.material.icons.rounded.FilterAlt
 import androidx.compose.material.icons.rounded.Fingerprint
 import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.FolderCopy
+import androidx.compose.material.icons.rounded.FolderDelete
 import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material.icons.rounded.FolderShared
 import androidx.compose.material.icons.rounded.FolderZip
@@ -65,12 +71,15 @@ import androidx.compose.material.icons.rounded.Power
 import androidx.compose.material.icons.rounded.ReceiptLong
 import androidx.compose.material.icons.rounded.Recycling
 import androidx.compose.material.icons.rounded.Restore
+import androidx.compose.material.icons.rounded.RocketLaunch
 import androidx.compose.material.icons.rounded.Rule
 import androidx.compose.material.icons.rounded.Savings
+import androidx.compose.material.icons.rounded.Schedule
 import androidx.compose.material.icons.rounded.Security
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material.icons.rounded.Shield
+import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material.icons.rounded.Summarize
 import androidx.compose.material.icons.rounded.Thermostat
@@ -84,7 +93,10 @@ import androidx.compose.material.icons.rounded.Verified
 import androidx.compose.material.icons.rounded.VideoFile
 import androidx.compose.material.icons.rounded.VideoLibrary
 import androidx.compose.material.icons.rounded.Visibility
+import androidx.compose.material.icons.rounded.VpnKey
 import androidx.compose.material.icons.rounded.WarningAmber
+import androidx.compose.material.icons.rounded.Accessibility
+import androidx.compose.material.icons.rounded.GpsFixed
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.knoux.ai.BuildConfig
@@ -493,6 +505,127 @@ internal object SectionToolsExpansion {
             initialAppFilter = 3,
             handoff = ToolHandoff.APP_SETTINGS,
         ),
+        x(
+            "privacy", "prv-overlay-apps", "04.16", "تطبيقات الظهور فوق التطبيقات", "OVERLAY APPS",
+            "التطبيقات التي تعلن إذن الظهور فوق التطبيقات الأخرى", Icons.Rounded.Layers, V2Violet,
+            metric = { f, _ -> "${formatCount(f.overlayAppCount)} تطبيقًا" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.Layers, "تطبيقات تعلن الظهور", formatCount(f.overlayAppCount), V2Violet),
+                    ToolRow(Icons.Rounded.Apps, "من إجمالي المثبت", formatCount(f.installedCount), V2Cyan),
+                    ToolRow(Icons.Rounded.AdminPanelSettings, "مراجعة المنح", "من إعدادات Android", V2Amber),
+                )
+            },
+            note = "العدّ من الأذونات المعلنة في PackageManager؛ المنح الفعلي يُراجع من إعدادات النظام.",
+            handoff = ToolHandoff.OVERLAY_SETTINGS, actionLabel = "فتح إعدادات الظهور فوق التطبيقات",
+        ),
+        x(
+            "privacy", "prv-access-services", "04.17", "خدمات إمكانية الوصول", "ACCESSIBILITY SERVICES",
+            "خدمات إمكانية الوصول المثبتة وحالة تفعيلها من النظام", Icons.Rounded.Accessibility, V2Cyan,
+            metric = { f, _ -> if (f.computedAt > 0L) "من إعدادات Android" else "جاري القراءة" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.Accessibility, "الخدمات المفعلة", "تُقرأ من إعدادات النظام", V2Cyan),
+                    ToolRow(Icons.Rounded.WarningAmber, "لماذا تهم", "وصول واسع للشاشة والتطبيقات", V2Amber),
+                    ToolRow(Icons.Rounded.Apps, "تطبيقات مثبتة", formatCount(f.installedCount), V2Violet),
+                )
+            },
+            note = "KNOUX لا يفعّل أي خدمة وصول؛ المراجعة والتفعيل من إعدادات Android فقط.",
+            handoff = ToolHandoff.PRIVACY_SETTINGS, actionLabel = "فتح إعدادات الخصوصية",
+        ),
+        x(
+            "privacy", "prv-device-admin", "04.18", "تطبيقات مسؤول الجهاز", "DEVICE ADMIN",
+            "التطبيقات التي تعلن مستقبل مسؤول الجهاز", Icons.Rounded.AdminPanelSettings, V2Violet,
+            metric = { f, _ -> "${formatCount(f.deviceAdminCount)} تطبيقًا" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.AdminPanelSettings, "تطبيقات تعلن المسؤول", formatCount(f.deviceAdminCount), V2Violet),
+                    ToolRow(Icons.Rounded.Apps, "من إجمالي المثبت", formatCount(f.installedCount), V2Cyan),
+                    ToolRow(Icons.Rounded.Security, "التفعيل والمراجعة", "من إعدادات الأمان", V2Amber),
+                )
+            },
+            note = "الإعلان يُقرأ من PackageManager؛ التفعيل الفعلي يظهر في إعدادات مسؤول الجهاز.",
+            handoff = ToolHandoff.DEVICE_ADMIN_SETTINGS, actionLabel = "فتح إعدادات مسؤول الجهاز",
+        ),
+        x(
+            "privacy", "prv-clipboard", "04.19", "خصوصية الحافظة", "CLIPBOARD PRIVACY",
+            "التطبيقات التي تعلن قراءة الحافظة في الخلفية", Icons.Rounded.ContentCopy, V2Pink,
+            metric = { f, _ -> "${formatCount(clipboardAlertCount(f.installedApps))} تنبيهًا" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.ContentCopy, "إعلانات قراءة الحافظة", formatCount(clipboardAlertCount(f.installedApps)), V2Pink),
+                    ToolRow(Icons.Rounded.WarningAmber, "تنبيهات النظام", "Android 12+ يعرض إشعار القراءة", V2Amber),
+                    ToolRow(Icons.Rounded.Apps, "تطبيقات مثبتة", formatCount(f.installedCount), V2Cyan),
+                )
+            },
+            note = "العدّ من الإعلانات المعلنة فقط؛ لا يقرأ KNOUX محتوى الحافظة أبدًا.",
+            handoff = ToolHandoff.PRIVACY_SETTINGS, actionLabel = "فتح إعدادات الخصوصية",
+        ),
+        x(
+            "privacy", "prv-vpn-proxy", "04.20", "حالة VPN / Proxy", "VPN / PROXY STATE",
+            "هل يوجد نفق VPN نشط على الجهاز الآن؟", Icons.Rounded.VpnKey, V2Cyan,
+            metric = { f, _ -> if (f.computedAt == 0L) "جاري القراءة" else if (f.vpnActive) "متصل" else "غير متصل" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.VpnKey, "نفق VPN نشط", if (f.vpnActive) "متصل" else "غير متصل", if (f.vpnActive) V2Green else V2Pink),
+                    ToolRow(Icons.Rounded.Settings, "إعدادات النفق", "من إعدادات Android", V2Cyan),
+                    ToolRow(Icons.Rounded.Info, "القراءة", "ConnectivityManager · لحظية", V2Violet),
+                )
+            },
+            note = "الحالة لحظية من ConnectivityManager؛ لا يسجل KNOUX حركة البيانات.",
+            handoff = ToolHandoff.VPN_SETTINGS, actionLabel = "فتح إعدادات VPN",
+        ),
+        x(
+            "privacy", "prv-lock-status", "04.23", "حالة القفل والبصمة", "LOCK & BIOMETRIC",
+            "قفل الشاشة الآمن وقدرات البصمة على هذا الجهاز", Icons.Rounded.Lock, V2Violet,
+            metric = { f, _ -> if (f.computedAt == 0L) "جاري القراءة" else if (f.lockSecure) "القفل مفعّل" else "بدون قفل" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.Lock, "قفل الشاشة", if (f.lockSecure) "مفعّل وآمن" else "غير مفعّل", if (f.lockSecure) V2Green else V2Pink),
+                    ToolRow(Icons.Rounded.Fingerprint, "عتاد البصمة", when (f.biometricStrength) {
+                        2 -> "قوي"
+                        1 -> "ضعيف"
+                        0 -> "غير متاح"
+                        else -> "غير معروف"
+                    }, if (f.biometricStrength >= 1) V2Green else V2Amber),
+                    ToolRow(Icons.Rounded.Security, "التفعيل والمراجعة", "من إعدادات الأمان", V2Cyan),
+                )
+            },
+            note = "القراءة من KeyguardManager وBiometricManager؛ لا يخزن KNOUX أي بصمة أو رمز.",
+            handoff = ToolHandoff.SECURITY_SETTINGS, actionLabel = "فتح إعدادات الأمان",
+        ),
+        x(
+            "privacy", "prv-action-plan", "04.21", "خطة إجراءات الخصوصية", "PRIVACY ACTION PLAN",
+            "بنود مراجعة مبنية على قراءات فعلية لهذا الجهاز", Icons.Rounded.Checklist, V2Amber,
+            metric = { f, _ -> "${formatCount(privacyActionPlanCount(f.sensitiveAppCount, f.overlayAppCount, captureRiskCount(f.installedApps), f.lockSecure, f.usageAccessGranted))} عناصر" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.Shield, "أذونات حساسة للمراجعة", formatCount(f.sensitiveAppCount), V2Pink),
+                    ToolRow(Icons.Rounded.Layers, "ظهور فوق التطبيقات", formatCount(f.overlayAppCount), V2Violet),
+                    ToolRow(Icons.Rounded.PhotoCamera, "مخاطر الالتقاط", formatCount(captureRiskCount(f.installedApps)), V2Amber),
+                    ToolRow(Icons.Rounded.Lock, "قفل الشاشة", if (f.lockSecure) "مفعّل" else "غير مفعّل", if (f.lockSecure) V2Green else V2Pink),
+                    ToolRow(Icons.Rounded.Visibility, "وصول الاستخدام", if (f.usageAccessGranted) "ممنوح" else "غير ممنوح", if (f.usageAccessGranted) V2Green else V2Amber),
+                )
+            },
+            note = "كل بند مرتبط بقراءة فعلية؛ لا توجد بنود افتراضية أو أرقام تصميم.",
+            actionRoute = "prv-overview", actionLabel = "فتح لوحة الخصوصية",
+        ),
+        x(
+            "privacy", "prv-capture-risk", "04.22", "مخاطر الالتقاط والتسجيل", "CAPTURE RISK",
+            "تطبيقات تعلن الكاميرا أو الميكروفون أو إسقاط الشاشة", Icons.Rounded.GpsFixed, V2Pink,
+            metric = { f, _ -> "${formatCount(captureRiskCount(f.installedApps))} تطبيقًا" },
+            rows = { f, _ ->
+                val cam = f.installedApps.count { "android.permission.CAMERA" in it.declaredPermissions }
+                val mic = f.installedApps.count { "android.permission.RECORD_AUDIO" in it.declaredPermissions }
+                listOf(
+                    ToolRow(Icons.Rounded.PhotoCamera, "تعلن الكاميرا", formatCount(cam), V2Pink),
+                    ToolRow(Icons.Rounded.Mic, "تعلن الميكروفون", formatCount(mic), V2Violet),
+                    ToolRow(Icons.Rounded.WarningAmber, "إجمالي مخاطر الالتقاط", formatCount(captureRiskCount(f.installedApps)), V2Amber),
+                )
+            },
+            note = "إعلانات أذونات فقط — ليست مراقبة استخدام فعلية؛ راجع المنح من إعدادات Android.",
+            handoff = ToolHandoff.PRIVACY_SETTINGS, actionLabel = "فتح إعدادات الخصوصية",
+        ),
     )
 
     private val deepScan = listOf(
@@ -751,6 +884,74 @@ internal object SectionToolsExpansion {
             list = ToolList.APPS,
             behavior = ToolBehavior.SORT_APPS,
         ),
+        x(
+            "appmanager", "apm-size", "07.16", "التطبيقات الأكبر حجما", "LARGEST APPS",
+            "حجم كل تطبيق كما يقيسه StorageStatsManager فعلًا", Icons.Rounded.Storage, V2Cyan,
+            metric = { f, _ -> "${formatCount(largeAppCount(f.installedApps))} تطبيقًا فوق 100 MB" },
+            rows = { f, _ ->
+                val ranked = appsBySizeDesc(f.installedApps)
+                listOf(
+                    ToolRow(Icons.Rounded.Storage, "أكبر تطبيق", ranked.firstOrNull()?.let { "${it.label} · ${formatBytes(it.appBytes ?: 0L)}" } ?: "غير مقروء", V2Cyan),
+                    ToolRow(Icons.Rounded.Inventory, "تطبيقات مقاسة", formatCount(ranked.size), V2Violet),
+                    ToolRow(Icons.Rounded.Layers, "فوق 100 MB", formatCount(largeAppCount(f.installedApps)), V2Pink),
+                    ToolRow(Icons.Rounded.Savings, "إجمالي المقاس", formatBytes(ranked.sumOf { it.appBytes ?: 0L }), V2Green),
+                )
+            },
+            note = "الحجم = APK + بيانات + كاش لكل حزمة سمح النظام بقياسها. الحزم غير المقروءة تظهر بعلامة «غير مقروء» ولا تُخمَّن.",
+            list = ToolList.APPS,
+            behavior = ToolBehavior.SHOW_APP_SIZE,
+            handoff = ToolHandoff.APP_SETTINGS,
+        ),
+        x(
+            "appmanager", "apm-usage", "07.17", "التطبيقات قليلة الاستخدام", "LOW USAGE APPS",
+            "وقت الاستخدام الفعلي في آخر 7 أيام من UsageStats", Icons.Rounded.History, V2Violet,
+            metric = { f, _ -> if (f.usageAccessGranted) "${formatCount(lowUsageAppCount(f.installedApps))} تطبيقًا قليل الاستخدام" else "يحتاج إذن" },
+            rows = { f, _ ->
+                if (!f.usageAccessGranted) {
+                    listOf(ToolRow(Icons.Rounded.Lock, "إذن الاستخدام", "غير ممنوح — افتح إعدادات الوصول للاستخدام", V2Amber))
+                } else {
+                    val ranked = appsByUsageDesc(f.installedApps)
+                    listOf(
+                        ToolRow(Icons.Rounded.History, "الأكثر استخدامًا", ranked.firstOrNull()?.let { "${it.label} · ${formatUsageShort(it.usage7dMs ?: 0L)}" } ?: "لا سجل", V2Violet),
+                        ToolRow(Icons.Rounded.Schedule, "قليلة الاستخدام (<30 د)", formatCount(lowUsageAppCount(f.installedApps)), V2Cyan),
+                        ToolRow(Icons.Rounded.Apps, "تطبيقات بسجل", formatCount(ranked.size), V2Pink),
+                    )
+                }
+            },
+            note = "«قليلة الاستخدام» = أقل من 30 دقيقة foreground في آخر 7 أيام. بدون إذن Usage Access لا نعرض أي رقم.",
+            list = ToolList.APPS,
+            behavior = ToolBehavior.SHOW_APP_USAGE,
+            handoff = ToolHandoff.USAGE_ACCESS,
+        ),
+        x(
+            "appmanager", "apm-battery", "07.18", "الأعلى استهلاكا للبطارية", "BATTERY DRAIN",
+            "ما يستطيع Android كشفه عن استهلاك التطبيقات للطاقة", Icons.Rounded.BatteryChargingFull, V2Green,
+            metric = { _, _ -> "غير متاح عبر API عام" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.BatteryChargingFull, "استهلاك لكل تطبيق", "غير متاح — BatteryStats ليس API عامًا", V2Muted),
+                    ToolRow(Icons.Rounded.Bolt, "مستوى البطارية", f.battery.levelPercent?.let { "$it%" } ?: "غير متاح", V2Green),
+                    ToolRow(Icons.Rounded.Thermostat, "الحرارة", f.battery.temperatureC?.let { "$it°" } ?: "غير متاح", V2Pink),
+                )
+            },
+            note = "لا نخمّن استهلاك أي تطبيق. شاشة استهلاك الطاقة الرسمية في Android هي المصدر الوحيد الموثوق لهذه الأرقام.",
+            handoff = ToolHandoff.BATTERY_SETTINGS,
+            actionLabel = "فتح استهلاك الطاقة في Android",
+        ),
+        x(
+            "appmanager", "apm-notifications", "07.19", "التطبيقات كثيرة الإشعارات", "NOTIFICATION HEAVY",
+            "حجم الإشعارات يحتاج إذن Notification Listener", Icons.Rounded.Notifications, V2Violet,
+            metric = { _, _ -> "يحتاج إذن" },
+            rows = { _, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.Notifications, "عدّ الإشعارات لكل تطبيق", "يحتاج إذن Notification Listener", V2Amber),
+                    ToolRow(Icons.Rounded.Settings, "الإجراء", "منح الإذن من إعدادات النظام ثم إعادة القراءة", V2Soft),
+                )
+            },
+            note = "بدون إذن الوصول للإشعارات لا نقرأ أي إشعار ولا نخمّن عددًا. المنح اختياري تمامًا من شاشة النظام.",
+            handoff = ToolHandoff.NOTIFICATION_LISTENER,
+            actionLabel = "فتح إعدادات الوصول للإشعارات",
+        ),
     )
 
     private val storage = listOf(
@@ -915,6 +1116,107 @@ internal object SectionToolsExpansion {
             note = "توصيات إرشادية من القراءات، ولا يغيّر KNOUX إعدادات الطاقة تلقائيًا.",
             handoff = ToolHandoff.BATTERY_SAVER,
         ),
+        x(
+            "battery", "bat-drain-apps", "09.16", "التطبيقات المستنزفة للطاقة", "DRAIN APPS",
+            "تطبيقات الاستخدام العالي مع قراءة البطارية الحالية", Icons.Rounded.Bolt, V2Violet,
+            metric = { f, _ -> if (f.computedAt == 0L) "جاري القراءة" else if (!f.usageAccessGranted) "يحتاج إذن" else "${formatCount(f.installedApps.count { (it.usage7dMs ?: 0L) >= 2 * 3600_000L })} تطبيقًا" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.Bolt, "استخدام عالي (7 أيام)", if (!f.usageAccessGranted) "يحتاج إذن" else formatCount(f.installedApps.count { (it.usage7dMs ?: 0L) >= 2 * 3600_000L }), V2Violet),
+                    ToolRow(Icons.Rounded.BatteryFull, "مستوى البطارية", f.battery.levelPercent?.let { "$it%" } ?: "غير متاح", V2Green),
+                    ToolRow(Icons.Rounded.Thermostat, "الحرارة", temperature(f), V2Amber),
+                    ToolRow(Icons.Rounded.Apps, "تطبيقات مثبتة", formatCount(f.installedCount), V2Cyan),
+                )
+            },
+            note = "الاستنزاف يُقدّر من وقت الاستخدام الفعلي؛ Android لا يتيح استهلاك كل تطبيق بالمللي أمبير.",
+            list = ToolList.APPS,
+            behavior = ToolBehavior.SHOW_APP_USAGE,
+            handoff = ToolHandoff.USAGE_ACCESS, actionLabel = "منح وصول الاستخدام",
+        ),
+        x(
+            "battery", "bat-background", "09.17", "النشاط الخلفي", "BACKGROUND ACTIVITY",
+            "التطبيقات التي تعلن خدمات أو مستقبلات خلفية", Icons.Rounded.Layers, V2Cyan,
+            metric = { f, _ -> if (f.computedAt == 0L) "جاري القراءة" else "${formatCount(f.installedApps.count { it.declaredPermissions.any { p -> p.startsWith("android.permission.FOREGROUND_SERVICE") } })} خدمة معلنة" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.Layers, "خدمات أمامية معلنة", formatCount(f.installedApps.count { it.declaredPermissions.any { p -> p.startsWith("android.permission.FOREGROUND_SERVICE") } }), V2Cyan),
+                    ToolRow(Icons.Rounded.NotificationsActive, "إعلانات الإشعارات", formatCount(f.installedApps.count { "android.permission.POST_NOTIFICATIONS" in it.declaredPermissions }), V2Violet),
+                    ToolRow(Icons.Rounded.Apps, "تطبيقات مثبتة", formatCount(f.installedCount), V2Pink),
+                )
+            },
+            note = "العدّ من الإعلانات المعلنة في PackageManager؛ النشاط الفعلي يظهر في إعدادات البطارية.",
+            handoff = ToolHandoff.BATTERY_SETTINGS, actionLabel = "فتح إعدادات البطارية",
+        ),
+        x(
+            "battery", "bat-wakelocks", "09.18", "Wake locks والتنبيهات", "WAKELOCKS & ALERTS",
+            "التطبيقات التي تعلن إبقاء الشاشة أو المعالج مستيقظًا", Icons.Rounded.NotificationsActive, V2Violet,
+            metric = { f, _ -> if (f.computedAt == 0L) "جاري القراءة" else "${formatCount(f.installedApps.count { "android.permission.WAKE_LOCK" in it.declaredPermissions })} تطبيقًا" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.NotificationsActive, "تعلن WAKE_LOCK", formatCount(f.installedApps.count { "android.permission.WAKE_LOCK" in it.declaredPermissions }), V2Violet),
+                    ToolRow(Icons.Rounded.BatterySaver, "توفير الطاقة", if (f.battery.levelPercent != null && f.battery.levelPercent!! <= 20) "موصى به" else "غير مطلوب", V2Green),
+                    ToolRow(Icons.Rounded.Apps, "تطبيقات مثبتة", formatCount(f.installedCount), V2Cyan),
+                )
+            },
+            note = "الإعلانات فقط — لا يقرأ KNOUX حالة Wake lock الفعلية لكل تطبيق.",
+            handoff = ToolHandoff.BATTERY_SETTINGS, actionLabel = "فتح إعدادات البطارية",
+        ),
+        x(
+            "battery", "bat-ram-pressure", "09.19", "ضغط الذاكرة RAM", "RAM PRESSURE",
+            "قراءة حية للذاكرة المستخدمة والمتاحة", Icons.Rounded.Memory, V2Cyan,
+            metric = { f, _ -> if (f.computedAt == 0L) "جاري القراءة" else "${(f.ram.usedFraction * 100).toInt()}% مستخدم" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.Memory, "الذاكرة المستخدمة", formatBytes(f.ram.usedBytes), V2Cyan),
+                    ToolRow(Icons.Rounded.Memory, "الذاكرة المتاحة", formatBytes(f.ram.availBytes), V2Green),
+                    ToolRow(Icons.Rounded.WarningAmber, "ذاكرة منخفضة", if (f.ram.lowMemory) "نعم" else "لا", if (f.ram.lowMemory) V2Pink else V2Green),
+                )
+            },
+            note = "القراءة من ActivityManager.MemoryInfo؛ لا يحرر KNOUX الذاكرة تلقائيًا.",
+        ),
+        x(
+            "battery", "bat-cpu", "09.20", "استهلاك المعالج", "CPU LOAD",
+            "لماذا لا تعرض Android نسبة المعالج لكل تطبيق؟", Icons.Rounded.DeveloperBoard, V2Violet,
+            metric = { _, _ -> "غير متاح" },
+            rows = { _, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.DeveloperBoard, "استهلاك المعالج اللحظي", "غير متاح", V2Violet),
+                    ToolRow(Icons.Rounded.Info, "السبب", "Android يحجب القراءة منذ الإصدارات الحديثة", V2Amber),
+                    ToolRow(Icons.Rounded.Settings, "البديل", "إعدادات البطارية لكل تطبيق", V2Cyan),
+                )
+            },
+            note = "لا يخمّن KNOUX نسبة المعالج؛ القيمة محجوبة على Android الحديث وتُعرض بصدق.",
+            handoff = ToolHandoff.BATTERY_SETTINGS, actionLabel = "فتح إعدادات البطارية",
+        ),
+        x(
+            "battery", "bat-storage-impact", "09.21", "أثر التخزين على الأداء", "STORAGE IMPACT",
+            "امتلاء التخزين يبطئ الجهاز — القراءة الحالية", Icons.Rounded.Storage, V2Cyan,
+            metric = { f, _ -> if (f.computedAt == 0L) "جاري القراءة" else "${(f.storage.usedFraction * 100).toInt()}% ممتلئ" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.Storage, "المستخدم", formatBytes(f.storage.usedBytes), V2Cyan),
+                    ToolRow(Icons.Rounded.Storage, "المتاح", formatBytes(f.storage.freeBytes), V2Green),
+                    ToolRow(Icons.Rounded.WarningAmber, "أثر على الأداء", if (f.storage.usedFraction >= .9f) "مرتفع" else if (f.storage.usedFraction >= .8f) "متوسط" else "منخفض", if (f.storage.usedFraction >= .9f) V2Pink else V2Amber),
+                )
+            },
+            note = "التقدير من نسبة الامتلاء الفعلية؛ التنظيف يحرر مساحة ولا يغير عتاد الجهاز.",
+            actionRoute = "storage", actionLabel = "فتح تحليل التخزين",
+        ),
+        x(
+            "battery", "bat-perf-report", "09.22", "تقرير الأداء العام", "PERFORMANCE REPORT",
+            "ملخص درجة الأداء من قراءات هذا الجهاز", Icons.Rounded.Description, V2Violet,
+            metric = { f, _ -> if (f.healthEstimate > 0) "${f.healthEstimate}/100" else "بانتظار القراءة" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.Speed, "درجة الأداء", "${f.healthEstimate}/100", V2Green),
+                    ToolRow(Icons.Rounded.BatteryFull, "البطارية", f.battery.levelPercent?.let { "$it%" } ?: "غير متاح", V2Cyan),
+                    ToolRow(Icons.Rounded.Memory, "ضغط RAM", "${(f.ram.usedFraction * 100).toInt()}%", V2Violet),
+                    ToolRow(Icons.Rounded.Storage, "امتلاء التخزين", "${(f.storage.usedFraction * 100).toInt()}%", V2Pink),
+                )
+            },
+            note = "الدرجة تُحسب محليًا من البطارية والتخزين والذاكرة؛ لا توجد أرقام تصميم.",
+            actionRoute = "bat-summary", actionLabel = "فتح ملخص التشخيص",
+        ),
     )
 
     private val ai = listOf(
@@ -997,6 +1299,109 @@ internal object SectionToolsExpansion {
             },
             note = "الملخص يتغير مع كل قراءة جديدة؛ لا يحفظ أسماء ملفات أو محتوى شخصي.",
             actionRoute = "ai-recommendations", actionLabel = "فتح مركز التوصيات",
+        ),
+        x(
+            "ai", "ai-clean-priority", "10.16", "أولوية التنظيف", "CLEAN PRIORITY",
+            "كم يستحق التنظيف الآن؟ درجة من قراءات فعلية", Icons.Rounded.CleaningServices, V2Pink,
+            metric = { f, _ -> if (f.computedAt == 0L) "جاري القراءة" else "${aiCleanPriority(f.storage.usedFraction, f.ownCacheBytes, f.cleanFiles.residueBytes)}%" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.CleaningServices, "الأولوية", "${aiCleanPriority(f.storage.usedFraction, f.ownCacheBytes, f.cleanFiles.residueBytes)}%", V2Pink),
+                    ToolRow(Icons.Rounded.Storage, "ضغط التخزين", "${(f.storage.usedFraction * 100).toInt()}%", V2Cyan),
+                    ToolRow(Icons.Rounded.DeleteSweep, "كاش KNOUX", formatBytes(f.ownCacheBytes), V2Violet),
+                    ToolRow(Icons.Rounded.FolderDelete, "بقايا التطبيقات", formatBytes(f.cleanFiles.residueBytes), V2Amber),
+                )
+            },
+            note = "الدرجة تُحسب من الامتلاء والكاش والبقايا؛ التنظيف نفسه يتم بموافقتك.",
+            actionRoute = "smartclean", actionLabel = "فتح مركز التنظيف",
+        ),
+        x(
+            "ai", "ai-perf-priority", "10.17", "أولوية الأداء", "PERFORMANCE PRIORITY",
+            "RAM والتخزين والبطارية في درجة واحدة", Icons.Rounded.RocketLaunch, V2Cyan,
+            metric = { f, _ -> if (f.computedAt == 0L) "جاري القراءة" else "${aiPerfPriority(f.ram.usedFraction, f.storage.usedFraction, f.battery.levelPercent)}%" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.RocketLaunch, "الأولوية", "${aiPerfPriority(f.ram.usedFraction, f.storage.usedFraction, f.battery.levelPercent)}%", V2Cyan),
+                    ToolRow(Icons.Rounded.Memory, "ضغط RAM", "${(f.ram.usedFraction * 100).toInt()}%", V2Violet),
+                    ToolRow(Icons.Rounded.Storage, "امتلاء التخزين", "${(f.storage.usedFraction * 100).toInt()}%", V2Pink),
+                    ToolRow(Icons.Rounded.BatteryFull, "مستوى البطارية", f.battery.levelPercent?.let { "$it%" } ?: "غير متاح", V2Green),
+                )
+            },
+            note = "لا يغيّر KNOUX إعدادات النظام؛ الدرجة إرشادية من القراءات الحية.",
+            actionRoute = "battery", actionLabel = "فتح البطارية والأداء",
+        ),
+        x(
+            "ai", "ai-app-delete", "10.18", "اقتراحات حذف التطبيقات", "APP DELETE SUGGESTIONS",
+            "تطبيقات قليلة الاستخدام تستحق المراجعة", Icons.Rounded.Delete, V2Pink,
+            metric = { f, _ -> if (f.computedAt == 0L) "جاري القراءة" else if (!f.usageAccessGranted) "يحتاج إذن" else "${formatCount(f.installedApps.count { !it.isSystem && (it.usage7dMs ?: 0L) == 0L })} تطبيقًا" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.Delete, "بلا استخدام 7 أيام", if (!f.usageAccessGranted) "يحتاج إذن" else formatCount(f.installedApps.count { !it.isSystem && (it.usage7dMs ?: 0L) == 0L }), V2Pink),
+                    ToolRow(Icons.Rounded.Apps, "تطبيقات المستخدم", formatCount(f.userAppCount), V2Cyan),
+                    ToolRow(Icons.Rounded.Info, "الحذف", "يتم من إعدادات Android بموافقتك", V2Amber),
+                )
+            },
+            note = "اقتراح مراجعة فقط — لا يحذف KNOUX أي تطبيق تلقائيًا.",
+            list = ToolList.APPS,
+            behavior = ToolBehavior.UNINSTALL_APPS,
+            handoff = ToolHandoff.USAGE_ACCESS, actionLabel = "منح وصول الاستخدام",
+        ),
+        x(
+            "ai", "ai-dup-suggest", "10.19", "اقتراحات المكررات", "DUPLICATE SUGGESTIONS",
+            "مجموعات متطابقة المحتوى قابلة للاستعادة", Icons.Rounded.Layers, V2Violet,
+            metric = { f, _ -> if (f.computedAt == 0L) "جاري القراءة" else if (!f.media.permissionGranted) "يحتاج إذن" else "${formatCount(f.media.duplicateGroups.size)} مجموعة" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.Layers, "مجموعات متطابقة", if (!f.media.permissionGranted) "يحتاج إذن" else formatCount(f.media.duplicateGroups.size), V2Violet),
+                    ToolRow(Icons.Rounded.Storage, "قابل للاستعادة", if (!f.media.permissionGranted) "يحتاج إذن" else formatBytes(f.media.duplicateGroups.sumOf { it.reclaimableBytes }), V2Green),
+                    ToolRow(Icons.Rounded.Info, "الحذف", "يحتاج تأكيدك لكل مجموعة", V2Amber),
+                )
+            },
+            note = "التطابق يُثبت بالبايتات الفعلية؛ لا اقتراح حذف بلا دليل.",
+            actionRoute = "duplicates", actionLabel = "فتح شاشة المكررات",
+        ),
+        x(
+            "ai", "ai-weekly", "10.20", "رؤى وتوصيات أسبوعية", "WEEKLY INSIGHTS",
+            "سجل الفحوصات خلال آخر 7 أيام", Icons.Rounded.CalendarMonth, V2Violet,
+            metric = { f, h -> if (f.computedAt == 0L) "جاري القراءة" else "${weeklyInsightCount(h, System.currentTimeMillis())} رؤى" },
+            rows = { f, h ->
+                val week = h.filter { System.currentTimeMillis() - it.timestamp <= 7L * 24 * 3600 * 1000 }
+                listOf(
+                    ToolRow(Icons.Rounded.CalendarMonth, "فحوصات الأسبوع", formatCount(week.size), V2Violet),
+                    ToolRow(Icons.Rounded.Shield, "نتائج خصوصية", formatCount(week.sumOf { it.privacyFindings }), V2Pink),
+                    ToolRow(Icons.Rounded.DeleteSweep, "كاش منظف", formatBytes(week.sumOf { it.cacheBytes }), V2Cyan),
+                )
+            },
+            note = "الرؤى من سجل الفحوصات المحلي فقط؛ لا توجد بيانات سحابية.",
+            list = ToolList.HISTORY,
+        ),
+        x(
+            "ai", "ai-delete-suggest", "10.21", "المقترح حذفه", "SUGGESTED DELETE",
+            "إجمالي المساحة المقترح مراجعتها للحذف", Icons.Rounded.DeleteSweep, V2Pink,
+            metric = { f, _ -> if (f.computedAt == 0L) "جاري القراءة" else if (!f.media.permissionGranted) "يحتاج إذن" else formatBytes(f.media.duplicateGroups.sumOf { it.reclaimableBytes } + f.cleanFiles.residueBytes) },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.Layers, "مكررات", if (!f.media.permissionGranted) "يحتاج إذن" else formatBytes(f.media.duplicateGroups.sumOf { it.reclaimableBytes }), V2Violet),
+                    ToolRow(Icons.Rounded.FolderDelete, "بقايا", formatBytes(f.cleanFiles.residueBytes), V2Amber),
+                    ToolRow(Icons.Rounded.Info, "التنفيذ", "بموافقتك خطوة بخطوة", V2Cyan),
+                )
+            },
+            note = "رقم مراجعة وليس أمر حذف؛ كل خطوة تحتاج تأكيدك.",
+            actionRoute = "smartclean", actionLabel = "فتح مركز التنظيف",
+        ),
+        x(
+            "ai", "ai-automation", "10.22", "أتمتة ذكية للمهام", "SMART AUTOMATION",
+            "ما الذي يمكن أتمتته وما الذي يحتاج موافقتك؟", Icons.Rounded.AutoAwesome, V2Cyan,
+            metric = { f, _ -> if (f.computedAt == 0L) "جاري القراءة" else "${aiRecommendations(f).size} مهام مقترحة" },
+            rows = { f, _ ->
+                listOf(
+                    ToolRow(Icons.Rounded.AutoAwesome, "مهام مقترحة", formatCount(aiRecommendations(f).size), V2Cyan),
+                    ToolRow(Icons.Rounded.Verified, "التنفيذ", "بموافقة صريحة لكل إجراء", V2Green),
+                    ToolRow(Icons.Rounded.Block, "حذف تلقائي", "غير مفعّل — قرار المستخدم", V2Pink),
+                )
+            },
+            note = "KNOUX لا ينفذ أي حذف أو تغيير إعدادات دون موافقة صريحة.",
+            actionRoute = "ai-execute", actionLabel = "فتح التنفيذ بموافقة",
         ),
     )
 

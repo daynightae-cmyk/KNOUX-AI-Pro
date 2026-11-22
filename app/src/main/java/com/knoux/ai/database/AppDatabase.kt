@@ -213,6 +213,12 @@ interface ScanSessionDao {
 
     @Query("SELECT COUNT(*) FROM scan_sessions WHERE serviceId = :serviceId")
     suspend fun countByService(serviceId: String): Int
+
+    @Query("SELECT COUNT(*) FROM scan_sessions")
+    suspend fun countAll(): Int
+
+    @Query("SELECT COUNT(*) FROM scan_sessions WHERE startedAt >= :sinceMs")
+    suspend fun countSince(sinceMs: Long): Int
 }
 
 @Dao
@@ -290,6 +296,9 @@ interface OperationRequestDao {
 
     @Query("SELECT COUNT(*) FROM operation_requests WHERE serviceId = :serviceId")
     suspend fun countByService(serviceId: String): Int
+
+    @Query("SELECT COUNT(*) FROM operation_requests")
+    suspend fun countAll(): Int
 }
 
 @Dao
@@ -318,7 +327,24 @@ interface OperationItemOutcomeDao {
         """
     )
     fun summaries(): Flow<List<OperationOutcomeSummary>>
+
+    /** All-time verified deletions and measured reclaimed bytes (sec10 hub). */
+    @Query(
+        """
+        SELECT COUNT(*) AS itemCount,
+               COALESCE(SUM(CASE WHEN result = 'SUCCESS' THEN 1 ELSE 0 END), 0) AS successCount,
+               COALESCE(SUM(COALESCE(measuredBytes, 0)), 0) AS measuredBytes
+        FROM operation_item_outcomes
+        """
+    )
+    suspend fun totals(): OperationTotals
 }
+
+data class OperationTotals(
+    val itemCount: Int,
+    val successCount: Int,
+    val measuredBytes: Long,
+)
 
 @Dao
 interface ScopedGrantDao {
@@ -360,6 +386,9 @@ interface PermissionEventDao {
 
     @Query("SELECT * FROM permission_events ORDER BY eventAt DESC LIMIT :limit")
     fun getRecent(limit: Int): Flow<List<PermissionEventEntity>>
+
+    @Query("SELECT COUNT(*) FROM permission_events")
+    suspend fun countAll(): Int
 }
 
 @Dao
@@ -369,6 +398,9 @@ interface BatterySampleDao {
 
     @Query("SELECT * FROM battery_samples ORDER BY recordedAt DESC LIMIT :limit")
     fun getRecent(limit: Int): Flow<List<BatterySampleEntity>>
+
+    @Query("SELECT COUNT(*) FROM battery_samples")
+    suspend fun countAll(): Int
 }
 
 @Dao

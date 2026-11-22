@@ -135,5 +135,6 @@ class OperationRequestParentJvmTest {
         override fun getAll(): Flow<List<OperationRequestEntity>> = flowOf(requests.toList())
         override suspend fun updateStatus(id: String, status: String): Unit = error("Unexpected status update")
         override suspend fun countByService(serviceId: String) = requests.count { it.serviceId == serviceId }
+        override suspend fun countAll() = requests.size
     }
 }

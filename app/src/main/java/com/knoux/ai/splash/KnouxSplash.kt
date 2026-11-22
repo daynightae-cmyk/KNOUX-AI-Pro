@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -35,6 +36,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asImageBitmap
@@ -47,9 +50,10 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.knoux.ai.R
-import com.knoux.ai.ui.theme.ProDeepInk
-import com.knoux.ai.ui.theme.ProArcticCyan
-import com.knoux.ai.ui.theme.ProBlue
+import com.knoux.ai.ui.v2.V2Blue
+import com.knoux.ai.ui.v2.V2Cyan
+import com.knoux.ai.ui.v2.V2Pink
+import com.knoux.ai.ui.v2.V2Violet
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -64,6 +68,19 @@ private const val CLICK_AT_MS = 2440f
 
 private fun seg(t: Float, start: Float, end: Float): Float =
     ((t - start) / (end - start)).coerceIn(0f, 1f)
+
+/** y of the lower aurora cubic at fraction fx of the width (same control pts). */
+private fun waveY(fx: Float, h: Float): Float {
+    // Cubic from (0,.86) c1(.28,.94) c2(.55,.74) to (1,.80) in x≈linear param.
+    val u = fx
+    val iu = 1f - u
+    val y = iu * iu * iu * 0.86f + 3f * iu * iu * u * 0.94f + 3f * iu * u * u * 0.74f + u * u * u * 0.80f
+    return h * y
+}
+
+/** Neon saturation lift: official rasters stay the SAME artwork, only the
+ *  color energy is raised to the approved splash gloss (pink→cyan V2 family). */
+private val NeonGloss = ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(1.55f) })
 
 /** Preloads the splash click sound off the main thread. Created once, kept for splash lifetime. */
 @Composable
@@ -146,57 +163,82 @@ fun KnouxSplashScreen(
     val stageAlpha = 1f - 0.9f * exit
     val stageScale = 1f - 0.035f * exit
 
-    Box(modifier.fillMaxSize().background(ProDeepInk)) {
+    Box(modifier.fillMaxSize().background(Color(0xFF070312))) {
         Canvas(Modifier.fillMaxSize()) {
             val bloom = if (calm) 1f else seg(t, 0f, 260f)
-            val center = Offset(size.width / 2f, size.height * 0.44f)
-            val radius = size.minDimension * 0.62f
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(ProBlue.copy(alpha = 0.34f * bloom), Color.Transparent),
-                    center = center,
-                    radius = radius,
-                ),
-                radius = radius,
-                center = center,
-            )
-            // ambient spectral waves (brand atmosphere, not UI chrome)
             val w = size.width
             val h = size.height
-            val topWave = androidx.compose.ui.graphics.Path().apply {
-                moveTo(w * 0.52f, 0f)
-                cubicTo(w * 0.70f, h * 0.04f, w * 0.86f, h * 0.15f, w, h * 0.21f)
-            }
-            drawPath(
-                path = topWave,
-                brush = Brush.linearGradient(
-                    colors = listOf(ProArcticCyan.copy(alpha = 0.50f), Color.Transparent),
-                    start = Offset(w * 0.60f, 0f),
-                    end = Offset(w, h * 0.28f),
+            // Approved splash: deep night ink with violet/magenta bloom upper
+            // LEFT and electric cyan bloom upper RIGHT — the same neon family
+            // as Home and the hubs (V2 tokens), replacing the arctic palette.
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(V2Violet.copy(alpha = 0.30f * bloom), Color.Transparent),
+                    center = Offset(w * 0.22f, h * 0.16f), radius = w * 0.85f,
                 ),
-                style = Stroke(width = 2.2.dp.toPx(), cap = StrokeCap.Round),
+                radius = w * 0.85f, center = Offset(w * 0.22f, h * 0.16f),
             )
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(V2Pink.copy(alpha = 0.16f * bloom), Color.Transparent),
+                    center = Offset(w * 0.05f, h * 0.30f), radius = w * 0.60f,
+                ),
+                radius = w * 0.60f, center = Offset(w * 0.05f, h * 0.30f),
+            )
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(V2Cyan.copy(alpha = 0.14f * bloom), Color.Transparent),
+                    center = Offset(w * 0.95f, h * 0.12f), radius = w * 0.70f,
+                ),
+                radius = w * 0.70f, center = Offset(w * 0.95f, h * 0.12f),
+            )
+            // Lower aurora: magenta rising left → cyan sweeping right, with
+            // the dotted particle field of the approved art along its crest.
             val bottomWave = androidx.compose.ui.graphics.Path().apply {
                 moveTo(0f, h * 0.86f)
-                cubicTo(w * 0.28f, h * 0.92f, w * 0.55f, h * 0.73f, w, h * 0.79f)
+                cubicTo(w * 0.28f, h * 0.94f, w * 0.55f, h * 0.74f, w, h * 0.80f)
+            }
+            val aurora = Brush.horizontalGradient(
+                colors = listOf(V2Pink.copy(alpha = 0.75f), V2Violet.copy(alpha = 0.65f), V2Cyan.copy(alpha = 0.85f)),
+                startX = 0f, endX = w,
+            )
+            drawPath(bottomWave, brush = aurora, style = Stroke(width = 10.dp.toPx(), cap = StrokeCap.Round), alpha = 0.16f)
+            drawPath(bottomWave, brush = aurora, style = Stroke(width = 2.6.dp.toPx(), cap = StrokeCap.Round))
+            // Deterministic dot field hugging the wave (no per-frame random).
+            for (i in 0 until 70) {
+                val fx = (i * 0.618034f) % 1f
+                val wy = waveY(fx, h)
+                val dy = ((i * 37) % 23 - 11) * 0.9.dp.toPx()
+                val c = if (fx < 0.45f) V2Pink else if (fx < 0.7f) V2Violet else V2Cyan
+                drawCircle(c.copy(alpha = 0.10f + (i % 5) * 0.05f), radius = (0.7f + (i % 3) * 0.5f).dp.toPx(), center = Offset(w * fx, wy + dy - 6.dp.toPx()))
+            }
+            // Upper streaks: violet descending from the left, cyan from the right.
+            val topLeft = androidx.compose.ui.graphics.Path().apply {
+                moveTo(0f, h * 0.10f)
+                cubicTo(w * 0.14f, h * 0.05f, w * 0.30f, h * 0.10f, w * 0.44f, h * 0.035f)
             }
             drawPath(
-                path = bottomWave,
-                brush = Brush.linearGradient(
-                    colors = listOf(ProArcticCyan.copy(alpha = 0.45f), ProArcticCyan.copy(alpha = 0.45f)),
-                    start = Offset(0f, h * 0.9f),
-                    end = Offset(w, h * 0.75f),
-                ),
-                style = Stroke(width = 2.6.dp.toPx(), cap = StrokeCap.Round),
+                topLeft,
+                brush = Brush.horizontalGradient(listOf(V2Pink.copy(alpha = 0.65f), V2Violet.copy(alpha = 0.45f), Color.Transparent), startX = 0f, endX = w * 0.5f),
+                style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round),
             )
+            val topRight = androidx.compose.ui.graphics.Path().apply {
+                moveTo(w, h * 0.07f)
+                cubicTo(w * 0.86f, h * 0.12f, w * 0.74f, h * 0.10f, w * 0.62f, h * 0.17f)
+            }
             drawPath(
-                path = bottomWave,
-                brush = Brush.linearGradient(
-                    colors = listOf(ProArcticCyan.copy(alpha = 0.14f), ProArcticCyan.copy(alpha = 0.12f)),
-                    start = Offset(0f, h * 0.9f),
-                    end = Offset(w, h * 0.75f),
-                ),
-                style = Stroke(width = 9.dp.toPx(), cap = StrokeCap.Round),
+                topRight,
+                brush = Brush.horizontalGradient(listOf(V2Cyan.copy(alpha = 0.85f), V2Blue.copy(alpha = 0.35f), Color.Transparent), startX = w, endX = w * 0.55f),
+                style = Stroke(width = 2.2.dp.toPx(), cap = StrokeCap.Round),
+            )
+            // Orbit rings around the K zone (the approved swirl), faint.
+            val kc = Offset(w * 0.5f, h * 0.40f)
+            drawOval(
+                brush = Brush.sweepGradient(listOf(Color.Transparent, V2Violet.copy(alpha = 0.35f), Color.Transparent, V2Cyan.copy(alpha = 0.30f), Color.Transparent), center = kc),
+                topLeft = Offset(kc.x - w * 0.44f, kc.y - h * 0.045f),
+                size = Size(w * 0.88f, h * 0.09f),
+                style = Stroke(width = 1.2.dp.toPx()),
+                alpha = bloom,
             )
         }
 
@@ -211,40 +253,8 @@ fun KnouxSplashScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // --- official white company seal: bloom, then one settling ring ---
-            Canvas(Modifier.size(78.dp)) {
-                val seal = sealBitmapState.value ?: return@Canvas
-                val p = if (calm) 1f else seg(t, 60f, 760f)
-                if (p <= 0f) return@Canvas
-                val bmp = seal.asImageBitmap()
-                val r = size.minDimension / 2f
-                // A single ring closes around the disc while it blooms in;
-                // it never spins after the reveal so the mark rests calm.
-                drawArc(
-                    color = ProArcticCyan.copy(alpha = .55f * p),
-                    startAngle = -90f,
-                    sweepAngle = 360f * p,
-                    useCenter = false,
-                    topLeft = Offset(center.x - r * .98f, center.y - r * .98f),
-                    size = Size(r * 1.96f, r * 1.96f),
-                    style = Stroke(width = 1.6.dp.toPx(), cap = StrokeCap.Round),
-                )
-                val disc = r * .84f * (0.90f + 0.10f * p)
-                val off = center - Offset(disc, disc)
-                drawImage(
-                    image = bmp,
-                    srcOffset = IntOffset.Zero,
-                    srcSize = IntSize(seal.width, seal.height),
-                    dstOffset = IntOffset(off.x.toInt(), off.y.toInt()),
-                    dstSize = IntSize((disc * 2f).toInt(), (disc * 2f).toInt()),
-                    alpha = p,
-                )
-            }
-
-            Spacer(Modifier.height(8.dp))
-
             // --- authentic K raster, revealed stroke by stroke with a light tip ---
-            Canvas(Modifier.size(width = 200.dp, height = 171.dp)) {
+            Canvas(Modifier.size(width = 236.dp, height = 202.dp)) {
                 val androidBmp = kBitmapState.value ?: return@Canvas
                 val bmp = androidBmp.asImageBitmap()
                 val dst = Size(size.width, size.height)
@@ -259,14 +269,15 @@ fun KnouxSplashScreen(
                         srcSize = IntSize(androidBmp.width, androidBmp.height),
                         dstOffset = IntOffset.Zero,
                         dstSize = IntSize(dst.width.toInt(), dst.height.toInt()),
+                        colorFilter = NeonGloss,
                     )
                 } else {
                     val m1 = seg(t, 180f, 620f)
                     val m2 = seg(t, 520f, 980f)
                     val m3 = seg(t, 760f, 1120f)
-                    drawWipeBand(bmp, dst, 0.00f, 0.48f, m1, ProArcticCyan, true)
-                    drawWipeBand(bmp, dst, 0.28f, 0.78f, m2, ProBlue, true)
-                    drawWipeBand(bmp, dst, 0.58f, 1.00f, m3, ProArcticCyan, false)
+                    drawWipeBand(bmp, dst, 0.00f, 0.48f, m1, V2Pink, true)
+                    drawWipeBand(bmp, dst, 0.28f, 0.78f, m2, V2Violet, true)
+                    drawWipeBand(bmp, dst, 0.58f, 1.00f, m3, V2Cyan, false)
                 }
             }
 
@@ -289,6 +300,7 @@ fun KnouxSplashScreen(
                         srcSize = IntSize(androidBmp.width, androidBmp.height),
                         dstOffset = IntOffset(left.toInt(), top.toInt()),
                         dstSize = IntSize(w.toInt(), h.toInt()),
+                        colorFilter = NeonGloss,
                     )
                 }
                 if (p < 1f && !calm) {
@@ -317,7 +329,7 @@ fun KnouxSplashScreen(
                 val cy = 4.dp.toPx()
                 val top = cy - h / 2f
                 val sweep = 180f * p
-                val brush = Brush.horizontalGradient(listOf(ProArcticCyan, ProBlue, ProArcticCyan))
+                val brush = Brush.horizontalGradient(listOf(V2Pink, V2Violet, V2Cyan))
                 drawArc(
                     brush = brush, alpha = 0.34f,
                     startAngle = 180f, sweepAngle = -sweep, useCenter = false,
@@ -344,7 +356,7 @@ fun KnouxSplashScreen(
                     )
                     drawCircle(
                         brush = Brush.radialGradient(
-                            listOf(Color.White, ProArcticCyan.copy(alpha = 0.65f), Color.Transparent)
+                            listOf(Color.White, V2Cyan.copy(alpha = 0.65f), Color.Transparent)
                         ),
                         radius = 17.dp.toPx(), center = tip,
                     )
@@ -378,6 +390,41 @@ fun KnouxSplashScreen(
                     drawCircle(Color.White.copy(alpha = fade), radius = 3.6.dp.toPx(), center = tip)
                 }
             }
+        }
+
+        // Official company seal — kept, blooming small at the TOP edge so the
+        // center stage matches the approved artwork (K + wordmark + smile).
+        Canvas(
+            Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 34.dp)
+                .size(56.dp)
+                .graphicsLayer { alpha = stageAlpha },
+        ) {
+            val seal = sealBitmapState.value ?: return@Canvas
+            val p = if (calm) 1f else seg(t, 60f, 760f)
+            if (p <= 0f) return@Canvas
+            val bmp = seal.asImageBitmap()
+            val r = size.minDimension / 2f
+            drawArc(
+                color = V2Cyan.copy(alpha = .55f * p),
+                startAngle = -90f,
+                sweepAngle = 360f * p,
+                useCenter = false,
+                topLeft = Offset(center.x - r * .98f, center.y - r * .98f),
+                size = Size(r * 1.96f, r * 1.96f),
+                style = Stroke(width = 1.4.dp.toPx(), cap = StrokeCap.Round),
+            )
+            val disc = r * .84f * (0.90f + 0.10f * p)
+            val off = center - Offset(disc, disc)
+            drawImage(
+                image = bmp,
+                srcOffset = IntOffset.Zero,
+                srcSize = IntSize(seal.width, seal.height),
+                dstOffset = IntOffset(off.x.toInt(), off.y.toInt()),
+                dstSize = IntSize((disc * 2f).toInt(), (disc * 2f).toInt()),
+                alpha = p,
+            )
         }
     }
 }
@@ -469,6 +516,7 @@ private fun DrawScope.drawWipeBand(
             srcSize = IntSize(bitmap.width, bitmap.height),
             dstOffset = IntOffset.Zero,
             dstSize = IntSize(dst.width.toInt(), dst.height.toInt()),
+            colorFilter = NeonGloss,
         )
     }
     if (glow && progress < 1f) {

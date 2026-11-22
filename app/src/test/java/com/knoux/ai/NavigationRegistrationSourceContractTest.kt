@@ -74,6 +74,47 @@ class NavigationRegistrationSourceContractTest {
         assertFalse(source.contains("V2DuplicateGroupScreen"))
     }
 
+    @Test
+    fun homeReferenceCardsAllNavigateToRegisteredRoutes() {
+        val home = appContractFile("src/main/java/com/knoux/ai/ui/v2/HomeV2.kt").readText()
+        val source = mainActivitySource()
+        val constants = Regex("private const val (\\w+) = \"([^\"]+)\"")
+            .findAll(source).associate { it.groupValues[1] to it.groupValues[2] }
+        val registered = Regex("composable\\(([^)]+)\\)")
+            .findAll(source).map { it.groupValues[1].trim() }
+            .flatMap { expression ->
+                when {
+                    expression.startsWith("\"") && expression.endsWith("\"") ->
+                        listOf(expression.removeSurrounding("\""))
+                    expression in constants -> listOf(constants.getValue(expression))
+                    expression == "hubRoute" -> SectionHub.routes
+                    expression == "cleanRoute" -> CleanTools.routes
+                    expression == "toolRoute" -> sectionToolNavigationRoutes()
+                    else -> emptyList()
+                }
+            }.toSet()
+        // Every RefCard(...) declaration carries its destination as 3rd arg.
+        val cards = Regex("RefCard\\(\"[^\"]+\", \"[^\"]+\", \"([^\"]+)\"")
+            .findAll(home).map { it.groupValues[1] }.toList()
+        assertEquals("Approved Home must carry exactly 14 service cards", 14, cards.size)
+        cards.forEach { route ->
+            assertTrue("Home card route not registered: $route", route in registered)
+        }
+        // The approved RTL row order, right card first per row.
+        assertEquals(
+            listOf(
+                "hub-smartclean", "hub-deepscan",
+                "hub-duplicates", "hub-residue",
+                "hub-storage", "hub-appmanager",
+                "hub-privacy", "hub-battery",
+                "hub-ai", "hub-reports",
+                "developer-studio", "cloud-cleaner",
+                "google-storage", "microsoft-storage",
+            ),
+            cards,
+        )
+    }
+
     private fun mainActivitySource() = appContractFile("src/main/java/com/knoux/ai/MainActivity.kt").readText()
 
     private fun destinationBody(source: String, route: String): String {

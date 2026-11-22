@@ -77,6 +77,7 @@ class ServiceHeaderLayoutTest {
         val identity = sectionIdentity("duplicates", facts)
         // 5 candidates across 2 groups => 3 redundant copies => 60%.
         assertEquals(60, identity.gaugePercent)
-        assertEquals("نسخ زائدة", identity.gaugeLabel)
+        assertEquals("مساحة قابلة للاستعادة", identity.gaugeLabel)
+        assertEquals("250 B", identity.gaugeValue)
     }
 }

@@ -1,17 +1,25 @@
 package com.knoux.ai.ui.v2
 
+import android.app.ActivityManager
 import android.app.AppOpsManager
+import android.app.KeyguardManager
+import android.app.usage.StorageStatsManager
+import android.app.usage.UsageStatsManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.graphics.drawable.Drawable
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.BatteryManager
 import android.os.Environment
 import android.os.Process
 import android.os.StatFs
+import android.os.storage.StorageManager
 import android.provider.MediaStore
 import android.provider.Settings
 import androidx.compose.runtime.Composable
@@ -26,6 +34,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.graphics.drawable.toBitmap
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.InputStream
@@ -81,6 +91,17 @@ data class StorageFacts(
         get() = if (totalBytes > 0L) usedBytes.toFloat() / totalBytes.toFloat() else 0f
 }
 
+/** Live RAM observation from ActivityManager; null fields when hidden. */
+data class RamFacts(
+    val totalBytes: Long = 0L,
+    val availBytes: Long = 0L,
+    val lowMemory: Boolean = false,
+) {
+    val usedBytes: Long get() = (totalBytes - availBytes).coerceAtLeast(0L)
+    val usedFraction: Float
+        get() = if (totalBytes > 0L) usedBytes.toFloat() / totalBytes.toFloat() else 0f
+}
+
 data class AppPermissionGroup(
     val key: String,
     val label: String,
@@ -100,6 +121,8 @@ data class InstalledAppFacts(
     val sensitivePermissions: List<String>,
     val icon: Drawable?,
     val appBytes: Long? = null,
+    /** Foreground time over the last 7 days; null without Usage Access. */
+    val usage7dMs: Long? = null,
 )
 
 data class MediaFileFacts(
@@ -108,6 +131,7 @@ data class MediaFileFacts(
     val bucket: String?,
     val isVideo: Boolean,
     val uriString: String,
+    val isAudio: Boolean = false,
 )
 
 data class MediaDuplicateGroup(
@@ -130,6 +154,52 @@ data class MediaFacts(
     val duplicateGroups: List<MediaDuplicateGroup> = emptyList(),
     val duplicateCandidates: Int = 0,
     val largestFiles: List<MediaFileFacts> = emptyList(),
+    /** Images sharing a byte size with another image (similar candidates, not confirmed copies). */
+    val similarImageCandidates: Int = 0,
+    /** Audio files that are byte-identical copies of another audio file. */
+    val duplicateAudioFiles: Int = 0,
+    /** The duplicate group with the most copies (null when none found). */
+    val largestGroup: MediaDuplicateGroup? = null,
+)
+
+/**
+ * Cleanable-file observations for the Smart Clean hub. Downloads come from
+ * MediaStore's Download bucket; APKs and empty folders are walked on shared
+ * storage within a strict directory budget. Hidden or unreadable trees stay
+ * at zero instead of being guessed.
+ */
+data class CleanFileFacts(
+    val downloadsBytes: Long = 0L,
+    val downloadsCount: Int = 0,
+    val apkBytes: Long = 0L,
+    val apkCount: Int = 0,
+    val emptyFolders: Int = 0,
+    /** Dot-prefixed files visible through MediaStore (deep-scan hub). */
+    val hiddenFiles: Int = 0,
+    /** Sum of every row the bounded MediaStore walk actually read. */
+    val scannedBytes: Long = 0L,
+    /** Residue hub: files inside known app-leftover buckets (cache/webview/logs). */
+    val residueFiles: Int = 0,
+    val residueBytes: Long = 0L,
+    /** Cache-bucket files older than the residue age threshold. */
+    val oldCacheFiles: Int = 0,
+    val oldCacheBytes: Long = 0L,
+    /** Download-bucket files that look truncated (.part/.crdownload/.tmp). */
+    val brokenDownloads: Int = 0,
+    /** .obb files outside the Android/obb sandbox, visible to MediaStore. */
+    val obbFiles: Int = 0,
+    val obbBytes: Long = 0L,
+    /** Files inside browser-named buckets (Chrome/WebView/Firefox/…). */
+    val browserFiles: Int = 0,
+    val browserBytes: Long = 0L,
+    /** Log-named files (.log / logs bucket). */
+    val logFiles: Int = 0,
+    /** Folders named after packages that are no longer installed. */
+    val orphanAppFolders: Int = 0,
+    /** Storage hub: largest MediaStore bucket by summed bytes (null when none). */
+    val largestBucket: Pair<String, Long>? = null,
+    /** Storage hub: summed bytes of image+video buckets (DCIM/Camera/Pictures/…). */
+    val mediaBucketBytes: Long = 0L,
 )
 
 data class ScanHistoryEntry(
@@ -144,13 +214,25 @@ data class ScanHistoryEntry(
 data class DeviceFacts(
     val battery: BatteryFacts = BatteryFacts(),
     val storage: StorageFacts = StorageFacts(),
+    val ram: RamFacts = RamFacts(),
     val installedApps: List<InstalledAppFacts> = emptyList(),
     val ownCacheBytes: Long = 0L,
     val ownCacheFiles: Int = 0,
     val media: MediaFacts = MediaFacts(),
+    val cleanFiles: CleanFileFacts = CleanFileFacts(),
     val usageAccessGranted: Boolean = false,
     val privacyGroups: List<AppPermissionGroup> = emptyList(),
     val sensitiveAppCount: Int = 0,
+    /** A VPN transport is active right now (ConnectivityManager, real). */
+    val vpnActive: Boolean = false,
+    /** Device-admin apps declared through PackageManager (real). */
+    val deviceAdminCount: Int = 0,
+    /** Apps declaring SYSTEM_ALERT_WINDOW — «الظهور فوق التطبيقات». */
+    val overlayAppCount: Int = 0,
+    /** Screen lock is set and secure (KeyguardManager, real). */
+    val lockSecure: Boolean = false,
+    /** Biometric hardware class: 2 strong, 1 weak, 0 none, -1 unknown. */
+    val biometricStrength: Int = -1,
     val computedAt: Long = 0L,
 ) {
     val installedCount: Int get() = installedApps.size
@@ -257,6 +339,13 @@ private fun readStorage(): StorageFacts = runCatching {
     StorageFacts(totalBytes = total, freeBytes = free)
 }.getOrElse { StorageFacts() }
 
+private fun readRam(context: Context): RamFacts = runCatching {
+    val am = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    val info = ActivityManager.MemoryInfo()
+    am.getMemoryInfo(info)
+    RamFacts(totalBytes = info.totalMem, availBytes = info.availMem, lowMemory = info.lowMemory)
+}.getOrElse { RamFacts() }
+
 private fun directoryStats(root: File?, limit: Int = 40_000): Pair<Long, Int> {
     if (root == null || !root.exists()) return 0L to 0
     var bytes = 0L
@@ -330,7 +419,7 @@ internal fun findExactMediaDuplicates(
     open: (MediaFileFacts) -> InputStream?,
 ): List<MediaDuplicateGroup> {
     val candidates = items.filter { it.sizeBytes in 1..MAX_HASH_FILE_BYTES }
-        .groupBy { it.sizeBytes to it.isVideo }
+        .groupBy { Triple(it.sizeBytes, it.isVideo, it.isAudio) }
         .values
         .filter { it.size > 1 }
         .sortedBy { it.first().sizeBytes }
@@ -408,10 +497,11 @@ private fun readMedia(context: Context): MediaFacts {
         "bucket_display_name",
         MediaStore.Files.FileColumns.MIME_TYPE,
     )
-    val selection = "${MediaStore.Files.FileColumns.MEDIA_TYPE} IN (?,?)"
+    val selection = "${MediaStore.Files.FileColumns.MEDIA_TYPE} IN (?,?,?)"
     val args = arrayOf(
         MediaStore.Files.FileColumns.MEDIA_TYPE_IMAGE.toString(),
         MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO.toString(),
+        MediaStore.Files.FileColumns.MEDIA_TYPE_AUDIO.toString(),
     )
     val items = mutableListOf<MediaFileFacts>()
     runCatching {
@@ -431,21 +521,28 @@ private fun readMedia(context: Context): MediaFacts {
                 val size = cursor.getLong(sizeCol)
                 val mediaType = cursor.getInt(typeCol)
                 val isVideo = mediaType == MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO
+                val isAudio = mediaType == MediaStore.Files.FileColumns.MEDIA_TYPE_AUDIO
                 items += MediaFileFacts(
                     name = cursor.getString(nameCol) ?: "ملف",
                     sizeBytes = size,
                     bucket = cursor.getString(bucketCol),
                     isVideo = isVideo,
                     uriString = Uri.withAppendedPath(collection, id.toString()).toString(),
+                    isAudio = isAudio,
                 )
             }
         }
     }
-    val images = items.filter { !it.isVideo }
+    val images = items.filter { !it.isVideo && !it.isAudio }
     val videos = items.filter { it.isVideo }
+    val audio = items.filter { it.isAudio }
     val grouped = findExactMediaDuplicates(items) { item ->
         context.contentResolver.openInputStream(Uri.parse(item.uriString))
     }
+    // Similar-image candidates: images that share a byte size with another
+    // image. Honest same-size signal, not a confirmed perceptual match.
+    val similarImageCandidates = images.groupBy { it.sizeBytes }
+        .values.filter { it.size > 1 }.sumOf { it.size }
     return MediaFacts(
         permissionGranted = true,
         images = images.size,
@@ -454,15 +551,256 @@ private fun readMedia(context: Context): MediaFacts {
         videosBytes = videos.sumOf { it.sizeBytes },
         duplicateGroups = grouped,
         duplicateCandidates = grouped.sumOf { it.count },
-        largestFiles = items.take(8),
+        largestFiles = items.filter { !it.isAudio }.take(8),
+        similarImageCandidates = similarImageCandidates,
+        duplicateAudioFiles = grouped.filter { g -> audio.any { it.uriString in g.uris } }.sumOf { it.count },
+        largestGroup = grouped.maxByOrNull { it.count },
     )
 }
 
-private fun readInstalledApps(context: Context): List<InstalledAppFacts> {
+/**
+ * Downloads bucket totals from MediaStore (same permission gate as media).
+ * Pure aggregation so it can be unit-tested without a ContentResolver.
+ */
+internal fun aggregateDownloads(rows: List<Pair<String?, Long>>): Pair<Long, Int> {
+    val downloads = rows.filter { (bucket, _) ->
+        bucket.equals("Download", true) || bucket.equals("Downloads", true)
+    }
+    return downloads.sumOf { it.second } to downloads.size
+}
+
+/** APK rows: name ends with .apk (case-insensitive) or the installer MIME. */
+internal fun aggregateApks(rows: List<Triple<String?, String?, Long>>): Pair<Long, Int> {
+    val apks = rows.filter { (name, mime, _) ->
+        name?.endsWith(".apk", true) == true || mime == "application/vnd.android.package-archive"
+    }
+    return apks.sumOf { it.third } to apks.size
+}
+
+/** One MediaStore row as seen by the residue walk: name, mime, bucket, size, mtime(s). */
+internal data class ResidueRow(
+    val name: String?,
+    val mime: String?,
+    val bucket: String?,
+    val size: Long,
+    val modifiedSec: Long,
+)
+
+internal data class ResidueAggregate(
+    val residueFiles: Int = 0,
+    val residueBytes: Long = 0L,
+    val oldCacheFiles: Int = 0,
+    val oldCacheBytes: Long = 0L,
+    val brokenDownloads: Int = 0,
+    val obbFiles: Int = 0,
+    val obbBytes: Long = 0L,
+    val browserFiles: Int = 0,
+    val browserBytes: Long = 0L,
+    val logFiles: Int = 0,
+)
+
+private val residueBucketHints = listOf("cache", "webview", "temp", "tmp", ".trash", "logs", "log")
+private val browserBucketHints = listOf("chrome", "webview", "browser", "firefox", "opera", "samsung", "ucbrowser", "duckduckgo", "brave", "edge")
+private val brokenDownloadSuffixes = listOf(".part", ".crdownload", ".tmp", ".partial", ".download")
+
+/**
+ * Pure residue aggregation over the bounded MediaStore walk. Buckets are the
+ * only honest signal available without MANAGE_EXTERNAL_STORAGE; nothing here
+ * claims to see inside Android/data sandboxes.
+ */
+internal fun aggregateResidue(rows: List<ResidueRow>, nowSec: Long, oldCacheAgeSec: Long = 30L * 24 * 3600): ResidueAggregate {
+    var residueFiles = 0; var residueBytes = 0L
+    var oldCacheFiles = 0; var oldCacheBytes = 0L
+    var broken = 0; var obbFiles = 0; var obbBytes = 0L
+    var browserFiles = 0; var browserBytes = 0L; var logFiles = 0
+    for (row in rows) {
+        val bucket = row.bucket?.lowercase().orEmpty()
+        val name = row.name?.lowercase().orEmpty()
+        val isCacheBucket = residueBucketHints.any { bucket.contains(it) }
+        val isBrowserBucket = browserBucketHints.any { bucket.contains(it) }
+        val isDownloadBucket = bucket == "download" || bucket == "downloads"
+        val isObb = name.endsWith(".obb")
+        val isLog = name.endsWith(".log") || bucket == "logs" || bucket == "log"
+        val isBroken = isDownloadBucket && brokenDownloadSuffixes.any { name.endsWith(it) }
+        if (isCacheBucket || isBrowserBucket || isObb || isLog) {
+            residueFiles++; residueBytes += row.size
+        }
+        if (isCacheBucket && row.modifiedSec > 0 && nowSec - row.modifiedSec > oldCacheAgeSec) {
+            oldCacheFiles++; oldCacheBytes += row.size
+        }
+        if (isBroken) broken++
+        if (isObb) { obbFiles++; obbBytes += row.size }
+        if (isBrowserBucket) { browserFiles++; browserBytes += row.size }
+        if (isLog) logFiles++
+    }
+    return ResidueAggregate(residueFiles, residueBytes, oldCacheFiles, oldCacheBytes, broken, obbFiles, obbBytes, browserFiles, browserBytes, logFiles)
+}
+
+/**
+ * Bounded walk counting top-level folders named like package ids
+ * (com.example.app) whose package is no longer installed. Skips the Android
+ * sandbox and dot-folders; stops at a directory budget.
+ */
+internal fun countOrphanAppFolders(root: File?, installedPackages: Set<String>, maxDirs: Int = 4_000): Int {
+    if (root == null || !root.exists()) return 0
+    val packageLike = Regex("^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*){2,}$")
+    var orphan = 0
+    var visited = 0
+    val stack = ArrayDeque<File>()
+    stack.add(root)
+    while (stack.isNotEmpty() && visited < maxDirs) {
+        val dir = stack.removeLast()
+        visited++
+        val name = dir.name
+        if (name == "Android" || name.startsWith(".")) continue
+        if (runCatching { dir.isSymbolicLink() }.getOrDefault(false)) continue
+        if (packageLike.matches(name) && name !in installedPackages) orphan++
+        val children = runCatching { dir.listFiles() }.getOrNull() ?: continue
+        for (child in children) {
+            if (child.isDirectory) stack.add(child)
+        }
+    }
+    return orphan
+}
+
+private fun readCleanFiles(context: Context, installedPackages: Set<String> = emptySet()): CleanFileFacts {
+    val permission = if (android.os.Build.VERSION.SDK_INT >= 33) {
+        "android.permission.READ_MEDIA_IMAGES"
+    } else {
+        "android.permission.READ_EXTERNAL_STORAGE"
+    }
+    if (context.checkSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
+        return CleanFileFacts()
+    }
+    val collection = MediaStore.Files.getContentUri("external")
+    val projection = arrayOf(
+        MediaStore.Files.FileColumns.DISPLAY_NAME,
+        MediaStore.Files.FileColumns.SIZE,
+        MediaStore.Files.FileColumns.MIME_TYPE,
+        MediaStore.Files.FileColumns.DATE_MODIFIED,
+        "bucket_display_name",
+    )
+    val rows = mutableListOf<Triple<String?, String?, Long>>()
+    val buckets = mutableListOf<Pair<String?, Long>>()
+    val residueRows = mutableListOf<ResidueRow>()
+    runCatching {
+        context.contentResolver.query(collection, projection, null, null, null)?.use { cursor ->
+            val nameCol = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME)
+            val sizeCol = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.SIZE)
+            val mimeCol = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MIME_TYPE)
+            val dateCol = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DATE_MODIFIED)
+            val bucketCol = cursor.getColumnIndexOrThrow("bucket_display_name")
+            var guard = 0
+            while (cursor.moveToNext() && guard < 20_000) {
+                guard++
+                val name = cursor.getString(nameCol)
+                val size = cursor.getLong(sizeCol)
+                val mime = cursor.getString(mimeCol)
+                val bucket = cursor.getString(bucketCol)
+                rows += Triple(name, mime, size)
+                buckets += bucket to size
+                residueRows += ResidueRow(name, mime, bucket, size, cursor.getLong(dateCol))
+            }
+        }
+    }
+    val (downBytes, downCount) = aggregateDownloads(buckets)
+    val (apkBytes, apkCount) = aggregateApks(rows)
+    val residue = aggregateResidue(residueRows, System.currentTimeMillis() / 1000)
+    return CleanFileFacts(
+        downloadsBytes = downBytes,
+        downloadsCount = downCount,
+        apkBytes = apkBytes,
+        apkCount = apkCount,
+        emptyFolders = countEmptyFolders(Environment.getExternalStorageDirectory()),
+        hiddenFiles = countHiddenFiles(rows),
+        scannedBytes = rows.sumOf { it.third },
+        residueFiles = residue.residueFiles,
+        residueBytes = residue.residueBytes,
+        oldCacheFiles = residue.oldCacheFiles,
+        oldCacheBytes = residue.oldCacheBytes,
+        brokenDownloads = residue.brokenDownloads,
+        obbFiles = residue.obbFiles,
+        obbBytes = residue.obbBytes,
+        browserFiles = residue.browserFiles,
+        browserBytes = residue.browserBytes,
+        logFiles = residue.logFiles,
+        orphanAppFolders = countOrphanAppFolders(Environment.getExternalStorageDirectory(), installedPackages),
+        largestBucket = largestBucketOf(buckets),
+        mediaBucketBytes = mediaBucketBytesOf(buckets),
+    )
+}
+
+/** Dot-prefixed display names are the hidden files MediaStore exposes. */
+internal fun countHiddenFiles(rows: List<Triple<String?, String?, Long>>): Int =
+    rows.count { (name, _, _) -> name?.startsWith(".") == true }
+
+/** Storage hub: the bucket with the most summed bytes, or null when empty. */
+internal fun largestBucketOf(rows: List<Pair<String?, Long>>): Pair<String, Long>? =
+    rows.filter { !it.first.isNullOrBlank() }
+        .groupBy { it.first!! }
+        .map { (name, list) -> name to list.sumOf { it.second } }
+        .maxByOrNull { it.second }
+
+private val mediaBucketHints = listOf("camera", "dcim", "pictures", "screenshots", "movies", "video")
+
+/** Storage hub: bytes inside camera/gallery-style buckets (honest subset). */
+internal fun mediaBucketBytesOf(rows: List<Pair<String?, Long>>): Long =
+    rows.filter { (bucket, _) ->
+        val b = bucket?.lowercase().orEmpty()
+        mediaBucketHints.any { b.contains(it) }
+    }.sumOf { it.second }
+
+/**
+ * Storage hub: used-byte delta between the newest scan and the oldest scan
+ * inside the lookback window. Null when fewer than two scans exist — growth
+ * is never guessed from a single reading.
+ */
+internal fun storageGrowthBytes(history: List<ScanHistoryEntry>, nowMs: Long, windowMs: Long = 30L * 24 * 3600 * 1000): Long? {
+    val inWindow = history.filter { nowMs - it.timestamp <= windowMs && it.storageUsedBytes > 0 }
+    if (inWindow.size < 2) return null
+    val newest = inWindow.maxByOrNull { it.timestamp } ?: return null
+    val oldest = inWindow.minByOrNull { it.timestamp } ?: return null
+    return newest.storageUsedBytes - oldest.storageUsedBytes
+}
+
+/**
+ * Bounded walk of shared storage counting directories with no entries.
+ * Skips symlinks and the Android/data|obb sandboxes; stops at a directory
+ * budget so a huge tree can never stall the facts pipeline.
+ */
+internal fun countEmptyFolders(root: File?, maxDirs: Int = 6_000): Int {
+    if (root == null || !root.exists()) return 0
+    var empty = 0
+    var visited = 0
+    val stack = ArrayDeque<File>()
+    stack.add(root)
+    while (stack.isNotEmpty() && visited < maxDirs) {
+        val dir = stack.removeLast()
+        visited++
+        val name = dir.name
+        if (name == "Android" || name.startsWith(".")) continue
+        if (runCatching { dir.isSymbolicLink() }.getOrDefault(false)) continue
+        val children = runCatching { dir.listFiles() }.getOrNull() ?: continue
+        if (children.isEmpty()) {
+            empty++
+            continue
+        }
+        for (child in children) {
+            if (child.isDirectory) stack.add(child)
+        }
+    }
+    return empty
+}
+
+private fun readInstalledApps(context: Context, withSizes: Boolean = true): List<InstalledAppFacts> {
     val pm = context.packageManager
     val infos = runCatching {
         pm.getInstalledPackages(PackageManager.GET_PERMISSIONS)
     }.getOrElse { emptyList() }
+    val usage = usageLast7Days(context)
+    // StorageStats queries cost ~0.5-1s per package on low-end devices; the
+    // first snapshot publishes without them and a backfill republishes later.
+    val sizes = if (withSizes) appStorageSizes(context, infos.mapNotNull { it.applicationInfo?.packageName }) else emptyMap()
     return infos.mapNotNull { info ->
         val app = info.applicationInfo ?: return@mapNotNull null
         val permissions = info.requestedPermissions?.toList().orEmpty()
@@ -476,8 +814,208 @@ private fun readInstalledApps(context: Context): List<InstalledAppFacts> {
             declaredPermissions = permissions,
             sensitivePermissions = permissions.filter { it in sensitivePermissions },
             icon = null,
+            appBytes = sizes[app.packageName],
+            usage7dMs = usage[app.packageName],
         )
     }.sortedWith(compareByDescending<InstalledAppFacts> { !it.isSystem }.thenBy { it.label })
+}
+
+/**
+ * Per-package foreground time over the last 7 days. Empty map when Usage
+ * Access is not granted — callers must show «يحتاج إذن», never a guess.
+ */
+/* ------------------------------------------------------------------ *
+ * App-manager aggregates (sec6). Pure functions over the real package
+ * list so the hub, the service screens and the unit tests all agree.
+ * ------------------------------------------------------------------ */
+
+/** Apps the platform actually measured, largest first. */
+internal fun appsBySizeDesc(apps: List<InstalledAppFacts>): List<InstalledAppFacts> =
+    apps.filter { it.appBytes != null }.sortedByDescending { it.appBytes ?: 0L }
+
+/** Apps with recorded foreground time, most-used first. */
+internal fun appsByUsageDesc(apps: List<InstalledAppFacts>): List<InstalledAppFacts> =
+    apps.filter { it.usage7dMs != null }.sortedByDescending { it.usage7dMs ?: 0L }
+
+/**
+ * «قليلة الاستخدام»: recorded usage under 30 minutes in the last 7 days.
+ * Apps the platform never reported are NOT counted — that would be a guess.
+ */
+internal fun lowUsageAppCount(apps: List<InstalledAppFacts>, thresholdMs: Long = 30L * 60 * 1000): Int =
+    apps.count { it.usage7dMs != null && it.usage7dMs < thresholdMs }
+
+/** Apps whose measured footprint is at least [minBytes] (default 100 MB). */
+internal fun largeAppCount(apps: List<InstalledAppFacts>, minBytes: Long = 100L * 1024 * 1024): Int =
+    apps.count { (it.appBytes ?: -1L) >= minBytes }
+
+/**
+ * Battery attribution needs BatteryStats, which is not a public API. The hub
+ * shows «غير متاح» instead of inventing a per-app drain number.
+ */
+internal fun batteryDrainAppCount(@Suppress("UNUSED_PARAMETER") apps: List<InstalledAppFacts>): Int? = null
+
+/**
+ * Notification volume needs NotificationListener access. Without the grant
+ * the hub shows «يحتاج إذن»; with it, callers pass the real observed count.
+ */
+internal fun notificationHeavyAppCount(observed: Int?): Int? = observed
+
+/** Apps declaring at least one sensitive permission — real PackageManager data. */
+internal fun permissionReviewAppCount(apps: List<InstalledAppFacts>): Int =
+    apps.count { it.sensitivePermissions.isNotEmpty() }
+
+/* ------------------------------------------------------------------ *
+ * Privacy aggregates (sec7). Pure functions over the real package list
+ * and platform state so hub, panel strip and unit tests all agree.
+ * ------------------------------------------------------------------ */
+
+/** Apps declaring SYSTEM_ALERT_WINDOW — can draw over other apps. */
+internal fun overlayDeclaredCount(apps: List<InstalledAppFacts>): Int =
+    apps.count { "android.permission.SYSTEM_ALERT_WINDOW" in it.declaredPermissions }
+
+/** «مخاطر الالتقاط»: declared camera / mic / screen-capture style access. */
+internal fun captureRiskCount(apps: List<InstalledAppFacts>): Int =
+    apps.count { app ->
+        app.declaredPermissions.any {
+            it == "android.permission.CAMERA" ||
+                it == "android.permission.RECORD_AUDIO" ||
+                it == "android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION"
+        }
+    }
+
+/** «المتعقبات»: declared advertising-ID / location style tracking access. */
+internal fun trackerDeclaredCount(apps: List<InstalledAppFacts>): Int =
+    apps.count { app ->
+        app.declaredPermissions.any {
+            it == "com.google.android.gms.permission.AD_ID" ||
+                it == "android.permission.ACCESS_FINE_LOCATION" ||
+                it == "android.permission.ACCESS_COARSE_LOCATION"
+        }
+    }
+
+/** «تنبيهات الحافظة»: clipboard read access (API 29+ declaration). */
+internal fun clipboardAlertCount(apps: List<InstalledAppFacts>): Int =
+    apps.count { "android.permission.READ_CLIPBOARD_IN_BACKGROUND" in it.declaredPermissions }
+
+/** Real risk percentage: sensitive apps over installed apps. */
+internal fun privacyRiskPercent(sensitive: Int, installed: Int): Int =
+    if (installed <= 0) 0 else (sensitive * 100 / installed).coerceIn(0, 100)
+
+/** Approved-art risk bands: منخفض ≤25%، متوسط ≤60%، مرتفع فوق ذلك. */
+internal fun privacyRiskLabel(percent: Int): String = when {
+    percent <= 25 -> "منخفض"
+    percent <= 60 -> "متوسط"
+    else -> "مرتفع"
+}
+
+/**
+ * «خطة الإجراءات»: one actionable review item per real finding — sensitive
+ * apps, overlay declarations, capture risks, missing screen lock, open usage
+ * access. Never a fixture: an empty device yields an empty plan.
+ */
+internal fun privacyActionPlanCount(
+    sensitive: Int,
+    overlay: Int,
+    capture: Int,
+    lockSecure: Boolean,
+    usageGranted: Boolean,
+): Int = listOf(sensitive > 0, overlay > 0, capture > 0, !lockSecure, !usageGranted).count { it }
+
+/* ------------------------------------------------------------------ *
+ * AI priority aggregates (sec9). Deterministic scores derived from the
+ * real readings — the same inputs the recommendation engine uses, so
+ * the hub panel and the service screens always agree.
+ * ------------------------------------------------------------------ */
+
+/** Cleaning priority: storage pressure + own cache + residue weight. */
+internal fun aiCleanPriority(usedFraction: Float, ownCacheBytes: Long, residueBytes: Long): Int {
+    var score = 40
+    score += when {
+        usedFraction >= .9f -> 35
+        usedFraction >= .8f -> 25
+        usedFraction >= .6f -> 12
+        else -> 0
+    }
+    if (ownCacheBytes > 50L * 1024 * 1024) score += 10 else if (ownCacheBytes > 0) score += 5
+    if (residueBytes > 0) score += 8
+    return score.coerceIn(0, 99)
+}
+
+/** Performance priority: RAM pressure + storage pressure + battery level. */
+internal fun aiPerfPriority(ramUsedFraction: Float, storageUsedFraction: Float, levelPercent: Int?): Int {
+    var score = 45
+    score += when {
+        ramUsedFraction >= .85f -> 25
+        ramUsedFraction >= .7f -> 15
+        ramUsedFraction >= .5f -> 8
+        else -> 0
+    }
+    if (storageUsedFraction >= .9f) score += 15 else if (storageUsedFraction >= .8f) score += 8
+    if (levelPercent != null && levelPercent <= 20) score += 10
+    return score.coerceIn(0, 99)
+}
+
+/** Battery priority: low level + heat + non-good health. */
+internal fun aiBatteryPriority(levelPercent: Int?, temperatureC: Float?, healthGood: Boolean): Int {
+    var score = 35
+    if (levelPercent != null) score += when {
+        levelPercent <= 15 -> 40
+        levelPercent <= 30 -> 28
+        levelPercent <= 50 -> 15
+        else -> 5
+    }
+    if ((temperatureC ?: 0f) >= 43f) score += 15 else if ((temperatureC ?: 0f) >= 38f) score += 8
+    if (!healthGood) score += 8
+    return score.coerceIn(0, 99)
+}
+
+/** Privacy priority: sensitive-app share + missing lock. */
+internal fun aiPrivacyPriority(sensitive: Int, installed: Int, lockSecure: Boolean): Int {
+    var score = privacyRiskPercent(sensitive, installed)
+    if (!lockSecure) score += 15
+    return score.coerceIn(0, 99)
+}
+
+/** Approved-art band for the smart-device score. */
+internal fun aiScoreLabel(score: Int): String = when {
+    score >= 80 -> "ممتاز"
+    score >= 60 -> "جيد"
+    else -> "يحتاج عناية"
+}
+
+/** Real weekly insight count from the Room/SharedPreferences scan journal. */
+internal fun weeklyInsightCount(history: List<ScanHistoryEntry>, nowMs: Long): Int =
+    history.count { nowMs - it.timestamp <= 7L * 24 * 3600 * 1000 }
+
+internal fun usageLast7Days(context: Context, nowMs: Long = System.currentTimeMillis()): Map<String, Long> {
+    if (!hasUsageAccess(context)) return emptyMap()
+    return runCatching {
+        val usm = context.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+        val stats = usm.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, nowMs - 7L * 24 * 3600 * 1000, nowMs)
+        stats.orEmpty()
+            .groupBy { it.packageName }
+            .mapValues { (_, list) -> list.sumOf { it.totalTimeInForeground } }
+            .filterValues { it >= 0L }
+    }.getOrDefault(emptyMap())
+}
+
+/**
+ * Real per-app storage (APK + data + cache) via StorageStatsManager.
+ * Packages the platform refuses to measure are simply absent from the map.
+ */
+internal fun appStorageSizes(context: Context, packages: List<String>): Map<String, Long> {
+    if (android.os.Build.VERSION.SDK_INT < 26) return emptyMap()
+    return runCatching {
+        val ssm = context.getSystemService(Context.STORAGE_STATS_SERVICE) as StorageStatsManager
+        val user = Process.myUserHandle()
+        val uuid = StorageManager.UUID_DEFAULT
+        packages.mapNotNull { pkg ->
+            runCatching {
+                val st = ssm.queryStatsForPackage(uuid, pkg, user)
+                pkg to (st.appBytes + st.dataBytes + st.cacheBytes)
+            }.getOrNull()
+        }.toMap()
+    }.getOrDefault(emptyMap())
 }
 
 private fun grantedPackagesFor(context: Context, permissions: List<String>): Set<String> {
@@ -561,29 +1099,70 @@ internal object DeviceReaders {
         readPrivacyGroups(context, apps)
     fun ownCache(context: Context): Pair<Long, Int> = ownCacheBytes(context)
     fun media(context: Context): MediaFacts = readMedia(context)
+    fun cleanFiles(context: Context): CleanFileFacts = readCleanFiles(context)
     fun usageAccess(context: Context): Boolean = hasUsageAccess(context)
 }
 
-fun readDeviceFacts(context: Context): DeviceFacts {
+fun readDeviceFacts(context: Context, withSizes: Boolean = true): DeviceFacts {
     val battery = readBattery(context)
     val storage = readStorage()
-    val apps = readInstalledApps(context)
+    val apps = readInstalledApps(context, withSizes)
     val cache = ownCacheBytes(context)
     val media = readMedia(context)
     val groups = readPrivacyGroups(context, apps)
     return DeviceFacts(
         battery = battery,
         storage = storage,
+        ram = readRam(context),
         installedApps = apps,
         ownCacheBytes = cache.first,
         ownCacheFiles = cache.second,
         media = media,
+        cleanFiles = readCleanFiles(context, apps.map { it.packageName }.toSet()),
         usageAccessGranted = hasUsageAccess(context),
         privacyGroups = groups,
         sensitiveAppCount = apps.count { it.sensitivePermissions.isNotEmpty() },
+        vpnActive = readVpnActive(context),
+        deviceAdminCount = readDeviceAdminCount(context),
+        overlayAppCount = overlayDeclaredCount(apps),
+        lockSecure = readLockSecure(context),
+        biometricStrength = readBiometricStrength(context),
         computedAt = System.currentTimeMillis(),
     )
 }
+
+/** A VPN transport is active right now — ConnectivityManager, not a guess. */
+internal fun readVpnActive(context: Context): Boolean = runCatching {
+    val cm = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    cm.allNetworks.any { n ->
+        cm.getNetworkCapabilities(n)?.hasTransport(NetworkCapabilities.TRANSPORT_VPN) == true
+    }
+}.getOrDefault(false)
+
+/** Device-admin receivers declared by installed packages (PackageManager). */
+internal fun readDeviceAdminCount(context: Context): Int = runCatching {
+    val pm = context.packageManager
+    val receivers = pm.queryBroadcastReceivers(Intent("android.app.action.DEVICE_ADMIN_ENABLED"), 0)
+    receivers.mapNotNull { it.activityInfo?.packageName }.toSet().size
+}.getOrDefault(0)
+
+/** Screen lock set and secure — KeyguardManager. */
+internal fun readLockSecure(context: Context): Boolean = runCatching {
+    (context.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager).isDeviceSecure
+}.getOrDefault(false)
+
+/** Biometric hardware class via androidx.biometric: 2 strong / 1 weak / 0 none / -1 unknown. */
+internal fun readBiometricStrength(context: Context): Int = runCatching {
+    when (androidx.biometric.BiometricManager.from(context).canAuthenticate(androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG)) {
+        androidx.biometric.BiometricManager.BIOMETRIC_SUCCESS -> 2
+        androidx.biometric.BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> 2
+        else -> when (androidx.biometric.BiometricManager.from(context).canAuthenticate(androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK)) {
+            androidx.biometric.BiometricManager.BIOMETRIC_SUCCESS -> 1
+            androidx.biometric.BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> 1
+            else -> 0
+        }
+    }
+}.getOrDefault(-1)
 
 /**
  * Process-wide snapshot of the last measured device facts.
@@ -609,6 +1188,15 @@ object DeviceFactsCache {
         loadedAt = System.currentTimeMillis()
     }
 
+    /** Merge late per-app storage measurements into the current snapshot. */
+    fun mergeSizes(sizes: Map<String, Long>) {
+        val cur = latest ?: return
+        if (sizes.isEmpty()) return
+        publish(cur.copy(installedApps = cur.installedApps.map { a ->
+            sizes[a.packageName]?.let { a.copy(appBytes = it) } ?: a
+        }))
+    }
+
     fun isFresh(now: Long = System.currentTimeMillis()): Boolean =
         latest != null && now - loadedAt < FRESH_WINDOW_MS
 
@@ -625,9 +1213,15 @@ fun rememberDeviceFacts(refreshKey: Int = 0): DeviceFacts {
             facts = cached
             return@LaunchedEffect
         }
-        val loaded = withContext(Dispatchers.IO) { readDeviceFacts(context.applicationContext) }
+        val loaded = withContext(Dispatchers.IO) { readDeviceFacts(context.applicationContext, withSizes = false) }
         DeviceFactsCache.publish(loaded)
         facts = loaded
+        // Backfill real per-app sizes off the critical path (apm-size et al.).
+        launch(Dispatchers.IO) {
+            val sizes = appStorageSizes(context.applicationContext, loaded.installedApps.map { it.packageName })
+            DeviceFactsCache.mergeSizes(sizes)
+            withContext(Dispatchers.Main) { facts = DeviceFactsCache.latest ?: loaded }
+        }
     }
     return facts
 }
@@ -722,6 +1316,59 @@ fun saveScanHistory(context: Context, entry: ScanHistoryEntry) {
 }
 
 /* ------------------------------------------------------------------ *
+ * Reports & History aggregates (sec10). Real counts from the Room
+ * audit journal — never fixtures. No scheduled-task subsystem exists,
+ * so that strip cell stays honestly unavailable.
+ * ------------------------------------------------------------------ */
+
+data class ReportsJournal(
+    val totalOperations: Int = 0,
+    val reclaimedBytes: Long = 0L,
+    val duplicateDeletes: Int = 0,
+    val appOperations: Int = 0,
+    val scanReports: Int = 0,
+    val batteryReports: Int = 0,
+    val privacyReports: Int = 0,
+    val reclaimedMonthBytes: Long = 0L,
+)
+
+/** Latest journal snapshot for the non-composable hub identity. */
+object ReportsJournalCache {
+    @Volatile var latest: ReportsJournal = ReportsJournal()
+        private set
+    fun publish(j: ReportsJournal) { latest = j }
+}
+
+suspend fun readReportsJournal(context: Context): ReportsJournal = runCatching {
+    val db = com.knoux.ai.database.AppDatabase.getDatabase(context)
+    val totals = db.operationItemOutcomeDao().totals()
+    val cal = java.util.Calendar.getInstance()
+    cal.set(java.util.Calendar.DAY_OF_MONTH, 1)
+    cal.set(java.util.Calendar.HOUR_OF_DAY, 0)
+    cal.set(java.util.Calendar.MINUTE, 0)
+    cal.set(java.util.Calendar.SECOND, 0)
+    cal.set(java.util.Calendar.MILLISECOND, 0)
+    val monthStart = cal.timeInMillis
+    val monthBytes = db.operationRequestDao().getAll().first()
+        .filter { it.createdAt >= monthStart }
+        .sumOf { req ->
+            db.operationItemOutcomeDao().getByOperation(req.id).first()
+                .filter { it.result == "SUCCESS" }
+                .sumOf { it.measuredBytes ?: 0L }
+        }
+    ReportsJournal(
+        totalOperations = db.operationRequestDao().countAll(),
+        reclaimedBytes = totals.measuredBytes,
+        duplicateDeletes = totals.successCount,
+        appOperations = db.operationRequestDao().countByService("app_manager"),
+        scanReports = db.scanSessionDao().countAll(),
+        batteryReports = db.batterySampleDao().countAll(),
+        privacyReports = db.permissionEventDao().countAll(),
+        reclaimedMonthBytes = monthBytes,
+    )
+}.getOrDefault(ReportsJournal()).also { ReportsJournalCache.publish(it) }
+
+/* ------------------------------------------------------------------ *
  * OS handoffs
  * ------------------------------------------------------------------ */
 
@@ -786,6 +1433,23 @@ fun openAllAppSettings(context: Context) {
     }.onFailure { openAppInfo(context, context.packageName) }
 }
 
+fun openNotificationListenerSettings(context: Context) {
+    runCatching {
+        context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    }.onFailure { openAllAppSettings(context) }
+}
+
+/** «3 س» / «42 د» — compact Arabic duration for usage rows. */
+internal fun formatUsageShort(millis: Long): String {
+    if (millis <= 0L) return "—"
+    val hours = millis / 3_600_000L
+    return when {
+        hours >= 24 -> "${hours / 24} يومًا"
+        hours > 0 -> "$hours س"
+        else -> "${(millis / 60_000L).coerceAtLeast(1L)} د"
+    }
+}
+
 fun openPrivacySettings(context: Context) {
     val intent = if (android.os.Build.VERSION.SDK_INT >= 31) {
         Intent(Settings.ACTION_PRIVACY_SETTINGS)
@@ -794,6 +1458,36 @@ fun openPrivacySettings(context: Context) {
     }
     runCatching {
         context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    }.onFailure { openAllAppSettings(context) }
+}
+
+fun openVpnSettings(context: Context) {
+    runCatching {
+        context.startActivity(Intent(Settings.ACTION_VPN_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    }.onFailure { openAllAppSettings(context) }
+}
+
+fun openSecuritySettings(context: Context) {
+    runCatching {
+        context.startActivity(Intent(Settings.ACTION_SECURITY_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+    }.onFailure { openPrivacySettings(context) }
+}
+
+fun openDeviceAdminSettings(context: Context) {
+    runCatching {
+        val intent = Intent().setComponent(
+            ComponentName("com.android.settings", "com.android.settings.Settings\$DeviceAdminSettingsActivity"),
+        ).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        context.startActivity(intent)
+    }.onFailure { openSecuritySettings(context) }
+}
+
+fun openOverlaySettings(context: Context) {
+    runCatching {
+        context.startActivity(
+            Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + context.packageName))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+        )
     }.onFailure { openAllAppSettings(context) }
 }
 

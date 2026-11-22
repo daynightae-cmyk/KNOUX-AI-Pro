@@ -183,13 +183,15 @@ fun KnouxApp(startRoute: String? = null, startDayMode: Boolean? = null) {
     var splashFinished by remember { mutableStateOf(false) }
 
     // A debug inspection route must win over a restored entry stage: after a
-    // task restore, rememberSaveable brings back the last stage (usually Shell)
-    // and the new intent extra would otherwise be ignored.
-    LaunchedEffect(entryDebugRoute) {
-        entryStage = when (entryDebugRoute) {
-            "onboarding" -> EntryStage.Onboarding
-            "auth" -> EntryStage.Auth
-            "loading" -> EntryStage.Loading
+    // task restore, rememberSaveable brings back the last stage (often Auth)
+    // and the new intent extra would otherwise be ignored. Shell routes force
+    // the Shell stage too, so `--es route home` never lands on a restored login.
+    LaunchedEffect(entryDebugRoute, shellStartRoute) {
+        entryStage = when {
+            entryDebugRoute == "onboarding" -> EntryStage.Onboarding
+            entryDebugRoute == "auth" -> EntryStage.Auth
+            entryDebugRoute == "loading" -> EntryStage.Loading
+            !shellStartRoute.isNullOrBlank() -> EntryStage.Shell
             else -> entryStage
         }
     }

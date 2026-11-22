@@ -880,6 +880,21 @@ internal object SectionToolsCatalog {
             note = "عندما لا توجد بيانات لا نعرض صفرًا. الصفر قد يعني قياسًا ناجحًا، والشرطة تعني غياب القياس.",
             action = "deepscan", actionLabel = "تشغيل فحص لملء السجل",
         ),
+        d(
+            "reports", "rpt-export", "06.11", "تصدير ومشاركة التقارير", "EXPORT & SHARE",
+            "ملخص نصي حقيقي من سجل الجهاز للمشاركة", Icons.Rounded.Share, RefGold,
+            rows = { _, h ->
+                val j = ReportsJournalCache.latest
+                listOf(
+                    tr(Icons.Rounded.History, "عمليات مسجلة", formatCount(j.totalOperations), RefGold),
+                    tr(Icons.Rounded.Savings, "مساحة مستعادة", formatBytes(j.reclaimedBytes), V2Green),
+                    tr(Icons.Rounded.FactCheck, "تقارير فحص", formatCount(j.scanReports), V2Cyan),
+                    tr(Icons.Rounded.Info, "قياسات محفوظة", "${h.size}/24", V2Violet),
+                )
+            },
+            note = "التصدير يبني نصًا من القياسات المحفوظة فقط — لا أرقام افتراضية.",
+            behavior = ToolBehavior.SHARE_REPORT,
+        ),
     )
 
     private val appManager = listOf(
