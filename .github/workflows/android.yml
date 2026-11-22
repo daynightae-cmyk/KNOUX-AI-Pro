@@ -56,7 +56,11 @@ jobs:
           echo "$CMDLINE_TOOLS" >> "$GITHUB_PATH"
           echo "$SDK_ROOT/platform-tools" >> "$GITHUB_PATH"
           "$CMDLINE_TOOLS/sdkmanager" --version
+          # pipefail + `yes` closed pipe (SIGPIPE) used to kill this step before
+          # any build ran; accept licenses in a subshell exempt from pipefail.
+          set +o pipefail
           yes | "$CMDLINE_TOOLS/sdkmanager" --licenses > /dev/null
+          set -o pipefail
           "$CMDLINE_TOOLS/sdkmanager" --install \
             "platform-tools" \
             "platforms;android-36" \
