@@ -252,7 +252,7 @@ connectivity CONFIGURATION_REQUIRED (owner supplies keys via vault).
 
 DOMAIN: cross-layer contracts (build config ↔ manifest ↔ Room ↔ UI call sites ↔ secrets)
 BASE SHA: `3f2284a2078b22bf9f8ea496b679a82b934bc6a2`
-COMMIT SHA: (recorded after commit)
+COMMIT SHA: `c4b95443b63221d707a2b431f7f55da517e91c09`
 FILES_CHANGED:
 - `app/src/test/java/com/knoux/ai/IntegrationContractJvmTest.kt` (new, 5 tests):
   1. No secrets in any app source/gradle file (sb_secret_*, service-role
@@ -267,8 +267,11 @@ FILES_CHANGED:
      SectionServiceViewModel × atomic `items =` overload).
 
 TESTS_EXECUTED: `.\gradlew.bat :app:testDebugUnitTest --tests com.knoux.ai.IntegrationContractJvmTest`
-→ EXIT 0, 5 tests / 0 failures (one assertion corrected to the per-file atomic
-marker after first run; re-run clean EXIT 0). Full suite + assembleDebug recorded after run.
+→ EXIT 0, 5 tests / 0 failures. Full `.\gradlew.bat :app:testDebugUnitTest :app:assembleDebug`
+→ **GRADLE_EXIT=0: 205 tests / 20 suites / 0 failures / 0 errors; app-debug.apk assembled**.
+Repo-wide secret sweep (`git grep` for sb_secret_/JWT-shaped strings): only hits are
+synthetic fixtures inside `ProductionSecurityTest.kt` (redactor test inputs) — intentional.
+All SHAs recorded in this manifest verified present via `git cat-file -e`.
 PUBLIC_INTERFACE_CHANGES: none (test-only slice).
 MIGRATIONS: none. REAL DATA SOURCE: none (static contracts).
 EXTERNAL VERIFICATION: none needed. UI_HANDOFF_REQUIRED: none.
@@ -282,10 +285,10 @@ on 2026-11-23). `git merge-tree` confirms my commits merge CLEANLY onto it.
 1. In the ORIGINAL repo (owner only, never an agent): `git fetch` the isolated
    worktree or apply the bundle:
    `git bundle verify K:\KNOUX-AI-Pro-CORE-ISOLATED\core-slices-230d30d.bundle`
-   `git merge 372a3e3ca1aef08ddc67ad92a57e254b75655c13` (after re-checking
+   `git merge c4b95443b63221d707a2b431f7f55da517e91c09` (after re-checking
    master; re-run merge-tree against the then-current master if it moved).
 2. Re-run `.\gradlew.bat :app:testDebugUnitTest :app:assembleDebug` in master.
-3. Expected result: 200 JVM tests, 0 failures, debug APK builds.
+3. Expected result: 205 JVM tests, 0 failures, debug APK builds.
 4. UI conflicts: none expected — the Visual Agent's layout files were not
    modified; the only UI-adjacent edits are journal-call swaps inside existing
    IO blocks of 5 ViewModel/screen files (listed per slice).
