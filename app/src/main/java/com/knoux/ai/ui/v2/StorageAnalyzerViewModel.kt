@@ -99,10 +99,6 @@ class StorageAnalyzerViewModel(
                             lastSeen = System.currentTimeMillis(),
                         )
                     }
-                    if (mediaItems.isNotEmpty()) {
-                        repository.recordObservedItems(id, mediaItems)
-                    }
-
                     repository.completeScanSession(
                         sessionId = id,
                         status = if (facts.computedAt > 0L) "COMPLETED" else "PARTIAL",
@@ -110,6 +106,7 @@ class StorageAnalyzerViewModel(
                         itemsFound = facts.media.images + facts.media.videos,
                         bytesFound = mediaBytes,
                         bytesReclaimable = cacheBytes,
+                        items = mediaItems,
                     )
 
                     repository.recordFeatureCapability(
@@ -202,7 +199,6 @@ class StorageAnalyzerViewModel(
                 val status = if (verified) "VERIFIED" else "PARTIAL"
 
                 withContext(Dispatchers.IO) {
-                    repository.updateOperationStatus(opId, status)
                     repository.recordItemOutcomes(
                         opId,
                         listOf(
@@ -216,6 +212,7 @@ class StorageAnalyzerViewModel(
                                 completedAt = System.currentTimeMillis(),
                             )
                         ),
+                        finalStatus = status,
                     )
                 }
 

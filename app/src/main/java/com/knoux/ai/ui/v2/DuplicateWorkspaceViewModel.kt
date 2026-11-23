@@ -118,7 +118,6 @@ internal class DuplicateWorkspaceViewModel : ViewModel() {
                             )
                         }
                     }.distinctBy { it.providerId }
-                    if (observed.isNotEmpty()) repository.recordObservedItems(sessionId, observed)
                     repository.completeScanSession(
                         sessionId = sessionId,
                         status = if (result.warnings.isEmpty() && !result.partialAccess) "COMPLETED" else "PARTIAL",
@@ -127,6 +126,7 @@ internal class DuplicateWorkspaceViewModel : ViewModel() {
                         bytesFound = observed.sumOf { it.sizeBytes ?: 0L },
                         bytesReclaimable = result.groups.filter { it.kind == DuplicateMatchKind.EXACT }
                             .sumOf { group -> group.files.drop(1).sumOf { it.sizeBytes } },
+                        items = observed,
                     )
                 }
                 mutableState.update { it.copy(scanning = false, result = result, sessionId = session) }
@@ -264,8 +264,7 @@ internal class DuplicateWorkspaceViewModel : ViewModel() {
                             providerError = if (presence == DuplicateMediaPresence.UNKNOWN) "Provider re-query unavailable; absence not proven" else null,
                             completedAt = System.currentTimeMillis(),
                         )
-                    })
-                    repository.updateOperationStatus(request.operationId, status)
+                    }, finalStatus = status)
                     clearPending(app)
                     verified.copy(status = status)
                 }

@@ -199,6 +199,25 @@ interface ScanSessionDao {
     @Update
     suspend fun update(session: ScanSessionEntity)
 
+    /**
+     * Atomically finalizes a scan: observed items and the session summary commit
+     * together, so a crash can never leave a COMPLETED session whose items are
+     * missing (or items whose session still says SCANNING).
+     */
+    @Transaction
+    suspend fun completeWithItems(
+        session: ScanSessionEntity,
+        items: List<ObservedItemEntity>,
+    ) {
+        val withSession = items.map { it.copy(scanSessionId = session.id) }
+        // Chunked: SQLite has a bound-variable limit; large scans are real.
+        withSession.chunked(500).forEach { chunk -> observedItemInsertAll(chunk) }
+        update(session)
+    }
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun observedItemInsertAll(items: List<ObservedItemEntity>)
+
     @Query("SELECT * FROM scan_sessions WHERE id = :id")
     suspend fun getById(id: String): ScanSessionEntity?
 
@@ -308,6 +327,31 @@ interface OperationItemOutcomeDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(outcomes: List<OperationItemOutcomeEntity>)
+
+    @Query("SELECT status FROM operation_requests WHERE id = :operationId")
+    suspend fun parentStatus(operationId: String): String?
+
+    @Query("UPDATE operation_requests SET status = :status WHERE id = :id")
+    suspend fun updateParentStatus(id: String, status: String)
+
+    /**
+     * Atomically journals item outcomes and the operation's final status.
+     * The status write and its evidence commit together; a crash cannot leave
+     * a VERIFIED operation without outcome rows.
+     */
+    @Transaction
+    suspend fun insertAllWithStatus(
+        operationId: String,
+        outcomes: List<OperationItemOutcomeEntity>,
+        status: String,
+    ) {
+        check(parentStatus(operationId) != null) {
+            "Operation $operationId does not exist; outcomes must reference a real request"
+        }
+        val withOp = outcomes.map { it.copy(operationId = operationId) }
+        withOp.chunked(500).forEach { chunk -> insertAll(chunk) }
+        updateParentStatus(operationId, status)
+    }
 
     @Query("SELECT * FROM operation_item_outcomes WHERE operationId = :operationId")
     fun getByOperation(operationId: String): Flow<List<OperationItemOutcomeEntity>>
@@ -526,9 +570,25 @@ class KnouxRepository(private val database: AppDatabase) {
         itemsFound: Int,
         bytesFound: Long,
         bytesReclaimable: Long,
+    ) = completeScanSession(sessionId, status, permissionGranted, itemsFound, bytesFound, bytesReclaimable, emptyList())
+
+    /**
+     * Transactional completion: the observed evidence and the session summary
+     * commit in one Room transaction. Prefer this overload whenever the caller
+     * has the items in hand; the two-write variant above remains only for
+     * callers that already persisted items separately.
+     */
+    suspend fun completeScanSession(
+        sessionId: String,
+        status: String,
+        permissionGranted: Boolean,
+        itemsFound: Int,
+        bytesFound: Long,
+        bytesReclaimable: Long,
+        items: List<ObservedItemEntity>,
     ) {
         val existing = database.scanSessionDao().getById(sessionId) ?: return
-        database.scanSessionDao().update(
+        database.scanSessionDao().completeWithItems(
             existing.copy(
                 endedAt = System.currentTimeMillis(),
                 status = status,
@@ -536,7 +596,8 @@ class KnouxRepository(private val database: AppDatabase) {
                 itemsFound = itemsFound,
                 bytesFound = bytesFound,
                 bytesReclaimable = bytesReclaimable,
-            )
+            ),
+            items,
         )
     }
 
@@ -592,9 +653,22 @@ class KnouxRepository(private val database: AppDatabase) {
         )
     }
 
-    suspend fun recordItemOutcomes(operationId: String, outcomes: List<OperationItemOutcomeEntity>) {
-        val withOp = outcomes.map { it.copy(operationId = operationId) }
-        database.operationItemOutcomeDao().insertAll(withOp)
+    /**
+     * Journals measured outcomes. When [finalStatus] is provided, outcomes and
+     * the operation status commit in one transaction: a VERIFIED/PARTIAL/ERROR
+     * status can never exist without its evidence rows.
+     */
+    suspend fun recordItemOutcomes(
+        operationId: String,
+        outcomes: List<OperationItemOutcomeEntity>,
+        finalStatus: String? = null,
+    ) {
+        if (finalStatus != null) {
+            database.operationItemOutcomeDao().insertAllWithStatus(operationId, outcomes, finalStatus)
+        } else {
+            val withOp = outcomes.map { it.copy(operationId = operationId) }
+            withOp.chunked(500).forEach { database.operationItemOutcomeDao().insertAll(it) }
+        }
     }
 
     suspend fun recordScopedGrant(

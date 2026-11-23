@@ -470,8 +470,7 @@ fun V2AppManagerScreen(
                             providerError = presence.error,
                             completedAt = System.currentTimeMillis(),
                         )
-                    ))
-                    repository.updateOperationStatus(opId, status)
+                    ), finalStatus = status)
                 }
                 uninstallMessage = when (status) {
                     "VERIFIED" -> "تمت إزالة الحزمة والتحقق من غيابها: $pkg"

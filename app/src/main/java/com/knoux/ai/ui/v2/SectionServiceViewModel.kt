@@ -105,10 +105,6 @@ class SectionServiceViewModel(
                             lastSeen = System.currentTimeMillis(),
                         )
                     }
-                    if (mediaItems.isNotEmpty()) {
-                        repository.recordObservedItems(id, mediaItems)
-                    }
-
                     val appItems = facts.installedApps.take(80).map { app ->
                         ObservedItemEntity(
                             scanSessionId = id,
@@ -118,9 +114,6 @@ class SectionServiceViewModel(
                             lastSeen = System.currentTimeMillis(),
                         )
                     }
-                    if (appItems.isNotEmpty()) {
-                        repository.recordObservedItems(id, appItems)
-                    }
 
                     repository.completeScanSession(
                         sessionId = id,
@@ -129,6 +122,7 @@ class SectionServiceViewModel(
                         itemsFound = facts.media.images + facts.media.videos + facts.installedCount,
                         bytesFound = mediaBytes,
                         bytesReclaimable = cacheBytes,
+                        items = mediaItems + appItems,
                     )
 
                     repository.recordFeatureCapability(

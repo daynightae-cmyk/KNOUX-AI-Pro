@@ -950,8 +950,7 @@ fun V2ResidueScreen(onBack: () -> Unit, onReview: () -> Unit, onPro: () -> Unit)
                                         providerError = null,
                                         completedAt = System.currentTimeMillis(),
                                     )
-                                ))
-                                repository.updateOperationStatus(opId, if (verified) "VERIFIED" else "PARTIAL")
+                                ), finalStatus = if (verified) "VERIFIED" else "PARTIAL")
                             }
                             Pair(freed, verified)
                         }
