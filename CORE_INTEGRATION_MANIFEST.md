@@ -152,3 +152,29 @@ UI already displays `result.error`.
 UNRESOLVED BLOCKERS: Google Android client ID not configured at build time
 (`knoux.googleAndroidClientId` unset → `knoux.oauth.unconfigured` scheme),
 Microsoft client ID unset, consent screens unverified on device.
+
+## Ordered safe integration procedure (for the owner / integration gate)
+
+Master has NOT moved since the base (`230d30d…` verified in the original repo
+on 2026-11-23). `git merge-tree` confirms my 4 commits merge CLEANLY onto it.
+
+1. In the ORIGINAL repo (owner only, never an agent): `git fetch` the isolated
+   worktree or apply the bundle:
+   `git bundle verify K:\KNOUX-AI-Pro-CORE-ISOLATED\core-slices-230d30d.bundle`
+   `git merge b0502c09bd71b9c719c5589dc481528391d7b28d` (after re-checking
+   master; re-run merge-tree against the then-current master if it moved).
+2. Re-run `.\gradlew.bat :app:testDebugUnitTest :app:assembleDebug` in master.
+3. Expected result: 180 JVM tests, 0 failures, debug APK builds.
+4. UI conflicts: none expected — the Visual Agent's layout files were not
+   modified; the only UI-adjacent edits are journal-call swaps inside existing
+   IO blocks of 5 ViewModel/screen files (listed per slice).
+
+## Disk-space actions taken (safe, regenerable only)
+
+- Cleaned build outputs ONLY inside the isolated worktree (`app/build`,
+  `.gradle`) — ~0.35 GB reclaimed; all regenerable by Gradle. No source,
+  asset, schema, or data file was deleted.
+- Refused: merging into master / pushing (mission boundary), writing to the
+  original repo, and deleting "old non-unique files" without an explicit file
+  list + impact assessment (destructive; mission boundary). K: has ~17 GB
+  free, D: ~8 GB free after cleanup.
