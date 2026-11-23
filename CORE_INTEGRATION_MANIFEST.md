@@ -248,6 +248,32 @@ UNRESOLVED BLOCKERS: device Keystore path still IMPLEMENTED_NOT_TESTED on JVM
 (instrumented run deferred — Visual Agent owns the phone); live provider
 connectivity CONFIGURATION_REQUIRED (owner supplies keys via vault).
 
+### Slice 6 — Integration contracts (P7)
+
+DOMAIN: cross-layer contracts (build config ↔ manifest ↔ Room ↔ UI call sites ↔ secrets)
+BASE SHA: `3f2284a2078b22bf9f8ea496b679a82b934bc6a2`
+COMMIT SHA: (recorded after commit)
+FILES_CHANGED:
+- `app/src/test/java/com/knoux/ai/IntegrationContractJvmTest.kt` (new, 5 tests):
+  1. No secrets in any app source/gradle file (sb_secret_*, service-role
+     assignments, JWT-shaped strings, hardcoded key literals) — scans
+     app/src/main + build.gradle.kts + gradle.properties.
+  2. BuildConfig Supabase host == manifest project ref `tduofkizwkjtqcbklfah`;
+     publishable key only, never a service-role reference.
+  3. Room schema stays v2 with exported `schemas/.../2.json`.
+  4. Repository keeps backward-compatible atomic overloads
+     (`completeScanSession(..., items=...)`, `recordItemOutcomes(..., finalStatus=...)`).
+  5. The five UI journal call-site swaps still in place (4× `finalStatus =`,
+     SectionServiceViewModel × atomic `items =` overload).
+
+TESTS_EXECUTED: `.\gradlew.bat :app:testDebugUnitTest --tests com.knoux.ai.IntegrationContractJvmTest`
+→ EXIT 0, 5 tests / 0 failures (one assertion corrected to the per-file atomic
+marker after first run; re-run clean EXIT 0). Full suite + assembleDebug recorded after run.
+PUBLIC_INTERFACE_CHANGES: none (test-only slice).
+MIGRATIONS: none. REAL DATA SOURCE: none (static contracts).
+EXTERNAL VERIFICATION: none needed. UI_HANDOFF_REQUIRED: none.
+UNRESOLVED BLOCKERS: none new.
+
 ## Ordered safe integration procedure (for the owner / integration gate)
 
 Master has NOT moved since the base (`230d30d…` verified in the original repo
