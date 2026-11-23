@@ -30,8 +30,8 @@ SOURCE_BASE_SHA: `230d30db9dbd83ddb4f857bea05ad0697d2fd660`
 | Passkeys (Supabase experimental routes) | CONFIGURATION_REQUIRED (server feature must be enabled; client implemented) | `KnouxPasskeyCredential.kt` |
 | Biometric local unlock | IMPLEMENTED_NOT_TESTED (correctly separate from server auth) | `KnouxBiometricUnlock.kt` |
 | OAuth redirect relay | IMPLEMENTED_NOT_TESTED → JVM-tested in Slice 2 | `OAuthRedirectRelay.kt` |
-| Google/Microsoft connectors | under audit (P4) | `google/`, `microsoft/` |
-| Supabase app tables + RLS | MISSING remotely → migrations prepared in later slice (P5); README references `001_core.sql` etc. which do NOT exist in repo | `database/supabase/` |
+| Google/Microsoft connectors | IMPLEMENTED_AND_TESTED (JVM contract tests) in Slice 3: structural parsing, pagination, explicit failure states, consent-safe mutations | `google/`, `microsoft/`, `CloudConnectorContractTest` (12 tests) |
+| Supabase app tables + RLS | IMPLEMENTED_AND_TESTED (source-contract JVM tests, 9 tests) in Slice 4; live DEPLOYMENT = CONFIGURATION_REQUIRED (no privileged access; files now exist at the paths README references) | `database/supabase/001_core.sql`, `002_rls.sql`, `003_account_erasure.sql`, `tests/001_rls_structure.sql`, `functions/report-summary/` |
 | Developer Studio providers + vault | under audit (P6) | `developer/` |
 | secureRequest HTTP-status retry | PARTIALLY_CONNECTED → repaired in Slice 2 (429/5xx never retried) | `security/ProductionSecurity.kt` |
 
@@ -155,6 +155,52 @@ UI already displays `result.error`.
 UNRESOLVED BLOCKERS: Google Android client ID not configured at build time
 (`knoux.googleAndroidClientId` unset → `knoux.oauth.unconfigured` scheme),
 Microsoft client ID unset, consent screens unverified on device.
+
+### Slice 4 — Supabase schema prep: core tables + RLS + erasure + tests (P5)
+
+DOMAIN: `database/supabase/` (files referenced by README_DEPLOYMENT.md that did not exist)
+BASE SHA: `b26710a97ebf312fd54086da5b98b6db5bf5cee8`
+COMMIT SHA: (recorded after commit)
+FILES_CHANGED:
+- `database/supabase/001_core.sql` (new): 7 user-owned tables mirroring Room
+  (ka_profiles, ka_devices, ka_scan_sessions, ka_operation_requests,
+  ka_operation_item_outcomes, ka_storage_snapshots, ka_battery_samples);
+  all FK to auth.users(id) ON DELETE CASCADE; consent CHECK constraint;
+  idempotent (create-if-not-exists), updated_at trigger.
+- `database/supabase/002_rls.sql` (new): RLS enabled on all tables; owner-only
+  policies `auth.uid() = user_id` for select/insert/update/delete; ka_operation_requests
+  INSERT exists ONLY as consent policy (consent_given AND consent_at);
+  item-outcomes owned via parent operation; no anon grants.
+- `database/supabase/003_account_erasure.sql` (new): SECURITY INVOKER
+  `ka_erase_my_account()` returning per-table audit counts; deny-by-default
+  `ka_erasure_audit` table (RLS on, zero policies); executable only by
+  `authenticated`; auth.users deletion documented as server-side service-role step.
+- `database/supabase/tests/001_rls_structure.sql` (new): Part A structural checks
+  (pg_tables.relrowsecurity, pg_policies, FK cascades, consent policy, audit
+  deny-by-default, no anon policies) + Part B two-real-user behavioral script
+  (B1–B8: cross-owner reads/writes denied, cross-device references rejected,
+  no-consent insert rejected, erasure receipt, expired token 401).
+- `database/supabase/functions/report-summary/index.ts` (new, optional Edge Fn):
+  JWT verified via auth.getUser(jwt) → 401 otherwise; all reads through a
+  client bound to the USER's JWT (RLS applies); aggregates only, never raw files.
+- `app/src/test/java/com/knoux/ai/cloud/SupabaseSchemaContractTest.kt` (new, 9 tests):
+  pins every security property above at source level + asserts zero secrets
+  (no JWT-shaped strings, no sb_* keys, no hardcoded credential assignments).
+
+TESTS_EXECUTED: `.\gradlew.bat :app:testDebugUnitTest --tests com.knoux.ai.cloud.SupabaseSchemaContractTest`
+→ EXIT 0, 9 tests / 0 failures. Full suite result recorded after run.
+PUBLIC_INTERFACE_CHANGES: none (new files only; README paths now satisfied).
+MIGRATIONS: these ARE the migrations (001→002→003 order), apply owner-side on
+staging first per README_DEPLOYMENT.md.
+REAL DATA SOURCE: none — no database was connected (no local Postgres/Docker in
+this environment, verified); remote project untouched (read-only probes only).
+EXTERNAL VERIFICATION: none — SQL never executed against any database.
+Classification: files IMPLEMENTED_AND_TESTED (JVM source-contract tests);
+live deployment + two-real-user RLS run = CONFIGURATION_REQUIRED / BLOCKED
+(no privileged credentials; must run owner-side on staging).
+UI_HANDOFF_REQUIRED: none.
+UNRESOLVED BLOCKERS: apply migrations to `tduofkizwkjtqcbklfah` requires owner
+SQL editor / CLI access; supabase-kt client wiring in the app is a follow-up.
 
 ## Ordered safe integration procedure (for the owner / integration gate)
 
