@@ -103,7 +103,7 @@ GRADLE HANDOFF: `app/build.gradle.kts` adds one testImplementation line (`org.js
 
 DOMAIN: cloud connectors (Drive, Gmail, Outlook) + OAuth token parsing
 BASE SHA: `658c32007892e5a0aaf24e5838b0ed2f9028318f`
-COMMIT SHA: (recorded after commit)
+COMMIT SHA: `b0502c09bd71b9c719c5589dc481528391d7b28d`
 FILES_CHANGED:
 - `app/src/main/java/com/knoux/ai/cloud/CloudHttp.kt` (new: shared secure GET/mutate/paginate + structural parsers)
 - `app/src/main/java/com/knoux/ai/google/auth/GoogleTokenParser.kt` (new, pure)
