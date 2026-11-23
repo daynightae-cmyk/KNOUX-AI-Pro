@@ -32,7 +32,7 @@ SOURCE_BASE_SHA: `230d30db9dbd83ddb4f857bea05ad0697d2fd660`
 | OAuth redirect relay | IMPLEMENTED_NOT_TESTED → JVM-tested in Slice 2 | `OAuthRedirectRelay.kt` |
 | Google/Microsoft connectors | IMPLEMENTED_AND_TESTED (JVM contract tests) in Slice 3: structural parsing, pagination, explicit failure states, consent-safe mutations | `google/`, `microsoft/`, `CloudConnectorContractTest` (12 tests) |
 | Supabase app tables + RLS | IMPLEMENTED_AND_TESTED (source-contract JVM tests, 9 tests) in Slice 4; live DEPLOYMENT = CONFIGURATION_REQUIRED (no privileged access; files now exist at the paths README references) | `database/supabase/001_core.sql`, `002_rls.sql`, `003_account_erasure.sql`, `tests/001_rls_structure.sql`, `functions/report-summary/` |
-| Developer Studio providers + vault | under audit (P6) | `developer/` |
+| Developer Studio providers + vault | IMPLEMENTED_AND_TESTED (JVM contract tests) in Slice 5: vault Keystore AES-GCM verified by source contract; adapters hardened | `developer/`, `DeveloperStudioContractTest` (11 tests) |
 | secureRequest HTTP-status retry | PARTIALLY_CONNECTED → repaired in Slice 2 (429/5xx never retried) | `security/ProductionSecurity.kt` |
 
 ## Slices
@@ -202,6 +202,50 @@ live deployment + two-real-user RLS run = CONFIGURATION_REQUIRED / BLOCKED
 UI_HANDOFF_REQUIRED: none.
 UNRESOLVED BLOCKERS: apply migrations to `tduofkizwkjtqcbklfah` requires owner
 SQL editor / CLI access; supabase-kt client wiring in the app is a follow-up.
+
+### Slice 5 — Developer Studio security hardening (P6)
+
+DOMAIN: `developer/provider/*` adapters + `developer/vault/CredentialVault.kt` + `cloud/CloudHttp.kt`
+BASE SHA: `83681554be5cb160f5206ab8c19f676a7d9b1917`
+COMMIT SHA: (recorded after commit)
+FILES_CHANGED:
+- `app/src/main/java/com/knoux/ai/cloud/CloudHttp.kt`: `CloudHttp` made public;
+  `getJson` gained `headerName` param (Bearer for Authorization, raw value for
+  e.g. x-goog-api-key) and skips the auth header entirely for empty credentials
+  (local providers). `paginate` forwards the header param.
+- All 5 adapters (OpenRouter, OpenAI, Nvidia, Gemini, Ollama): raw
+  HttpURLConnection blocks replaced with `CloudHttp.getJson` (https-only base
+  URLs, `instanceFollowRedirects = false`, timeouts, secureRequest retry on
+  transient statuses). Removed `throw RuntimeException("HTTP $status: $payload")`
+  which echoed raw provider bodies (potential key/PII echo) into UI-visible
+  error messages — now `CloudApiException` carries a redacted, status-only
+  message. `normalizeError` now maps `CloudApiException.status`
+  (401/403→InvalidApiKey, 429→RateLimited, 5xx→ProviderUnavailable).
+- `GeminiAdapter`: API key moved OUT of the URL query (`?key=` leaks into
+  logs/proxies) into the `x-goog-api-key` header.
+- `OllamaAdapter` + new pure `OllamaEndpointPolicy`: `setBaseUrl` validates —
+  cleartext HTTP allowed ONLY for loopback hosts (localhost/127.x/10.0.2.2/::1),
+  remote hosts must be https; malformed URLs rejected.
+- `CredentialVault.kt`: masking extracted to pure `CredentialMask` (short keys
+  fully hidden; first4****last4 otherwise) — JVM-testable. Vault itself was
+  audited clean: Keystore AES-256-GCM with randomized IV, unreadable-entry
+  cleanup on decrypt failure, wipeAll recovery, safeLogKey = REDACTED.
+- Gmail/Drive `isTrashed`: raw connections replaced with `CloudHttp.getJson`;
+  404→true (gone), other provider failures→null (never success).
+- `app/src/test/java/com/knoux/ai/cloud/DeveloperStudioContractTest.kt` (new, 11 tests).
+
+TESTS_EXECUTED: `.\gradlew.bat :app:testDebugUnitTest --tests com.knoux.ai.cloud.DeveloperStudioContractTest`
+→ EXIT 0, 11 tests / 0 failures (also proves all refactored files compile).
+Full suite + assembleDebug recorded after run.
+PUBLIC_INTERFACE_CHANGES: additive only (`CloudHttp` visibility, `getJson` default
+param, `OllamaEndpointPolicy`, `CredentialMask`); adapter interface unchanged;
+`OllamaAdapter.setBaseUrl` now throws on invalid/remote-cleartext URLs (intentional).
+MIGRATIONS: none. REAL DATA SOURCE: unchanged (provider APIs at call time).
+EXTERNAL VERIFICATION: no live provider calls made from tests (fixtures/synthetic).
+UI_HANDOFF_REQUIRED: none.
+UNRESOLVED BLOCKERS: device Keystore path still IMPLEMENTED_NOT_TESTED on JVM
+(instrumented run deferred — Visual Agent owns the phone); live provider
+connectivity CONFIGURATION_REQUIRED (owner supplies keys via vault).
 
 ## Ordered safe integration procedure (for the owner / integration gate)
 

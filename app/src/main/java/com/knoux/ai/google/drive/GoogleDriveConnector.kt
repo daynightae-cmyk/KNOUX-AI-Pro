@@ -231,27 +231,17 @@ class GoogleDriveConnector(
      * false = still live, null = provider unreachable (never success).
      */
     suspend fun isTrashed(accountId: String, fileId: String): Boolean? {
-        return withContext(Dispatchers.IO) {
-            val account = accountManager.getConnectedAccounts()
-                .firstOrNull { it.id == accountId } ?: return@withContext null
-            val accessToken = accountManager.getValidAccessToken(account) ?: return@withContext null
-            try {
-                val url = java.net.URL("$DRIVE_API_BASE/files/$fileId?fields=trashed")
-                val connection = url.openConnection() as java.net.HttpURLConnection
-                connection.requestMethod = "GET"
-                connection.connectTimeout = 15_000
-                connection.readTimeout = 20_000
-                connection.setRequestProperty("Authorization", "Bearer $accessToken")
-                val status = connection.responseCode
-                val payload = (if (status in 200..299) connection.inputStream else connection.errorStream)
-                    ?.bufferedReader(java.nio.charset.StandardCharsets.UTF_8)?.use { it.readText() }.orEmpty()
-                connection.disconnect()
-                if (status == 404) return@withContext true
-                if (status !in 200..299) return@withContext null
-                org.json.JSONObject(payload).optBoolean("trashed", false)
-            } catch (_: Exception) {
-                null
-            }
+        val account = accountManager.getConnectedAccounts()
+            .firstOrNull { it.id == accountId } ?: return null
+        val accessToken = accountManager.getValidAccessToken(account) ?: return null
+        return try {
+            val body = CloudHttp.getJson("$DRIVE_API_BASE/files/$fileId?fields=trashed", accessToken)
+            body.optBoolean("trashed", false)
+        } catch (e: CloudApiException) {
+            // 404 = gone from Drive (treated as trashed); other failures -> null.
+            if (e.status == 404) true else null
+        } catch (_: Exception) {
+            null
         }
     }
 

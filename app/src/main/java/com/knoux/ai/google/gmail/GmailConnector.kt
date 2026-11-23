@@ -264,28 +264,21 @@ class GmailConnector(
      * cannot be reached — null is never treated as success.
      */
     suspend fun isTrashed(accountId: String, messageId: String): Boolean? {
-        return withContext(Dispatchers.IO) {
-            val account = accountManager.getConnectedAccounts()
-                .firstOrNull { it.id == accountId } ?: return@withContext null
-            val accessToken = accountManager.getValidAccessToken(account) ?: return@withContext null
-            try {
-                val url = java.net.URL("$GMAIL_API_BASE/users/me/messages/$messageId?format=minimal")
-                val connection = url.openConnection() as java.net.HttpURLConnection
-                connection.requestMethod = "GET"
-                connection.connectTimeout = 15_000
-                connection.readTimeout = 20_000
-                connection.setRequestProperty("Authorization", "Bearer $accessToken")
-                val status = connection.responseCode
-                val payload = (if (status in 200..299) connection.inputStream else connection.errorStream)
-                    ?.bufferedReader(java.nio.charset.StandardCharsets.UTF_8)?.use { it.readText() }.orEmpty()
-                connection.disconnect()
-                if (status == 404) return@withContext true
-                if (status !in 200..299) return@withContext null
-                val labels = org.json.JSONObject(payload).optJSONArray("labelIds") ?: return@withContext false
-                (0 until labels.length()).any { labels.optString(it) == "TRASH" }
-            } catch (_: Exception) {
-                null
-            }
+        val account = accountManager.getConnectedAccounts()
+            .firstOrNull { it.id == accountId } ?: return null
+        val accessToken = accountManager.getValidAccessToken(account) ?: return null
+        return try {
+            val body = CloudHttp.getJson(
+                "$GMAIL_API_BASE/users/me/messages/$messageId?format=minimal", accessToken,
+            )
+            val labels = body.optJSONArray("labelIds")
+            labels != null && (0 until labels.length()).any { labels.optString(it) == "TRASH" }
+        } catch (e: CloudApiException) {
+            // 404 = gone from the mailbox (treated as trashed); any other
+            // provider failure is null — never treated as success.
+            if (e.status == 404) true else null
+        } catch (_: Exception) {
+            null
         }
     }
 

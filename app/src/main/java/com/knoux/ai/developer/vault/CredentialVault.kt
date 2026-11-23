@@ -115,10 +115,7 @@ class CredentialVault(private val context: Context) {
     }
 
     /** Mask a key for display: show only first 4 and last 4 chars. */
-    fun maskKey(apiKey: String): String {
-        if (apiKey.length <= 8) return "****"
-        return apiKey.substring(0, 4) + "****" + apiKey.substring(apiKey.length - 4)
-    }
+    fun maskKey(apiKey: String): String = CredentialMask.mask(apiKey)
 
     /** Store a provider credential (encrypted) and masked display value. */
     suspend fun storeCredential(config: ProviderConfig, plaintextKey: String) {
@@ -207,6 +204,17 @@ class CredentialVault(private val context: Context) {
 
     /** Never log real keys. */
     fun safeLogKey(providerId: String): String = "***REDACTED***"
+}
+
+/**
+ * Pure key-masking rule, JVM-testable: short keys are fully hidden; longer
+ * keys show only first 4 + last 4. Never returns the real key.
+ */
+object CredentialMask {
+    fun mask(apiKey: String): String {
+        if (apiKey.length <= 8) return "****"
+        return apiKey.substring(0, 4) + "****" + apiKey.substring(apiKey.length - 4)
+    }
 }
 
 /**

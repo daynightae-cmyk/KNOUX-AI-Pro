@@ -1,17 +1,17 @@
 package com.knoux.ai.developer.provider
 
 import android.content.Context
+import com.knoux.ai.cloud.CloudApiException
+import com.knoux.ai.cloud.CloudHttp
 import com.knoux.ai.developer.model.AiModel
 import com.knoux.ai.developer.model.AiProvider
 import com.knoux.ai.developer.model.ProviderConnectionState
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import org.json.JSONArray
-import org.json.JSONObject
-import java.net.HttpURLConnection
-import java.net.URL
 
-/** Google Gemini adapter: generativelanguage.googleapis.com. */
+/**
+ * Google Gemini adapter: generativelanguage.googleapis.com.
+ * The API key is sent ONLY as the `x-goog-api-key` header — never in the URL,
+ * where it would leak into logs, proxies and error messages.
+ */
 class GeminiAdapter(private val context: Context) : ProviderAdapter {
     override val providerId = "google-gemini"
     override val displayName = "Google Gemini"
@@ -25,62 +25,52 @@ class GeminiAdapter(private val context: Context) : ProviderAdapter {
     private val baseUrl = "https://generativelanguage.googleapis.com/v1beta"
 
     override suspend fun testConnection(apiKey: String): ConnectionTestResult {
-        return withContext(Dispatchers.IO) {
-            try {
-                val models = discoverModels(apiKey)
-                ConnectionTestResult(
-                    success = true,
-                    state = ProviderConnectionState.Connected,
-                    modelsDiscovered = models.models.size,
-                )
-            } catch (e: Exception) {
-                ConnectionTestResult(
-                    success = false,
-                    state = normalizeError(e),
-                    errorMessage = e.message,
-                )
-            }
+        return try {
+            val models = discoverModels(apiKey)
+            ConnectionTestResult(
+                success = true,
+                state = ProviderConnectionState.Connected,
+                modelsDiscovered = models.models.size,
+            )
+        } catch (e: Exception) {
+            ConnectionTestResult(
+                success = false,
+                state = normalizeError(e),
+                errorMessage = e.message,
+            )
         }
     }
 
     override suspend fun discoverModels(apiKey: String): ModelDiscoveryResult {
-        return withContext(Dispatchers.IO) {
-            val url = URL("$baseUrl/models?key=$apiKey")
-            val conn = url.openConnection() as HttpURLConnection
-            conn.requestMethod = "GET"
-            conn.connectTimeout = 15_000
-            conn.readTimeout = 20_000
-            conn.setRequestProperty("Accept", "application/json")
-
-            val status = conn.responseCode
-            val stream = if (status in 200..299) conn.inputStream else conn.errorStream
-            val payload = stream?.readBytes()?.let { String(it, charset = java.nio.charset.StandardCharsets.UTF_8) } ?: ""
-            conn.disconnect()
-
-            if (status !in 200..299) throw RuntimeException("HTTP $status: $payload")
-
-            val json = JSONObject(payload)
-            val modelsArray = json.getJSONArray("models")
-            val models = mutableListOf<AiModel>()
-            for (i in 0 until modelsArray.length()) {
-                val item = modelsArray.getJSONObject(i)
-                val name = item.optString("name", "").removePrefix("models/")
-                models.add(AiModel(
-                    modelId = name,
-                    providerId = providerId,
-                    displayName = item.optString("displayName", name),
-                    supportsVision = name.contains("vision", ignoreCase = true) || name.contains("pro", ignoreCase = true),
-                    supportsToolCalling = true,
-                    supportsStreaming = true,
-                ))
-            }
-            ModelDiscoveryResult(models = models.toList())
+        val json = CloudHttp.getJson("$baseUrl/models", apiKey, headerName = "x-goog-api-key")
+        val modelsArray = json.optJSONArray("models")
+            ?: throw CloudApiException(200, null, "Malformed models response from $providerId")
+        val models = mutableListOf<AiModel>()
+        for (i in 0 until modelsArray.length()) {
+            val item = modelsArray.optJSONObject(i) ?: continue
+            val name = item.optString("name", "").removePrefix("models/")
+            if (name.isBlank()) continue
+            models.add(AiModel(
+                modelId = name,
+                providerId = providerId,
+                displayName = item.optString("displayName", name),
+                supportsVision = name.contains("vision", ignoreCase = true) || name.contains("pro", ignoreCase = true),
+                supportsToolCalling = true,
+                supportsStreaming = true,
+            ))
         }
+        return ModelDiscoveryResult(models = models.toList())
     }
 
     override suspend fun getPublicCatalog(): ModelDiscoveryResult? = null
 
     override fun normalizeError(throwable: Throwable): ProviderConnectionState {
+        if (throwable is CloudApiException) return when (throwable.status) {
+            400, 401, 403 -> ProviderConnectionState.InvalidApiKey
+            429 -> ProviderConnectionState.RateLimited
+            in 500..599 -> ProviderConnectionState.ProviderUnavailable
+            else -> ProviderConnectionState.Offline
+        }
         val msg = throwable.message ?: ""
         return when {
             msg.contains("401") || msg.contains("403") -> ProviderConnectionState.InvalidApiKey

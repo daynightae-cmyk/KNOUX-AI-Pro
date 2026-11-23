@@ -1,17 +1,13 @@
 package com.knoux.ai.developer.provider
 
 import android.content.Context
+import com.knoux.ai.cloud.CloudApiException
+import com.knoux.ai.cloud.CloudHttp
 import com.knoux.ai.developer.model.AiModel
 import com.knoux.ai.developer.model.AiProvider
 import com.knoux.ai.developer.model.ProviderConnectionState
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import org.json.JSONArray
-import org.json.JSONObject
-import java.net.HttpURLConnection
-import java.net.URL
 
-/** NVIDIA NIM / Build adapter: integrate.api.nvidia.com/v1. */
+/** NVIDIA NIM / Build adapter: integrate.api.nvidia.com/v1, bearer auth via [CloudHttp]. */
 class NvidiaAdapter(private val context: Context) : ProviderAdapter {
     override val providerId = "nvidia-nim"
     override val displayName = "NVIDIA NIM"
@@ -25,64 +21,52 @@ class NvidiaAdapter(private val context: Context) : ProviderAdapter {
     private val baseUrl = "https://integrate.api.nvidia.com/v1"
 
     override suspend fun testConnection(apiKey: String): ConnectionTestResult {
-        return withContext(Dispatchers.IO) {
-            try {
-                val models = discoverModels(apiKey)
-                ConnectionTestResult(
-                    success = true,
-                    state = ProviderConnectionState.Connected,
-                    modelsDiscovered = models.models.size,
-                )
-            } catch (e: Exception) {
-                ConnectionTestResult(
-                    success = false,
-                    state = normalizeError(e),
-                    errorMessage = e.message,
-                )
-            }
+        return try {
+            val models = discoverModels(apiKey)
+            ConnectionTestResult(
+                success = true,
+                state = ProviderConnectionState.Connected,
+                modelsDiscovered = models.models.size,
+            )
+        } catch (e: Exception) {
+            ConnectionTestResult(
+                success = false,
+                state = normalizeError(e),
+                errorMessage = e.message,
+            )
         }
     }
 
     override suspend fun discoverModels(apiKey: String): ModelDiscoveryResult {
-        return withContext(Dispatchers.IO) {
-            val url = URL("$baseUrl/models")
-            val conn = url.openConnection() as HttpURLConnection
-            conn.requestMethod = "GET"
-            conn.connectTimeout = 15_000
-            conn.readTimeout = 20_000
-            conn.setRequestProperty("Authorization", "Bearer $apiKey")
-            conn.setRequestProperty("Accept", "application/json")
-
-            val status = conn.responseCode
-            val stream = if (status in 200..299) conn.inputStream else conn.errorStream
-            val payload = stream?.readBytes()?.let { String(it, charset = java.nio.charset.StandardCharsets.UTF_8) } ?: ""
-            conn.disconnect()
-
-            if (status !in 200..299) throw RuntimeException("HTTP $status: $payload")
-
-            val json = JSONObject(payload)
-            val data = json.optJSONArray("data")
-            val models = mutableListOf<AiModel>()
-            if (data != null) {
-                for (i in 0 until data.length()) {
-                    val item = data.getJSONObject(i)
-                    val id = item.optString("id", "")
-                    models.add(AiModel(
-                        modelId = id,
-                        providerId = providerId,
-                        displayName = item.optString("name", id),
-                        supportsToolCalling = true,
-                        supportsStreaming = true,
-                    ))
-                }
+        val json = CloudHttp.getJson("$baseUrl/models", apiKey)
+        val data = json.optJSONArray("data")
+        val models = mutableListOf<AiModel>()
+        if (data != null) {
+            for (i in 0 until data.length()) {
+                val item = data.optJSONObject(i) ?: continue
+                val id = item.optString("id", "")
+                if (id.isBlank()) continue
+                models.add(AiModel(
+                    modelId = id,
+                    providerId = providerId,
+                    displayName = item.optString("name", id),
+                    supportsToolCalling = true,
+                    supportsStreaming = true,
+                ))
             }
-            ModelDiscoveryResult(models = models.toList())
         }
+        return ModelDiscoveryResult(models = models.toList())
     }
 
     override suspend fun getPublicCatalog(): ModelDiscoveryResult? = null
 
     override fun normalizeError(throwable: Throwable): ProviderConnectionState {
+        if (throwable is CloudApiException) return when (throwable.status) {
+            401, 403 -> ProviderConnectionState.InvalidApiKey
+            429 -> ProviderConnectionState.RateLimited
+            in 500..599 -> ProviderConnectionState.ProviderUnavailable
+            else -> ProviderConnectionState.Offline
+        }
         val msg = throwable.message ?: ""
         return when {
             msg.contains("401") || msg.contains("403") -> ProviderConnectionState.InvalidApiKey

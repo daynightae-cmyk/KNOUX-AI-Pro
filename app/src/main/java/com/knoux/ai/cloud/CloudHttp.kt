@@ -30,20 +30,36 @@ class CloudApiException(
 /** One page of a provider list response. */
 data class CloudPage(val body: JSONObject, val nextPageToken: String?)
 
-internal object CloudHttp {
+object CloudHttp {
 
     /** Bounded pagination: never loop forever on a misbehaving provider. */
     const val MAX_PAGES = 10
 
-    suspend fun getJson(url: String, accessToken: String): JSONObject =
+    /**
+     * GET with bearer-style credential. [headerName] defaults to
+     * "Authorization" (sent as `Bearer <credential>`); pass e.g.
+     * "x-goog-api-key" for providers that take a raw header value. An empty
+     * [credential] sends no auth header (local providers such as Ollama).
+     */
+    suspend fun getJson(
+        url: String,
+        credential: String,
+        headerName: String = "Authorization",
+    ): JSONObject =
         secureRequest(maxRetries = 3, idempotent = true) {
             withContext(Dispatchers.IO) {
                 val connection = (URL(url).openConnection() as HttpURLConnection).apply {
                     requestMethod = "GET"
                     connectTimeout = 15_000
                     readTimeout = 20_000
+                    // Never follow redirects with a credential attached.
                     instanceFollowRedirects = false
-                    setRequestProperty("Authorization", "Bearer $accessToken")
+                    if (credential.isNotBlank()) {
+                        setRequestProperty(
+                            headerName,
+                            if (headerName.equals("Authorization", ignoreCase = true)) "Bearer $credential" else credential,
+                        )
+                    }
                     setRequestProperty("Accept", "application/json")
                 }
                 try {
@@ -112,15 +128,16 @@ internal object CloudHttp {
      */
     suspend fun paginate(
         firstUrl: String,
-        accessToken: String,
+        credential: String,
         tokenParam: String,
+        headerName: String = "Authorization",
         maxPages: Int = MAX_PAGES,
         onPage: (JSONObject) -> Unit,
     ) {
         var url = firstUrl
         var pages = 0
         while (pages < maxPages) {
-            val body = getJson(url, accessToken)
+            val body = getJson(url, credential, headerName)
             onPage(body)
             pages++
             val next = body.optString("nextPageToken").takeIf { it.isNotBlank() } ?: break
