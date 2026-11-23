@@ -41,7 +41,7 @@ SOURCE_BASE_SHA: `230d30db9dbd83ddb4f857bea05ad0697d2fd660`
 
 DOMAIN: persistence / repository integrity
 BASE SHA: `230d30db9dbd83ddb4f857bea05ad0697d2fd660`
-COMMIT SHA: (recorded below after commit)
+COMMIT SHA: `8d3128726c2561ba5e68265c546acc4943e2e54f`
 FILES_CHANGED:
 - `app/src/main/java/com/knoux/ai/database/AppDatabase.kt`
 - `app/src/main/java/com/knoux/ai/ui/v2/StorageAnalyzerViewModel.kt` (data-call swap only)
@@ -71,8 +71,8 @@ UNRESOLVED BLOCKERS: device-level SQLite transaction behavior verified only via 
 ### Slice 2 — Auth session correctness + HTTP retry policy (P1)
 
 DOMAIN: authentication / network safety
-BASE SHA: `230d30db…` (Slice 1 commit)
-COMMIT SHA: (recorded below after commit)
+BASE SHA: `8d3128726c2561ba5e68265c546acc4943e2e54f` (Slice 1 commit)
+COMMIT SHA: `658c32007892e5a0aaf24e5838b0ed2f9028318f`
 FILES_CHANGED:
 - `app/src/main/java/com/knoux/ai/auth/SessionResponseParser.kt` (new, pure JVM policy)
 - `app/src/main/java/com/knoux/ai/auth/KnouxAuthApi.kt`
@@ -98,3 +98,57 @@ LOCAL VERIFICATION: full JVM suite + assembleDebug, exit 0.
 EXTERNAL VERIFICATION: GoTrue `/auth/v1/health` 200 (read-only). Actual sign-in against live project NOT executed (would create a real account; owner decision).
 UNRESOLVED BLOCKERS: Google interactive consent (CONFIGURATION_REQUIRED), passkey server feature enablement (CONFIGURATION_REQUIRED), device Keystore/biometric paths (IMPLEMENTED_NOT_TESTED — instrumented run deferred while Visual Agent owns the phone).
 GRADLE HANDOFF: `app/build.gradle.kts` adds one testImplementation line (`org.json:json:20240303`). Trivial merge; required for JVM JSON contract tests.
+
+### Slice 3 — Google/Microsoft connector data integrity (P4)
+
+DOMAIN: cloud connectors (Drive, Gmail, Outlook) + OAuth token parsing
+BASE SHA: `658c32007892e5a0aaf24e5838b0ed2f9028318f`
+COMMIT SHA: (recorded after commit)
+FILES_CHANGED:
+- `app/src/main/java/com/knoux/ai/cloud/CloudHttp.kt` (new: shared secure GET/mutate/paginate + structural parsers)
+- `app/src/main/java/com/knoux/ai/google/auth/GoogleTokenParser.kt` (new, pure)
+- `app/src/main/java/com/knoux/ai/microsoft/auth/MicrosoftTokenParser.kt` (new, pure)
+- `app/src/main/java/com/knoux/ai/google/auth/GoogleAuthProvider.kt`
+- `app/src/main/java/com/knoux/ai/microsoft/auth/MicrosoftAuthProvider.kt`
+- `app/src/main/java/com/knoux/ai/google/drive/GoogleDriveConnector.kt`
+- `app/src/main/java/com/knoux/ai/google/gmail/GmailConnector.kt`
+- `app/src/main/java/com/knoux/ai/microsoft/outlook/OutlookConnector.kt`
+- `app/src/test/java/com/knoux/ai/cloud/CloudConnectorContractTest.kt` (new, 12 tests)
+
+IMPLEMENTATION (real defects repaired):
+- Regex field-zip parsing replaced by structural org.json parsing — the old
+  code mis-paired id/size/md5Checksum whenever a record omitted an optional
+  field (e.g. Google Docs editors without size), silently attributing another
+  file's checksum to a file. Duplicates are now claimed only on verified MD5.
+- Silent `catch → emptyList()` on list calls replaced by `CloudApiException`:
+  a failed provider call now fails the scan explicitly (ScanStatus.Failed +
+  redacted provider message) instead of reporting an empty "Completed" scan.
+- Pagination: Drive/Gmail listings follow pageToken (bounded 10 pages);
+  Gmail now fetches real sizeEstimate/Subject via messages.get metadata
+  (bounded 50) instead of reporting sizeEstimate=0 for every message.
+- Mutating calls (trash/untrash/move) execute exactly once and count success
+  only from the provider's confirmed response body (trashed flag / TRASH
+  label / parentFolderId), not from a bare 2xx.
+- Candidate dedup by providerItemId: one real item matched by two queries is
+  counted once in itemsFound/bytesFound.
+- Outlook "old emails" cutoff computed from scan time (was hardcoded
+  2025-01-01); junk query resolves the real junkemail folder id; token
+  exchange bodies no longer echo raw provider responses (PII leak); scopes
+  deduped; token bodies URL-encoded.
+- OAuth token responses parse via pure JVM-tested parsers; missing
+  access_token is rejected; AAD string-or-number expires_in handled.
+
+TESTS_EXECUTED: targeted `CloudConnectorContractTest` + full
+`:app:testDebugUnitTest :app:assembleDebug` (results recorded after run).
+PUBLIC_INTERFACE_CHANGES: additive only; connector public method signatures
+unchanged (`scanWithCandidates`, `trashFiles`, `isTrashed`, etc.).
+MIGRATIONS: none.
+REAL DATA SOURCE: provider APIs at call time; fixtures in tests are synthetic.
+EXTERNAL VERIFICATION: none performed against live Google/Microsoft accounts
+(interactive consent + registered redirect URIs are owner-controlled) —
+labeled BLOCKED, not claimed.
+UI_HANDOFF_REQUIRED: none (backend-only). ScanResult.error semantics improved:
+UI already displays `result.error`.
+UNRESOLVED BLOCKERS: Google Android client ID not configured at build time
+(`knoux.googleAndroidClientId` unset → `knoux.oauth.unconfigured` scheme),
+Microsoft client ID unset, consent screens unverified on device.

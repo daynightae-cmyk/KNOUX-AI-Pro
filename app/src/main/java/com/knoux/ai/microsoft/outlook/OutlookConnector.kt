@@ -1,6 +1,9 @@
 package com.knoux.ai.microsoft.outlook
 
 import android.content.Context
+import com.knoux.ai.cloud.CloudApiException
+import com.knoux.ai.cloud.CloudHttp
+import com.knoux.ai.cloud.CloudJsonParsers
 import com.knoux.ai.cloud.model.CleanupCandidate
 import com.knoux.ai.cloud.model.CleanupCategory
 import com.knoux.ai.cloud.model.CloudScanOutcome
@@ -9,7 +12,6 @@ import com.knoux.ai.cloud.model.ScanStatus
 import com.knoux.ai.cloud.model.CloudProvider
 import com.knoux.ai.microsoft.auth.MicrosoftAccountManager
 import com.knoux.ai.microsoft.auth.MicrosoftAuthProvider
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -28,8 +30,6 @@ class OutlookConnector(
     private companion object {
         const val GRAPH_BASE = "https://graph.microsoft.com/v1.0"
     }
-
-    private val scope = CoroutineScope(Dispatchers.IO)
 
     /**
      * Scan an Outlook account for cleanup candidates.
@@ -65,16 +65,15 @@ class OutlookConnector(
                             error = "No valid access token",
                         ),
                     )
-
-                var itemsFound = 0
-                var bytesFound = 0L
                 val candidates = mutableListOf<CleanupCandidate>()
 
-                // 1. Old emails (> 1 year)
-                val oldEmails = searchMessages(accessToken, "receivedDateTime lt 2025-01-01T00:00:00Z", maxResults = 50)
-                itemsFound += oldEmails.size
+                // 1. Old emails (> 1 year) — cutoff measured at scan time,
+                // never a hardcoded calendar date.
+                val oldCutoff = java.time.Instant.now()
+                    .minus(365, java.time.temporal.ChronoUnit.DAYS)
+                    .toString()
+                val oldEmails = searchMessages(accessToken, "receivedDateTime lt $oldCutoff", maxResults = 50)
                 for (msg in oldEmails) {
-                    bytesFound += msg.sizeBytes
                     candidates.add(CleanupCandidate(
                         id = "outlook_${msg.id}",
                         accountId = accountId,
@@ -90,9 +89,7 @@ class OutlookConnector(
 
                 // 2. Large emails (> 5MB)
                 val largeEmails = searchMessages(accessToken, "size gt 5242880", maxResults = 50)
-                itemsFound += largeEmails.size
                 for (msg in largeEmails) {
-                    bytesFound += msg.sizeBytes
                     candidates.add(CleanupCandidate(
                         id = "outlook_${msg.id}_large",
                         accountId = accountId,
@@ -106,11 +103,16 @@ class OutlookConnector(
                     ))
                 }
 
-                // 3. Junk mail
-                val junk = searchMessages(accessToken, "folderId eq 'JunkEmail'", maxResults = 50)
-                itemsFound += junk.size
+                // 3. Junk mail — resolve the real junkemail folder id first;
+                // Graph $filter needs the opaque id, not the well-known name.
+                val junkFolder = CloudHttp.getJson(
+                    "$GRAPH_BASE/me/mailFolders/junkemail?%24select=id", accessToken,
+                )
+                val junkFolderId = junkFolder.optString("id").takeIf { it.isNotBlank() }
+                val junk = if (junkFolderId != null) {
+                    searchMessages(accessToken, "parentFolderId eq '$junkFolderId'", maxResults = 50)
+                } else emptyList()
                 for (msg in junk) {
-                    bytesFound += msg.sizeBytes
                     candidates.add(CleanupCandidate(
                         id = "outlook_${msg.id}_junk",
                         accountId = accountId,
@@ -124,18 +126,31 @@ class OutlookConnector(
                     ))
                 }
 
+                // One real message matched by two queries is ONE candidate.
+                val distinct = CloudJsonParsers.distinctByProviderItem(candidates) { it.providerItemId }
+
                 CloudScanOutcome(
                     result = ScanResult(
                         scanId = scanId,
                         provider = CloudProvider.Outlook,
                         accountId = accountId,
                         status = ScanStatus.Completed,
-                        itemsFound = itemsFound,
-                        bytesFound = bytesFound,
-                        bytesReclaimable = bytesFound,
+                        itemsFound = distinct.size,
+                        bytesFound = distinct.sumOf { it.sizeBytes },
+                        bytesReclaimable = distinct.sumOf { it.sizeBytes },
                         completedAt = System.currentTimeMillis(),
                     ),
-                    candidates = candidates.toList(),
+                    candidates = distinct,
+                )
+            } catch (e: CloudApiException) {
+                CloudScanOutcome(
+                    result = ScanResult(
+                        scanId = scanId,
+                        provider = CloudProvider.Outlook,
+                        accountId = accountId,
+                        status = ScanStatus.Failed,
+                        error = e.message ?: "Provider HTTP ${e.status}",
+                    ),
                 )
             } catch (e: Exception) {
                 CloudScanOutcome(
@@ -151,63 +166,15 @@ class OutlookConnector(
         }
     }
 
-    private data class OutlookMessage(
-        val id: String,
-        val subject: String?,
-        val sizeBytes: Long,
-        val receivedDateTime: String?,
-    )
-
     private suspend fun searchMessages(
         accessToken: String,
         filter: String,
         maxResults: Int = 50,
-    ): List<OutlookMessage> {
-        return withContext(Dispatchers.IO) {
-            try {
-                val encodedFilter = java.net.URLEncoder.encode(filter, "UTF-8")
-                val url = java.net.URL("$GRAPH_BASE/me/messages?`\$filter=$encodedFilter&`\$top=$maxResults&`\$select=id,subject,size,receivedDateTime")
-                val connection = url.openConnection() as java.net.HttpURLConnection
-                connection.requestMethod = "GET"
-                connection.setRequestProperty("Authorization", "Bearer $accessToken")
-                connection.setRequestProperty("Accept", "application/json")
-
-                val responseCode = connection.responseCode
-                if (responseCode !in 200..299) {
-                    connection.disconnect()
-                    return@withContext emptyList()
-                }
-
-                val responseBody = connection.inputStream.bufferedReader(java.nio.charset.StandardCharsets.UTF_8).use { it.readText() }
-                connection.disconnect()
-
-                parseOutlookMessages(responseBody)
-            } catch (_: Exception) {
-                emptyList()
-            }
-        }
-    }
-
-    private fun parseOutlookMessages(json: String): List<OutlookMessage> {
-        val messages = mutableListOf<OutlookMessage>()
-        val idRegex = kotlin.text.Regex("\"id\"\\s*:\\s*\"([^\"]+)\"")
-        val subjectRegex = kotlin.text.Regex("\"subject\"\\s*:\\s*\"([^\"]*)\"")
-        val sizeRegex = kotlin.text.Regex("\"size\"\\s*:\\s*(\\d+)")
-
-        val idMatches = idRegex.findAll(json).map { it.groupValues[1] }.toList()
-        val subjectMatches = subjectRegex.findAll(json).map { it.groupValues[1] }.toList()
-        val sizeMatches = sizeRegex.findAll(json).map { it.groupValues[1].toLongOrNull() ?: 0L }.toList()
-
-        for (i in idMatches.indices) {
-            messages.add(OutlookMessage(
-                id = idMatches[i],
-                subject = subjectMatches.getOrElse(i) { null },
-                sizeBytes = sizeMatches.getOrElse(i) { 0L },
-                receivedDateTime = null,
-            ))
-        }
-
-        return messages
+    ): List<CloudJsonParsers.OutlookMessage> {
+        val encodedFilter = java.net.URLEncoder.encode(filter, "UTF-8")
+        val url = "$GRAPH_BASE/me/messages?`\$filter=$encodedFilter&`\$top=$maxResults&`\$select=id,subject,size,receivedDateTime"
+        val body = CloudHttp.getJson(url, accessToken)
+        return CloudJsonParsers.parseOutlookMessages(body)
     }
 
     /**
@@ -222,23 +189,16 @@ class OutlookConnector(
             var moved = 0
             for (msgId in messageIds) {
                 try {
-                    val url = java.net.URL("$GRAPH_BASE/me/messages/$msgId/move")
-                    val connection = url.openConnection() as java.net.HttpURLConnection
-                    connection.requestMethod = "POST"
-                    connection.doOutput = true
-                    connection.setRequestProperty("Authorization", "Bearer $accessToken")
-                    connection.setRequestProperty("Content-Type", "application/json")
-
-                    // Move to Deleted Items folder
-                    val body = """{"destinationId":"DeletedItems"}"""
-                    connection.outputStream.use { it.write(body.toByteArray()) }
-
-                    if (connection.responseCode in 200..299) {
-                        moved++
-                    }
-                    connection.disconnect()
+                    // Graph move returns the moved message; count only when the
+                    // response confirms a new parent folder (real state change).
+                    val body = CloudHttp.mutateJson(
+                        "$GRAPH_BASE/me/messages/$msgId/move", accessToken,
+                        method = "POST",
+                        jsonBody = """{"destinationId":"deleteditems"}""",
+                    )
+                    if (body.optString("parentFolderId").isNotBlank()) moved++
                 } catch (_: Exception) {
-                    // Continue
+                    // Per-item failure: continue, but never count it as success.
                 }
             }
             moved

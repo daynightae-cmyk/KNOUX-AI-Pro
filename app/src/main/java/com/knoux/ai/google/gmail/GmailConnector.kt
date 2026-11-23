@@ -1,6 +1,9 @@
 package com.knoux.ai.google.gmail
 
 import android.content.Context
+import com.knoux.ai.cloud.CloudApiException
+import com.knoux.ai.cloud.CloudHttp
+import com.knoux.ai.cloud.CloudJsonParsers
 import com.knoux.ai.cloud.model.CleanupCandidate
 import com.knoux.ai.cloud.model.CleanupCategory
 import com.knoux.ai.cloud.model.CloudScanOutcome
@@ -8,9 +11,7 @@ import com.knoux.ai.cloud.model.ScanResult
 import com.knoux.ai.cloud.model.ScanStatus
 import com.knoux.ai.google.auth.GoogleAccountManager
 import com.knoux.ai.google.auth.GoogleAuthProvider
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
@@ -27,9 +28,10 @@ class GmailConnector(
 
     private companion object {
         const val GMAIL_API_BASE = "https://gmail.googleapis.com/gmail/v1"
-    }
 
-    private val scope = CoroutineScope(Dispatchers.IO)
+        /** Bound on metadata fetches per query: each ref costs one API call. */
+        const val MAX_DETAIL_FETCHES = 50
+    }
 
     /**
      * Scan a Gmail account for cleanup candidates.
@@ -68,15 +70,11 @@ class GmailConnector(
                         ),
                     )
 
-                var itemsFound = 0
-                var bytesFound = 0L
                 val candidates = mutableListOf<CleanupCandidate>()
 
                 // 1. Old emails (older than 1 year)
                 val oldEmails = searchMessages(accessToken, account.email, "older_than:1y", maxResults = 50)
-                itemsFound += oldEmails.size
                 for (msg in oldEmails) {
-                    bytesFound += msg.sizeEstimate
                     candidates.add(CleanupCandidate(
                         id = "gmail_${msg.id}",
                         accountId = accountId,
@@ -92,9 +90,7 @@ class GmailConnector(
 
                 // 2. Large attachments (> 5MB)
                 val largeAttachments = searchMessages(accessToken, account.email, "has:attachment larger:5M", maxResults = 50)
-                itemsFound += largeAttachments.size
                 for (msg in largeAttachments) {
-                    bytesFound += msg.sizeEstimate
                     candidates.add(CleanupCandidate(
                         id = "gmail_${msg.id}_attach",
                         accountId = accountId,
@@ -110,9 +106,7 @@ class GmailConnector(
 
                 // 3. Promotions
                 val promotions = searchMessages(accessToken, account.email, "category:promotions", maxResults = 50)
-                itemsFound += promotions.size
                 for (msg in promotions) {
-                    bytesFound += msg.sizeEstimate
                     candidates.add(CleanupCandidate(
                         id = "gmail_${msg.id}_promo",
                         accountId = accountId,
@@ -128,9 +122,7 @@ class GmailConnector(
 
                 // 4. Social
                 val social = searchMessages(accessToken, account.email, "category:social", maxResults = 50)
-                itemsFound += social.size
                 for (msg in social) {
-                    bytesFound += msg.sizeEstimate
                     candidates.add(CleanupCandidate(
                         id = "gmail_${msg.id}_social",
                         accountId = accountId,
@@ -146,9 +138,7 @@ class GmailConnector(
 
                 // 5. Spam
                 val spam = searchMessages(accessToken, account.email, "in:spam", maxResults = 50)
-                itemsFound += spam.size
                 for (msg in spam) {
-                    bytesFound += msg.sizeEstimate
                     candidates.add(CleanupCandidate(
                         id = "gmail_${msg.id}_spam",
                         accountId = accountId,
@@ -162,12 +152,8 @@ class GmailConnector(
                     ))
                 }
 
-                // Save candidates
-                scope.launch {
-                    withContext(Dispatchers.IO) {
-                        // Save to cleanup repository
-                    }
-                }
+                // One real message matched by two queries is ONE candidate.
+                val distinct = CloudJsonParsers.distinctByProviderItem(candidates) { it.providerItemId }
 
                 CloudScanOutcome(
                     result = ScanResult(
@@ -175,12 +161,22 @@ class GmailConnector(
                         provider = com.knoux.ai.cloud.model.CloudProvider.Gmail,
                         accountId = accountId,
                         status = ScanStatus.Completed,
-                        itemsFound = itemsFound,
-                        bytesFound = bytesFound,
-                        bytesReclaimable = bytesFound,
+                        itemsFound = distinct.size,
+                        bytesFound = distinct.sumOf { it.sizeBytes },
+                        bytesReclaimable = distinct.sumOf { it.sizeBytes },
                         completedAt = System.currentTimeMillis(),
                     ),
-                    candidates = candidates.toList(),
+                    candidates = distinct,
+                )
+            } catch (e: CloudApiException) {
+                CloudScanOutcome(
+                    result = ScanResult(
+                        scanId = scanId,
+                        provider = com.knoux.ai.cloud.model.CloudProvider.Gmail,
+                        accountId = accountId,
+                        status = ScanStatus.Failed,
+                        error = e.message ?: "Provider HTTP ${e.status}",
+                    ),
                 )
             } catch (e: Exception) {
                 CloudScanOutcome(
@@ -197,7 +193,9 @@ class GmailConnector(
     }
 
     /**
-     * Search Gmail messages using the Gmail API.
+     * Search Gmail messages. messages.list returns only {id, threadId}; the
+     * real sizeEstimate and Subject come from messages.get?format=metadata.
+     * Provider errors throw [CloudApiException] — never an empty success.
      */
     private suspend fun searchMessages(
         accessToken: String,
@@ -205,27 +203,20 @@ class GmailConnector(
         query: String,
         maxResults: Int = 50,
     ): List<GmailMessage> {
-        return withContext(Dispatchers.IO) {
-            try {
-                val encodedQuery = java.net.URLEncoder.encode(query, "UTF-8")
-                val url = java.net.URL("$GMAIL_API_BASE/users/me/messages?q=$encodedQuery&maxResults=$maxResults")
-                val connection = url.openConnection() as java.net.HttpURLConnection
-                connection.requestMethod = "GET"
-                connection.setRequestProperty("Authorization", "Bearer $accessToken")
-                connection.setRequestProperty("Accept", "application/json")
-
-                val responseCode = connection.responseCode
-                if (responseCode !in 200..299) {
-                    connection.disconnect()
-                    return@withContext emptyList()
-                }
-
-                val responseBody = connection.inputStream.bufferedReader(java.nio.charset.StandardCharsets.UTF_8).use { it.readText() }
-                connection.disconnect()
-
-                parseMessageList(responseBody)
-            } catch (_: Exception) {
-                emptyList()
+        val encodedQuery = java.net.URLEncoder.encode(query, "UTF-8")
+        val firstUrl = "$GMAIL_API_BASE/users/me/messages?q=$encodedQuery&maxResults=$maxResults"
+        val refs = mutableListOf<CloudJsonParsers.GmailMessageRef>()
+        CloudHttp.paginate(firstUrl, accessToken, tokenParam = "pageToken", maxPages = 2) { body ->
+            refs += CloudJsonParsers.parseGmailMessageRefs(body)
+        }
+        // Bound the per-message metadata calls; a scan must stay affordable.
+        return refs.take(MAX_DETAIL_FETCHES).mapNotNull { ref ->
+            val detail = CloudHttp.getJson(
+                "$GMAIL_API_BASE/users/me/messages/${ref.id}?format=metadata&metadataHeaders=Subject",
+                accessToken,
+            )
+            CloudJsonParsers.parseGmailMessageDetail(detail)?.let {
+                GmailMessage(it.id, it.threadId, it.subject, it.sizeEstimate)
             }
         }
     }
@@ -234,35 +225,8 @@ class GmailConnector(
         val id: String,
         val threadId: String,
         val subject: String?,
-        val sizeEstimate: Int,
+        val sizeEstimate: Long,
     )
-
-    private fun parseMessageList(json: String): List<GmailMessage> {
-        // Simple extraction of message IDs from Gmail API list response
-        val messages = mutableListOf<GmailMessage>()
-        val idRegex = kotlin.text.Regex("\"id\"\\s*:\\s*\"([^\"]+)\"")
-        val threadRegex = kotlin.text.Regex("\"threadId\"\\s*:\\s*\"([^\"]+)\"")
-        val sizeRegex = kotlin.text.Regex("\"sizeEstimate\"\\s*:\\s*(\\d+)")
-
-        val idMatches = idRegex.findAll(json)
-        val threadMatches = threadRegex.findAll(json)
-        val sizeMatches = sizeRegex.findAll(json)
-
-        val ids = idMatches.map { it.groupValues[1] }.toList()
-        val threads = threadMatches.map { it.groupValues[1] }.toList()
-        val sizes = sizeMatches.map { it.groupValues[1].toIntOrNull() ?: 0 }.toList()
-
-        for (i in ids.indices) {
-            messages.add(GmailMessage(
-                id = ids[i],
-                threadId = threads.getOrElse(i) { "" },
-                subject = null, // Would need a separate get() call per message
-                sizeEstimate = sizes.getOrElse(i) { 0 },
-            ))
-        }
-
-        return messages
-    }
 
     /**
      * Move messages to Trash (safe deletion).
@@ -277,20 +241,16 @@ class GmailConnector(
             var trashed = 0
             for (msgId in messageIds) {
                 try {
-                    val url = java.net.URL("$GMAIL_API_BASE/users/me/messages/$msgId/trash")
-                    val connection = url.openConnection() as java.net.HttpURLConnection
-                    connection.requestMethod = "POST"
-                    connection.doOutput = true
-                    connection.setRequestProperty("Authorization", "Bearer $accessToken")
-                    connection.setRequestProperty("Content-Length", "0")
-                    connection.outputStream.use { }
-
-                    if (connection.responseCode in 200..299) {
+                    val body = CloudHttp.mutateJson(
+                        "$GMAIL_API_BASE/users/me/messages/$msgId/trash", accessToken, method = "POST",
+                    )
+                    // Count only when the provider response carries the TRASH label.
+                    val labels = body.optJSONArray("labelIds")
+                    if (labels != null && (0 until labels.length()).any { labels.optString(it) == "TRASH" }) {
                         trashed++
                     }
-                    connection.disconnect()
                 } catch (_: Exception) {
-                    // Continue with next message
+                    // Per-item failure: continue, but never count it as success.
                 }
             }
             trashed
@@ -341,20 +301,16 @@ class GmailConnector(
             var restored = 0
             for (msgId in messageIds) {
                 try {
-                    val url = java.net.URL("$GMAIL_API_BASE/users/me/messages/$msgId/untrash")
-                    val connection = url.openConnection() as java.net.HttpURLConnection
-                    connection.requestMethod = "POST"
-                    connection.doOutput = true
-                    connection.setRequestProperty("Authorization", "Bearer $accessToken")
-                    connection.setRequestProperty("Content-Length", "0")
-                    connection.outputStream.use { }
-
-                    if (connection.responseCode in 200..299) {
-                        restored++
-                    }
-                    connection.disconnect()
+                    val body = CloudHttp.mutateJson(
+                        "$GMAIL_API_BASE/users/me/messages/$msgId/untrash", accessToken, method = "POST",
+                    )
+                    // Count only when the provider response no longer carries TRASH.
+                    val labels = body.optJSONArray("labelIds")
+                    val stillTrashed = labels != null &&
+                        (0 until labels.length()).any { labels.optString(it) == "TRASH" }
+                    if (labels != null && !stillTrashed) restored++
                 } catch (_: Exception) {
-                    // Continue
+                    // Per-item failure: continue, but never count it as success.
                 }
             }
             restored

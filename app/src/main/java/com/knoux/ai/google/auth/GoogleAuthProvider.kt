@@ -66,7 +66,7 @@ class GoogleAuthProvider(
         codeVerifier = generateCodeVerifier()
         OAuthRedirectRelay.register(state!!) { redirect -> handleRedirect(redirect) }
 
-        val scopeString = scopes.joinToString(" ")
+        val scopeString = scopes.distinct().joinToString(" ")
         val challenge = generateCodeChallenge(codeVerifier!!)
 
         val authUrl = Uri.Builder()
@@ -129,10 +129,13 @@ class GoogleAuthProvider(
         val client = url.openConnection() as java.net.HttpURLConnection
         client.requestMethod = "POST"
         client.doOutput = true
+        client.connectTimeout = 15_000
+        client.readTimeout = 20_000
+        client.instanceFollowRedirects = false
         client.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
 
-        val body = "code=$code" +
-            "&client_id=$clientId" +
+        val body = "code=${URLEncoder.encode(code, "UTF-8")}" +
+            "&client_id=${URLEncoder.encode(clientId, "UTF-8")}" +
             "&redirect_uri=${URLEncoder.encode(redirectUri, "UTF-8")}" +
             "&grant_type=authorization_code" +
             "&code_verifier=${URLEncoder.encode(codeVerifier ?: "", "UTF-8")}"
@@ -146,35 +149,15 @@ class GoogleAuthProvider(
         client.disconnect()
 
         if (responseCode !in 200..299) {
-            throw Exception("Token exchange failed (HTTP $responseCode): $responseBody")
+            // Never echo the raw provider body: it can contain request PII.
+            throw Exception("Token exchange failed (HTTP $responseCode)")
         }
 
         return parseTokenResponse(responseBody)
     }
 
-    private fun parseTokenResponse(json: String): GoogleTokenResponse {
-        val accessToken = extractJsonField(json, "access_token") ?: ""
-        val refreshToken = extractJsonField(json, "refresh_token")
-        val expiresIn = extractJsonField(json, "expires_in")?.toLongOrNull() ?: 3600L
-        val tokenType = extractJsonField(json, "token_type") ?: "Bearer"
-        val scope = extractJsonField(json, "scope") ?: ""
-
-        return GoogleTokenResponse(
-            accessToken = accessToken,
-            refreshToken = refreshToken,
-            expiresInSeconds = expiresIn,
-            tokenType = tokenType,
-            scope = scope,
-            obtainedAtMs = System.currentTimeMillis(),
-        )
-    }
-
-    private fun extractJsonField(json: String, field: String): String? {
-        val pattern = "\"$field\"\\s*:\\s*\"([^\"]*)\""
-        val regex = kotlin.text.Regex(pattern)
-        val match = regex.find(json)
-        return match?.groupValues?.getOrNull(1)
-    }
+    private fun parseTokenResponse(json: String): GoogleTokenResponse =
+        GoogleTokenParser.parse(json, System.currentTimeMillis())
 
     /** Revoke an access token. */
     suspend fun revokeToken(token: String): Boolean {
@@ -185,7 +168,7 @@ class GoogleAuthProvider(
                 client.doOutput = true
                 client.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
 
-                val body = "token=$token"
+                val body = "token=${URLEncoder.encode(token, "UTF-8")}"
                 client.outputStream.use { it.write(body.toByteArray()) }
 
                 val responseCode = client.responseCode

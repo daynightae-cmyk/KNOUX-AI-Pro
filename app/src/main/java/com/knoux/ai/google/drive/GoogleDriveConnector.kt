@@ -1,6 +1,9 @@
 package com.knoux.ai.google.drive
 
 import android.content.Context
+import com.knoux.ai.cloud.CloudApiException
+import com.knoux.ai.cloud.CloudHttp
+import com.knoux.ai.cloud.CloudJsonParsers
 import com.knoux.ai.cloud.model.CleanupCandidate
 import com.knoux.ai.cloud.model.CleanupCategory
 import com.knoux.ai.cloud.model.CloudScanOutcome
@@ -9,9 +12,7 @@ import com.knoux.ai.cloud.model.ScanStatus
 import com.knoux.ai.cloud.model.CloudProvider
 import com.knoux.ai.google.auth.GoogleAccountManager
 import com.knoux.ai.google.auth.GoogleAuthProvider
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
@@ -28,9 +29,8 @@ class GoogleDriveConnector(
 
     private companion object {
         const val DRIVE_API_BASE = "https://www.googleapis.com/drive/v3"
+        const val FILE_FIELDS = "files(id,name,size,md5Checksum,createdTime),nextPageToken"
     }
-
-    private val scope = CoroutineScope(Dispatchers.IO)
 
     /**
      * Scan Google Drive for cleanup candidates.
@@ -71,11 +71,9 @@ class GoogleDriveConnector(
                 var bytesFound = 0L
                 val candidates = mutableListOf<CleanupCandidate>()
 
-                // 1. Large files (> 10MB)
-                val largeFiles = listFiles(accessToken, "size > 10485760 and trashed = false", maxResults = 100)
-                itemsFound += largeFiles.size
+                // 1. Large files (> 10MB), paginated.
+                val largeFiles = listFiles(accessToken, "size > 10485760 and trashed = false", pageSize = 100)
                 for (file in largeFiles) {
-                    bytesFound += file.sizeBytes
                     candidates.add(CleanupCandidate(
                         id = "drive_${file.id}",
                         accountId = accountId,
@@ -89,18 +87,16 @@ class GoogleDriveConnector(
                     ))
                 }
 
-                // 2. Old files (older than 1 year)
+                // 2. Old files (older than 1 year), paginated.
                 val cutoff = java.time.Instant.now()
                     .minus(365, java.time.temporal.ChronoUnit.DAYS)
                     .toString()
                 val oldFiles = listFiles(
                     accessToken,
                     "modifiedTime < '$cutoff' and trashed = false",
-                    maxResults = 100,
+                    pageSize = 100,
                 )
-                itemsFound += oldFiles.size
                 for (file in oldFiles) {
-                    bytesFound += file.sizeBytes
                     candidates.add(CleanupCandidate(
                         id = "drive_${file.id}_old",
                         accountId = accountId,
@@ -114,11 +110,9 @@ class GoogleDriveConnector(
                     ))
                 }
 
-                // 3. Exact duplicates (by MD5 checksum)
+                // 3. Exact duplicates (verified MD5 identity), paginated.
                 val duplicates = findExactDuplicates(accessToken)
-                itemsFound += duplicates.size
                 for (file in duplicates) {
-                    bytesFound += file.sizeBytes
                     candidates.add(CleanupCandidate(
                         id = "drive_${file.id}_dup",
                         accountId = accountId,
@@ -132,6 +126,12 @@ class GoogleDriveConnector(
                     ))
                 }
 
+                // One real file matched by two queries is ONE candidate:
+                // dedupe by provider id before counting items/bytes.
+                val distinct = CloudJsonParsers.distinctByProviderItem(candidates) { it.providerItemId }
+                itemsFound = distinct.size
+                bytesFound = distinct.sumOf { it.sizeBytes }
+
                 CloudScanOutcome(
                     result = ScanResult(
                         scanId = scanId,
@@ -143,7 +143,17 @@ class GoogleDriveConnector(
                         bytesReclaimable = bytesFound,
                         completedAt = System.currentTimeMillis(),
                     ),
-                    candidates = candidates.toList(),
+                    candidates = distinct,
+                )
+            } catch (e: CloudApiException) {
+                CloudScanOutcome(
+                    result = ScanResult(
+                        scanId = scanId,
+                        provider = CloudProvider.GoogleDrive,
+                        accountId = accountId,
+                        status = ScanStatus.Failed,
+                        error = e.message ?: "Provider HTTP ${e.status}",
+                    ),
                 )
             } catch (e: Exception) {
                 CloudScanOutcome(
@@ -159,111 +169,36 @@ class GoogleDriveConnector(
         }
     }
 
-    private data class DriveFile(
-        val id: String,
-        val name: String,
-        val sizeBytes: Long,
-        val md5Checksum: String?,
-        val createdTime: String?,
-    )
-
+    /**
+     * Paginated file listing. Provider errors throw [CloudApiException] and
+     * fail the scan explicitly — never an empty "Completed" result.
+     */
     private suspend fun listFiles(
         accessToken: String,
         query: String,
-        maxResults: Int = 100,
-    ): List<DriveFile> {
-        return withContext(Dispatchers.IO) {
-            try {
-                val encodedQuery = java.net.URLEncoder.encode(query, "UTF-8")
-                val url = java.net.URL("$DRIVE_API_BASE/files?q=$encodedQuery&maxResults=$maxResults&fields=files(id,name,size,md5Checksum,createdTime)")
-                val connection = url.openConnection() as java.net.HttpURLConnection
-                connection.requestMethod = "GET"
-                connection.setRequestProperty("Authorization", "Bearer $accessToken")
-                connection.setRequestProperty("Accept", "application/json")
-
-                val responseCode = connection.responseCode
-                if (responseCode !in 200..299) {
-                    connection.disconnect()
-                    return@withContext emptyList()
-                }
-
-                val responseBody = connection.inputStream.bufferedReader(java.nio.charset.StandardCharsets.UTF_8).use { it.readText() }
-                connection.disconnect()
-
-                parseDriveFiles(responseBody)
-            } catch (_: Exception) {
-                emptyList()
-            }
+        pageSize: Int = 100,
+    ): List<CloudJsonParsers.DriveFile> {
+        val encodedQuery = java.net.URLEncoder.encode(query, "UTF-8")
+        val firstUrl = "$DRIVE_API_BASE/files?q=$encodedQuery&pageSize=$pageSize&fields=$FILE_FIELDS"
+        val files = mutableListOf<CloudJsonParsers.DriveFile>()
+        CloudHttp.paginate(firstUrl, accessToken, tokenParam = "pageToken") { body ->
+            files += CloudJsonParsers.parseDriveFiles(body)
         }
-    }
-
-    private fun parseDriveFiles(json: String): List<DriveFile> {
-        val files = mutableListOf<DriveFile>()
-        // Extract each file object from the "files" array
-        val idRegex = kotlin.text.Regex("\"id\"\\s*:\\s*\"([^\"]+)\"")
-        val nameRegex = kotlin.text.Regex("\"name\"\\s*:\\s*\"([^\"]+)\"")
-        val sizeRegex = kotlin.text.Regex("\"size\"\\s*:\\s*\"(\\d+)\"")
-        val md5Regex = kotlin.text.Regex("\"md5Checksum\"\\s*:\\s*\"([^\"]+)\"")
-
-        val idMatches = idRegex.findAll(json).map { it.groupValues[1] }.toList()
-        val nameMatches = nameRegex.findAll(json).map { it.groupValues[1] }.toList()
-        val sizeMatches = sizeRegex.findAll(json).map { it.groupValues[1].toLongOrNull() ?: 0L }.toList()
-        val md5Matches = md5Regex.findAll(json).map { it.groupValues[1] }.toList()
-
-        for (i in idMatches.indices) {
-            files.add(DriveFile(
-                id = idMatches[i],
-                name = nameMatches.getOrElse(i) { "Unknown" },
-                sizeBytes = sizeMatches.getOrElse(i) { 0L },
-                md5Checksum = md5Matches.getOrElse(i) { null },
-                createdTime = null,
-            ))
-        }
-
         return files
     }
 
     /**
-     * Find exact duplicate files by MD5 checksum.
-     * Groups files by checksum and returns all but the first occurrence of each group.
+     * Find exact duplicate files by verified MD5 checksum across paginated
+     * listing. Files without a checksum are never claimed as duplicates.
      */
-    private suspend fun findExactDuplicates(accessToken: String): List<DriveFile> {
-        return withContext(Dispatchers.IO) {
-            try {
-                // List all files with checksums
-                val query = java.net.URLEncoder.encode("trashed = false", "UTF-8")
-                val url = java.net.URL("$DRIVE_API_BASE/files?q=$query&maxResults=1000&fields=files(id,name,size,md5Checksum)")
-                val connection = url.openConnection() as java.net.HttpURLConnection
-                connection.requestMethod = "GET"
-                connection.setRequestProperty("Authorization", "Bearer $accessToken")
-                connection.setRequestProperty("Accept", "application/json")
-
-                val responseCode = connection.responseCode
-                if (responseCode !in 200..299) {
-                    connection.disconnect()
-                    return@withContext emptyList()
-                }
-
-                val responseBody = connection.inputStream.bufferedReader(java.nio.charset.StandardCharsets.UTF_8).use { it.readText() }
-                connection.disconnect()
-
-                val allFiles = parseDriveFiles(responseBody)
-
-                // Group by MD5 checksum
-                val byChecksum = allFiles
-                    .filter { it.md5Checksum != null }
-                    .groupBy { it.md5Checksum!! }
-
-                // Return duplicates (all but first in each group)
-                val duplicates = byChecksum.values
-                    .filter { it.size > 1 }
-                    .flatMap { group -> group.drop(1) } // Keep first as keeper
-
-                duplicates
-            } catch (_: Exception) {
-                emptyList()
-            }
+    private suspend fun findExactDuplicates(accessToken: String): List<CloudJsonParsers.DriveFile> {
+        val query = java.net.URLEncoder.encode("trashed = false", "UTF-8")
+        val firstUrl = "$DRIVE_API_BASE/files?q=$query&pageSize=1000&fields=$FILE_FIELDS"
+        val allFiles = mutableListOf<CloudJsonParsers.DriveFile>()
+        CloudHttp.paginate(firstUrl, accessToken, tokenParam = "pageToken") { body ->
+            allFiles += CloudJsonParsers.parseDriveFiles(body)
         }
+        return CloudJsonParsers.exactDuplicates(allFiles)
     }
 
     /**
@@ -278,20 +213,13 @@ class GoogleDriveConnector(
             var trashed = 0
             for (fileId in fileIds) {
                 try {
-                    val url = java.net.URL("$DRIVE_API_BASE/files/$fileId/trash")
-                    val connection = url.openConnection() as java.net.HttpURLConnection
-                    connection.requestMethod = "PATCH"
-                    connection.doOutput = true
-                    connection.setRequestProperty("Authorization", "Bearer $accessToken")
-                    connection.setRequestProperty("Content-Length", "0")
-                    connection.outputStream.use { }
-
-                    if (connection.responseCode in 200..299) {
-                        trashed++
-                    }
-                    connection.disconnect()
+                    val body = CloudHttp.mutateJson(
+                        "$DRIVE_API_BASE/files/$fileId/trash", accessToken, method = "PATCH",
+                    )
+                    // Count only when the provider confirms the file is trashed.
+                    if (body.optBoolean("trashed", false)) trashed++
                 } catch (_: Exception) {
-                    // Continue
+                    // Per-item failure: continue, but never count it as success.
                 }
             }
             trashed
@@ -339,20 +267,13 @@ class GoogleDriveConnector(
             var restored = 0
             for (fileId in fileIds) {
                 try {
-                    val url = java.net.URL("$DRIVE_API_BASE/files/$fileId/untrash")
-                    val connection = url.openConnection() as java.net.HttpURLConnection
-                    connection.requestMethod = "PATCH"
-                    connection.doOutput = true
-                    connection.setRequestProperty("Authorization", "Bearer $accessToken")
-                    connection.setRequestProperty("Content-Length", "0")
-                    connection.outputStream.use { }
-
-                    if (connection.responseCode in 200..299) {
-                        restored++
-                    }
-                    connection.disconnect()
+                    val body = CloudHttp.mutateJson(
+                        "$DRIVE_API_BASE/files/$fileId/untrash", accessToken, method = "PATCH",
+                    )
+                    // Count only when the provider confirms the file is live again.
+                    if (!body.optBoolean("trashed", true)) restored++
                 } catch (_: Exception) {
-                    // Continue
+                    // Per-item failure: continue, but never count it as success.
                 }
             }
             restored

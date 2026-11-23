@@ -62,7 +62,7 @@ class MicrosoftAuthProvider(
         codeVerifier = generateCodeVerifier()
         OAuthRedirectRelay.register(state!!) { redirect -> handleRedirect(redirect) }
 
-        val scopeString = scopes.joinToString(" ")
+        val scopeString = scopes.distinct().joinToString(" ")
         val challenge = generateCodeChallenge(codeVerifier!!)
 
         val authUrl = Uri.Builder()
@@ -127,10 +127,10 @@ class MicrosoftAuthProvider(
         client.doOutput = true
         client.setRequestProperty("Content-Type", "application/x-www-form-urlencoded")
 
-        val scopeString = (mailScopes + driveScopes).joinToString(" ")
-        val body = "client_id=$clientId" +
+        val scopeString = (mailScopes + driveScopes).distinct().joinToString(" ")
+        val body = "client_id=${java.net.URLEncoder.encode(clientId, "UTF-8")}" +
             "&scope=${java.net.URLEncoder.encode(scopeString, "UTF-8")}" +
-            "&code=$code" +
+            "&code=${java.net.URLEncoder.encode(code, "UTF-8")}" +
             "&redirect_uri=${java.net.URLEncoder.encode(redirectUri, "UTF-8")}" +
             "&grant_type=authorization_code" +
             "&code_verifier=${java.net.URLEncoder.encode(codeVerifier ?: "", "UTF-8")}"
@@ -144,32 +144,15 @@ class MicrosoftAuthProvider(
         client.disconnect()
 
         if (responseCode !in 200..299) {
-            throw Exception("Token exchange failed (HTTP $responseCode): $responseBody")
+            // Never echo the raw provider body: it can contain request PII.
+            throw Exception("Token exchange failed (HTTP $responseCode)")
         }
 
         return parseTokenResponse(responseBody)
     }
 
-    private fun parseTokenResponse(json: String): MicrosoftTokenResponse {
-        val accessToken = extractField(json, "access_token")
-        val refreshToken = extractField(json, "refresh_token")
-        val expiresIn = extractField(json, "expires_in")?.toLongOrNull() ?: 3600L
-        val scope = extractField(json, "scope") ?: ""
-
-        return MicrosoftTokenResponse(
-            accessToken = accessToken ?: "",
-            refreshToken = refreshToken,
-            expiresInSeconds = expiresIn,
-            tokenType = extractField(json, "token_type") ?: "Bearer",
-            scope = scope,
-            obtainedAtMs = System.currentTimeMillis(),
-        )
-    }
-
-    private fun extractField(json: String, field: String): String? {
-        val regex = kotlin.text.Regex("\"$field\"\\s*:\\s*\"([^\"]*)\"")
-        return regex.find(json)?.groupValues?.getOrNull(1)
-    }
+    private fun parseTokenResponse(json: String): MicrosoftTokenResponse =
+        MicrosoftTokenParser.parse(json, System.currentTimeMillis())
 
     /** Revoke a refresh token. */
     suspend fun revokeToken(token: String): Boolean {
