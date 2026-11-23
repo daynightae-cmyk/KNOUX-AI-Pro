@@ -11,6 +11,7 @@ import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.concurrent.ConcurrentHashMap
+import com.knoux.ai.security.HttpStatusException
 import com.knoux.ai.security.ProductionSecurity
 import com.knoux.ai.security.secureRequest
 
@@ -51,7 +52,7 @@ class KnouxAuthApi(context: Context, val config: KnouxAuthConfig) {
     private fun validateEmail(email: String): String {
         val trimmed = email.trim()
         require(trimmed.isNotBlank()) { "Email is required" }
-        require(android.util.Patterns.EMAIL_ADDRESS.matcher(trimmed).matches()) { "Invalid email format" }
+        require(ProductionSecurity.isValidEmail(trimmed)) { "Invalid email format" }
         require(trimmed.length <= 254) { "Email too long" }
         return trimmed
     }
@@ -74,11 +75,17 @@ class KnouxAuthApi(context: Context, val config: KnouxAuthConfig) {
     /** Fast local-only validity: encrypted token present and not yet expired. No network. */
     internal suspend fun localSessionValid(): Boolean = withContext(Dispatchers.IO) {
         val saved = store.read() ?: return@withContext false
-        System.currentTimeMillis() < saved.expiresAtMs - 60_000
+        SessionResponseParser.isLocallyValid(saved.expiresAtMs, System.currentTimeMillis())
     }
 
-    private suspend fun request(method:String, path:String, body:JSONObject?=null, bearer:String?=null):JSONObject =
-        secureRequest(maxRetries = 3) {
+    private suspend fun request(
+        method: String,
+        path: String,
+        body: JSONObject? = null,
+        bearer: String? = null,
+        idempotent: Boolean = method == "GET",
+    ): JSONObject =
+        secureRequest(maxRetries = 3, idempotent = idempotent) {
             rateLimitCheck(path)
             ProductionSecurity.validateRequestPath(path)
             ProductionSecurity.validateSupabaseUrl(config.baseAuthUrl)
@@ -100,21 +107,26 @@ class KnouxAuthApi(context: Context, val config: KnouxAuthConfig) {
                     val stream=if(status in 200..299)c.inputStream else c.errorStream
                     val payload=stream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }.orEmpty()
                     val result=runCatching { JSONObject(payload) }.getOrElse { JSONObject() }
-                    if(status !in 200..299) throw KnouxAuthException(
-                        result.optString("error_code",result.optString("code","http_$status")),
-                        // Avoid returning provider message with tokens/PII to logs.
-                        "Auth provider rejected the request (HTTP $status)")
+                    if(status !in 200..299) {
+                        val code = result.optString("error_code", result.optString("code", "http_$status"))
+                        // Transient statuses (408/425/429/5xx) become HttpStatusException so
+                        // secureRequest can retry idempotent calls; permanent 4xx surface as
+                        // KnouxAuthException and are never replayed.
+                        if (ProductionSecurity.isRetryableStatus(status)) {
+                            throw HttpStatusException(status, "Auth provider transient failure (HTTP $status)")
+                        }
+                        throw KnouxAuthException(
+                            code,
+                            // Avoid returning provider message with tokens/PII to logs.
+                            "Auth provider rejected the request (HTTP $status)")
+                    }
                     result
                 } finally { c.disconnect() }
             }
         }
     private fun acceptSession(obj:JSONObject):Boolean {
-        val data=obj.optJSONObject("session")?:obj
-        val a=data.optString("access_token")
-        val r=data.optString("refresh_token")
-        if(a.isBlank()||r.isBlank()) return false // Signup may require email confirmation.
-        val expiry=data.optLong("expires_in",3600).coerceIn(1,86_400)
-        store.save(KnouxTokens(a,r,System.currentTimeMillis()+expiry*1000))
+        val accepted = SessionResponseParser.parse(obj, System.currentTimeMillis()) ?: return false
+        store.save(KnouxTokens(accepted.accessToken, accepted.refreshToken, accepted.expiresAtMs))
         return true
     }
     private suspend fun acceptAndVerify(obj:JSONObject): Boolean {
@@ -143,12 +155,25 @@ class KnouxAuthApi(context: Context, val config: KnouxAuthConfig) {
         "POST","/token?grant_type=id_token",JSONObject()
             .put("provider","google").put("id_token",idToken).also { if(nonce!=null) it.put("nonce",nonce) }))
 
-    private suspend fun verifiedToken():String? {
-        val saved=store.read()?:return null
-        if(System.currentTimeMillis()<saved.expiresAtMs-60_000) return saved.accessToken
-        val refreshed=request("POST","/token?grant_type=refresh_token",JSONObject().put("refresh_token",saved.refreshToken))
-        if(!acceptSession(refreshed)) throw KnouxAuthException("invalid_refresh","No session after refresh")
-        return store.read()?.accessToken
+    /** Serializes refresh so parallel callers cannot spend the same rotating refresh token twice. */
+    private val refreshMutex = Mutex()
+
+    private suspend fun verifiedToken():String? = refreshMutex.withLock {
+        val saved=store.read()?:return@withLock null
+        if(SessionResponseParser.isLocallyValid(saved.expiresAtMs, System.currentTimeMillis())) return@withLock saved.accessToken
+        val refreshed=try {
+            request("POST","/token?grant_type=refresh_token",JSONObject().put("refresh_token",saved.refreshToken), idempotent = true)
+        } catch(e:KnouxAuthException) {
+            // Server permanently rejected the refresh token: the local session is
+            // dead. Clear it so the UI returns to sign-in instead of looping.
+            store.clear()
+            throw e
+        }
+        if(!acceptSession(refreshed)) {
+            store.clear()
+            throw KnouxAuthException("invalid_refresh","No session after refresh")
+        }
+        store.read()?.accessToken
     }
     suspend fun currentUserVerified():JSONObject {
         val token=verifiedToken()?:throw KnouxAuthException("not_authenticated","Account login required")

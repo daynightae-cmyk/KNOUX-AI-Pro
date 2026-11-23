@@ -102,6 +102,10 @@ dependencies {
     ksp("androidx.room:room-compiler:$roomVersion")
     debugImplementation("androidx.compose.ui:ui-tooling")
     testImplementation("junit:junit:4.13.2")
+    // Real org.json on the JVM test classpath: android.jar's stubbed JSONObject
+    // throws "not mocked". This lets auth/session contract tests execute the
+    // production JSON parsing code instead of a reimplementation.
+    testImplementation("org.json:json:20240303")
     // Test-only TLS fixtures: real certificate chains for hostname/trust tests.
     testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
     testImplementation("com.squareup.okhttp3:okhttp-tls:4.12.0")

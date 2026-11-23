@@ -5,6 +5,7 @@ import java.security.MessageDigest
 import java.security.SecureRandom
 import java.util.Base64
 import java.util.Locale
+import java.util.regex.Pattern
 import javax.net.ssl.HttpsURLConnection
 import kotlinx.coroutines.delay
 
@@ -181,9 +182,19 @@ object ProductionSecurity {
             path.length <= 2048
     }
 
+    /**
+     * Email shape validation without android.util.Patterns so the same rule is
+     * executable in JVM unit tests. Deliberately conservative: local@domain.tld,
+     * no spaces, at least one dot in the domain, RFC-ish length bound.
+     */
+    private val EMAIL_PATTERN: Pattern = Pattern.compile(
+        "^[A-Za-z0-9._%+\\-]+@[A-Za-z0-9.\\-]+\\.[A-Za-z]{2,}$"
+    )
+
     fun isValidEmail(email: String?): Boolean {
         if (email.isNullOrBlank()) return false
-        return android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+        if (email.length > 254) return false
+        return EMAIL_PATTERN.matcher(email).matches()
     }
 
     /** Generate a unique idempotency key for safe retries of network operations. */
@@ -315,11 +326,19 @@ class HostPinPolicy(
 }
 
 /**
+ * An HTTP failure that carries its status so [secureRequest] can apply
+ * [ProductionSecurity.isRetryableStatus]. Permanent 4xx responses must never
+ * be replayed; transient 408/425/429/5xx may be retried on idempotent calls.
+ * The message must already be redacted: it can reach logs.
+ */
+class HttpStatusException(val status: Int, message: String) : java.io.IOException(message)
+
+/**
  * Wraps a network request with bounded retry logic.
  *
  * Contract:
  *  - retries happen only for transient failures ([ProductionSecurity.isRetryableException]
- *    or a retryable HTTP status surfaced by the block),
+ *    or a retryable HTTP status surfaced via [HttpStatusException]),
  *  - a request is retried only when it is idempotent or carries a durable
  *    idempotency key. Non-idempotent destructive operations (delete/trash/send)
  *    must supply a key that the server records; otherwise they are executed once.
@@ -339,7 +358,11 @@ suspend fun <T> secureRequest(
             return block(attempt)
         } catch (e: Exception) {
             lastException = e
-            val retryable = ProductionSecurity.isRetryableException(e)
+            val retryable = if (e is HttpStatusException) {
+                ProductionSecurity.isRetryableStatus(e.status)
+            } else {
+                ProductionSecurity.isRetryableException(e)
+            }
             if (!retryable || attempt == attempts - 1) throw e
             val waitMs = ProductionSecurity.calculateBackoffMs(attempt)
             if (delayForTest != null) delayForTest(waitMs) else delay(waitMs)
