@@ -138,8 +138,11 @@ IMPLEMENTATION (real defects repaired):
 - OAuth token responses parse via pure JVM-tested parsers; missing
   access_token is rejected; AAD string-or-number expires_in handled.
 
-TESTS_EXECUTED: targeted `CloudConnectorContractTest` + full
-`:app:testDebugUnitTest :app:assembleDebug` (results recorded after run).
+TESTS_EXECUTED: `.\gradlew.bat :app:testDebugUnitTest :app:assembleDebug` → **EXIT 0**
+(full suite: **180 tests / 17 suites / 0 failures**, includes the 12 new
+CloudConnectorContractTest tests; `app-debug.apk` assembled. An earlier
+background run failed only because build outputs were deleted mid-run —
+re-run from a clean state passed.)
 PUBLIC_INTERFACE_CHANGES: additive only; connector public method signatures
 unchanged (`scanWithCandidates`, `trashFiles`, `isTrashed`, etc.).
 MIGRATIONS: none.
