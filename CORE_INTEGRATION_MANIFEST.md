@@ -160,7 +160,7 @@ Microsoft client ID unset, consent screens unverified on device.
 
 DOMAIN: `database/supabase/` (files referenced by README_DEPLOYMENT.md that did not exist)
 BASE SHA: `b26710a97ebf312fd54086da5b98b6db5bf5cee8`
-COMMIT SHA: (recorded after commit)
+COMMIT SHA: `76ffe182a1dc672279f7b68caaf64980c6374f23`
 FILES_CHANGED:
 - `database/supabase/001_core.sql` (new): 7 user-owned tables mirroring Room
   (ka_profiles, ka_devices, ka_scan_sessions, ka_operation_requests,
@@ -188,7 +188,8 @@ FILES_CHANGED:
   (no JWT-shaped strings, no sb_* keys, no hardcoded credential assignments).
 
 TESTS_EXECUTED: `.\gradlew.bat :app:testDebugUnitTest --tests com.knoux.ai.cloud.SupabaseSchemaContractTest`
-→ EXIT 0, 9 tests / 0 failures. Full suite result recorded after run.
+→ EXIT 0, 9 tests / 0 failures (one whitespace-tolerant fix after first run).
+Full suite `.\gradlew.bat :app:testDebugUnitTest` → **EXIT 0: 189 tests / 18 suites / 0 failures / 0 errors**.
 PUBLIC_INTERFACE_CHANGES: none (new files only; README paths now satisfied).
 MIGRATIONS: these ARE the migrations (001→002→003 order), apply owner-side on
 staging first per README_DEPLOYMENT.md.
@@ -205,15 +206,15 @@ SQL editor / CLI access; supabase-kt client wiring in the app is a follow-up.
 ## Ordered safe integration procedure (for the owner / integration gate)
 
 Master has NOT moved since the base (`230d30d…` verified in the original repo
-on 2026-11-23). `git merge-tree` confirms my 4 commits merge CLEANLY onto it.
+on 2026-11-23). `git merge-tree` confirms my commits merge CLEANLY onto it.
 
 1. In the ORIGINAL repo (owner only, never an agent): `git fetch` the isolated
    worktree or apply the bundle:
    `git bundle verify K:\KNOUX-AI-Pro-CORE-ISOLATED\core-slices-230d30d.bundle`
-   `git merge b0502c09bd71b9c719c5589dc481528391d7b28d` (after re-checking
+   `git merge 76ffe182a1dc672279f7b68caaf64980c6374f23` (after re-checking
    master; re-run merge-tree against the then-current master if it moved).
 2. Re-run `.\gradlew.bat :app:testDebugUnitTest :app:assembleDebug` in master.
-3. Expected result: 180 JVM tests, 0 failures, debug APK builds.
+3. Expected result: 189 JVM tests, 0 failures, debug APK builds.
 4. UI conflicts: none expected — the Visual Agent's layout files were not
    modified; the only UI-adjacent edits are journal-call swaps inside existing
    IO blocks of 5 ViewModel/screen files (listed per slice).
