@@ -207,7 +207,7 @@ SQL editor / CLI access; supabase-kt client wiring in the app is a follow-up.
 
 DOMAIN: `developer/provider/*` adapters + `developer/vault/CredentialVault.kt` + `cloud/CloudHttp.kt`
 BASE SHA: `83681554be5cb160f5206ab8c19f676a7d9b1917`
-COMMIT SHA: (recorded after commit)
+COMMIT SHA: `372a3e3ca1aef08ddc67ad92a57e254b75655c13`
 FILES_CHANGED:
 - `app/src/main/java/com/knoux/ai/cloud/CloudHttp.kt`: `CloudHttp` made public;
   `getJson` gained `headerName` param (Bearer for Authorization, raw value for
@@ -236,7 +236,8 @@ FILES_CHANGED:
 
 TESTS_EXECUTED: `.\gradlew.bat :app:testDebugUnitTest --tests com.knoux.ai.cloud.DeveloperStudioContractTest`
 → EXIT 0, 11 tests / 0 failures (also proves all refactored files compile).
-Full suite + assembleDebug recorded after run.
+Full `.\gradlew.bat :app:testDebugUnitTest :app:assembleDebug` → **EXIT 0:
+200 tests / 19 suites / 0 failures / 0 errors; app-debug.apk assembled**.
 PUBLIC_INTERFACE_CHANGES: additive only (`CloudHttp` visibility, `getJson` default
 param, `OllamaEndpointPolicy`, `CredentialMask`); adapter interface unchanged;
 `OllamaAdapter.setBaseUrl` now throws on invalid/remote-cleartext URLs (intentional).
@@ -255,10 +256,10 @@ on 2026-11-23). `git merge-tree` confirms my commits merge CLEANLY onto it.
 1. In the ORIGINAL repo (owner only, never an agent): `git fetch` the isolated
    worktree or apply the bundle:
    `git bundle verify K:\KNOUX-AI-Pro-CORE-ISOLATED\core-slices-230d30d.bundle`
-   `git merge 76ffe182a1dc672279f7b68caaf64980c6374f23` (after re-checking
+   `git merge 372a3e3ca1aef08ddc67ad92a57e254b75655c13` (after re-checking
    master; re-run merge-tree against the then-current master if it moved).
 2. Re-run `.\gradlew.bat :app:testDebugUnitTest :app:assembleDebug` in master.
-3. Expected result: 189 JVM tests, 0 failures, debug APK builds.
+3. Expected result: 200 JVM tests, 0 failures, debug APK builds.
 4. UI conflicts: none expected — the Visual Agent's layout files were not
    modified; the only UI-adjacent edits are journal-call swaps inside existing
    IO blocks of 5 ViewModel/screen files (listed per slice).
