@@ -456,18 +456,11 @@ private fun RefHomeHeader(
     // Absolute placement so the lockup stays optically centered no matter
     // how wide the side clusters are (reference: lockup center ≈ artboard mid).
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-        Box(Modifier.fillMaxWidth().height(42.dp)) {
+        Box(Modifier.fillMaxWidth().height(52.dp)) {
             Row(Modifier.align(Alignment.CenterStart), verticalAlignment = Alignment.CenterVertically) {
-                RefHeaderCircle(Icons.Rounded.Person, "الحساب", onProfile)
-                Spacer(Modifier.width(9.dp))
-                Box {
-                    RefHeaderCircle(Icons.Rounded.NotificationsNone, "التنبيهات", onNotifications)
-                    Box(
-                        Modifier.size(7.dp).clip(CircleShape).background(Color(0xFFFF3B4E))
-                            .border(.8.dp, RefSkyTop, CircleShape)
-                            .align(Alignment.TopEnd).offset(x = (-5).dp, y = 5.dp)
-                    )
-                }
+                RefHeaderMenuPill("القائمة", onMenu)
+                Spacer(Modifier.width(8.dp))
+                RefHeaderActionPill(Icons.Rounded.NotificationsNone, "التنبيهات", onNotifications)
             }
             // Center lockup: official geometric K + knoux ai wordmark + gold PRO capsule.
             Row(Modifier.align(Alignment.Center), verticalAlignment = Alignment.CenterVertically) {
@@ -499,35 +492,13 @@ private fun RefHomeHeader(
                     }
                 }
             }
-            // Glowing gold hamburger on the RIGHT (reference).
-            Box(
-                Modifier
-                    .align(Alignment.CenterEnd)
-                    .size(width = 34.dp, height = 32.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(Brush.verticalGradient(listOf(Color(0xFF241503), Color(0xFF120A02))))
-                    .border(1.4.dp, Brush.verticalGradient(listOf(RefGoldBright, RefGold, Color(0xFFB87A1E))), RoundedCornerShape(10.dp))
-                    .clickable(onClickLabel = "القائمة", onClick = onMenu),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(Icons.Rounded.Menu, "القائمة", tint = RefGoldBright, modifier = Modifier.size(19.dp))
+            // Right: flat profile pill + hamburger.
+            Row(Modifier.align(Alignment.CenterEnd), verticalAlignment = Alignment.CenterVertically) {
+                RefHeaderActionPill(Icons.Rounded.Person, "الحساب", onProfile)
+                Spacer(Modifier.width(8.dp))
+                RefHeaderMenuPill("القائمة", onMenu, isRight = true)
             }
         }
-    }
-}
-
-@Composable
-internal fun RefHeaderCircle(icon: androidx.compose.ui.graphics.vector.ImageVector, desc: String, onClick: () -> Unit) {
-    Box(
-        Modifier
-            .size(32.dp)
-            .clip(CircleShape)
-            .background(Brush.radialGradient(listOf(Color(0xFF1B1240), Color(0xFF0B0722))))
-            .border(1.2.dp, Brush.linearGradient(listOf(V2Violet.withAlpha(.85f), V2Cyan.withAlpha(.55f), V2Violet.withAlpha(.85f))), CircleShape)
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(icon, desc, tint = Color.White.withAlpha(.94f), modifier = Modifier.size(16.dp))
     }
 }
 
@@ -963,10 +934,10 @@ private fun RefHouseOutline(modifier: Modifier = Modifier) {
 private fun RefServiceGrid(onNavigate: (String) -> Unit, modifier: Modifier = Modifier) {
     // Absolute artboard order: index 0 = right column, index 1 = left column.
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-        // Reference pitch: 100px rows of 88px cards → 12px gap ≈ 5dp.
-        Column(modifier, verticalArrangement = Arrangement.spacedBy(5.dp)) {
+        // Larger cards at 64dp → slightly wider row pitch so they breathe.
+        Column(modifier, verticalArrangement = Arrangement.spacedBy(10.dp)) {
             refCards.chunked(2).forEach { row ->
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     // row[0] is the RIGHT card in the reference; place it last
                     // in LTR so it lands on the right edge.
                     listOf(row[1], row[0]).forEach { card ->
@@ -982,29 +953,21 @@ private fun RefServiceGrid(onNavigate: (String) -> Unit, modifier: Modifier = Mo
 private fun RefServiceCard(card: RefCard, modifier: Modifier = Modifier, onClick: () -> Unit) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
-    val shape = RoundedCornerShape(19.dp)
+    val shape = RoundedCornerShape(22.dp)
     val edge = if (card.goldEdge) listOf(RefGoldBright, RefGold, Color(0xFFB87A1E)) else listOf(card.accent, card.accent2, card.accent)
-    // Reference geometry (88px card on 941px artboard ≈ 38.5dp at 411dp):
-    // fixed height keeps all seven rows on one 720×1600 screen, matching the
-    // approved composition. Font scaling stays available via non-scaling dp
-    // layout + ellipsis rather than growing the cards off-screen.
+    // Larger cards: 64dp height, 44dp icons, stronger touch targets.
     Box(
         modifier
-            .height(46.dp)
+            .height(64.dp)
             .scale(if (pressed) .97f else 1f)
             .clip(shape)
             .background(Brush.verticalGradient(listOf(RefCardFillTop.withAlpha(.92f), RefCardFillBottom.withAlpha(.94f))))
             .drawBehind {
-                // Accent wash from the icon side (RIGHT edge in the reference);
-                // subtle top sheen.
-                drawCircle(
-                    Brush.radialGradient(listOf(card.accent.withAlpha(.20f), Color.Transparent), center = Offset(size.width * .85f, size.height * .5f), radius = size.width * .5f),
-                    radius = size.width * .5f, center = Offset(size.width * .85f, size.height * .5f),
-                )
+                // Subtle top sheen only — no accent circle (orb is the only circle).
                 drawLine(
                     Brush.horizontalGradient(listOf(Color.Transparent, Color.White.withAlpha(.30f), Color.Transparent)),
-                    start = Offset(size.width * .12f, .8.dp.toPx()),
-                    end = Offset(size.width * .88f, .8.dp.toPx()),
+                    start = Offset(size.width * .10f, .8.dp.toPx()),
+                    end = Offset(size.width * .90f, .8.dp.toPx()),
                     strokeWidth = .8.dp.toPx(),
                 )
             }
@@ -1012,65 +975,51 @@ private fun RefServiceCard(card: RefCard, modifier: Modifier = Modifier, onClick
             .semantics { contentDescription = "${card.title}، ${card.subtitle}" }
             .clickable(interactionSource = interaction, indication = null, role = Role.Button, onClickLabel = card.title, onClick = onClick),
     ) {
-        // Reference anatomy (verified against the full artboard): BOTH columns
-        // carry the icon at their RIGHT edge, a thin divider, then the text
-        // block. Arabic text is right-aligned (toward the divider); the two
-        // Latin cards (Google/Microsoft Center) are LEFT-aligned with their
-        // icon still on the right — exactly as the approved rows 7 shows.
+        // No divider between text and icon — cleaner anatomy, larger touch area.
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
             Row(
-                Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 3.dp),
+                Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 RefCardText(card, Modifier.weight(1f), alignEnd = !card.latin)
-                RefCardDivider(card.accent)
                 RefCardIcon(card)
             }
         }
     }
 }
 
-@Composable
-private fun RefCardDivider(accent: Color) {
-    Box(
-        Modifier.padding(horizontal = 7.dp).width(1.dp).height(26.dp)
-            .background(Brush.verticalGradient(listOf(Color.Transparent, accent.withAlpha(.55f), Color.Transparent)))
-    )
-}
-
+/** Stronger typography: 15sp title / 11sp subtitle for readability. */
 @Composable
 private fun RefCardText(card: RefCard, modifier: Modifier = Modifier, alignEnd: Boolean = false) {
     Column(modifier, horizontalAlignment = if (alignEnd) Alignment.End else Alignment.Start) {
         CompositionLocalProvider(LocalKnouxOnDark provides true) {
             if (card.latin) {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                    KText(card.title, size = 12.5.sp, weight = FontWeight.Black, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis, align = if (alignEnd) TextAlign.End else TextAlign.Start)
+                    KText(card.title, size = 15.sp, weight = FontWeight.Black, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis, align = if (alignEnd) TextAlign.End else TextAlign.Start)
                 }
             } else {
-                KText(card.title, size = 12.5.sp, weight = FontWeight.Black, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis, align = if (alignEnd) TextAlign.End else TextAlign.Start)
+                KText(card.title, size = 15.sp, weight = FontWeight.Black, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis, align = if (alignEnd) TextAlign.End else TextAlign.Start)
             }
-            Spacer(Modifier.height(1.dp))
-            KText(card.subtitle, size = 8.5.sp, color = V2Soft, maxLines = 1, overflow = TextOverflow.Ellipsis, align = if (alignEnd) TextAlign.End else TextAlign.Start)
+            Spacer(Modifier.height(2.dp))
+            KText(card.subtitle, size = 11.sp, color = V2Soft, maxLines = 1, overflow = TextOverflow.Ellipsis, align = if (alignEnd) TextAlign.End else TextAlign.Start)
         }
     }
 }
 
+/** Larger 44dp icon with no circle wash behind it. */
 @Composable
 private fun RefCardIcon(card: RefCard) {
-    Box(Modifier.size(34.dp), contentAlignment = Alignment.Center) {
+    Box(Modifier.size(44.dp), contentAlignment = Alignment.Center) {
         when {
-            card.mark == RefMark.MICROSOFT -> RefMicrosoftMark(Modifier.size(26.dp))
+            card.mark == RefMark.MICROSOFT -> RefMicrosoftMark(Modifier.size(32.dp))
             card.art != null -> Image(
                 painter = painterResource(card.art),
                 contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize(.85f),
                 contentScale = androidx.compose.ui.layout.ContentScale.Fit,
             )
             card.glyph != null -> {
-                Canvas(Modifier.fillMaxSize()) {
-                    drawCircle(Brush.radialGradient(listOf(card.accent.withAlpha(.30f), Color.Transparent), center = center, radius = size.minDimension * .55f), radius = size.minDimension * .55f)
-                }
-                Icon(card.glyph, null, tint = card.accent, modifier = Modifier.size(24.dp))
+                Icon(card.glyph, null, tint = card.accent, modifier = Modifier.size(30.dp))
             }
         }
     }

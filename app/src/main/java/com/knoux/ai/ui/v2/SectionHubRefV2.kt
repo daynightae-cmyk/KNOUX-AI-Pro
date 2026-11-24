@@ -701,7 +701,9 @@ fun V2SectionHubRefScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) 
 }
 
 /* ------------------------------------------------------------------ *
- * Header capsule — back LEFT, brand lockup CENTER, gold hamburger RIGHT
+ * Header capsule — back LEFT, brand lockup CENTER, gold hamburger RIGHT.
+ * Flat pills like Home — no competing circles; the orb below is the only
+ * dominant circle on the screen.
  * ------------------------------------------------------------------ */
 
 @Composable
@@ -720,11 +722,10 @@ private fun HubRefTopBar(onBack: () -> Unit, onPro: () -> Unit, onMenu: () -> Un
             ),
     ) {
         Box(Modifier.align(Alignment.CenterStart).padding(start = 6.dp)) {
-            RefHeaderCircle(Icons.AutoMirrored.Rounded.ArrowBack, "رجوع", onBack)
+            RefHeaderMenuPill("رجوع", onBack, isRight = false, showIcon = false)
         }
         Row(Modifier.align(Alignment.Center), verticalAlignment = Alignment.CenterVertically) {
-            // Official stag (owner: «بالهيدر بجانب اللوجو بمقاس ثابت وتحته أرض
-            // ليكون معتدل») — fixed size on every hub, standing on a lit
+            // Official stag — fixed size on every hub, standing on a lit
             // ground plane so the header stays balanced. No float: grounded.
             HubRefHeaderStag(Modifier.size(width = 30.dp, height = 48.dp))
             Spacer(Modifier.width(6.dp))

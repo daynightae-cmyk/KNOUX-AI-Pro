@@ -766,7 +766,7 @@ fun V2TopBar(
         modifier
             .fillMaxWidth()
             .height(54.dp)
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = 12.dp),
     ) {
         Row(
             Modifier.align(Alignment.CenterStart),
@@ -774,7 +774,7 @@ fun V2TopBar(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             CrownHexButton(onClick = onPro)
-            HeaderIcon(Icons.Rounded.Menu, "القائمة", onMenu)
+            RefHeaderMenuPill("القائمة", onMenu, isRight = false)
         }
 
         Row(
@@ -791,25 +791,14 @@ fun V2TopBar(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                    HeaderIcon(Icons.Rounded.Person, "الحساب", onProfile)
-                    Spacer(Modifier.width(7.dp))
-                    Box {
-                        HeaderIcon(Icons.Rounded.NotificationsNone, "التنبيهات", onNotifications)
-                        Box(
-                            Modifier
-                                .size(7.dp)
-                                .clip(CircleShape)
-                                .background(V2Red)
-                                .border(1.dp, V2Deep2, CircleShape)
-                                .align(Alignment.TopEnd)
-                                .offset(x = (-6).dp, y = 6.dp)
-                        )
-                    }
+                    RefHeaderActionPill(Icons.Rounded.Person, "الحساب", onProfile)
+                    Spacer(Modifier.width(8.dp))
+                    RefHeaderMenuPill("القائمة", onMenu, isRight = true)
                 }
             }
         } else {
             Box(Modifier.align(Alignment.CenterEnd)) {
-                HeaderIcon(Icons.Rounded.ArrowBack, "رجوع", onBack)
+                RefHeaderMenuPill("رجوع", onBack, isRight = false, showIcon = false)
             }
         }
     }
@@ -831,6 +820,53 @@ fun HeaderIcon(icon: ImageVector, description: String, onClick: () -> Unit) {
     ) {
         HeaderHalo(Modifier.matchParentSize(), color = if (day) DayCyan else V2Cyan)
         Icon(icon, description, tint = if (day) DayInk else Color.White.withAlpha( .92f), modifier = Modifier.size(20.dp))
+    }
+}
+
+/** Flat header pill — no circle, competes with nothing. Menu icon + optional text. */
+@Composable
+internal fun RefHeaderMenuPill(
+    label: String,
+    onClick: () -> Unit,
+    isRight: Boolean = false,
+    showIcon: Boolean = true,
+) {
+    Box(
+        Modifier
+            .size(width = 76.dp, height = 32.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(Brush.verticalGradient(listOf(Color(0xFF1B1240), Color(0xFF0B0722))))
+            .border(1.2.dp, Brush.linearGradient(listOf(V2Violet.withAlpha(.85f), V2Cyan.withAlpha(.55f), V2Violet.withAlpha(.85f))), RoundedCornerShape(16.dp))
+            .clickable(onClickLabel = label, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = if (isRight) Arrangement.End else Arrangement.Start) {
+            if (showIcon) {
+                Icon(Icons.Rounded.Menu, null, tint = Color.White.withAlpha(.94f), modifier = Modifier.size(18.dp))
+                if (!isRight && label.isNotEmpty()) Spacer(Modifier.width(6.dp))
+            }
+            if (!isRight && label.isNotEmpty()) {
+                KText(label, size = 10.sp, weight = FontWeight.Bold, color = Color.White.withAlpha(.94f), maxLines = 1)
+            }
+        }
+    }
+}
+
+/** Flat header action pill — icon only, no circle. */
+@Composable
+internal fun RefHeaderActionPill(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, onClick: () -> Unit) {
+    Box(
+        Modifier
+            .size(width = 76.dp, height = 32.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(Brush.verticalGradient(listOf(Color(0xFF1B1240), Color(0xFF0B0722))))
+            .border(1.2.dp, Brush.linearGradient(listOf(V2Violet.withAlpha(.85f), V2Cyan.withAlpha(.55f), V2Violet.withAlpha(.85f))), RoundedCornerShape(16.dp))
+            .clickable(onClickLabel = label, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
+            Icon(icon, null, tint = Color.White.withAlpha(.94f), modifier = Modifier.size(18.dp))
+        }
     }
 }
 
