@@ -87,6 +87,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.LayoutDirection
 import com.knoux.ai.BuildConfig
+import com.knoux.ai.R
 import com.knoux.ai.auth.KnouxAuthConfig
 import com.knoux.ai.auth.KnouxAuthController
 import com.knoux.ai.auth.KnouxAuthException
@@ -667,7 +668,9 @@ private fun GoogleButton(
             label = "المتابعة باستخدام جوجل",
             icon = Icons.Rounded.Person,
             subtitle = "Continue with Google",
-            gold = true,
+            // The approved login reference draws Google as a dark glass row
+            // with the real mark, not a gold primary button.
+            leadingPainter = R.drawable.knoux_google_g,
             enabled = configured && !inProgress,
             onClick = onClick,
         )

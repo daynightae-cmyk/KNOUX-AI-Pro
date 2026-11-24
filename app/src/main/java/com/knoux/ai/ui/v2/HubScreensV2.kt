@@ -22,6 +22,8 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -86,6 +88,9 @@ import com.knoux.ai.ui.v2.V2LuxuryIdentity
 import com.knoux.ai.ui.v2.V2LuxuryStage
 import com.knoux.ai.ui.v2.V2LuxuryServiceGrid
 import com.knoux.ai.ui.v2.V2LuxuryStatStrip
+import com.knoux.ai.ui.v2.FixedServiceScreen
+import com.knoux.ai.ui.v2.ServiceSpecs
+import com.knoux.ai.ui.v2.KnouxRunOrbBlock
 
 private data class HubV2(
     val title: String,
@@ -960,34 +965,30 @@ fun V2SmartCleanScreen(onBack: () -> Unit, onOpenDeepScan: () -> Unit, onPro: ()
         )
     }
 
+    val status = when {
+        cleanState.isScanning -> "جاري القراءة"
+        !cleanState.loaded -> "جاهز للتشغيل"
+        cacheBytes > 0L -> "كاش مقروء"
+        else -> "لا كاش الآن"
+    }
+    val statusColor = when {
+        cleanState.isScanning -> V2Amber
+        !cleanState.loaded -> V2Violet
+        cacheBytes > 0L -> V2Green
+        else -> V2Muted
+    }
+    val metric = if (cleanState.loaded) "$cacheText · ${formatCount(facts.ownCacheFiles)} ملف" else "اضغط الزر الدائري لبدء الخدمة"
+
     Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)) {
         Column(Modifier.fillMaxSize()) {
             V2TopBar(V2TopMode.INTERIOR, onBack = onBack, onPro = onPro)
-            LazyColumn(
-                Modifier.weight(1f),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(9.dp),
-            ) {
-                item {
-                    ServiceBanner(
-                        spec = ServiceSpecs.smartClean,
-                        status = when {
-                            cleanState.isScanning -> "جاري القراءة"
-                            !cleanState.loaded -> "جاهز للتشغيل"
-                            cacheBytes > 0L -> "كاش مقروء"
-                            else -> "لا كاش الآن"
-                        },
-                        statusColor = when {
-                            cleanState.isScanning -> V2Amber
-                            !cleanState.loaded -> V2Violet
-                            cacheBytes > 0L -> V2Green
-                            else -> V2Muted
-                        },
-                        metric = if (cleanState.loaded) "$cacheText · ${formatCount(facts.ownCacheFiles)} ملف" else "اضغط الزر الدائري لبدء الخدمة",
-                    )
-                }
-                item {
-                    // The universal K orb: the only way this service starts.
+            FixedServiceScreen(
+                spec = ServiceSpecs.smartClean,
+                status = status,
+                statusColor = statusColor,
+                metric = metric,
+                scene = { modifier -> ServiceArtScene(ServiceSpecs.smartClean, modifier) },
+                action = {
                     KnouxRunOrbBlock(
                         progress = when {
                             cleanState.isScanning -> null
@@ -1005,99 +1006,76 @@ fun V2SmartCleanScreen(onBack: () -> Unit, onOpenDeepScan: () -> Unit, onPro: ()
                         accent2 = V2Violet,
                         onTap = { if (!busy) cleaner.rescan() },
                     )
-                }
-                item {
-                    SmartCleanSummary(
-                        selectedSize = cacheText,
-                        totalSize = formatBytes(facts.storage.usedBytes),
-                        selectedProgress = progress,
-                        cacheFiles = facts.ownCacheFiles,
-                        storageFree = formatBytes(facts.storage.freeBytes),
-                        health = facts.healthEstimate,
-                    )
-                }
-                item {
-                    RealCleanRow(
-                        title = "ذاكرة KNOUX المؤقتة",
-                        subtitle = "${formatCount(facts.ownCacheFiles)} ملفًا داخل مجلدات الكاش",
-                        value = cacheText,
-                        accent = V2Cyan,
-                        icon = Icons.Rounded.CleaningServices,
-                    )
-                }
-                item {
-                    RealCleanRow(
-                        title = "ذاكرة التطبيقات الأخرى",
-                        subtitle = "يحتاج صلاحية وصول خاصة — لا يُقدَّر بدل الجهاز",
-                        value = "مقيد",
-                        accent = V2Amber,
-                        icon = Icons.Rounded.Storage,
-                    )
-                }
-                item {
-                    RealCleanRow(
-                        title = "ملفات النظام المؤقتة",
-                        subtitle = "يديرها Android ويحذفها تلقائيًا",
-                        value = "تلقائي",
-                        accent = V2Violet,
-                        icon = Icons.Rounded.Shield,
-                    )
-                }
+                },
+                listState = rememberLazyListState(),
+            ) {
+                SmartCleanSummary(
+                    selectedSize = cacheText,
+                    totalSize = formatBytes(facts.storage.usedBytes),
+                    selectedProgress = progress,
+                    cacheFiles = facts.ownCacheFiles,
+                    storageFree = formatBytes(facts.storage.freeBytes),
+                    health = facts.healthEstimate,
+                )
+                RealCleanRow(
+                    title = "ذاكرة KNOUX المؤقتة",
+                    subtitle = "${formatCount(facts.ownCacheFiles)} ملفًا داخل مجلدات الكاش",
+                    value = cacheText,
+                    accent = V2Cyan,
+                    icon = Icons.Rounded.CleaningServices,
+                )
+                RealCleanRow(
+                    title = "ذاكرة التطبيقات الأخرى",
+                    subtitle = "يحتاج صلاحية وصول خاصة — لا يُقدَّر بدل الجهاز",
+                    value = "مقيد",
+                    accent = V2Amber,
+                    icon = Icons.Rounded.Storage,
+                )
+                RealCleanRow(
+                    title = "ملفات النظام المؤقتة",
+                    subtitle = "يديرها Android ويحذفها تلقائيًا",
+                    value = "تلقائي",
+                    accent = V2Violet,
+                    icon = Icons.Rounded.Shield,
+                )
                 if (cleanState.gate == OperationGate.VERIFIED || cleanState.gate == OperationGate.PARTIAL) {
-                    item {
-                        V2GlassCard(
-                            Modifier.fillMaxWidth(),
-                            padding = 10.dp,
-                            radius = 16.dp,
-                            glow = if (cleanState.gate == OperationGate.VERIFIED) V2Green else V2Amber,
-                            borderAlpha = .45f,
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    if (cleanState.gate == OperationGate.VERIFIED) Icons.Rounded.Verified else Icons.Rounded.Warning,
-                                    null,
-                                    tint = if (cleanState.gate == OperationGate.VERIFIED) V2Green else V2Amber,
-                                    modifier = Modifier.size(20.dp),
+                    V2GlassCard(
+                        Modifier.fillMaxWidth(),
+                        padding = 10.dp,
+                        radius = 16.dp,
+                        glow = if (cleanState.gate == OperationGate.VERIFIED) V2Green else V2Amber,
+                        borderAlpha = .45f,
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                if (cleanState.gate == OperationGate.VERIFIED) Icons.Rounded.Verified else Icons.Rounded.Warning,
+                                null,
+                                tint = if (cleanState.gate == OperationGate.VERIFIED) V2Green else V2Amber,
+                                modifier = Modifier.size(20.dp),
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Column(Modifier.weight(1f)) {
+                                KText(
+                                    if (cleanState.gate == OperationGate.VERIFIED) "تم مسح كاش KNOUX وتأكد الفرق" else "المسح جزئي — راجع القياس",
+                                    size = 10.sp,
+                                    weight = FontWeight.Bold,
+                                    color = if (cleanState.gate == OperationGate.VERIFIED) V2Green else V2Amber,
                                 )
-                                Spacer(Modifier.width(8.dp))
-                                Column(Modifier.weight(1f)) {
-                                    KText(
-                                        if (cleanState.gate == OperationGate.VERIFIED) "تم مسح كاش KNOUX وتأكد الفرق" else "المسح جزئي — راجع القياس",
-                                        size = 10.sp,
-                                        weight = FontWeight.Bold,
-                                        color = if (cleanState.gate == OperationGate.VERIFIED) V2Green else V2Amber,
-                                    )
-                                    KText(
-                                        cleanState.operationMessage ?: "الكاش بعد العملية ${formatBytes(cleanState.measuredAfter ?: 0L)}",
-                                        size = 9.sp,
-                                        color = V2Soft,
-                                    )
-                                }
+                                KText(
+                                    cleanState.operationMessage ?: "الكاش بعد العملية ${formatBytes(cleanState.measuredAfter ?: 0L)}",
+                                    size = 9.sp,
+                                    color = V2Soft,
+                                )
                             }
                         }
                     }
                 }
-                item { ServiceSubGrid(ServiceSpecs.smartClean) }
-                item { CleanSafetyCard() }
-                item {
-                    PreviewNote(
-                        "الأحجام هنا مقروءة من كاش KNOUX على هذا الهاتف. " +
-                            "المعالجة المزيفة أو أرقام المعاينة غير مستخدمة في هذه الشاشة."
-                    )
-                }
-            }
-            if (cacheBytes > 0L) {
-                Row(
-                    Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    V2GradientButton(
-                        "تنظيف $cacheText",
-                        onClick = { cleaner.prepareClearOwnCache() },
-                        icon = Icons.Rounded.CleaningServices,
-                        height = 46.dp,
-                    )
-                }
+                ServiceSubGrid(ServiceSpecs.smartClean)
+                CleanSafetyCard()
+                PreviewNote(
+                    "الأحجام هنا مقروءة من كاش KNOUX على هذا الهاتف. " +
+                        "المعالجة المزيفة أو أرقام المعاينة غير مستخدمة في هذه الشاشة."
+                )
             }
         }
     }

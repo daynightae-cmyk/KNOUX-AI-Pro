@@ -1,6 +1,13 @@
 package com.knoux.ai.developer.ui
 
 import android.os.Build
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -21,6 +28,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AccountCircle
@@ -54,7 +62,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -65,7 +78,6 @@ import com.knoux.ai.developer.model.ProviderConnectionState
 import com.knoux.ai.developer.provider.ProviderRegistryHolder
 import com.knoux.ai.ui.v2.KText
 import com.knoux.ai.ui.v2.V2Amber
-import com.knoux.ai.ui.v2.V2Background
 import com.knoux.ai.ui.v2.V2Blue
 import com.knoux.ai.ui.v2.V2Cyan
 import com.knoux.ai.ui.v2.V2Deep
@@ -77,7 +89,6 @@ import com.knoux.ai.ui.v2.V2Violet
 import com.knoux.ai.ui.v2.formatBytes
 import com.knoux.ai.ui.v2.formatCount
 import com.knoux.ai.ui.v2.v2Bidi
-import com.knoux.ai.ui.v2.V2LuxuryIdentity
 import com.knoux.ai.ui.v2.V2TopBar
 import com.knoux.ai.ui.v2.V2TopMode
 import com.knoux.ai.ui.v2.V2LuxuryServiceGrid
@@ -86,10 +97,14 @@ import com.knoux.ai.ui.v2.SectionStat
 import com.knoux.ai.ui.v2.ServiceSubItem
 import com.knoux.ai.ui.v2.LocalServiceNavigate
 import com.knoux.ai.ui.v2.V2GlassCard
+import com.knoux.ai.ui.v2.FixedServiceScreen
+import com.knoux.ai.ui.v2.ServiceSpecs
+import com.knoux.ai.ui.v2.KnouxRunOrbBlock
+import com.knoux.ai.ui.components.rememberMotionEnabled
 
 /**
  * Developer Studio hub — matches reference image 1.
- * Central K orb + live stat strip + 4-column service grid.
+ * Central K orb (cosmic) + live stat strip + 4-column service grid.
  * Every number is read from real device data via DeviceFacts / android.os.Build.
  */
 @Composable
@@ -129,30 +144,24 @@ fun DeveloperStudioScreen(
         }
     }
 
-    Column(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)) {
-        V2TopBar(V2TopMode.INTERIOR, onBack = onBack, onPro = onPro)
-        V2LuxuryIdentity(
-            title = "لوحة المطور",
-            english = "DEVELOPER STUDIO",
-            subtitle = "إدارة مزودي الذكاء الاصطناعي والمفاتيح والنماذج والوكلاء",
-            accent = V2Cyan,
-        )
+    val connectedCount = providers.count { it.connectionState == ProviderConnectionState.Connected }
+    val totalCount = providers.count { it.isConfigured }
+    val status = "$connectedCount من $totalCount مزوّد متصل"
+    val statusColor = if (connectedCount > 0) V2Green else V2Amber
+    val metric = "${registryProviderCount()} مزوّد مسجّل"
 
-        LazyColumn(
-            Modifier.weight(1f),
-            contentPadding = androidx.compose.foundation.layout.PaddingValues(
-                start = 16.dp, end = 16.dp, bottom = 12.dp
-            ),
-            verticalArrangement = Arrangement.spacedBy(9.dp),
-        ) {
-            item {
-                KnouxDeveloperOrb(
-                    providers = providers,
-                    accent = V2Cyan,
-                    accent2 = V2Blue,
-                )
-            }
-            item {
+    Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)) {
+        Column(Modifier.fillMaxSize()) {
+            V2TopBar(V2TopMode.INTERIOR, onBack = onBack, onPro = onPro)
+            FixedServiceScreen(
+                spec = ServiceSpecs.developer,
+                status = status,
+                statusColor = statusColor,
+                metric = metric,
+                scene = { modifier -> DeveloperCosmicOrb(modifier, V2Cyan, V2Violet, status) },
+                action = null,
+                listState = rememberLazyListState(),
+            ) {
                 V2LuxuryServiceGrid(
                     items = listOf(
                         ServiceSubItem(
@@ -186,8 +195,6 @@ fun DeveloperStudioScreen(
                     ),
                     onNavigate = navigate,
                 )
-            }
-            item {
                 V2GlassCard(
                     Modifier.fillMaxWidth(),
                     padding = 13.dp,
@@ -211,13 +218,11 @@ fun DeveloperStudioScreen(
                         ExtraInfoLine("مزوّدون مسجّلون", "${registryProviderCount()} مزوّد")
                     }
                 }
-            }
-            item {
                 V2LuxuryStatStrip(
                     stats = listOf(
-                        SectionStat(Icons.Rounded.Storage, "0", "مزوّد متصل", V2Cyan),
+                        SectionStat(Icons.Rounded.Storage, connectedCount.toString(), "مزوّد متصل", V2Cyan),
                         SectionStat(Icons.Rounded.Inventory, "0", "نموذج مكتشف", V2Violet),
-                        SectionStat(Icons.Rounded.Shield, "0", "مفتاح مخزّن", V2Pink),
+                        SectionStat(Icons.Rounded.Shield, totalCount.toString(), "مفتاح مخزّن", V2Pink),
                         SectionStat(Icons.Rounded.BarChart, "0", "وكيل نشط", V2Green),
                     ),
                 )
@@ -244,40 +249,157 @@ private fun ExtraInfoLine(label: String, value: String) {
 }
 
 /**
- * Central K orb for Developer Studio — live connection state indicator.
+ * Cosmic K orb for Developer Studio hero — matches the reference:
+ * the stag floats behind a living K jewel with orbiting rings.
  */
 @Composable
-private fun KnouxDeveloperOrb(
-    providers: List<AiProvider>,
+private fun DeveloperCosmicOrb(
+    modifier: Modifier,
     accent: Color,
     accent2: Color,
+    status: String,
 ) {
-    val connectedCount = providers.count { it.connectionState == ProviderConnectionState.Connected }
-    val totalCount = providers.count { it.isConfigured }
+    val motion = rememberMotionEnabled()
+    val transition = rememberInfiniteTransition(label = "devStudioOrb")
+    val orbit by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = if (motion) 360f else 0f,
+        animationSpec = infiniteRepeatable(tween(9000, easing = androidx.compose.animation.core.LinearEasing), androidx.compose.animation.core.RepeatMode.Restart),
+        label = "devOrbit",
+    )
+    val counter by transition.animateFloat(
+        initialValue = 360f,
+        targetValue = if (motion) 0f else 360f,
+        animationSpec = infiniteRepeatable(tween(14000, easing = androidx.compose.animation.core.LinearEasing), androidx.compose.animation.core.RepeatMode.Restart),
+        label = "devCounter",
+    )
+    val breath by transition.animateFloat(
+        initialValue = 1f,
+        targetValue = if (motion) 1.04f else 1f,
+        animationSpec = infiniteRepeatable(tween(2600, easing = androidx.compose.animation.core.FastOutSlowInEasing), androidx.compose.animation.core.RepeatMode.Reverse),
+        label = "devBreath",
+    )
 
     Box(
-        Modifier
+        modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(24.dp))
-            .background(accent.copy(alpha = .10f))
-            .border(1.dp, accent.copy(alpha = .42f), RoundedCornerShape(24.dp))
-            .padding(horizontal = 16.dp, vertical = 16.dp),
+            .clip(androidx.compose.foundation.shape.RoundedCornerShape(24.dp))
+            .background(
+                Brush.verticalGradient(listOf(
+                    accent.copy(alpha = .18f),
+                    accent2.copy(alpha = .08f),
+                    Color(0xFF07051C),
+                )),
+            )
+            .border(1.dp, accent.copy(alpha = .35f), androidx.compose.foundation.shape.RoundedCornerShape(24.dp))
+            .padding(16.dp),
         contentAlignment = Alignment.Center,
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            // The stag floats behind the orb
             Box(
-                Modifier.size(88.dp)
-                    .clip(RoundedCornerShape(44.dp))
-                    .background(accent.copy(alpha = .20f))
-                    .border(2.dp, accent.copy(alpha = .60f), RoundedCornerShape(44.dp)),
+                Modifier
+                    .size(120.dp)
+                    .graphicsLayer {
+                        scaleX = 1f + breath * .02f
+                        scaleY = 1f + breath * .02f
+                        alpha = .6f + breath * .12f
+                    }
+                    .background(
+                        Brush.radialGradient(
+                            listOf(
+                                accent2.copy(alpha = .35f),
+                                accent.copy(alpha = .15f),
+                                Color.Transparent,
+                            ),
+                        ),
+                        androidx.compose.foundation.shape.CircleShape,
+                    ),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(Icons.Rounded.Code, null, tint = accent, modifier = Modifier.size(32.dp))
+                androidx.compose.foundation.Image(
+                    painter = androidx.compose.ui.res.painterResource(R.drawable.knoux_stag_official),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(100.dp)
+                        .graphicsLayer { translationY = -8f },
+                    contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                )
             }
-
+            // The K jewel
+            Box(
+                Modifier.size(88.dp)
+                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(44.dp))
+                    .background(accent.copy(alpha = .20f))
+                    .border(2.dp, accent.copy(alpha = .60f), androidx.compose.foundation.shape.RoundedCornerShape(44.dp))
+                    .graphicsLayer { scaleX = breath; scaleY = breath },
+                contentAlignment = Alignment.Center,
+            ) {
+                androidx.compose.material3.Icon(
+                    androidx.compose.material.icons.Icons.Rounded.Code,
+                    null,
+                    tint = accent,
+                    modifier = Modifier.size(32.dp),
+                )
+            }
+            // Orbiting rings
+            Box(
+                Modifier.size(120.dp)
+                    .graphicsLayer { rotationZ = orbit },
+                contentAlignment = Alignment.Center,
+            ) {
+                androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
+                    val radius = size.width / 2f
+                    val center = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f)
+                    drawArc(
+                        brush = androidx.compose.ui.graphics.Brush.sweepGradient(
+                            listOf(
+                                Color.Transparent,
+                                accent.copy(alpha = .85f),
+                                accent2.copy(alpha = .75f),
+                                Color.Transparent,
+                            ),
+                            center = center,
+                        ),
+                        startAngle = orbit,
+                        sweepAngle = 230f,
+                        useCenter = false,
+                        topLeft = androidx.compose.ui.geometry.Offset(center.x - radius * .95f, center.y - radius * .95f),
+                        size = androidx.compose.ui.geometry.Size(radius * 1.9f, radius * 1.9f),
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round),
+                    )
+                }
+            }
+            Box(
+                Modifier.size(110.dp)
+                    .graphicsLayer { rotationZ = -counter * .7f },
+                contentAlignment = Alignment.Center,
+            ) {
+                androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {
+                    val radius = size.width / 2f
+                    val center = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f)
+                    drawArc(
+                        brush = androidx.compose.ui.graphics.Brush.sweepGradient(
+                            listOf(
+                                Color.Transparent,
+                                accent2.copy(alpha = .70f),
+                                accent.copy(alpha = .70f),
+                                Color.Transparent,
+                            ),
+                            center = center,
+                        ),
+                        startAngle = -counter * .7f,
+                        sweepAngle = 190f,
+                        useCenter = false,
+                        topLeft = androidx.compose.ui.geometry.Offset(center.x - radius * .86f, center.y - radius * .86f),
+                        size = androidx.compose.ui.geometry.Size(radius * 1.72f, radius * 1.72f),
+                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.5.dp.toPx(), cap = androidx.compose.ui.graphics.StrokeCap.Round),
+                    )
+                }
+            }
             KText(
                 "لوحة المطور",
                 size = 16.sp,
@@ -285,7 +407,7 @@ private fun KnouxDeveloperOrb(
                 color = Color.White,
             )
             KText(
-                "$connectedCount من $totalCount مزوّد متصل",
+                status,
                 size = 10.4.sp,
                 color = V2Soft,
             )

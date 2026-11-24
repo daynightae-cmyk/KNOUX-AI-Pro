@@ -86,9 +86,16 @@ data class StorageFacts(
     val totalBytes: Long = 0L,
     val freeBytes: Long = 0L,
 ) {
+    /**
+     * True only when StatFs actually returned a volume. A failed read yields
+     * 0/0, which is NOT "0% used": callers must show "غير متاح"/error instead of
+     * a healthy gauge or a false "+6" health bonus.
+     */
+    val isMeasured: Boolean get() = totalBytes > 0L
+
     val usedBytes: Long get() = (totalBytes - freeBytes).coerceAtLeast(0L)
     val usedFraction: Float
-        get() = if (totalBytes > 0L) usedBytes.toFloat() / totalBytes.toFloat() else 0f
+        get() = if (isMeasured) usedBytes.toFloat() / totalBytes.toFloat() else 0f
 }
 
 /** Live RAM observation from ActivityManager; null fields when hidden. */
@@ -147,6 +154,12 @@ data class MediaDuplicateGroup(
 
 data class MediaFacts(
     val permissionGranted: Boolean = false,
+    /**
+     * The MediaStore walk finished. When permission is granted but this stays
+     * false, the query itself failed and every zero below is "unknown", not
+     * "the phone has no photos".
+     */
+    val readSucceeded: Boolean = false,
     val images: Int = 0,
     val videos: Int = 0,
     val imagesBytes: Long = 0L,
@@ -233,13 +246,24 @@ data class DeviceFacts(
     val lockSecure: Boolean = false,
     /** Biometric hardware class: 2 strong, 1 weak, 0 none, -1 unknown. */
     val biometricStrength: Int = -1,
+    /**
+     * True only when the live readers actually returned measurable state.
+     * [computedAt] alone is a wall-clock stamp, not proof of a successful read.
+     */
+    val measured: Boolean = false,
     val computedAt: Long = 0L,
 ) {
     val installedCount: Int get() = installedApps.size
     val userAppCount: Int get() = installedApps.count { !it.isSystem }
+    /**
+     * True only when the snapshot rests on real measurements; drive-by
+     * defaults and a bare wall-clock stamp are not evidence.
+     */
+    val isLive: Boolean get() = computedAt > 0L && measured
+
     val healthEstimate: Int
         get() {
-            if (computedAt == 0L) return 0
+            if (!isLive) return 0
             var score = 70
             val level = battery.levelPercent
             if (level != null) score += when {
@@ -248,7 +272,8 @@ data class DeviceFacts(
                 level >= 20 -> 2
                 else -> -10
             }
-            score += when {
+            // A missing storage reading must not earn the "low usage" bonus.
+            if (storage.isMeasured) score += when {
                 storage.usedFraction >= .93f -> -20
                 storage.usedFraction >= .82f -> -8
                 storage.usedFraction <= .60f -> 6
@@ -504,35 +529,37 @@ private fun readMedia(context: Context): MediaFacts {
         MediaStore.Files.FileColumns.MEDIA_TYPE_AUDIO.toString(),
     )
     val items = mutableListOf<MediaFileFacts>()
-    runCatching {
-        context.contentResolver.query(
+    val querySucceeded = runCatching {
+        val cursor = context.contentResolver.query(
             collection, projection, selection, args,
             "${MediaStore.Files.FileColumns.SIZE} DESC",
-        )?.use { cursor ->
-            val idCol = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
-            val nameCol = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME)
-            val sizeCol = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.SIZE)
-            val typeCol = cursor.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MEDIA_TYPE)
-            val bucketCol = cursor.getColumnIndexOrThrow("bucket_display_name")
+        ) ?: return@runCatching false
+        cursor.use {
+            val idCol = it.getColumnIndexOrThrow(MediaStore.Files.FileColumns._ID)
+            val nameCol = it.getColumnIndexOrThrow(MediaStore.Files.FileColumns.DISPLAY_NAME)
+            val sizeCol = it.getColumnIndexOrThrow(MediaStore.Files.FileColumns.SIZE)
+            val typeCol = it.getColumnIndexOrThrow(MediaStore.Files.FileColumns.MEDIA_TYPE)
+            val bucketCol = it.getColumnIndexOrThrow("bucket_display_name")
             var guard = 0
-            while (cursor.moveToNext() && guard < 6000) {
+            while (it.moveToNext() && guard < 6000) {
                 guard++
-                val id = cursor.getLong(idCol)
-                val size = cursor.getLong(sizeCol)
-                val mediaType = cursor.getInt(typeCol)
+                val id = it.getLong(idCol)
+                val size = it.getLong(sizeCol)
+                val mediaType = it.getInt(typeCol)
                 val isVideo = mediaType == MediaStore.Files.FileColumns.MEDIA_TYPE_VIDEO
                 val isAudio = mediaType == MediaStore.Files.FileColumns.MEDIA_TYPE_AUDIO
                 items += MediaFileFacts(
-                    name = cursor.getString(nameCol) ?: "ملف",
+                    name = it.getString(nameCol) ?: "ملف",
                     sizeBytes = size,
-                    bucket = cursor.getString(bucketCol),
+                    bucket = it.getString(bucketCol),
                     isVideo = isVideo,
                     uriString = Uri.withAppendedPath(collection, id.toString()).toString(),
                     isAudio = isAudio,
                 )
             }
         }
-    }
+        true
+    }.getOrDefault(false)
     val images = items.filter { !it.isVideo && !it.isAudio }
     val videos = items.filter { it.isVideo }
     val audio = items.filter { it.isAudio }
@@ -545,6 +572,7 @@ private fun readMedia(context: Context): MediaFacts {
         .values.filter { it.size > 1 }.sumOf { it.size }
     return MediaFacts(
         permissionGranted = true,
+        readSucceeded = querySucceeded,
         images = images.size,
         videos = videos.size,
         imagesBytes = images.sumOf { it.sizeBytes },
@@ -1127,6 +1155,7 @@ fun readDeviceFacts(context: Context, withSizes: Boolean = true): DeviceFacts {
         overlayAppCount = overlayDeclaredCount(apps),
         lockSecure = readLockSecure(context),
         biometricStrength = readBiometricStrength(context),
+        measured = storage.isMeasured || media.readSucceeded || apps.isNotEmpty(),
         computedAt = System.currentTimeMillis(),
     )
 }

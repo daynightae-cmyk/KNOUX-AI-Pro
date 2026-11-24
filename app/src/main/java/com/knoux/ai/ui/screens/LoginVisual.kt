@@ -43,6 +43,7 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.annotation.DrawableRes
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontStyle
@@ -79,49 +80,45 @@ private val ValleyRidges = listOf(
 
 @Composable
 internal fun LoginBrand() {
-    Column(
-        Modifier.fillMaxWidth().zIndex(1f).padding(top = 4.dp, bottom = 2.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(1.dp),
+    // Reference: one compact stage lockup. The former three-line "poster"
+    // header pushed the login panel and trust strip below the 360dp fold.
+    Box(
+        Modifier.fillMaxWidth().zIndex(1f).padding(top = 1.dp),
+        contentAlignment = Alignment.TopCenter,
     ) {
-        // Reference: the gold crown floats above the header wordmark.
-        CrownGold(size = 24.dp, color = ProEditionGold)
-        // The official company seal opens the login brand, halo breathing.
-        com.knoux.ai.ui.components.BrandSeal(size = 44.dp, haloColor = NeonViolet)
-        CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                BrandWordmark(height = 22.dp)
-                Spacer(Modifier.width(9.dp))
+        // The gold crown floats above the wordmark, as in the approved art.
+        CrownGold(size = 15.dp, color = ProEditionGold)
+        Row(
+            Modifier.padding(top = 11.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            // The official company seal opens the login lockup.
+            com.knoux.ai.ui.components.BrandSeal(size = 30.dp, haloColor = NeonViolet)
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
                 Row(
-                    Modifier.border(1.dp, ProEditionGold, RoundedCornerShape(50))
-                        .padding(horizontal = 7.dp, vertical = 2.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(3.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    CrownGold(size = 16.dp, color = ProEditionGold)
-                    Text("Pro", color = ProEditionGold, fontStyle = FontStyle.Italic, fontWeight = FontWeight.Black, fontSize = 14.sp)
+                    BrandWordmark(height = 17.dp)
+                    Row(
+                        Modifier.border(1.dp, ProEditionGold, RoundedCornerShape(50))
+                            .padding(horizontal = 5.dp, vertical = 1.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(1.dp),
+                    ) {
+                        CrownGold(size = 10.dp, color = ProEditionGold)
+                        Text(
+                            "Pro",
+                            color = ProEditionGold,
+                            fontStyle = FontStyle.Italic,
+                            fontWeight = FontWeight.Black,
+                            fontSize = 10.sp,
+                        )
+                    }
                 }
             }
         }
-        Text(
-            "مساعدك الذكي لإدارة الجهاز وتنظيفه",
-            color = ProTextPrimary,
-            fontSize = 11.sp,
-            textAlign = TextAlign.Center,
-            modifier = Modifier
-                .background(
-                    Brush.horizontalGradient(
-                        listOf(Color.Transparent, Color(0xEC07051C), Color(0xEC07051C), Color.Transparent),
-                    ),
-                )
-                .padding(horizontal = 18.dp, vertical = 1.dp),
-        )
-        Text(
-            "Smart Management & AI Cleaning",
-            color = ProTextSecondary,
-            fontSize = 9.sp,
-            textAlign = TextAlign.Center,
-        )
     }
 }
 
@@ -378,6 +375,7 @@ internal fun NeonLoginButton(
     bright: Boolean = false,
     gold: Boolean = false,
     green: Boolean = false,
+    @DrawableRes leadingPainter: Int? = null,
     enabled: Boolean = true,
     onClick: () -> Unit,
 ) {
@@ -411,6 +409,10 @@ internal fun NeonLoginButton(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         when {
+            leadingPainter != null -> Image(
+                painterResource(leadingPainter), null,
+                Modifier.size(20.dp),
+            )
             bright -> Image(painterResource(R.drawable.knoux_google_g), null, Modifier.size(20.dp))
             gold -> Box(
                 Modifier.size(26.dp).clip(RoundedCornerShape(50)).background(Color.White),
