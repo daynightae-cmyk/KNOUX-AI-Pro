@@ -54,7 +54,13 @@ class GoogleAccountManager(
     private fun loadAccounts() {
         prefs.all.forEach { (key, value) ->
             if (key.startsWith(ACCOUNT_PREFIX) && value is String) {
-                val email = key.removePrefix(ACCOUNT_PREFIX)
+                // Always read the e-mail from the persisted payload, never by
+                // stripping the slot prefix off the key: e-mails may contain a
+                // leading "gmail_"/"drive_" and that would corrupt the address.
+                val email = runCatching { JSONObject(value).optString("email") }
+                    .getOrNull()
+                    ?.takeIf { it.isNotEmpty() }
+                    ?: key.removePrefix(ACCOUNT_PREFIX)
                 parseAccount(email, value)?.let { accounts[it.id] = it }
             }
         }
@@ -90,8 +96,12 @@ class GoogleAccountManager(
     ) {
         withContext(Dispatchers.IO) {
             accounts[account.id] = account
+            val slotKey = "$ACCOUNT_PREFIX${GoogleAccountPolicy.slotKey(account.provider)}_${account.email}"
             prefs.edit()
-                .putString("$ACCOUNT_PREFIX${account.email}", serializeAccount(account))
+                .putString(slotKey, serializeAccount(account))
+                // Drop an unslotted legacy row for the same e-mail so a reload
+                // cannot resurrect the pre-split single Gmail slot.
+                .remove("$ACCOUNT_PREFIX${account.email}")
                 .commit()
             saveToken(account.email, tokenResponse)
         }
@@ -103,12 +113,30 @@ class GoogleAccountManager(
                 authProvider.revokeToken(token.refreshToken ?: token.accessToken)
             }
             accounts.remove(account.id)
-            prefs.edit().remove("$ACCOUNT_PREFIX${account.email}").commit()
-            vault.removeCredential(tokenKey(account.email))
+            val slotKeys = prefs.all.keys.filter { key ->
+                key.startsWith(ACCOUNT_PREFIX) && key.endsWith("_${account.email}")
+            }
+            val editor = prefs.edit()
+            slotKeys.forEach { editor.remove(it) }
+            editor.remove("$ACCOUNT_PREFIX${account.email}")
+            editor.commit()
+            // One consent row per provider; only the token is shared by e-mail.
+            if (accounts.values.none { it.email == account.email }) {
+                vault.removeCredential(tokenKey(account.email))
+            }
         }
     }
 
     private fun tokenKey(email: String): String = "$TOKEN_KEY_PREFIX$email"
+
+    /**
+     * Provider of a persisted account row. Rows written before the per-provider
+     * split had no `provider` field and are Gmail rows.
+     */
+    private fun slotProvider(raw: String): CloudProvider = when (raw) {
+        CloudProvider.GoogleDrive.name -> CloudProvider.GoogleDrive
+        else -> CloudProvider.Gmail
+    }
 
     private suspend fun loadToken(email: String): StoredToken? {
         val raw = vault.getCredential(tokenKey(email)) ?: return null
@@ -201,9 +229,10 @@ class GoogleAccountManager(
         val scopes = obj.optJSONArray("scopes")?.let { array ->
             buildList { for (i in 0 until array.length()) add(array.optString(i)) }
         }.orEmpty()
+        val provider = slotProvider(obj.optString("provider"))
         CloudAccount(
-            id = "google_$email",
-            provider = CloudProvider.Gmail,
+            id = GoogleAccountPolicy.accountId(email, provider),
+            provider = provider,
             email = email,
             displayName = obj.optString("displayName").takeIf { it.isNotEmpty() },
             isConnected = true,

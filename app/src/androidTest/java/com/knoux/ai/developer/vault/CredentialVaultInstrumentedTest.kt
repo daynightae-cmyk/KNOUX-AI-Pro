@@ -17,8 +17,15 @@ import org.junit.runner.RunWith
 
 /**
  * Instrumented proof that the credential vault uses the real Android Keystore:
- * AES-256-GCM round-trips, a fresh Keystore-generated nonce per encryption,
- * persistence across vault instances, and complete deletion.
+ * AES-256-GCM round-trips, a fresh Keystore-generated nonce per encryption and
+ * persistence across vault instances.
+ *
+ * Safety contract: the tests run only against `com.knoux.ai.debug` and only
+ * ever touch the fixture id [providerId]. They never call the production
+ * `wipeAll()`: that method would erase real developer keys and Google/Microsoft
+ * OAuth tokens on this debug install while account metadata still listed the
+ * accounts as connected (they live in different preferences). A whole-vault
+ * wipe is not "test cleanup".
  */
 @RunWith(AndroidJUnit4::class)
 class CredentialVaultInstrumentedTest {
@@ -29,9 +36,19 @@ class CredentialVaultInstrumentedTest {
     private val providerId = "test-provider-instrumented"
     private val secret = "sk-test-abcdefghijklmnopqrstuvwxyz-0123456789"
 
+    private fun fixture(): ProviderConfig = ProviderConfig(
+        providerId = providerId,
+        keystoreAlias = "knoux_key_$providerId",
+        maskedKey = CredentialMask.mask(secret),
+        isConfigured = true,
+        isEnabled = true,
+    )
+
     @Before
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
+        // Never run destructive vault checks against the production install.
+        assertEquals("com.knoux.ai.debug", context.packageName)
         vault = CredentialVault(context)
         runBlocking { vault.removeCredential(providerId) }
     }
@@ -63,16 +80,7 @@ class CredentialVaultInstrumentedTest {
 
     @Test
     fun storeAndRead_persistsAcrossVaultInstances() = runBlocking {
-        vault.storeCredential(
-            ProviderConfig(
-                providerId = providerId,
-                keystoreAlias = "knoux_key_$providerId",
-                maskedKey = vault.maskKey(secret),
-                isConfigured = true,
-                isEnabled = true,
-            ),
-            secret,
-        )
+        vault.storeCredential(fixture(), secret)
 
         assertTrue(vault.hasCredential(providerId))
 
@@ -84,16 +92,7 @@ class CredentialVaultInstrumentedTest {
 
     @Test
     fun maskedValue_neverContainsFullSecret() = runBlocking {
-        vault.storeCredential(
-            ProviderConfig(
-                providerId = providerId,
-                keystoreAlias = "knoux_key_$providerId",
-                maskedKey = vault.maskKey(secret),
-                isConfigured = true,
-                isEnabled = true,
-            ),
-            secret,
-        )
+        vault.storeCredential(fixture(), secret)
         val masked = vault.getMaskedKey(providerId)
         assertNotEquals(secret, masked)
         assertFalse(masked.contains(secret))
@@ -102,16 +101,7 @@ class CredentialVaultInstrumentedTest {
 
     @Test
     fun removeCredential_erasesCiphertextAndMetadata() = runBlocking {
-        vault.storeCredential(
-            ProviderConfig(
-                providerId = providerId,
-                keystoreAlias = "knoux_key_$providerId",
-                maskedKey = vault.maskKey(secret),
-                isConfigured = true,
-                isEnabled = true,
-            ),
-            secret,
-        )
+        vault.storeCredential(fixture(), secret)
         vault.removeCredential(providerId)
 
         assertFalse(vault.hasCredential(providerId))
@@ -133,27 +123,5 @@ class CredentialVaultInstrumentedTest {
             "Unreadable ciphertext must be deleted, not retried forever",
             vault.hasCredential(providerId),
         )
-    }
-
-    @Test
-    fun wipeAll_removesEveryCredentialButKeepsVaultUsable() = runBlocking {
-        vault.storeCredential(
-            ProviderConfig(
-                providerId = providerId,
-                keystoreAlias = "knoux_key_$providerId",
-                maskedKey = vault.maskKey(secret),
-                isConfigured = true,
-                isEnabled = true,
-            ),
-            secret,
-        )
-        vault.wipeAll()
-
-        assertFalse(vault.hasCredential(providerId))
-        assertNull(vault.getCredential(providerId))
-
-        // The Keystore master key must still work after a logical wipe.
-        val encrypted = vault.encrypt(secret)
-        assertEquals(secret, vault.decrypt(encrypted))
     }
 }

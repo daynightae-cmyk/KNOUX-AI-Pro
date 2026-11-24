@@ -32,17 +32,34 @@ class GoogleAuthProvider(
         const val REVOKE_ENDPOINT = "https://oauth2.googleapis.com/revoke"
     }
 
+    /**
+     * OIDC identity scopes. Without `openid` + `email` the userinfo lookup below
+     * cannot return the account e-mail and the add-account flow aborts after consent.
+     * They are additive; `email` is not a sensitive Gmail scope.
+     */
+    val identityScopes = listOf("openid", "email", "profile")
+
     /** Scopes for Gmail access. */
     val gmailScopes = listOf(
         "https://www.googleapis.com/auth/gmail.readonly",
         "https://www.googleapis.com/auth/gmail.modify",
     )
 
-    /** Scopes for Google Drive access. */
+    /**
+     * Scopes for Google Drive access.
+     *
+     * Drive v3 has no "trash-only" OAuth scope: moving a file the app did not
+     * create to Trash requires the full `drive` scope. `drive.readonly` can
+     * only list/read, so requesting it alone made every real Trash call fail.
+     * This is the most privileged scope the app asks for; the connector still
+     * only ever PATCHes `trashed`, never deletes permanently.
+     */
     val driveScopes = listOf(
-        "https://www.googleapis.com/auth/drive.file",
-        "https://www.googleapis.com/auth/drive.readonly",
+        "https://www.googleapis.com/auth/drive",
     )
+
+    /** What the add-account button actually requests: identity + both cleaners. */
+    val connectScopes: List<String> get() = (identityScopes + gmailScopes + driveScopes).distinct()
 
     /** Scopes for Google Photos Picker (no OAuth needed, uses Picker API). */
     val photosScopes = emptyList<String>()
@@ -260,15 +277,22 @@ class GoogleAuthProvider(
 
     data class GoogleUserInfo(val email: String, val displayName: String?)
 
+    /** One account row per provider; the encrypted token is shared by e-mail. */
+    private fun accountId(email: String, provider: CloudProvider): String = when (provider) {
+        CloudProvider.GoogleDrive -> "google_drive_$email"
+        else -> "google_$email"
+    }
+
     /** Convert a successful auth result to a CloudAccount entity. */
     fun accountFromResult(
         email: String,
         displayName: String?,
         tokenResponse: GoogleTokenResponse,
+        provider: CloudProvider = CloudProvider.Gmail,
     ): CloudAccount {
         return CloudAccount(
-            id = "google_$email",
-            provider = CloudProvider.Gmail,
+            id = accountId(email, provider),
+            provider = provider,
             email = email,
             displayName = displayName,
             isConnected = true,

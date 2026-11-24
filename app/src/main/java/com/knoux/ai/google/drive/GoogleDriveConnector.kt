@@ -72,7 +72,11 @@ class GoogleDriveConnector(
                 val candidates = mutableListOf<CleanupCandidate>()
 
                 // 1. Large files (> 10MB), paginated.
-                val largeFiles = listFiles(accessToken, "size > 10485760 and trashed = false", pageSize = 100)
+                val largeFiles = listFiles(
+                    accessToken,
+                    "size > ${GoogleDriveApiPolicy.LARGE_FILE_MIN_BYTES} and trashed = false",
+                    pageSize = 100,
+                )
                 for (file in largeFiles) {
                     candidates.add(CleanupCandidate(
                         id = "drive_${file.id}",
@@ -89,7 +93,7 @@ class GoogleDriveConnector(
 
                 // 2. Old files (older than 1 year), paginated.
                 val cutoff = java.time.Instant.now()
-                    .minus(365, java.time.temporal.ChronoUnit.DAYS)
+                    .minus(GoogleDriveApiPolicy.OLD_FILE_DAYS, java.time.temporal.ChronoUnit.DAYS)
                     .toString()
                 val oldFiles = listFiles(
                     accessToken,
@@ -213,8 +217,15 @@ class GoogleDriveConnector(
             var trashed = 0
             for (fileId in fileIds) {
                 try {
+                    // Drive v3: there is no /files/{id}/trash sub-resource (that
+                    // was v2). Trash is files.update on the file resource itself,
+                    // PATCHing the `trashed` flag. The old URL 404'd on every call
+                    // and reported zero items moved.
                     val body = CloudHttp.mutateJson(
-                        "$DRIVE_API_BASE/files/$fileId/trash", accessToken, method = "PATCH",
+                        GoogleDriveApiPolicy.trashedFlagUpdateUrl(fileId),
+                        accessToken,
+                        method = "PATCH",
+                        jsonBody = GoogleDriveApiPolicy.trashRequestBody(),
                     )
                     // Count only when the provider confirms the file is trashed.
                     if (body.optBoolean("trashed", false)) trashed++
@@ -257,8 +268,13 @@ class GoogleDriveConnector(
             var restored = 0
             for (fileId in fileIds) {
                 try {
+                    // Drive v3 restore is the same files.update PATCH with
+                    // `trashed:false`; /files/{id}/untrash does not exist in v3.
                     val body = CloudHttp.mutateJson(
-                        "$DRIVE_API_BASE/files/$fileId/untrash", accessToken, method = "PATCH",
+                        GoogleDriveApiPolicy.trashedFlagUpdateUrl(fileId),
+                        accessToken,
+                        method = "PATCH",
+                        jsonBody = GoogleDriveApiPolicy.untrashRequestBody(),
                     )
                     // Count only when the provider confirms the file is live again.
                     if (!body.optBoolean("trashed", true)) restored++

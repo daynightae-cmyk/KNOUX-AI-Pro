@@ -187,9 +187,20 @@ class CredentialVault(private val context: Context) {
      * Explicit recovery: delete every encrypted value and masked label. The
      * Keystore key is kept (deleting it would also invalidate any other data
      * using it) so the user can re-enter credentials safely.
+     *
+     * DESTRUCTIVE: this removes real provider keys and Google/Microsoft OAuth
+     * tokens, while account metadata lives in separate preferences and would
+     * still list "connected" accounts. Tests must scope their own fixture
+     * cleanup to [removeCredential], never call this against a debug build that
+     * may hold owner credentials.
      */
     suspend fun wipeAll() {
         withContext(Dispatchers.IO) {
+            val deleted = vaultPrefs.all.keys.count {
+                it.startsWith(ENC_KEY_PREFIX) ||
+                    it.startsWith(MASKED_KEY_PREFIX) ||
+                    it.startsWith(ENABLED_KEY_PREFIX)
+            }
             val editor = vaultPrefs.edit()
             vaultPrefs.all.keys
                 .filter {
@@ -198,7 +209,8 @@ class CredentialVault(private val context: Context) {
                         it.startsWith(ENABLED_KEY_PREFIX)
                 }
                 .forEach { editor.remove(it) }
-            editor.commit()
+            val committed = editor.commit()
+            Log.i(TAG, "Vault wipe requested: $deleted credential entries removed=$committed")
         }
     }
 

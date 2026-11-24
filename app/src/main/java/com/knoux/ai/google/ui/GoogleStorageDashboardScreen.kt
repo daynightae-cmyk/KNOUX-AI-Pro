@@ -243,7 +243,9 @@ fun GoogleStorageDashboardScreen(
                 "-Pknoux.googleAndroidClientId=… ثم أعد البناء."
             return
         }
-        authProvider.authorize(activity, authProvider.gmailScopes + authProvider.driveScopes) { result ->
+        // The Google Drive dashboard must request identity scopes, otherwise
+        // the userinfo lookup cannot return the e-mail and the link aborts.
+        authProvider.authorize(activity, authProvider.connectScopes) { result ->
             val token = result.tokenResponse
             if (!result.success || token == null) {
                 message = result.error ?: "فشل تفويض Google"
@@ -256,7 +258,21 @@ fun GoogleStorageDashboardScreen(
                     return@launch
                 }
                 accountManager.saveAccount(
-                    authProvider.accountFromResult(info.email, info.displayName, token),
+                    authProvider.accountFromResult(
+                        info.email,
+                        info.displayName,
+                        token,
+                        CloudProvider.GoogleDrive,
+                    ),
+                    token,
+                )
+                accountManager.saveAccount(
+                    authProvider.accountFromResult(
+                        info.email,
+                        info.displayName,
+                        token,
+                        CloudProvider.Gmail,
+                    ),
                     token,
                 )
                 reload()

@@ -324,7 +324,7 @@ fun UnifiedCloudCleanerScreen(
         }
         googleAuth.authorize(
             activity,
-            googleAuth.gmailScopes + googleAuth.driveScopes,
+            googleAuth.connectScopes,
         ) { result ->
             val token = result.tokenResponse
             if (!result.success || token == null) {
@@ -338,7 +338,21 @@ fun UnifiedCloudCleanerScreen(
                     return@launch
                 }
                 googleAccounts.saveAccount(
-                    googleAuth.accountFromResult(info.email, info.displayName, token),
+                    googleAuth.accountFromResult(
+                        info.email,
+                        info.displayName,
+                        token,
+                        CloudProvider.GoogleDrive,
+                    ),
+                    token,
+                )
+                googleAccounts.saveAccount(
+                    googleAuth.accountFromResult(
+                        info.email,
+                        info.displayName,
+                        token,
+                        CloudProvider.Gmail,
+                    ),
                     token,
                 )
                 reloadAccounts()
