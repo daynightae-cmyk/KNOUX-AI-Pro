@@ -2075,20 +2075,30 @@ fun V2PrivacyRiskScreen(onBack: () -> Unit, onPro: () -> Unit) {
     val (refresh, bump) = rememberRefreshCounter()
     val facts = rememberDeviceFacts(refresh)
     var actionError by remember { mutableStateOf<String?>(null) }
-    InteriorScaffold(onBack, onPro, bottomBar = {
-        V2GradientButton("إعدادات الخصوصية في Android", { openPrivacySettings(context) }, icon = Icons.Rounded.Security, height = 48.dp)
-    }) {
-        item { PageHeading("مراجعة الأذونات الحساسة", "PackageManager؛ لا كشف تسجيل أو تتبع", Icons.Rounded.Shield, V2Pink) }
-        item { ScopedNotice("الإذن المعلن أو الممنوح ليس دليلاً على تشغيل الكاميرا أو التسجيل أو التتبع. لا يملك KNOUX سجلاً لاستخدام الحساسات في الخلفية؛ راجع لوحة خصوصية Android.", V2Amber) }
-        actionError?.let { message -> item { ScopedNotice(message, V2Amber) } }
-        if (facts.computedAt == 0L) item { ScopedNotice("جاري قراءة الأذونات…") }
-        facts.privacyGroups.forEach { group ->
-            item {
+
+    // Royal stage: fixed header with live instrument + measured ribbon
+    FixedServiceScreen(
+        spec = ServiceSpecs.privacy,
+        status = if (facts.computedAt > 0L) "PackageManager" else "جاري القراءة",
+        statusColor = if (facts.computedAt > 0L) V2Green else V2Amber,
+        metric = "${facts.privacyGroups.sumOf { it.appCount }} إذن حساس",
+        scene = { sceneModifier -> ServiceArtScene(ServiceSpecs.privacy, sceneModifier) },
+        ribbonSlots = listOf(
+            HeroRibbonSlot(Icons.Rounded.Shield, facts.privacyGroups.sumOf { it.appCount }.toString(), "إذن حساس", V2Pink),
+            HeroRibbonSlot(Icons.Rounded.Apps, formatCount(facts.installedCount), "تطبيق مثبت", V2Cyan),
+            HeroRibbonSlot(Icons.Rounded.Memory, formatBytes(facts.ownCacheBytes), "كاش KNOUX", V2Violet),
+        ),
+        action = {
+            V2GradientButton("إعدادات الخصوصية في Android", { openPrivacySettings(context) }, icon = Icons.Rounded.Security, height = 48.dp)
+        },
+        content = {
+            ScopedNotice("الإذن المعلن أو الممنوح ليس دليلاً على تشغيل الكاميرا أو التسجيل أو التتبع. لا يملك KNOUX سجلاً لاستخدام الحساسات في الخلفية؛ راجع لوحة خصوصية Android.", V2Amber)
+            actionError?.let { message -> ScopedNotice(message, V2Amber) }
+            if (facts.computedAt == 0L) ScopedNotice("جاري قراءة الأذونات…")
+            facts.privacyGroups.forEach { group ->
                 ScopedNotice("${group.label}: ${formatCount(group.appCount)} حزمة تعلن الإذن؛ ${formatCount(group.grantedCount)} حزمة يظهر الإذن ممنوحاً لها ضمن الحزم الظاهرة.", V2Violet)
-            }
-            group.packages.forEach { pkg ->
-                val app = facts.installedApps.firstOrNull { it.packageName == pkg }
-                item {
+                group.packages.forEach { pkg ->
+                    val app = facts.installedApps.firstOrNull { it.packageName == pkg }
                     V2GlassCard(Modifier.fillMaxWidth().heightIn(min = 48.dp).clickable {
                         actionError = showInstalledAppInfo(context, pkg)
                     }, padding = 12.dp, radius = 16.dp, glow = V2Cyan) {
@@ -2100,12 +2110,12 @@ fun V2PrivacyRiskScreen(onBack: () -> Unit, onPro: () -> Unit) {
                     }
                 }
             }
-        }
-        if (facts.computedAt > 0L && facts.privacyGroups.all { it.appCount == 0 }) {
-            item { ScopedNotice("لا أذونات حساسة في الحزم الظاهرة. هذا لا يثبت خلو الجهاز من مخاطر الخصوصية.") }
-        }
-        item { V2GhostButton("تحديث بعد تغيير الأذونات", bump, icon = Icons.Rounded.Refresh, height = 48.dp) }
-    }
+            if (facts.computedAt > 0L && facts.privacyGroups.all { it.appCount == 0 }) {
+                ScopedNotice("لا أذونات حساسة في الحزم الظاهرة. هذا لا يثبت خلو الجهاز من مخاطر الخصوصية.")
+            }
+            V2GhostButton("تحديث بعد تغيير الأذونات", bump, icon = Icons.Rounded.Refresh, height = 48.dp)
+        },
+    )
 }
 
 @Composable
