@@ -464,7 +464,6 @@ fun V2AppManagerScreen(
                             operationId = opId,
                             itemId = pkg,
                             result = if (status == "VERIFIED") "SUCCESS" else status,
-                            // Unknown cannot prove absence; providerError retains that distinction.
                             postQueryExists = presence.exists != false,
                             measuredBytes = null,
                             providerError = presence.error,
@@ -485,10 +484,19 @@ fun V2AppManagerScreen(
         }
     }
 
-    InteriorScaffold(
-        onBack = onBack,
-        onPro = onPro,
-        bottomBar = {
+    // Royal stage: fixed header with live instrument + measured ribbon
+    FixedServiceScreen(
+        spec = ServiceSpecs.appManager,
+        status = if (facts.computedAt > 0L) "PackageManager" else "جاري القراءة",
+        statusColor = if (facts.computedAt > 0L) V2Green else V2Amber,
+        metric = "${formatCount(facts.installedCount)} تطبيق",
+        scene = { sceneModifier -> ServiceArtScene(ServiceSpecs.appManager, sceneModifier) },
+        ribbonSlots = listOf(
+            HeroRibbonSlot(Icons.Rounded.Apps, formatCount(facts.installedCount), "تطبيق مثبت", V2Cyan),
+            HeroRibbonSlot(Icons.Rounded.Memory, formatBytes(facts.ownCacheBytes), "كاش KNOUX", V2Pink),
+            HeroRibbonSlot(Icons.Rounded.Storage, formatBytes(facts.storage.freeBytes), "مساحة متاحة", V2Green),
+        ),
+        action = {
             V2GradientButton(
                 "فتح إعدادات التطبيقات",
                 { openAllAppSettings(context) },
@@ -496,109 +504,69 @@ fun V2AppManagerScreen(
                 trailingChevron = true,
             )
         },
-    ) {
-        item {
-            ServiceBanner(
-                spec = ServiceSpecs.appManager,
-                status = if (facts.computedAt > 0L) "PackageManager" else "جاري القراءة",
-                statusColor = if (facts.computedAt > 0L) V2Green else V2Amber,
-                metric = "${formatCount(facts.installedCount)} تطبيق",
-            )
-        }
-        item {
-            // The universal K orb: the only way this service starts.
-            KnouxRunOrbBlock(
-                progress = when {
-                    refreshing -> null
-                    facts.computedAt > 0L -> 1f
-                    else -> 0f
-                },
-                running = refreshing,
-                enabled = !refreshing,
-                label = when {
-                    refreshing -> "جارٍ قراءة التطبيقات…"
-                    facts.computedAt > 0L -> "اضغط لإعادة قراءة التطبيقات"
-                    else -> "اضغط لتشغيل الخدمة"
-                },
-                accent = V2Pink,
-                accent2 = V2Violet,
-                onTap = {
-                    if (!refreshing) {
-                        refreshing = true
-                        bump()
+        content = {
+            uninstallMessage?.let { message -> ScopedNotice(message, V2Amber) }
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    val labels = listOf(
+                        "الكل (${formatCount(facts.installedCount)})",
+                        "مستخدم (${formatCount(facts.userAppCount)})",
+                        "نظام (${formatCount(facts.installedCount - facts.userAppCount)})",
+                    )
+                    labels.forEachIndexed { index, label ->
+                        AppFilterChip(
+                            text = label,
+                            active = filter == index,
+                            modifier = Modifier.weight(1f),
+                            onClick = { filter = index },
+                        )
                     }
-                },
-            )
-        }
-        item { AppManagerRealSummary(facts) }
-        uninstallMessage?.let { message -> item { ScopedNotice(message, V2Amber) } }
-        item {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                val labels = listOf(
-                    "الكل (${formatCount(facts.installedCount)})",
-                    "مستخدم (${formatCount(facts.userAppCount)})",
-                    "نظام (${formatCount(facts.installedCount - facts.userAppCount)})",
-                )
-                labels.forEachIndexed { index, label ->
-                    AppFilterChip(
-                        text = label,
-                        active = filter == index,
-                        modifier = Modifier.weight(1f),
-                        onClick = { filter = index },
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    KText("التطبيقات الظاهرة للتطبيق", size = 12.5.sp, weight = FontWeight.Bold)
+                    Spacer(Modifier.weight(1f))
+                    KText("مرتبة حسب الحجم", size = 9.sp, color = V2Muted)
+                }
+                if (apps.isEmpty()) {
+                    ServiceCapabilityCard(
+                        title = if (facts.computedAt == 0L) "جاري قراءة الحزم" else "لا تطبيقات في هذا التصنيف",
+                        body = "تُقرأ القائمة من PackageManager على هذا الهاتف فقط، بدون أي بيانات تجريبية.",
+                        state = ServiceState.LIVE,
+                        actionLabel = "تحديث",
+                        onAction = bump,
                     )
                 }
-            }
-        }
-        item {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                KText("التطبيقات الظاهرة للتطبيق", size = 12.5.sp, weight = FontWeight.Bold)
-                Spacer(Modifier.weight(1f))
-                KText("مرتبة حسب الحجم", size = 9.sp, color = V2Muted)
-            }
-        }
-        if (apps.isEmpty()) {
-            item {
-                ServiceCapabilityCard(
-                    title = if (facts.computedAt == 0L) "جاري قراءة الحزم" else "لا تطبيقات في هذا التصنيف",
-                    body = "تُقرأ القائمة من PackageManager على هذا الهاتف فقط، بدون أي بيانات تجريبية.",
-                    state = ServiceState.LIVE,
-                    actionLabel = "تحديث",
-                    onAction = bump,
+                apps.forEach { app ->
+                    RealInstalledAppRow(
+                        app = app,
+                        onClick = { openAppInfo(context, app.packageName) },
+                        onUninstall = {
+                            if (!app.isSystem) {
+                                if (appToUninstall == null) {
+                                    appToUninstall = app.packageName
+                                    try {
+                                        uninstallLauncher.launch(
+                                            Intent(Intent.ACTION_DELETE)
+                                                .setData(Uri.parse("package:${app.packageName}"))
+                                                .putExtra(Intent.EXTRA_RETURN_RESULT, true)
+                                        )
+                                    } catch (error: Exception) {
+                                        appToUninstall = null
+                                        uninstallMessage = "تعذّر فتح إزالة التطبيق: ${error.message}"
+                                    }
+                                }
+                            }
+                        },
+                    )
+                }
+                ServiceSubGrid(ServiceSpecs.appManager)
+                PreviewNote(
+                    "المصدر: PackageManager. حجم الحزمة يظهر فقط عندما يوفره النظام؛ " +
+                        "الغياب يعني «غير متاح» وليس صفرًا. تفاصيل الأذونات تُفتح في إعدادات Android الرسمية."
                 )
             }
-        }
-        items(apps.size) { index ->
-            val app = apps[index]
-            RealInstalledAppRow(
-                app = app,
-                onClick = { openAppInfo(context, app.packageName) },
-                onUninstall = {
-                    if (!app.isSystem) {
-                        if (appToUninstall == null) {
-                            appToUninstall = app.packageName
-                            try {
-                                uninstallLauncher.launch(
-                                    Intent(Intent.ACTION_DELETE)
-                                        .setData(Uri.parse("package:${app.packageName}"))
-                                        .putExtra(Intent.EXTRA_RETURN_RESULT, true)
-                                )
-                            } catch (error: Exception) {
-                                appToUninstall = null
-                                uninstallMessage = "تعذّر فتح إزالة التطبيق: ${error.message}"
-                            }
-                        }
-                    }
-                },
-            )
-        }
-        item { ServiceSubGrid(ServiceSpecs.appManager) }
-        item {
-            PreviewNote(
-                "المصدر: PackageManager. حجم الحزمة يظهر فقط عندما يوفره النظام؛ " +
-                    "الغياب يعني «غير متاح» وليس صفرًا. تفاصيل الأذونات تُفتح في إعدادات Android الرسمية."
-            )
-        }
-    }
+        },
+    )
 }
 
 @Composable
