@@ -235,6 +235,7 @@ fun V2CleanToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
                         status = if (facts.computedAt > 0L) "قراءة مباشرة" else "جاري القراءة",
                         statusColor = if (facts.computedAt > 0L) V2Green else V2Amber,
                         metric = metric,
+                        showIdentityLine = false,
                     )
                 }
                 item {

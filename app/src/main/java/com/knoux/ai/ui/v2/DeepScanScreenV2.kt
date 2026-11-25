@@ -123,6 +123,7 @@ fun V2DeepScanScreen(onBack: () -> Unit, onOpenSummary: () -> Unit, onPro: () ->
                 metric = metric,
                 scene = { modifier -> DeepScanSonar(state, modifier) },
                 listState = listState,
+                showIdentityLine = false,
                 action = {
                     // The universal K orb: the only way this service starts.
                     KnouxRunOrbBlock(

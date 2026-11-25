@@ -106,6 +106,7 @@ private fun ExtraHubHeader(
                 .fillMaxWidth()
                 .height(serviceHeaderHeight(maxWidth, compact)),
             scene = { sceneModifier -> ServiceArtScene(spec, sceneModifier) },
+            showIdentityLine = false,
         )
     }
 }

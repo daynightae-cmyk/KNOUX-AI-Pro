@@ -177,6 +177,7 @@ private fun LegacyDeepScanScreen(onBack: () -> Unit, onOpenSummary: () -> Unit, 
                             else -> V2Cyan
                         },
                         metric = "${(progress * 100).toInt()}% · ${formatCount(facts.installedCount)} تطبيق",
+                        showIdentityLine = false,
                     )
                 }
                 item {
@@ -981,6 +982,7 @@ fun V2ResidueScreen(onBack: () -> Unit, onReview: () -> Unit, onPro: () -> Unit)
                         status = "كاش KNOUX مقروء",
                         statusColor = V2Green,
                         metric = "$cacheText · ${formatCount(facts.ownCacheFiles)} ملف",
+                        showIdentityLine = false,
                     )
                 }
                 item {
@@ -1359,6 +1361,7 @@ fun V2PrivacyScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> U
                         status = "PackageManager",
                         statusColor = V2Green,
                         metric = "${formatCount(granted)}/${formatCount(declared)} إذن",
+                        showIdentityLine = false,
                     )
                 }
                 item {

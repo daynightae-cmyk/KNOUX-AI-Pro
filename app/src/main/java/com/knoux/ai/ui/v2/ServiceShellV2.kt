@@ -165,6 +165,7 @@ fun FixedServiceScreen(
     action: (@Composable () -> Unit)? = null,
     ribbonSlots: List<HeroRibbonSlot>? = null,
     listState: LazyListState = rememberLazyListState(),
+    showIdentityLine: Boolean = true,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     BoxWithConstraints(modifier.fillMaxSize()) {
@@ -187,6 +188,7 @@ fun FixedServiceScreen(
                     .height(headerHeight)
                     .testTag("service_fixed_cover"),
                 scene = scene,
+                showIdentityLine = showIdentityLine,
             )
             if (action != null) {
                 Spacer(Modifier.height(10.dp))
@@ -235,6 +237,7 @@ fun ServiceHero(
     compact: Boolean = false,
     ribbonSlots: List<HeroRibbonSlot>? = null,
     scene: @Composable (Modifier) -> Unit,
+    showIdentityLine: Boolean = true,
 ) {
     val motion = rememberMotionEnabled()
     var entered by remember { mutableStateOf(false) }
@@ -380,52 +383,55 @@ fun ServiceHero(
                 ),
         ) {
             // Identity line — order number and the wordmark, PRO badge when earned.
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                // The official seal opens the stage like board 01: the original
-                // logo above the scene, breathing softly on the night sky.
-                com.knoux.ai.ui.components.BrandSeal(
-                    size = if (compact) 24.dp else 32.dp,
-                    haloColor = spec.accent,
-                    contentDescription = null,
-                )
-                Spacer(Modifier.width(if (compact) 6.dp else 8.dp))
-                Column(Modifier.weight(1f)) {
-                    KText(
-                        "${spec.order} · ${spec.english}",
-                        size = if (compact) 8.sp else 9.sp,
-                        weight = FontWeight.Bold,
-                        color = spec.accent2,
-                        letterSpacing = 1.8.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
+            // Hidden when the screen already has a unified V2TopBar header.
+            if (showIdentityLine) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    // The official seal opens the stage like board 01: the original
+                    // logo above the scene, breathing softly on the night sky.
+                    com.knoux.ai.ui.components.BrandSeal(
+                        size = if (compact) 24.dp else 32.dp,
+                        haloColor = spec.accent,
+                        contentDescription = null,
                     )
-                    Spacer(Modifier.height(1.dp))
-                    KText(
-                        if (spec.pro) "KNOUX AI · PRO" else "KNOUX AI",
-                        size = if (compact) 6.4.sp else 7.2.sp,
-                        weight = FontWeight.SemiBold,
-                        color = V2Muted,
-                        letterSpacing = 1.4.sp,
-                        maxLines = 1,
-                    )
-                }
-                if (spec.pro) {
-                    Box(
-                        Modifier
-                            .clip(RoundedCornerShape(50))
-                            .background(V2GoldText.copy(alpha = .16f))
-                            .border(1.dp, V2GoldText.copy(alpha = .50f), RoundedCornerShape(50))
-                            .padding(horizontal = 7.dp, vertical = 3.dp),
-                    ) {
-                        KText("PRO", size = 9.sp, weight = FontWeight.Black, color = V2GoldText)
+                    Spacer(Modifier.width(if (compact) 6.dp else 8.dp))
+                    Column(Modifier.weight(1f)) {
+                        KText(
+                            "${spec.order} · ${spec.english}",
+                            size = if (compact) 8.sp else 9.sp,
+                            weight = FontWeight.Bold,
+                            color = spec.accent2,
+                            letterSpacing = 1.8.sp,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Spacer(Modifier.height(1.dp))
+                        KText(
+                            if (spec.pro) "KNOUX AI · PRO" else "KNOUX AI",
+                            size = if (compact) 6.4.sp else 7.2.sp,
+                            weight = FontWeight.SemiBold,
+                            color = V2Muted,
+                            letterSpacing = 1.4.sp,
+                            maxLines = 1,
+                        )
+                    }
+                    if (spec.pro) {
+                        Box(
+                            Modifier
+                                .clip(RoundedCornerShape(50))
+                                .background(V2GoldText.copy(alpha = .16f))
+                                .border(1.dp, V2GoldText.copy(alpha = .50f), RoundedCornerShape(50))
+                                .padding(horizontal = 7.dp, vertical = 3.dp),
+                        ) {
+                            KText("PRO", size = 9.sp, weight = FontWeight.Black, color = V2GoldText)
+                        }
                     }
                 }
-            }
 
-            Spacer(Modifier.height(if (compact) 3.dp else 5.dp))
+                Spacer(Modifier.height(if (compact) 3.dp else 5.dp))
+            }
 
             // The service name is the hero text, with its promise underneath.
             Column(

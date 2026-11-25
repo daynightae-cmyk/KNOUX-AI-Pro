@@ -759,47 +759,116 @@ fun V2TopBar(
     onBack: () -> Unit = {},
     onProfile: () -> Unit = {},
     onNotifications: () -> Unit = {},
-    onMenu: () -> Unit = {},
+    onMenu: (() -> Unit)? = null,
     onPro: () -> Unit = {},
+    showMenu: Boolean = true,
+) {
+    // Approved header from the 941×1672 artboard, shared by every routed
+    // screen: small circular profile/notification/back controls at the start,
+    // the official KNOUX lockup dead centre, and the gold hamburger at the end.
+    // No flat text pills, no duplicate menu, no competing oversized discs.
+    // The menu always has a real destination: an explicit handler, or Settings.
+    val navigate = LocalServiceNavigate.current
+    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+        Box(
+            modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .padding(horizontal = 8.dp),
+        ) {
+            Row(
+                Modifier.align(Alignment.CenterStart),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (mode == V2TopMode.HOME) {
+                    RefCircleButton(Icons.Rounded.Person, "الحساب", onProfile)
+                    RefCircleButton(Icons.Rounded.NotificationsNone, "التنبيهات", onNotifications)
+                } else {
+                    RefCircleButton(Icons.Rounded.ArrowBack, "رجوع", onBack)
+                }
+            }
+
+            BrandLockupV2(
+                modifier = Modifier.align(Alignment.Center).fillMaxWidth(.60f),
+                onPro = onPro,
+            )
+
+            if (showMenu) {
+                Box(Modifier.align(Alignment.CenterEnd)) {
+                    RefMenuButton(label = "القائمة", onClick = { onMenu?.invoke() ?: navigate("settings") })
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Compact circular header control — 36dp visual disc inside a real 48dp
+ * touch target, exactly like the approved Home artboard.
+ */
+@Composable
+internal fun RefCircleButton(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     Box(
         modifier
-            .fillMaxWidth()
-            .height(54.dp)
-            .padding(horizontal = 12.dp),
+            .size(48.dp)
+            .clickable(onClickLabel = label, onClick = onClick)
+            .semantics { contentDescription = label },
+        contentAlignment = Alignment.Center,
     ) {
-        Row(
-            Modifier.align(Alignment.CenterStart),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
+        Box(
+            Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .background(Brush.radialGradient(listOf(Color(0xFF1B1240), Color(0xFF0B0722))))
+                .border(
+                    1.2.dp,
+                    Brush.linearGradient(listOf(V2Violet.withAlpha(.85f), V2Cyan.withAlpha(.55f), V2Violet.withAlpha(.85f))),
+                    CircleShape,
+                ),
+            contentAlignment = Alignment.Center,
         ) {
-            CrownHexButton(onClick = onPro)
-            RefHeaderMenuPill("القائمة", onMenu, isRight = false)
+            Icon(icon, null, tint = Color.White.withAlpha(.94f), modifier = Modifier.size(18.dp))
         }
+    }
+}
 
-        Row(
-            Modifier.align(Alignment.Center),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(7.dp),
+/** Gold rounded-square hamburger from the approved art (48dp touch target). */
+@Composable
+internal fun RefMenuButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val day = LocalDayMode.current
+    Box(
+        modifier
+            .size(48.dp)
+            .clickable(onClickLabel = label, onClick = onClick)
+            .semantics { contentDescription = label },
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            Modifier
+                .size(36.dp)
+                .clip(RoundedCornerShape(11.dp))
+                .background(
+                    if (day) Brush.verticalGradient(listOf(Color(0xFFF4EAD8), Color(0xFFE7D7BC)))
+                    else Brush.verticalGradient(listOf(Color(0xFF241503), Color(0xFF120A02)))
+                )
+                .border(
+                    1.3.dp,
+                    Brush.linearGradient(listOf(RefGoldBright, RefGold, Color(0xFFB87A1E))),
+                    RoundedCornerShape(11.dp),
+                ),
+            contentAlignment = Alignment.Center,
         ) {
-            BrandLockupV2()
-        }
-
-        if (mode == V2TopMode.HOME) {
-            Row(
-                Modifier.align(Alignment.CenterEnd),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-                    RefHeaderActionPill(Icons.Rounded.Person, "الحساب", onProfile)
-                    Spacer(Modifier.width(8.dp))
-                    RefHeaderMenuPill("القائمة", onMenu, isRight = true)
-                }
-            }
-        } else {
-            Box(Modifier.align(Alignment.CenterEnd)) {
-                RefHeaderMenuPill("رجوع", onBack, isRight = false, showIcon = false)
-            }
+            Icon(
+                Icons.Rounded.Menu,
+                null,
+                tint = if (day) V2GoldText else RefGoldBright,
+                modifier = Modifier.size(19.dp),
+            )
         }
     }
 }
@@ -871,10 +940,10 @@ internal fun RefHeaderActionPill(icon: androidx.compose.ui.graphics.vector.Image
 }
 
 @Composable
-fun BrandLockupV2() {
+fun BrandLockupV2(modifier: Modifier = Modifier, onPro: (() -> Unit)? = null) {
     val day = LocalDayMode.current
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
             // The official white company seal leads the lockup on every V2
             // screen; its halo breathes and orbits, the pearl disc stays lit.
             com.knoux.ai.ui.components.BrandSeal(
@@ -891,7 +960,17 @@ fun BrandLockupV2() {
                 modifier = Modifier.height(14.5.dp),
             )
             Spacer(Modifier.width(7.dp))
-            ProPill()
+            Box(
+                Modifier
+                    .clip(RoundedCornerShape(50))
+                    .then(
+                        if (onPro != null) {
+                            Modifier.clickable(onClickLabel = "Pro", onClick = onPro)
+                        } else Modifier
+                    ),
+            ) {
+                ProPill()
+            }
         }
     }
 }

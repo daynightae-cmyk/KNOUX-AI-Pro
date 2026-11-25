@@ -459,6 +459,7 @@ private fun AppNavHost(
                 onPro = { open(ROUTE_PRO) },
                 onProfile = onAccount,
                 onNotifications = { open(ROUTE_REPORTS) },
+                onBack = { nav.popBackStack(ROUTE_HOME, false) },
             )
         }
 
@@ -469,6 +470,7 @@ private fun AppNavHost(
                 onPro = { open(ROUTE_PRO) },
                 onProfile = onAccount,
                 onNotifications = { open(ROUTE_REPORTS) },
+                onBack = { nav.popBackStack(ROUTE_HOME, false) },
             )
         }
 

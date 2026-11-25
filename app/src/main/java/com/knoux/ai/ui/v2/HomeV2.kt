@@ -443,7 +443,21 @@ internal fun RefHomeBackground() {
 }
 
 /* ------------------------------------------------------------------ *
- * Header — profile + bell left, K lockup + PRO center, hamburger right
+ * Small circular header button — 34dp touch target inside a compact disc,
+ * pinned to the status-bar edge. Shared visual with SectionHubRefV2.
+ * ------------------------------------------------------------------ */
+
+@Composable
+private fun RefHeaderCircle(icon: androidx.compose.ui.graphics.vector.ImageVector, desc: String, onClick: () -> Unit) {
+    RefCircleButton(icon, desc, onClick)
+}
+
+/* ------------------------------------------------------------------ *
+ * Header — matched to the approved 941×1672 artboard:
+ *   • Three small circular header buttons pinned to the status-bar edge
+ *     (profile left, notifications center-left, hamburger right).
+ *   • Center: wide "KNOUX AI PRO" wordmark with gold PRO badge on its right.
+ *   • No text pills, no duplicated menus.
  * ------------------------------------------------------------------ */
 
 @Composable
@@ -453,27 +467,32 @@ private fun RefHomeHeader(
     onNotifications: () -> Unit,
     onPro: () -> Unit,
 ) {
-    // Absolute placement so the lockup stays optically centered no matter
-    // how wide the side clusters are (reference: lockup center ≈ artboard mid).
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-        Box(Modifier.fillMaxWidth().height(52.dp)) {
-            Row(Modifier.align(Alignment.CenterStart), verticalAlignment = Alignment.CenterVertically) {
-                RefHeaderMenuPill("القائمة", onMenu)
-                Spacer(Modifier.width(8.dp))
-                RefHeaderActionPill(Icons.Rounded.NotificationsNone, "التنبيهات", onNotifications)
+        Box(Modifier.fillMaxWidth().height(56.dp).windowInsetsPadding(WindowInsets.statusBars)) {
+            // Real 48dp touch targets; the discs stay compact like the art.
+            Row(
+                Modifier.align(Alignment.CenterStart),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                RefHeaderCircle(Icons.Rounded.Person, "الحساب", onProfile)
+                RefHeaderCircle(Icons.Rounded.NotificationsNone, "التنبيهات", onNotifications)
             }
             // Center lockup: official geometric K + knoux ai wordmark + gold PRO capsule.
-            Row(Modifier.align(Alignment.Center), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                Modifier.align(Alignment.Center),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+            ) {
                 Image(
                     painter = painterResource(R.drawable.knoux_symbol_alpha),
                     contentDescription = "KNOUX",
-                    modifier = Modifier.height(24.dp),
+                    modifier = Modifier.height(22.dp),
                 )
                 Spacer(Modifier.width(5.dp))
                 Image(
                     painter = painterResource(R.drawable.knoux_wordmark_alpha),
                     contentDescription = "knoux ai",
-                    modifier = Modifier.height(15.dp),
+                    modifier = Modifier.height(13.dp),
                 )
                 Spacer(Modifier.width(7.dp))
                 Row(
@@ -482,21 +501,19 @@ private fun RefHomeHeader(
                         .background(Brush.horizontalGradient(listOf(Color(0xFF3A2404), Color(0xFF241503))))
                         .border(1.2.dp, Brush.horizontalGradient(listOf(RefGold, RefGoldBright, RefGold)), RoundedCornerShape(50))
                         .clickable(onClickLabel = "Pro", onClick = onPro)
-                        .padding(horizontal = 9.dp, vertical = 3.5.dp),
+                        .padding(horizontal = 8.dp, vertical = 3.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    CrownGold(size = 13.dp, color = RefGold)
-                    Spacer(Modifier.width(4.dp))
+                    CrownGold(size = 12.dp, color = RefGold)
+                    Spacer(Modifier.width(3.dp))
                     CompositionLocalProvider(LocalKnouxOnDark provides true) {
-                        KText("PRO", size = 10.sp, weight = FontWeight.Black, color = RefGoldBright, letterSpacing = .8.sp)
+                        KText("PRO", size = 9.sp, weight = FontWeight.Black, color = RefGoldBright, letterSpacing = .7.sp)
                     }
                 }
             }
-            // Right: flat profile pill + hamburger.
-            Row(Modifier.align(Alignment.CenterEnd), verticalAlignment = Alignment.CenterVertically) {
-                RefHeaderActionPill(Icons.Rounded.Person, "الحساب", onProfile)
-                Spacer(Modifier.width(8.dp))
-                RefHeaderMenuPill("القائمة", onMenu, isRight = true)
+            // Right: single gold hamburger, identical to every inner screen.
+            Box(Modifier.align(Alignment.CenterEnd)) {
+                RefMenuButton("القائمة", onMenu)
             }
         }
     }
@@ -978,7 +995,7 @@ private fun RefServiceCard(card: RefCard, modifier: Modifier = Modifier, onClick
         // No divider between text and icon — cleaner anatomy, larger touch area.
         CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
             Row(
-                Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 8.dp),
+                Modifier.fillMaxWidth().padding(horizontal = 11.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 RefCardText(card, Modifier.weight(1f), alignEnd = !card.latin)
@@ -1001,7 +1018,7 @@ private fun RefCardText(card: RefCard, modifier: Modifier = Modifier, alignEnd: 
                 KText(card.title, size = 15.sp, weight = FontWeight.Black, color = Color.White, maxLines = 1, overflow = TextOverflow.Ellipsis, align = if (alignEnd) TextAlign.End else TextAlign.Start)
             }
             Spacer(Modifier.height(2.dp))
-            KText(card.subtitle, size = 11.sp, color = V2Soft, maxLines = 1, overflow = TextOverflow.Ellipsis, align = if (alignEnd) TextAlign.End else TextAlign.Start)
+            KText(card.subtitle, size = 10.sp, color = V2Soft, maxLines = 1, overflow = TextOverflow.Ellipsis, align = if (alignEnd) TextAlign.End else TextAlign.Start)
         }
     }
 }

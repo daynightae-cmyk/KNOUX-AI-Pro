@@ -187,52 +187,18 @@ fun V2CleanHubScreen(
     onPro: () -> Unit,
     onProfile: () -> Unit,
     onNotifications: () -> Unit,
+    onBack: () -> Unit = { onNavigate("home") },
 ) {
-    val facts = rememberDeviceFacts()
-    Box(
-        Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)
-    ) {
-        V2TopBar(
-            V2TopMode.HOME,
-            onMenu = onMenu,
-            onPro = onPro,
-            onProfile = onProfile,
-            onNotifications = onNotifications,
-        )
-        V2LuxuryIdentity(
-            title = "التنظيف الذكي",
-            english = "SMART CLEAN HUB",
-            subtitle = "كل ما يحتاجه جهازك في مكان واحد",
-            accent = V2Cyan,
-        )
-        V2LuxuryServiceGrid(
-            items = cleanServices.map { s ->
-                ServiceSubItem(
-                    title = s.title,
-                    subtitle = s.subtitle,
-                    route = s.route,
-                    icon = Icons.Rounded.CleaningServices,
-                    accent = s.accent,
-                    art = s.art,
-                )
-            },
-            onNavigate = onNavigate,
-        )
-        V2LuxuryStatStrip(
-            stats = listOf(
-                SectionStat(Icons.Rounded.Verified, "قراءة مباشرة", facts.healthEstimate.toString() + "%", V2Green),
-                SectionStat(Icons.Rounded.CleaningServices, formatBytes(facts.ownCacheBytes), "${facts.ownCacheFiles} ملف", V2Pink),
-                SectionStat(Icons.Rounded.Storage, formatBytes(facts.storage.freeBytes), "متاحة", V2Cyan),
-                SectionStat(Icons.Rounded.Info, formatBytes(facts.storage.totalBytes), "المجموع", V2Amber),
-            ),
-        )
-        V2LuxuryIdentity(
-            title = "الخطوة التالية",
-            english = "BEST NEXT",
-            subtitle = "ابدأ بمراجعة كاش KNOUX والملفات المؤقتة قبل أي حذف.",
-            accent = V2Amber,
-        )
-    }
+    // The Clean tab IS the approved sec1 hub: hero stage, live readings panel,
+    // the 3×3 + 4 service grid, one CTA and the PRO banner. The old stacked
+    // Box composition is gone; this is a real scrolling reference screen.
+    V2SectionHubRefScreen(
+        route = "hub-smartclean",
+        onBack = onBack,
+        onPro = onPro,
+        onProfile = onProfile,
+        onNotifications = onNotifications,
+    )
 }
 
 @Composable
@@ -242,52 +208,15 @@ fun V2ToolsHubScreen(
     onPro: () -> Unit,
     onProfile: () -> Unit,
     onNotifications: () -> Unit,
+    onBack: () -> Unit = { onNavigate("home") },
 ) {
-    val facts = rememberDeviceFacts()
-    Box(
-        Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)
-    ) {
-        V2TopBar(
-            V2TopMode.HOME,
-            onMenu = onMenu,
-            onPro = onPro,
-            onProfile = onProfile,
-            onNotifications = onNotifications,
-        )
-        V2LuxuryIdentity(
-            title = "أدوات الجهاز",
-            english = "DEVICE TOOLS HUB",
-            subtitle = "تحكم كامل في الأداء والخصوصية والمساحة",
-            accent = V2Violet,
-        )
-        V2LuxuryServiceGrid(
-            items = toolServices.map { s ->
-                ServiceSubItem(
-                    title = s.title,
-                    subtitle = s.subtitle,
-                    route = s.route,
-                    icon = Icons.Rounded.Build,
-                    accent = s.accent,
-                    art = s.art,
-                )
-            },
-            onNavigate = onNavigate,
-        )
-        V2LuxuryStatStrip(
-            stats = listOf(
-                SectionStat(Icons.Rounded.Storage, "StatFs", "مباشر", V2Green),
-                SectionStat(Icons.Rounded.BatteryFull, "BatteryManager", "مباشر", V2Cyan),
-                SectionStat(Icons.Rounded.Apps, facts.installedCount.toString(), "تطبيقات", V2Pink),
-                SectionStat(Icons.Rounded.Settings, "PackageManager", "مباشر", V2Amber),
-            ),
-        )
-        V2LuxuryIdentity(
-            title = "نصيحة الأداء",
-            english = "PERFORMANCE TIP",
-            subtitle = "أغلق التطبيقات الثقيلة غير المستخدمة لتحرير الذاكرة وتحسين الاستجابة.",
-            accent = V2Amber,
-        )
-    }
+    // Device Tools uses the same reference language as every section hub and
+    // routes into the real tool screens through LocalServiceNavigate.
+    V2ToolsHubRefScreen(
+        onBack = onBack,
+        onPro = onPro,
+        onMenu = onMenu,
+    )
 }
 
 @Composable
@@ -988,6 +917,7 @@ fun V2SmartCleanScreen(onBack: () -> Unit, onOpenDeepScan: () -> Unit, onPro: ()
                 statusColor = statusColor,
                 metric = metric,
                 scene = { modifier -> ServiceArtScene(ServiceSpecs.smartClean, modifier) },
+                showIdentityLine = false,
                 action = {
                     KnouxRunOrbBlock(
                         progress = when {

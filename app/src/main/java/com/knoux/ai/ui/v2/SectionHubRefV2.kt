@@ -44,6 +44,8 @@ import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material.icons.rounded.InsertDriveFile
 import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.Menu
+import androidx.compose.material.icons.rounded.NotificationsNone
+import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Shield
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material.icons.rounded.TrendingUp
@@ -623,11 +625,17 @@ internal fun rememberPrivacyRefConfig(facts: DeviceFacts): HubRefConfig {
 }
 
 @Composable
-fun V2SectionHubRefScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
+fun V2SectionHubRefScreen(
+    route: String,
+    onBack: () -> Unit,
+    onPro: () -> Unit,
+    onProfile: (() -> Unit)? = null,
+    onNotifications: (() -> Unit)? = null,
+) {
     val entry = SectionHub.byRoute(route) ?: return
-    val navigate = LocalServiceNavigate.current
     val facts = rememberDeviceFacts()
     val context = androidx.compose.ui.platform.LocalContext.current
+    val navigate = LocalServiceNavigate.current
     val journal by androidx.compose.runtime.produceState(ReportsJournal(), facts.computedAt) {
         value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { readReportsJournal(context) }
     }
@@ -644,6 +652,57 @@ fun V2SectionHubRefScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) 
         "reports" -> rememberReportsRefConfig(facts, journal)
         else -> rememberSmartCleanRefConfig(facts)
     }
+    HubRefScreenFrame(
+        title = config.heroTitle ?: entry.spec.title,
+        config = config,
+        identity = identity,
+        onBack = onBack,
+        onPro = onPro,
+        onMenu = { navigate("settings") },
+        onProfile = onProfile,
+        onNotifications = onNotifications,
+    )
+}
+
+/**
+ * Device Tools — the fifth root destination, rendered with the same approved
+ * section language as the ten reference hubs: one hero stage, one readings
+ * panel, one grid of live cards, one CTA and one PRO banner.
+ */
+@Composable
+internal fun V2ToolsHubRefScreen(
+    onBack: () -> Unit,
+    onPro: () -> Unit,
+    onMenu: () -> Unit,
+    onProfile: (() -> Unit)? = null,
+    onNotifications: (() -> Unit)? = null,
+) {
+    val facts = rememberDeviceFacts()
+    val identity = remember(facts.computedAt) { sectionIdentity("appmanager", facts) }
+    HubRefScreenFrame(
+        title = "أدوات الجهاز",
+        config = rememberToolsRefConfig(facts),
+        identity = identity,
+        onBack = onBack,
+        onPro = onPro,
+        onMenu = onMenu,
+        onProfile = onProfile,
+        onNotifications = onNotifications,
+    )
+}
+
+@Composable
+private fun HubRefScreenFrame(
+    title: String,
+    config: HubRefConfig,
+    identity: SectionIdentity,
+    onBack: () -> Unit,
+    onPro: () -> Unit,
+    onMenu: () -> Unit,
+    onProfile: (() -> Unit)? = null,
+    onNotifications: (() -> Unit)? = null,
+) {
+    val navigate = LocalServiceNavigate.current
     // Approved art is night-lit and composed LTR (gauge left, stag right);
     // Arabic strings keep their own RTL shaping inside KText/TextDirection.
     androidx.compose.runtime.CompositionLocalProvider(
@@ -658,10 +717,10 @@ fun V2SectionHubRefScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) 
                     Modifier.weight(1f).windowInsetsPadding(WindowInsets.statusBars),
                     contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 4.dp, bottom = 10.dp),
                 ) {
-                    item { HubRefTopBar(onBack, onPro, { navigate("settings") }) }
+                    item { HubRefTopBar(onBack, onPro, onMenu, onProfile, onNotifications) }
                     item {
                         HubRefHeroStage(
-                            title = config.heroTitle ?: entry.spec.title,
+                            title = title,
                             subtitle = config.heroSubtitle,
                             heroArt = config.heroArt,
                             stagArt = config.stagArt,
@@ -700,31 +759,81 @@ fun V2SectionHubRefScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) 
     }
 }
 
+/** Device Tools hub — live cards for every tool route reachable from Home. */
+@Composable
+internal fun rememberToolsRefConfig(facts: DeviceFacts): HubRefConfig {
+    val live = facts.computedAt > 0L
+    fun count(v: Int): String = if (live) "${formatCount(v)} تطبيق" else "…"
+    fun ready(label: String): String = if (live) label else "…"
+    return HubRefConfig(
+        heroArt = R.drawable.knoux_sec5_hero,
+        heroTitle = "أدوات الجهاز",
+        heroSubtitle = "تحكم كامل في الأداء والمساحة والخصوصية",
+        stagArt = R.drawable.knoux_sec1_stag,
+        dense = true,
+        compactGrid = true,
+        panelLines = 4,
+        gaugeSizeDp = 96,
+        cards = listOf(
+            // Row 1 — the four owner-facing tools, right → left.
+            HubRefCard("مدير التطبيقات", "appmanager", R.drawable.knoux_svc_apps, V2Cyan, count(facts.installedCount)),
+            HubRefCard("تحليل التخزين", "storage", R.drawable.knoux_svc_storage, V2Cyan, ready(formatBytes(facts.storage.freeBytes))),
+            HubRefCard("البطارية", "battery", R.drawable.knoux_svc_battery, V2Green, facts.battery.levelPercent?.let { "$it%" } ?: "—"),
+            HubRefCard("الخصوصية", "privacy", R.drawable.knoux_svc_privacy, V2Violet, count(facts.sensitiveAppCount)),
+            // Row 2 — analysis and inspection.
+            HubRefCard("التحسين الذكي", "ai", R.drawable.knoux_svc_ai, V2Pink, ready("اقتراحات")),
+            HubRefCard("مستكشف الملفات", "file-explorer", R.drawable.knoux_svc_residue, V2Blue, ready("فتح")),
+            HubRefCard("معلومات الجهاز", "device-info", R.drawable.knoux_svc_deepscan, V2Violet, ready("قراءة")),
+            HubRefCard("فحص الشبكة", "network-scan", R.drawable.knoux_sec1g_cache, V2Cyan, ready("فحص")),
+            // Row 3 — protection and records.
+            HubRefCard("فحص الأمان", "security-scan", R.drawable.knoux_sec1g_shield, V2Pink, ready("فحص")),
+            HubRefCard("مدير الإشعارات", "notification-manager", R.drawable.knoux_svc_duplicates, V2Amber, ready("إدارة")),
+            HubRefCard("مركز التقارير", "reports", R.drawable.knoux_sec10_cta, V2Violet, ready("تقرير")),
+            HubRefCard("إعدادات KNOUX", "settings", R.drawable.knoux_sec1g_plan, RefGold, ready("فتح"), gold = true),
+        ),
+        ctaLabel = "فتح مدير التطبيقات الآن",
+        ctaRoute = "appmanager",
+        ctaArt = R.drawable.knoux_svc_apps,
+        bannerTitle = "KNOUX AI Pro",
+        bannerSubtitle = "أدوات أعمق · تحكم أوسع · قراءة مباشرة من جهازك",
+    )
+}
+
 /* ------------------------------------------------------------------ *
- * Header capsule — back LEFT, brand lockup CENTER, gold hamburger RIGHT.
- * Flat pills like Home — no competing circles; the orb below is the only
- * dominant circle on the screen.
+ * Header — exactly the approved chrome: small circular back at the start,
+ * the official lockup dead centre, the gold hamburger at the end. No
+ * competing full-width capsule, so the hero stays the only stage.
  * ------------------------------------------------------------------ */
 
 @Composable
-private fun HubRefTopBar(onBack: () -> Unit, onPro: () -> Unit, onMenu: () -> Unit) {
-    val shape = RoundedCornerShape(50)
+private fun HubRefTopBar(
+    onBack: () -> Unit,
+    onPro: () -> Unit,
+    onMenu: () -> Unit,
+    onProfile: (() -> Unit)? = null,
+    onNotifications: (() -> Unit)? = null,
+) {
     Box(
         Modifier
             .fillMaxWidth()
             .height(56.dp)
-            .clip(shape)
-            .background(Brush.horizontalGradient(listOf(Color(0xFF140B33), Color(0xFF1B1040), Color(0xFF140B33))))
-            .border(
-                1.2.dp,
-                Brush.horizontalGradient(listOf(V2Violet.withAlpha(.85f), V2Cyan.withAlpha(.55f), V2Pink.withAlpha(.75f))),
-                shape,
-            ),
+            .padding(horizontal = 2.dp),
     ) {
-        Box(Modifier.align(Alignment.CenterStart).padding(start = 6.dp)) {
-            RefHeaderMenuPill("رجوع", onBack, isRight = false, showIcon = false)
+        Row(Modifier.align(Alignment.CenterStart), verticalAlignment = Alignment.CenterVertically) {
+            if (onProfile != null) {
+                // Root destination: profile + notifications, exactly like Home.
+                RefCircleButton(Icons.Rounded.Person, "الحساب", onProfile)
+                if (onNotifications != null) {
+                    RefCircleButton(Icons.Rounded.NotificationsNone, "التنبيهات", onNotifications)
+                }
+            } else {
+                RefCircleButton(Icons.AutoMirrored.Rounded.ArrowBack, "رجوع", onBack)
+            }
         }
-        Row(Modifier.align(Alignment.Center), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier.align(Alignment.Center),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             // Official stag — fixed size on every hub, standing on a lit
             // ground plane so the header stays balanced. No float: grounded.
             HubRefHeaderStag(Modifier.size(width = 30.dp, height = 48.dp))
@@ -738,7 +847,7 @@ private fun HubRefTopBar(onBack: () -> Unit, onPro: () -> Unit, onMenu: () -> Un
             Image(
                 painter = painterResource(R.drawable.knoux_wordmark_alpha),
                 contentDescription = "knoux ai",
-                modifier = Modifier.height(14.dp),
+                modifier = Modifier.height(13.dp),
             )
             Spacer(Modifier.width(7.dp))
             Row(
@@ -747,24 +856,14 @@ private fun HubRefTopBar(onBack: () -> Unit, onPro: () -> Unit, onMenu: () -> Un
                     .background(Brush.horizontalGradient(listOf(Color(0xFF3A2404), Color(0xFF241503))))
                     .border(1.2.dp, Brush.horizontalGradient(listOf(RefGold, RefGoldBright, RefGold)), RoundedCornerShape(50))
                     .clickable(onClickLabel = "Pro", onClick = onPro)
-                    .padding(horizontal = 9.dp, vertical = 3.dp),
+                    .padding(horizontal = 8.dp, vertical = 3.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                KText("PRO", size = 10.sp, weight = FontWeight.Black, color = RefGoldBright, letterSpacing = .8.sp)
+                KText("PRO", size = 9.sp, weight = FontWeight.Black, color = RefGoldBright, letterSpacing = .7.sp)
             }
         }
-        Box(
-            Modifier
-                .align(Alignment.CenterEnd)
-                .padding(end = 7.dp)
-                .size(width = 32.dp, height = 30.dp)
-                .clip(RoundedCornerShape(9.dp))
-                .background(Brush.verticalGradient(listOf(Color(0xFF241503), Color(0xFF120A02))))
-                .border(1.3.dp, Brush.verticalGradient(listOf(RefGoldBright, RefGold, Color(0xFFB87A1E))), RoundedCornerShape(9.dp))
-                .clickable(onClickLabel = "القائمة", onClick = onMenu),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(Icons.Rounded.Menu, "القائمة", tint = RefGoldBright, modifier = Modifier.size(18.dp))
+        Box(Modifier.align(Alignment.CenterEnd)) {
+            RefMenuButton("القائمة", onMenu)
         }
     }
 }

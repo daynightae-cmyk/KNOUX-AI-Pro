@@ -553,6 +553,7 @@ fun ServiceBanner(
     modifier: Modifier = Modifier,
     metric: String? = null,
     ribbonSlots: List<HeroRibbonSlot>? = null,
+    showIdentityLine: Boolean = true,
 ) {
     BoxWithConstraints(modifier.fillMaxWidth()) {
         val window = androidx.compose.ui.platform.LocalConfiguration.current
@@ -569,6 +570,7 @@ fun ServiceBanner(
                 .fillMaxWidth()
                 .height(headerHeight),
             scene = { sceneModifier -> ServiceArtScene(spec, sceneModifier) },
+            showIdentityLine = showIdentityLine,
         )
     }
 }

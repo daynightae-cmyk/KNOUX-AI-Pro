@@ -1923,7 +1923,7 @@ fun V2SettingsScreenV2(
 
     Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)) {
         Column(Modifier.fillMaxSize()) {
-            V2TopBar(V2TopMode.INTERIOR, onBack = onBack, onPro = {})
+            V2TopBar(V2TopMode.INTERIOR, onBack = onBack, onPro = {}, showMenu = false)
             LazyColumn(
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 18.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
