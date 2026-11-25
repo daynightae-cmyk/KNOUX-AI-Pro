@@ -88,6 +88,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.LayoutDirection
 import com.knoux.ai.BuildConfig
 import com.knoux.ai.R
+import com.knoux.ai.auth.AuthSettingsParser
 import com.knoux.ai.auth.KnouxAuthConfig
 import com.knoux.ai.auth.KnouxAuthController
 import com.knoux.ai.auth.KnouxAuthException
@@ -129,6 +130,17 @@ fun WelcomeScreen(
     val controller = remember { KnouxAuthController(context, config) }
     val activity = context as? androidx.fragment.app.FragmentActivity
     val googleConfigured = remember { BuildConfig.GOOGLE_WEB_CLIENT_ID.isNotBlank() }
+
+    // Public, session-less project settings: only offer sign-in methods this
+    // Supabase project actually has enabled. A disabled provider's routes answer
+    // permanent rejections (passkeys -> 404 passkey_disabled, Google id_token ->
+    // 400 provider_disabled), so offering it is what produced the raw
+    // "Auth provider rejected the request (HTTP 404)" on this screen.
+    var authSettings by remember { mutableStateOf<AuthSettingsParser.AuthSettings?>(null) }
+    LaunchedEffect(Unit) { authSettings = controller.authSettings() }
+    val googleEnabled = googleConfigured && (authSettings?.googleEnabled == true)
+    val passkeysEnabled = authSettings?.passkeysEnabled == true
+    val signupAllowed = authSettings?.disableSignup != true
 
     var state by remember { mutableStateOf(AuthVisualState.Idle) }
     var message by remember { mutableStateOf<String?>(null) }
@@ -362,15 +374,17 @@ fun WelcomeScreen(
                             )
                         )
                     )
-                    GoogleButton(scope, inProgress, googleConfigured, controller, activity, hero = true) { result ->
+                    GoogleButton(scope, inProgress, googleEnabled, controller, activity, hero = true) { result ->
                         inProgress = result.first
                         message = result.second
                         if (result.third) onSignedIn()
                     }
-                    PasskeyButton(scope, inProgress, controller, activity, hero = true) { result ->
-                        inProgress = result.first
-                        message = result.second
-                        if (result.third) onSignedIn()
+                    if (passkeysEnabled) {
+                        PasskeyButton(scope, inProgress, controller, activity, hero = true) { result ->
+                            inProgress = result.first
+                            message = result.second
+                            if (result.third) onSignedIn()
+                        }
                     }
                     LoginOrDivider()
                     Box(contentAlignment = Alignment.Center) {
@@ -512,14 +526,16 @@ fun WelcomeScreen(
                     )
                     Spacer(Modifier.height(8.dp))
                 }
-                GoogleButton(scope, inProgress, googleConfigured, controller, activity) { v ->
+                GoogleButton(scope, inProgress, googleEnabled, controller, activity) { v ->
                     inProgress = v.first; message = v.second
                     if (v.third) onSignedIn()
                 }
-                Spacer(Modifier.height(8.dp))
-                PasskeyButton(scope, inProgress, controller, activity) { v ->
-                    inProgress = v.first; message = v.second
-                    if (v.third) onSignedIn()
+                if (passkeysEnabled) {
+                    Spacer(Modifier.height(8.dp))
+                    PasskeyButton(scope, inProgress, controller, activity) { v ->
+                        inProgress = v.first; message = v.second
+                        if (v.third) onSignedIn()
+                    }
                 }
                 Spacer(Modifier.height(8.dp))
                 GuestButton(onContinueAsGuest, enabled = !inProgress)
@@ -565,7 +581,7 @@ fun WelcomeScreen(
                 onClick = { section = AuthSection.EmailLogin; message = null },
             )
             Spacer(Modifier.height(6.dp))
-            Row(
+            if (signupAllowed) Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
@@ -612,7 +628,12 @@ private fun PasskeyButton(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: KnouxAuthException) {
-                onResult(Triple(false, e.message ?: "تعذر تسجيل الدخول بمفتاح المرور.", false))
+                onResult(Triple(false, when (e.code) {
+                    // The project has passkeys disabled (server answers 404
+                    // passkey_disabled): say so plainly instead of a raw HTTP status.
+                    "passkey_disabled" -> "مفاتيح المرور غير مفعّلة في هذا المشروع حاليًا — استخدم البريد وكلمة المرور أو البصمة."
+                    else -> e.message ?: "تعذر تسجيل الدخول بمفتاح المرور."
+                }, false))
             } catch (e: Exception) {
                 onResult(Triple(false, "مفتاح المرور غير متاح أو غير مُعد.", false))
             }
@@ -657,7 +678,11 @@ private fun GoogleButton(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: KnouxAuthException) {
-                onResult(Triple(false, e.message ?: "تعذر تسجيل الدخول بحساب Google.", false))
+                onResult(Triple(false, when (e.code) {
+                    // Google provider disabled on the project (400 provider_disabled).
+                    "provider_disabled" -> "تسجيل الدخول بحساب Google غير مفعّل في هذا المشروع حاليًا — استخدم البريد وكلمة المرور."
+                    else -> e.message ?: "تعذر تسجيل الدخول بحساب Google."
+                }, false))
             } catch (e: Exception) {
                 onResult(Triple(false, "أُلغي تسجيل الدخول أو حدث خطأ في الشبكة.", false))
             }

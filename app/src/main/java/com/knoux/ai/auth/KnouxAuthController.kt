@@ -22,6 +22,8 @@ class KnouxAuthController(context:Context, config:KnouxAuthConfig) {
     suspend fun passkey(activity:Activity):Boolean=passkey.signIn(activity)
     suspend fun biometric(activity:FragmentActivity):Boolean=biometric.unlock(activity)
     suspend fun currentUser():JSONObject=api.currentUserVerified()
+    /** Public project auth settings (which sign-in providers are enabled). Cached in the API. */
+    suspend fun authSettings()=api.authSettings()
     suspend fun resumeIfVerified():Boolean=api.restoreIfValid()
 
     /** Fast local-only session validity used for the post-splash entry decision. No network. */

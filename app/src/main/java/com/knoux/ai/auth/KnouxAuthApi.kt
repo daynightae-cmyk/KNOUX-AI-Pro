@@ -115,10 +115,20 @@ class KnouxAuthApi(context: Context, val config: KnouxAuthConfig) {
                         if (ProductionSecurity.isRetryableStatus(status)) {
                             throw HttpStatusException(status, "Auth provider transient failure (HTTP $status)")
                         }
+                        // Known permanent "feature disabled" rejections keep their provider
+                        // code and get an explicit message, so the UI can stop offering the
+                        // method instead of showing a raw HTTP status (e.g. passkeys on a
+                        // project with passkeys_enabled=false answer 404 passkey_disabled).
+                        // Still never retried, still never treated as success.
+                        val message = when (code) {
+                            "passkey_disabled" -> "Passkeys are not enabled for this project"
+                            "provider_disabled" -> "This sign-in provider is not enabled for this project"
+                            else -> "Auth provider rejected the request (HTTP $status)"
+                        }
                         throw KnouxAuthException(
                             code,
                             // Avoid returning provider message with tokens/PII to logs.
-                            "Auth provider rejected the request (HTTP $status)")
+                            message)
                     }
                     result
                 } finally { c.disconnect() }
@@ -182,6 +192,34 @@ class KnouxAuthApi(context: Context, val config: KnouxAuthConfig) {
         }
     }
     suspend fun restoreIfValid():Boolean = try {currentUserVerified();true} catch(_:Exception){false}
+
+    // ---------------------------------------------------------- public settings
+    // GET /auth/v1/settings is public (apikey only, no session): it reports which
+    // sign-in methods this project has enabled. The login UI uses it so a disabled
+    // provider is never offered — its routes answer permanent rejections.
+    private var cachedSettings: AuthSettingsParser.AuthSettings? = null
+    private var settingsFetchedAtMs = 0L
+
+    suspend fun authSettings(forceRefresh: Boolean = false): AuthSettingsParser.AuthSettings {
+        val now = System.currentTimeMillis()
+        cachedSettings?.let { cached ->
+            if (!forceRefresh && now - settingsFetchedAtMs < SETTINGS_CACHE_MS) return cached
+        }
+        return try {
+            val parsed = AuthSettingsParser.parse(request("GET", "/settings"))
+            cachedSettings = parsed
+            settingsFetchedAtMs = now
+            parsed
+        } catch (_: Exception) {
+            // Fail-safe: when the settings call itself fails we must not offer
+            // providers we cannot confirm. Email stays the always-available path.
+            AuthSettingsParser.failSafe
+        }
+    }
+
+    private companion object {
+        const val SETTINGS_CACHE_MS = 5 * 60_000L
+    }
     /**
      * Clears the encrypted local session and asks Supabase to revoke the
      * refresh token. Returns true only when the server revocation succeeded;
