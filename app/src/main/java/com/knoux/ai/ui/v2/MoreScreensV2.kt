@@ -1235,10 +1235,19 @@ fun V2BatteryScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> U
         }
     }
 
-    InteriorScaffold(
-        onBack = onBack,
-        onPro = onPro,
-        bottomBar = {
+    // Royal stage: fixed header with live instrument + measured ribbon
+    FixedServiceScreen(
+        spec = ServiceSpecs.battery,
+        status = if (battery.levelPercent != null) "BatteryManager" else "جاري القراءة",
+        statusColor = if (battery.levelPercent != null) V2Green else V2Amber,
+        metric = battery.levelPercent?.let { "$it% · ${battery.statusLabel}" } ?: "غير متاح",
+        scene = { sceneModifier -> ServiceArtScene(ServiceSpecs.battery, sceneModifier) },
+        ribbonSlots = listOf(
+            HeroRibbonSlot(Icons.Rounded.BatteryFull, battery.levelPercent?.let { "$it%" } ?: "—", "مستوى الشحن", V2Green),
+            HeroRibbonSlot(Icons.Rounded.Memory, formatBytes(facts.ownCacheBytes), "كاش KNOUX", V2Pink),
+            HeroRibbonSlot(Icons.Rounded.Apps, formatCount(facts.installedCount), "تطبيق مثبت", V2Cyan),
+        ),
+        action = {
             V2GhostButton(
                 "إعدادات البطارية",
                 onClick = { openBatterySaverSettings(context) },
@@ -1246,43 +1255,9 @@ fun V2BatteryScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> U
                 height = 47.dp,
             )
         },
-    ) {
-        item {
-            ServiceBanner(
-                spec = ServiceSpecs.battery,
-                status = if (battery.levelPercent != null) "BatteryManager" else "جاري القراءة",
-                statusColor = if (battery.levelPercent != null) V2Green else V2Amber,
-                metric = battery.levelPercent?.let { "$it% · ${battery.statusLabel}" } ?: "غير متاح",
-            )
-        }
-        item {
-            // The universal K orb: the only way this service starts.
-            KnouxRunOrbBlock(
-                progress = when {
-                    refreshing -> null
-                    battery.levelPercent != null -> 1f
-                    else -> 0f
-                },
-                running = refreshing,
-                enabled = !refreshing,
-                label = when {
-                    refreshing -> "جارٍ قراءة البطارية…"
-                    battery.levelPercent != null -> "اضغط لإعادة قراءة البطارية"
-                    else -> "اضغط لتشغيل الخدمة"
-                },
-                accent = V2Green,
-                accent2 = V2Cyan,
-                onTap = {
-                    if (!refreshing) {
-                        refreshing = true
-                        bump()
-                    }
-                },
-            )
-        }
-        item { BatteryHeroCard(battery) }
-        item { V2SectionLabel("القراءة الفعلية", trailing = "من النظام") }
-        item {
+        content = {
+            BatteryHeroCard(battery)
+            V2SectionLabel("القراءة الفعلية", trailing = "من النظام")
             V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 20.dp, glow = V2Green, borderAlpha = .30f) {
                 Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
                     BatteryFactRow("الحالة", battery.statusLabel, V2Green)
@@ -1293,9 +1268,7 @@ fun V2BatteryScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> U
                     BatteryFactRow("الشاحن", if (battery.charging) "متصل" else "غير متصل", if (battery.charging) V2Green else V2Muted)
                 }
             }
-        }
-        item { V2SectionLabel("إدارة الاستهلاك", trailing = "يدوي") }
-        item {
+            V2SectionLabel("إدارة الاستهلاك", trailing = "يدوي")
             ServiceCapabilityCard(
                 title = "استهلاك التطبيقات التفصيلي",
                 body = if (facts.usageAccessGranted) {
@@ -1307,8 +1280,6 @@ fun V2BatteryScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> U
                 actionLabel = if (facts.usageAccessGranted) null else "فتح الصلاحية",
                 onAction = if (facts.usageAccessGranted) null else openUsagePermission,
             )
-        }
-        item {
             ServiceCapabilityCard(
                 title = "وضع توفير البطارية",
                 body = "يُدار من إعدادات Android الرسمية. لا يغيّر KNOUX إعدادات النظام تلقائيًا.",
@@ -1316,15 +1287,13 @@ fun V2BatteryScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> U
                 actionLabel = "فتح",
                 onAction = { openBatterySettings(context) },
             )
-        }
-        item { ServiceSubGrid(ServiceSpecs.battery) }
-        item {
+            ServiceSubGrid(ServiceSpecs.battery)
             PreviewNote(
                 "كل القيم أعلاه من BatteryManager لحظة القراءة. الوقت المتبقي غير معروض " +
                     "لأن Android لا يوفره بشكل موثوق لكل الأجهزة."
             )
-        }
-    }
+        },
+    )
 }
 
 @Composable
