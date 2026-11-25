@@ -1604,66 +1604,37 @@ fun V2AiScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> Unit) 
         }
     }
 
-    InteriorScaffold(
-        onBack = onBack,
-        onPro = onPro,
-    ) {
-        item {
-            ServiceBanner(
-                spec = ServiceSpecs.ai,
-                status = if (facts.computedAt > 0L) "قراءة مباشرة" else "جاري القراءة",
-                statusColor = if (facts.computedAt > 0L) V2Green else V2Amber,
-                metric = "${recommendations.size} توصية",
-            )
-        }
-        item {
-            // The universal K orb: the only way this service starts.
-            KnouxRunOrbBlock(
-                progress = when {
-                    refreshing -> null
-                    facts.computedAt > 0L -> 1f
-                    else -> 0f
-                },
-                running = refreshing,
-                enabled = !refreshing,
-                label = when {
-                    refreshing -> "جارٍ تحديث التوصيات…"
-                    facts.computedAt > 0L -> "اضغط لتحديث التوصيات"
-                    else -> "اضغط لتشغيل الخدمة"
-                },
-                accent = V2Violet,
-                accent2 = V2Cyan,
-                onTap = {
-                    if (!refreshing) {
-                        refreshing = true
-                        bump()
-                    }
-                },
-            )
-        }
-        item {
+    // Royal stage: fixed header with live instrument + measured ribbon
+    FixedServiceScreen(
+        spec = ServiceSpecs.ai,
+        status = if (facts.computedAt > 0L) "قراءة مباشرة" else "جاري القراءة",
+        statusColor = if (facts.computedAt > 0L) V2Green else V2Amber,
+        metric = "${recommendations.size} توصية",
+        scene = { sceneModifier -> ServiceArtScene(ServiceSpecs.ai, sceneModifier) },
+        ribbonSlots = listOf(
+            HeroRibbonSlot(Icons.Rounded.AutoAwesome, facts.healthEstimate.toString(), "تقييم الجهاز", V2Violet),
+            HeroRibbonSlot(Icons.Rounded.Storage, "${(storage.usedFraction * 100).toInt()}%", "تخزين مستخدم", V2Cyan),
+            HeroRibbonSlot(Icons.Rounded.BatteryFull, battery.levelPercent?.let { "$it%" } ?: "—", "بطارية", V2Green),
+        ),
+        action = null,
+        content = {
             AiScoreCard(
                 score = facts.healthEstimate,
                 storageUsed = storage.usedFraction,
                 batteryLevel = battery.levelPercent,
                 apps = facts.installedCount,
             )
-        }
-        item { V2SectionLabel("التوصيات", trailing = "${recommendations.size} مرتبة بالأثر") }
-        if (recommendations.isEmpty()) {
-            item {
+            V2SectionLabel("التوصيات", trailing = "${recommendations.size} مرتبة بالأثر")
+            if (recommendations.isEmpty()) {
                 ServiceCapabilityCard(
                     title = "لا توصيات حالية",
                     body = "كل القراءات المتاحة ضمن النطاق الطبيعي. تُحدَّث التوصيات مع كل قراءة جديدة.",
                     state = ServiceState.LIVE,
                 )
             }
-        }
-        items(recommendations.size) { index ->
-            val action = recommendations[index]
-            LiveRecommendationRow(action) { run(action.key) }
-        }
-        item {
+            recommendations.forEach { action ->
+                LiveRecommendationRow(action) { run(action.key) }
+            }
             V2GlassCard(
                 Modifier.fillMaxWidth(),
                 padding = 11.dp,
@@ -1680,15 +1651,13 @@ fun V2AiScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> Unit) 
                     }
                 }
             }
-        }
-        item { ServiceSubGrid(ServiceSpecs.ai) }
-        item {
+            ServiceSubGrid(ServiceSpecs.ai)
             PreviewNote(
                 "كل توصية مبنية على قراءة فعلية من هذا الهاتف. التنفيذ يفتح الشاشة أو إعدادات Android " +
                     "المختصة؛ لا يوجد تطبيق تلقائي لأي تغيير."
             )
-        }
-    }
+        },
+    )
 }
 
 @Composable
