@@ -190,21 +190,22 @@ fun V2DeveloperToolsScreen(onBack: () -> Unit, onPro: () -> Unit) {
     val facts = rememberDeviceFacts(refresh)
     val navigate = LocalServiceNavigate.current
 
-    Column(Modifier.fillMaxWidth().windowInsetsPadding(WindowInsets.statusBars)) {
-        ExtraHubHeader(
-            spec = ServiceSpecs.developer,
-            status = if (facts.computedAt > 0L) "قراءة مباشرة من الجهاز" else "جاري القراءة…",
-            statusColor = if (facts.computedAt > 0L) V2Green else V2Amber,
-            metric = "Android ${Build.VERSION.RELEASE} · API ${Build.VERSION.SDK_INT}",
-            onBack = onBack,
-            onPro = onPro,
-        )
-        LazyColumn(
-            Modifier.weight(1f),
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(9.dp),
-        ) {
-            item {
+    // Royal stage: fixed header with live instrument + measured ribbon
+    FixedServiceScreen(
+        spec = ServiceSpecs.developer,
+        status = if (facts.computedAt > 0L) "قراءة مباشرة من الجهاز" else "جاري القراءة…",
+        statusColor = if (facts.computedAt > 0L) V2Green else V2Amber,
+        metric = "Android ${Build.VERSION.RELEASE} · API ${Build.VERSION.SDK_INT}",
+        scene = { sceneModifier -> ServiceArtScene(ServiceSpecs.developer, sceneModifier) },
+        ribbonSlots = listOf(
+            HeroRibbonSlot(Icons.Rounded.Android, Build.VERSION.RELEASE, "إصدار النظام", V2Cyan),
+            HeroRibbonSlot(Icons.Rounded.Memory, formatBytes(facts.ownCacheBytes), "كاش KNOUX", V2Pink),
+            HeroRibbonSlot(Icons.Rounded.Storage, formatBytes(facts.storage.freeBytes), "مساحة متاحة", V2Green),
+            HeroRibbonSlot(Icons.Rounded.Apps, formatCount(facts.installedCount), "تطبيق مثبت", V2Violet),
+        ),
+        action = null,
+        content = {
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 KnouxRunOrbBlock(
                     progress = if (facts.computedAt > 0L) 1f else 0f,
                     running = false,
@@ -215,8 +216,6 @@ fun V2DeveloperToolsScreen(onBack: () -> Unit, onPro: () -> Unit) {
                     size = 118.dp,
                     onTap = { bump() },
                 )
-            }
-            item {
                 V2LuxuryServiceGrid(
                     items = listOf(
                         ServiceSubItem(
@@ -250,8 +249,6 @@ fun V2DeveloperToolsScreen(onBack: () -> Unit, onPro: () -> Unit) {
                     ),
                     onNavigate = navigate,
                 )
-            }
-            item {
                 V2LuxurySurface(Modifier.fillMaxWidth(), radius = 18.dp, accent = V2Cyan, borderAlpha = .38f) {
                     Column(Modifier.fillMaxWidth().padding(13.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -268,8 +265,6 @@ fun V2DeveloperToolsScreen(onBack: () -> Unit, onPro: () -> Unit) {
                         ExtraInfoLine("المعمارية", Build.SUPPORTED_ABIS.firstOrNull() ?: "—")
                     }
                 }
-            }
-            item {
                 ExtraHubAction(
                     icon = Icons.Rounded.DeveloperMode,
                     title = "إعدادات المطور في النظام",
@@ -277,8 +272,6 @@ fun V2DeveloperToolsScreen(onBack: () -> Unit, onPro: () -> Unit) {
                     accent = V2Cyan,
                     onClick = { openSystemSettings(context, Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS) },
                 )
-            }
-            item {
                 ExtraHubStatStrip(
                     facts = facts,
                     first = Build.VERSION.RELEASE to "إصدار النظام",
@@ -287,7 +280,7 @@ fun V2DeveloperToolsScreen(onBack: () -> Unit, onPro: () -> Unit) {
                 )
             }
         }
-    }
+    )
 }
 
 @Composable
