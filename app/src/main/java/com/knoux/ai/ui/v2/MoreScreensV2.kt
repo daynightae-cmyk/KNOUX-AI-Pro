@@ -977,51 +977,31 @@ fun V2StorageScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> U
     val facts = storageState.facts
     val storage = facts.storage
 
-    InteriorScaffold(
-        onBack = onBack,
-        onPro = onPro,
-        bottomBar = {
+    // Royal stage: fixed header with live instrument + measured ribbon
+    FixedServiceScreen(
+        spec = ServiceSpecs.storage,
+        status = when {
+            storageState.isScanning -> "جاري القراءة"
+            storage.totalBytes > 0L -> "StatFs مقروء"
+            else -> "جاهز للتشغيل"
+        },
+        statusColor = when {
+            storageState.isScanning -> V2Amber
+            storage.totalBytes > 0L -> V2Green
+            else -> V2Violet
+        },
+        metric = if (storage.totalBytes > 0L) "${(storage.usedFraction * 100).toInt()}% مستخدم" else "اضغط الزر الدائري لبدء الخدمة",
+        scene = { sceneModifier -> ServiceArtScene(ServiceSpecs.storage, sceneModifier) },
+        ribbonSlots = listOf(
+            HeroRibbonSlot(Icons.Rounded.Storage, "${(storage.usedFraction * 100).toInt()}%", "مستخدم", V2Cyan),
+            HeroRibbonSlot(Icons.Rounded.Memory, formatBytes(facts.ownCacheBytes), "كاش KNOUX", V2Pink),
+            HeroRibbonSlot(Icons.Rounded.Apps, formatCount(facts.installedCount), "تطبيق مثبت", V2Green),
+        ),
+        action = {
             V2GradientButton("إعدادات التخزين في Android", { openStorageSettings(context) }, icon = Icons.Rounded.Storage, trailingChevron = true)
         },
-    ) {
-        item {
-            ServiceBanner(
-                spec = ServiceSpecs.storage,
-                status = when {
-                    storageState.isScanning -> "جاري القراءة"
-                    storage.totalBytes > 0L -> "StatFs مقروء"
-                    else -> "جاهز للتشغيل"
-                },
-                statusColor = when {
-                    storageState.isScanning -> V2Amber
-                    storage.totalBytes > 0L -> V2Green
-                    else -> V2Violet
-                },
-                metric = if (storage.totalBytes > 0L) "${(storage.usedFraction * 100).toInt()}% مستخدم" else "اضغط الزر الدائري لبدء الخدمة",
-            )
-        }
-        item {
-            // The universal K orb: the only way this service starts.
-            KnouxRunOrbBlock(
-                progress = when {
-                    storageState.isScanning -> null
-                    storageState.loaded -> 1f
-                    else -> 0f
-                },
-                running = storageState.isScanning,
-                enabled = !storageState.isScanning && storageState.gate != OperationGate.RUNNING,
-                label = when {
-                    storageState.isScanning -> "جارٍ قراءة التخزين…"
-                    storageState.loaded -> "اضغط لإعادة قراءة التخزين"
-                    else -> "اضغط لتشغيل الخدمة"
-                },
-                accent = V2Cyan,
-                accent2 = V2Violet,
-                onTap = { storageViewModel.rescan() },
-            )
-        }
-        item { StorageHeroCard(storage, facts.ownCacheBytes) }
-        item {
+        content = {
+            StorageHeroCard(storage, facts.ownCacheBytes)
             StorageCacheActionCard(
                 state = storageState,
                 onPrepare = { storageViewModel.prepareClearOwnCache() },
@@ -1029,29 +1009,23 @@ fun V2StorageScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> U
                 onCancel = { storageViewModel.cancelClearOwnCache() },
                 onRescan = { storageViewModel.rescan() },
             )
-        }
-        item { V2SectionLabel("القراءة الفعلية", trailing = "من الجهاز") }
-        item { RealStorageBreakdown(facts) }
-        item { V2SectionLabel("أكبر الملفات", trailing = if (facts.media.permissionGranted) "MediaStore" else "بعد المنح") }
-        if (!facts.media.permissionGranted) {
-            item {
+            V2SectionLabel("القراءة الفعلية", trailing = "من الجهاز")
+            RealStorageBreakdown(facts)
+            V2SectionLabel("أكبر الملفات", trailing = if (facts.media.permissionGranted) "MediaStore" else "بعد المنح")
+            if (!facts.media.permissionGranted) {
                 ServiceCapabilityCard(
                     title = "صلاحية الصور والفيديو مطلوبة",
                     body = "لا يقرأ KNOUX مكتبتك قبل موافقتك. تُطلب الصلاحية من شاشة الملفات المكررة أو من إعدادات Android.",
                     state = ServiceState.PERMISSION,
                 )
-            }
-        } else if (facts.media.largestFiles.isEmpty()) {
-            item {
+            } else if (facts.media.largestFiles.isEmpty()) {
                 ServiceCapabilityCard(
                     title = "لا ملفات وسائط لعرضها",
                     body = "فُحصت المكتبة المصرح بها ولم تُعد MediaStore أي ملفات قابلة للعرض.",
                     state = ServiceState.LIVE,
                 )
-            }
-        } else {
-            facts.media.largestFiles.take(4).forEach { file ->
-                item {
+            } else {
+                facts.media.largestFiles.take(4).forEach { file ->
                     LoadingFileRow(
                         title = file.name,
                         subtitle = file.bucket ?: if (file.isVideo) "فيديو" else "صورة",
@@ -1060,15 +1034,13 @@ fun V2StorageScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> U
                     )
                 }
             }
-        }
-        item { ServiceSubGrid(ServiceSpecs.storage) }
-        item {
+            ServiceSubGrid(ServiceSpecs.storage)
             PreviewNote(
                 "الأرقام أعلاه من StatFs وMediaStore على هذا الهاتف. أحجام التطبيقات المنفصلة تحتاج " +
                     "صلاحية Usage Access، وتظهر «مقيدة» بدل رقم تقديري."
             )
-        }
-    }
+        },
+    )
 }
 
 @Composable
