@@ -1,10 +1,13 @@
 package com.knoux.ai.ui.v2
 
 import android.content.Context
+import android.os.Build
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import com.knoux.ai.database.AppDatabase
+import com.knoux.ai.database.KnouxRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -88,6 +91,19 @@ internal class DeepScanViewModel : ViewModel() {
             facts = DeviceFacts(),
         )
         job = scope.launch {
+            // A completed deep scan is a real Room session, so the summary and
+            // activity log can show it instead of claiming no session exists.
+            val repository = runCatching {
+                KnouxRepository(AppDatabase.getDatabase(appContext))
+            }.getOrNull()
+            val sessionId = runCatching {
+                repository?.createScanSession(
+                    serviceId = "deep_scan",
+                    serviceName = "الفحص العميق",
+                    deviceModel = Build.MODEL,
+                    apiLevel = Build.VERSION.SDK_INT,
+                )
+            }.getOrNull()
             var facts = DeviceFacts()
             var completed = 0
             try {
@@ -119,14 +135,50 @@ internal class DeepScanViewModel : ViewModel() {
                         ),
                     )
                 }
+                if (sessionId != null) {
+                    runCatching {
+                        repository?.completeScanSession(
+                            sessionId = sessionId,
+                            status = "COMPLETED",
+                            permissionGranted = finished.media.permissionGranted,
+                            itemsFound = finished.installedCount,
+                            bytesFound = finished.storage.usedBytes,
+                            bytesReclaimable = 0L,
+                        )
+                    }
+                }
                 state = DeepScanUiState.Completed(
                     facts = finished,
                     completedAt = System.currentTimeMillis(),
                 )
             } catch (cancelled: CancellationException) {
+                if (sessionId != null) {
+                    runCatching {
+                        repository?.completeScanSession(
+                            sessionId = sessionId,
+                            status = "CANCELLED",
+                            permissionGranted = facts.media.permissionGranted,
+                            itemsFound = 0,
+                            bytesFound = 0L,
+                            bytesReclaimable = 0L,
+                        )
+                    }
+                }
                 state = DeepScanUiState.Cancelled(completed = completed, facts = facts)
                 throw cancelled
             } catch (error: Throwable) {
+                if (sessionId != null) {
+                    runCatching {
+                        repository?.completeScanSession(
+                            sessionId = sessionId,
+                            status = "FAILED",
+                            permissionGranted = facts.media.permissionGranted,
+                            itemsFound = 0,
+                            bytesFound = 0L,
+                            bytesReclaimable = 0L,
+                        )
+                    }
+                }
                 state = DeepScanUiState.Failed(
                     completed = completed,
                     facts = facts,

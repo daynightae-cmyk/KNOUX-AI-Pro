@@ -81,18 +81,21 @@ internal fun V2DuplicatesWorkspace(
     }
     LaunchedEffect(state.deletion) { state.deletion?.deletedUris?.forEach { selected.remove(it) } }
     LaunchedEffect(state.result) {
-        state.result?.let { result ->
-            val known = result.groups.flatMap { it.files }.map { it.uriString }.toSet()
-            selected.keys.toList().filterNot { it in known }.forEach { selected.remove(it) }
-        }
+        // A new/cleared result invalidates every old selection and keeper, so
+        // the bottom CTA can never act on files from a previous scan.
+        val known = state.result?.groups?.flatMap { it.files }?.map { it.uriString }?.toSet().orEmpty()
+        selected.keys.toList().filterNot { it in known }.forEach { selected.remove(it) }
+        val groupIds = state.result?.groups?.map { it.id }?.toSet().orEmpty()
+        keepers.keys.toList().filterNot { it in groupIds }.forEach { keepers.remove(it) }
     }
     val groups = state.result?.groups.orEmpty()
     val visible = groups.filter { group ->
         when (filter) { 1 -> !group.files.first().isVideo; 2 -> group.files.first().isVideo; else -> true }
     }
-    val selectedUris = selected.filterValues { it }.keys.toSet()
-    val selectedBytes = groups.flatMap { it.files }.distinctBy { it.uriString }
-        .filter { it.uriString in selectedUris }.sumOf { it.sizeBytes }
+    val knownFiles = groups.flatMap { it.files }.distinctBy { it.uriString }
+    val knownUris = knownFiles.map { it.uriString }.toSet()
+    val selectedUris = selected.filterValues { it }.keys.filter { it in knownUris }.toSet()
+    val selectedBytes = knownFiles.filter { it.uriString in selectedUris }.sumOf { it.sizeBytes }
     fun startScan() {
         if (!mediaAllowed) permissionLauncher.launch(duplicateReadPermissions())
         else { selected.clear(); keepers.clear(); model.start(context, mode) }

@@ -212,9 +212,15 @@ fun V2CleanToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
     val total = storage.totalBytes.coerceAtLeast(1L)
     val other = (storage.usedBytes - cache - (if (media.permissionGranted) media.imagesBytes + media.videosBytes else 0L))
         .coerceAtLeast(0L)
+    val loading = facts.computedAt == 0L
+    val failed = !loading && !facts.isLive
+    val storageUnread = !loading && facts.isLive && !storage.isMeasured
+    val mediaUnread = !loading && facts.isLive && media.permissionGranted && !media.readSucceeded
     val metric = when {
-        storage.totalBytes > 0L -> "${formatBytes(storage.freeBytes)} متاحة"
-        else -> "جاري القراءة"
+        loading -> "جاري القراءة"
+        failed -> "غير متاح"
+        !storage.isMeasured -> "مساحة التخزين غير مقروءة"
+        else -> "${formatBytes(storage.freeBytes)} متاحة"
     }
 
     Box(
@@ -232,8 +238,16 @@ fun V2CleanToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
                 item {
                     ServiceBanner(
                         spec = CleanTools.bannerSpec(tool),
-                        status = if (facts.computedAt > 0L) "قراءة مباشرة" else "جاري القراءة",
-                        statusColor = if (facts.computedAt > 0L) V2Green else V2Amber,
+                        status = when {
+                            loading -> "جاري القراءة"
+                            failed -> "تعذّرت القراءة"
+                            else -> "قراءة مباشرة"
+                        },
+                        statusColor = when {
+                            loading -> V2Amber
+                            failed -> V2Red
+                            else -> V2Green
+                        },
                         metric = metric,
                         showIdentityLine = false,
                     )
@@ -247,24 +261,66 @@ fun V2CleanToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
                         history = history,
                     )
                 }
-                when (tool.route) {
-                    "clean-scope" -> scopeItems(facts, navigate)
-                    "clean-scan" -> scanItems(facts, navigate)
-                    "clean-classify" -> classifyItems(facts, total, other)
-                    "clean-filters" -> filterItems(facts)
-                    "clean-preview" -> previewItems(facts)
-                    "clean-protected" -> protectedItems(facts)
-                    "clean-selection" -> selectionItems(facts, navigate)
-                    "clean-impact" -> impactItems(facts, navigate)
-                    "clean-confirm" -> confirmItems(facts, navigate)
-                    "clean-history" -> historyItems(history, navigate)
-                    "clean-large" -> largeItems(facts, navigate)
-                    "clean-media-mix" -> mediaMixItems(facts, navigate)
-                    "clean-buckets" -> bucketItems(facts, navigate)
-                    "clean-free-plan" -> freePlanItems(facts, navigate)
-                    "clean-cache-audit" -> cacheAuditItems(facts, navigate)
+                if (failed) {
+                    item {
+                        ServiceCapabilityCard(
+                            title = "تعذّر إكمال قراءة الجهاز",
+                            body = "لم تُعد قراءة التخزين أو التطبيقات أو الوسائط أي قيمة. لن نعرض أصفاراً كأنها نتيجة ناجحة.",
+                            state = ServiceState.PERMISSION,
+                            actionLabel = "إعادة القراءة",
+                            onAction = bump,
+                        )
+                    }
+                } else {
+                    if (storageUnread) {
+                        item {
+                            ServiceCapabilityCard(
+                                title = "مساحة التخزين غير مقروءة",
+                                body = "StatFs لم يُعد حجماً لهذا الحجم. القيم المعتمدة على المساحة تبقى غير متاحة حتى تنجح إعادة القراءة.",
+                                state = ServiceState.RESTRICTED,
+                                actionLabel = "إعادة القراءة",
+                                onAction = bump,
+                            )
+                        }
+                    }
+                    if (mediaUnread) {
+                        item {
+                            ServiceCapabilityCard(
+                                title = "مكتبة الوسائط غير مقروءة",
+                                body = "الإذن ممنوح لكن استعلام MediaStore لم يكتمل. الصفر هنا ليس «لا صور»؛ أعد القراءة قبل الاعتماد على أي رقم.",
+                                state = ServiceState.RESTRICTED,
+                                actionLabel = "إعادة القراءة",
+                                onAction = bump,
+                            )
+                        }
+                    }
+                    when (tool.route) {
+                        "clean-scope" -> scopeItems(facts, navigate)
+                        "clean-scan" -> scanItems(facts, navigate)
+                        "clean-classify" -> classifyItems(facts, total, other)
+                        "clean-filters" -> filterItems(facts)
+                        "clean-preview" -> previewItems(facts)
+                        "clean-protected" -> protectedItems(facts)
+                        "clean-selection" -> selectionItems(facts, navigate)
+                        "clean-impact" -> impactItems(facts, navigate)
+                        "clean-confirm" -> confirmItems(facts, navigate)
+                        "clean-history" -> historyItems(history, navigate)
+                        "clean-large" -> largeItems(facts, navigate)
+                        "clean-media-mix" -> mediaMixItems(facts, navigate)
+                        "clean-buckets" -> bucketItems(facts, navigate)
+                        "clean-free-plan" -> freePlanItems(facts, navigate)
+                        "clean-cache-audit" -> cacheAuditItems(facts, navigate)
+                    }
                 }
-                item { PreviewNote("كل الأرقام أعلاه مقروءة من هذا الهاتف الآن. لا تُعرض قيم تقديرية بدلًا من القراءة الفعلية.") }
+                item {
+                    PreviewNote(
+                        when {
+                            failed -> "لا توجد قيم معروضة بدلاً من قراءة فاشلة."
+                            storageUnread || mediaUnread -> "بعض القراءات غير مكتملة وموضحة أعلاه؛ لا تُعرض كأصفار ناجحة."
+                            else -> "كل الأرقام أعلاه مقروءة من هذا الهاتف الآن. لا تُعرض قيم تقديرية بدلًا من القراءة الفعلية."
+                        },
+                    )
+                }
             }
             V2GradientButton(
                 "تحديث القراءة",

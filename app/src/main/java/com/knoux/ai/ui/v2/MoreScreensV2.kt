@@ -1,9 +1,11 @@
 package com.knoux.ai.ui.v2
 
 import android.app.Application
+import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.LaunchedEffect
@@ -11,8 +13,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.knoux.ai.database.AppDatabase
 import com.knoux.ai.database.KnouxRepository
 import com.knoux.ai.database.OperationItemOutcomeEntity
+import com.knoux.ai.database.ScanSessionEntity
 import com.knoux.ai.ui.v2.markKnouxOnboardingSeen
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -100,7 +104,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.time.LocalDate
+import java.time.temporal.ChronoUnit
+import java.util.Locale
 import java.util.UUID
+import kotlin.math.roundToInt
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -125,6 +133,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.pm.PackageInfoCompat
 import com.knoux.ai.R
 import com.knoux.ai.ui.v2.V2LuxuryIdentity
 import com.knoux.ai.ui.v2.V2LuxuryStage
@@ -379,28 +389,6 @@ internal fun SegmentedBar(segments: List<Pair<Float, Color>>, height: Int = 9) {
 /* ------------------------------------------------------------------ *
  * App manager
  * ------------------------------------------------------------------ */
-
-private data class ManagedAppV2(
-    val name: String,
-    val packageName: String,
-    val mark: AppMark,
-    val size: String,
-    val data: String,
-    val cache: String,
-    val lastUsed: String,
-    val permissions: Int,
-    val accent: Color,
-)
-
-private val managedAppsV2 = listOf(
-    ManagedAppV2("TikTok", "com.zhiliaoapp.musically", AppMark.TikTok, "842 MB", "486 MB", "128 MB", "منذ 12 دقيقة", 12, V2Cyan),
-    ManagedAppV2("WhatsApp", "com.whatsapp", AppMark.WhatsApp, "412 MB", "1.8 GB", "64 MB", "منذ 3 ساعات", 9, V2Green),
-    ManagedAppV2("YouTube", "com.google.android.youtube", AppMark.YouTube, "356 MB", "920 MB", "212 MB", "منذ ساعة", 8, V2Pink),
-    ManagedAppV2("Telegram", "org.telegram.messenger", AppMark.Telegram, "228 MB", "2.4 GB", "310 MB", "منذ 5 دقائق", 7, V2Blue),
-    ManagedAppV2("الصور", "com.google.android.apps.photos", AppMark.Photos, "186 MB", "1.2 GB", "96 MB", "منذ يوم", 6, V2Violet),
-)
-
-private val appFilters = listOf("الكل (54)", "ثقيلة (8)", "نادرًا (12)", "حديثة (6)")
 
 @Composable
 fun V2AppManagerScreen(
@@ -698,43 +686,6 @@ private fun AppFilterChip(
 }
 
 @Composable
-private fun AppManagerSummary() {
-    V2GlassCard(
-        Modifier.fillMaxWidth(),
-        padding = 12.dp,
-        radius = 22.dp,
-        glow = V2Violet,
-        borderAlpha = .52f,
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            V2NeonRing(
-                progress = .67f,
-                size = 92.dp,
-                stroke = 7.dp,
-                colors = listOf(V2Cyan, V2Blue, V2Violet),
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    KText("46.8", size = 17.sp, weight = FontWeight.Black)
-                    KText("GB مستخدمة", size = 9.sp, color = V2Soft)
-                }
-            }
-            Spacer(Modifier.width(13.dp))
-            Column(Modifier.weight(1f)) {
-                KText("54 تطبيقًا مثبتًا", size = 11.5.sp, weight = FontWeight.Bold)
-                KText("من أصل 72.4 GB مساحة متاحة", size = 9.sp, color = V2Soft)
-                Spacer(Modifier.height(6.dp))
-                V2ProgressBar(.67f, height = 5.dp)
-                Spacer(Modifier.height(7.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    SummaryPill("8 ثقيلة", V2Pink)
-                    SummaryPill("12 نادرًا", V2Amber)
-                }
-            }
-        }
-    }
-}
-
-@Composable
 internal fun SummaryPill(text: String, accent: Color) {
     Box(
         Modifier
@@ -744,46 +695,6 @@ internal fun SummaryPill(text: String, accent: Color) {
             .padding(horizontal = 8.dp, vertical = 3.dp)
     ) {
         KText(text, size = 9.sp, weight = FontWeight.SemiBold, color = accent)
-    }
-}
-
-@Composable
-private fun ManagedAppRow(
-    app: ManagedAppV2,
-    checked: Boolean,
-    onToggle: () -> Unit,
-    onClick: () -> Unit,
-) {
-    val shape = RoundedCornerShape(20.dp)
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .background(
-                Brush.horizontalGradient(
-                    if (checked) listOf(app.accent.withAlpha( .13f), V2Panel2)
-                    else listOf(Color.White.withAlpha( .04f), V2Panel2)
-                )
-            )
-            .border(1.dp, if (checked) app.accent.withAlpha( .45f) else Color.White.withAlpha( .10f), shape)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 9.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        AppLogo(app.mark, size = 42.dp)
-        Spacer(Modifier.width(9.dp))
-        Column(Modifier.weight(1f)) {
-            KText(app.name, size = 11.5.sp, weight = FontWeight.Bold, maxLines = 1)
-            KText(app.packageName, size = 9.sp, color = V2Muted, maxLines = 1)
-            Spacer(Modifier.height(2.dp))
-            KText("آخر استخدام ${app.lastUsed}", size = 9.sp, color = V2Muted, maxLines = 1)
-        }
-        Column(horizontalAlignment = Alignment.End) {
-            KText(app.size, size = 10.5.sp, weight = FontWeight.Bold, color = app.accent)
-            KText("${app.permissions} أذونات", size = 9.sp, color = V2Muted)
-        }
-        Spacer(Modifier.width(8.dp))
-        V2Check(checked = checked, accent = app.accent, onToggle = onToggle)
     }
 }
 
@@ -943,23 +854,6 @@ private fun SettingToggleRow(
 /* ------------------------------------------------------------------ *
  * Storage analyzer
  * ------------------------------------------------------------------ */
-
-private data class StorageCategoryV2(
-    val name: String,
-    val size: String,
-    val percent: String,
-    val fraction: Float,
-    val icon: ImageVector,
-    val accent: Color,
-)
-
-private val storageCategories = listOf(
-    StorageCategoryV2("التطبيقات", "46.8 GB", "65%", .65f, Icons.Rounded.Apps, V2Violet),
-    StorageCategoryV2("الصور والفيديو", "18.2 GB", "25%", .25f, Icons.Rounded.PhotoLibrary, V2Pink),
-    StorageCategoryV2("المستندات", "4.6 GB", "6%", .06f, Icons.Rounded.Article, V2Cyan),
-    StorageCategoryV2("الصوتيات", "1.8 GB", "3%", .03f, Icons.Rounded.Audiotrack, V2Amber),
-    StorageCategoryV2("أخرى", "1.0 GB", "1%", .01f, Icons.Rounded.Folder, V2Green),
-)
 
 @Composable
 fun V2StorageScreen(onBack: () -> Unit, onOpenDetail: () -> Unit, onPro: () -> Unit) {
@@ -1140,34 +1034,6 @@ private fun LoadingFileRow(title: String, subtitle: String, size: String, accent
             }
             KText(size, size = 9.2.sp, weight = FontWeight.Bold, color = accent)
         }
-    }
-}
-
-@Composable
-private fun StorageCategoryRow(category: StorageCategoryV2) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Box(
-            Modifier
-                .size(30.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(category.accent.withAlpha( .12f))
-                .border(1.dp, category.accent.withAlpha( .28f), RoundedCornerShape(8.dp)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(category.icon, null, tint = category.accent, modifier = Modifier.size(15.dp))
-        }
-        Spacer(Modifier.width(8.dp))
-        Column(Modifier.weight(1f)) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                KText(category.name, size = 9.6.sp, weight = FontWeight.SemiBold)
-                Spacer(Modifier.weight(1f))
-                KText(category.size, size = 9.2.sp, weight = FontWeight.Bold, color = category.accent)
-            }
-            Spacer(Modifier.height(4.dp))
-            V2ProgressBar(category.fraction, height = 4.dp, colors = listOf(category.accent, category.accent.withAlpha( .55f)))
-        }
-        Spacer(Modifier.width(8.dp))
-        KText(category.percent, size = 9.sp, color = V2Muted, modifier = Modifier.width(26.dp), align = TextAlign.End)
     }
 }
 
@@ -1476,21 +1342,6 @@ private fun DrainRow(name: String, percent: String, fraction: Float, accent: Col
  * AI optimization
  * ------------------------------------------------------------------ */
 
-private data class AiAction(
-    val title: String,
-    val detail: String,
-    val gain: String,
-    val icon: ImageVector,
-    val accent: Color,
-)
-
-private val aiActions = listOf(
-    AiAction("إغلاق التطبيقات الخلفية", "11 تطبيقًا يستهلك الذاكرة بدون استخدام", "1.2 GB", Icons.Rounded.Memory, V2Cyan),
-    AiAction("تحسين بدء التشغيل", "تعطيل 4 تطبيقات تبدأ تلقائيًا", "أسرع 18%", Icons.Rounded.Speed, V2Violet),
-    AiAction("تنظيف ذاكرة التخزين", "ملفات مؤقتة قابلة للحذف بأمان", "684 MB", Icons.Rounded.CleaningServices, V2Pink),
-    AiAction("تبريد الجهاز", "إيقاف النشاط الثقيل مؤقتًا", "-4°", Icons.Rounded.Thermostat, V2Amber),
-)
-
 private data class LiveRecommendation(
     val key: String,
     val title: String,
@@ -1727,35 +1578,6 @@ private fun LiveRecommendationRow(action: LiveRecommendation, onClick: () -> Uni
             KText(action.value, size = 9.sp, weight = FontWeight.Bold, color = action.accent)
             Spacer(Modifier.width(5.dp))
             Icon(Icons.Rounded.ChevronLeft, null, tint = V2Soft, modifier = Modifier.size(15.dp))
-        }
-    }
-}
-
-@Composable
-private fun AiActionRow(action: AiAction, applied: Boolean, onToggle: () -> Unit) {
-    V2GlassCard(
-        Modifier.fillMaxWidth(),
-        padding = 10.dp,
-        radius = 17.dp,
-        glow = if (applied) V2Green else action.accent,
-        borderAlpha = .34f,
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            V2IconTile(action.icon, if (applied) V2Green else action.accent, size = 36.dp, iconSize = 18.dp)
-            Spacer(Modifier.width(9.dp))
-            Column(Modifier.weight(1f)) {
-                KText(action.title, size = 9.8.sp, weight = FontWeight.Bold)
-                KText(action.detail, size = 9.sp, color = V2Muted, maxLines = 1)
-            }
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                KText(action.gain, size = 9.sp, weight = FontWeight.Bold, color = V2Cyan)
-                Spacer(Modifier.height(3.dp))
-                AppFilterChip(
-                    text = if (applied) "مطبق" else "تطبيق",
-                    active = applied,
-                    onClick = onToggle,
-                )
-            }
         }
     }
 }
@@ -2876,161 +2698,236 @@ fun V2LargeFilesScreen(onBack: () -> Unit, onPro: () -> Unit) {
  * Old Backups
  * ------------------------------------------------------------------ */
 
-private data class OldBackupV2(val name: String, val date: String, val size: String, val path: String, val accent: Color)
-
-private val oldBackups = listOf(
-    OldBackupV2("نسخة نظام 2025", "12 مايو 2025", "1.2 GB", "Android/backup/full_2025", V2Amber),
-    OldBackupV2("نسخة تطبيقات واتساب", "3 مارس 2025", "850 MB", "Android/backup/whatsapp", V2Violet),
-    OldBackupV2("نسخة صور Google", "1 يناير 2025", "620 MB", "Android/backup/photos", V2Cyan),
-    OldBackupV2("نسخة إعدادات النظام", "15 يونيو 2025", "150 MB", "Android/backup/settings", V2Green),
-)
-
 @Composable
 fun V2OldBackupsScreen(onBack: () -> Unit, onPro: () -> Unit) {
-    var selected by remember { mutableStateOf(setOf<Int>()) }
+    val context = LocalContext.current
+    val (refresh, bump) = rememberRefreshCounter()
+    var tree by remember { mutableStateOf<Uri?>(null) }
+    var files by remember { mutableStateOf(emptyList<ScopedDocument>()) }
+    var loading by remember { mutableStateOf(false) }
+    var message by remember { mutableStateOf<String?>(null) }
+    val folderId = remember(tree) {
+        tree?.let { runCatching { DocumentsContract.getTreeDocumentId(it) }.getOrNull() }
+    }
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri == null) {
+            message = "أُلغي اختيار المجلد؛ لم يتغير شيء"
+        } else {
+            tree = uri
+            files = emptyList()
+            message = null
+        }
+    }
+    LaunchedEffect(tree, refresh) {
+        val root = tree ?: return@LaunchedEffect
+        val id = folderId ?: run {
+            message = "تعذّر قراءة معرّف المجلد المختار"
+            return@LaunchedEffect
+        }
+        loading = true
+        message = null
+        try {
+            files = withContext(Dispatchers.IO) {
+                readScopedFolder(context, root, id)
+                    .filterNot { it.isDirectory }
+                    .sortedByDescending { it.lastModified ?: 0L }
+            }
+            if (files.isEmpty()) message = "لم يُعد الموفر ملفات في هذا المجلد."
+        } catch (error: Exception) {
+            files = emptyList()
+            message = "تعذّرت قراءة المجلد المصرح به: ${error.message ?: error.javaClass.simpleName}"
+        } finally {
+            loading = false
+        }
+    }
     InteriorScaffold(
         onBack = onBack,
         onPro = onPro,
         bottomBar = {
             V2GradientButton(
-                "حذف ${selected.size} نسخ احتياطية",
-                {},
-                icon = Icons.Rounded.Delete,
-                trailingChevron = true,
+                "اختيار مجلد النسخ الاحتياطية",
+                {
+                    try { picker.launch(null) }
+                    catch (error: Exception) { message = "منتقي المجلدات غير متاح: ${error.message}" }
+                },
+                icon = Icons.Rounded.Backup,
+                height = 48.dp,
             )
         },
     ) {
-        item { PageHeading("النسخ الاحتياطية القديمة", "مراجعة وحذف النسخ غير المستخدمة", Icons.Rounded.Backup, V2Amber) }
-        item { V2SectionLabel("النسخ المتاحة", trailing = "${oldBackups.size} نسخة") }
-        item {
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                TextButton(
-                    onClick = {
-                        selected = if (selected.size == oldBackups.size) emptySet() else oldBackups.indices.toSet()
-                    },
-                    modifier = Modifier.heightIn(min = 48.dp),
-                ) {
-                    KText(
-                        if (selected.size == oldBackups.size) "إلغاء تحديد الكل" else "تحديد الكل",
-                        size = 13.sp,
-                        weight = FontWeight.Bold,
-                        color = V2Cyan,
-                    )
+        item { PageHeading("النسخ الاحتياطية", "قراءة مجلد تختاره عبر SAF — بلا حذف", Icons.Rounded.Backup, V2Amber) }
+        item { ScopedNotice("لا يرى KNOUX نسخك الاحتياطية إلا داخل المجلد الذي تختاره بنفسك. لا توجد نسخ أو أحجام مفترضة، ولا يحذف هذا التطبيق نسخاً.", V2Cyan) }
+        if (tree == null) {
+            item { ScopedNotice("لم يُختر مجلد بعد. اختر مجلد النسخ الاحتياطية لعرض ملفاته الحقيقية.", V2Amber) }
+        } else {
+            item { ScopedNotice("المجلد المختار: ${folderId ?: "معرّف غير مقروء"}") }
+            if (loading) item { ScopedNotice("جارٍ قراءة المجلد…") }
+            message?.let { text -> item { ScopedNotice(text, V2Amber) } }
+            if (files.isNotEmpty()) {
+                item { V2SectionLabel("ملفات المجلد", trailing = "${files.size} ملف") }
+                files.forEach { file ->
+                    item {
+                        V2GlassCard(
+                            Modifier.fillMaxWidth().heightIn(min = 52.dp).clickable {
+                                message = viewGrantedDocument(context, file.uri)
+                            },
+                            padding = 12.dp,
+                            radius = 16.dp,
+                            glow = V2Amber,
+                            borderAlpha = .24f,
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                V2IconTile(Icons.Rounded.Archive, V2Amber, size = 36.dp, iconSize = 18.dp)
+                                Spacer(Modifier.width(10.dp))
+                                Column(Modifier.weight(1f)) {
+                                    KText(file.name, size = 11.sp, weight = FontWeight.SemiBold, maxLines = 1)
+                                    KText(
+                                        "${file.lastModified?.let(::formatScanTime) ?: "تاريخ غير معلن"} · ${file.mime}",
+                                        size = 9.sp,
+                                        color = V2Soft,
+                                        maxLines = 1,
+                                    )
+                                }
+                                KText(file.bytes?.let(::formatBytes) ?: "حجم غير معلن", size = 9.5.sp, weight = FontWeight.Bold, color = V2Amber)
+                                Spacer(Modifier.width(6.dp))
+                                Icon(Icons.Rounded.OpenInNew, null, tint = V2Soft, modifier = Modifier.size(16.dp))
+                            }
+                        }
+                    }
                 }
+                item { ScopedNotice("تُعرض أول 500 نتيجة في المجلد. اضغط أي ملف لفتحه في تطبيق النظام.") }
+                item { V2GhostButton("إعادة قراءة المجلد", bump, icon = Icons.Rounded.Refresh, height = 48.dp) }
             }
         }
-        items(oldBackups.size) { index ->
-            val item = oldBackups[index]
-            val checked = selected.contains(index)
-            V2GlassCard(
-                Modifier.fillMaxWidth().clickable {
-                    selected = if (checked) selected - index else selected + index
-                },
-                padding = 10.dp,
-                radius = 16.dp,
-                glow = item.accent,
-                borderAlpha = if (checked) .50f else .18f,
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        Modifier.size(38.dp).clip(RoundedCornerShape(12.dp))
-                            .background(item.accent.withAlpha(.12f))
-                            .border(1.dp, item.accent.withAlpha(.32f), RoundedCornerShape(12.dp)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(Icons.Rounded.Backup, null, tint = item.accent, modifier = Modifier.size(18.dp))
-                    }
-                    Spacer(Modifier.width(9.dp))
-                    Column(Modifier.weight(1f)) {
-                        KText(item.name, size = 9.4.sp, weight = FontWeight.SemiBold, maxLines = 1)
-                        KText("${item.date} · ${item.path}", size = 9.sp, color = V2Muted, maxLines = 1)
-                    }
-                    KText(item.size, size = 9.4.sp, weight = FontWeight.Bold, color = item.accent)
-                    Spacer(Modifier.width(8.dp))
-                    V2Check(checked, item.accent, onToggle = { selected = if (checked) selected - index else selected + index })
-                }
-            }
-        }
-        item { PreviewNote("حذف النسخ الاحتياطية لا يسترجع المساحة فوراً حتى يتم فراغ سلة المهملات.") }
+        item { PreviewNote("لا يحذف KNOUX ملفات النسخ الاحتياطية. الحذف يتم من تطبيق الملفات في النظام بعد مراجعتك.") }
     }
 }
 
 /* ------------------------------------------------------------------ *
- * System Logs
+ * System Logs — the app's own journal, not other apps' logcat
  * ------------------------------------------------------------------ */
 
-private data class SystemLogV2(val app: String, val level: String, val message: String, val time: String, val accent: Color)
-
-private val systemLogs = listOf(
-    SystemLogV2("النظام", "معلومات", "تم تشغيل الجهاز بنجاح", "منذ 4 ساعات", V2Cyan),
-    SystemLogV2("واتساب", "تحذير", "فشل في مزامنة النسخة الاحتياطية", "منذ 3 ساعات", V2Amber),
-    SystemLogV2("التيك توك", "خطأ", "توقف التطبيق بشكل غير متوقع", "منذ ساعتين", V2Red),
-    SystemLogV2("المتصفح", "معلومات", "تم تحديث ملفات الكاش", "منذ ساعة", V2Green),
-    SystemLogV2("النظام", "معلومات", "تم تثبيت تحديث أمني", "منذ 30 دقيقة", V2Cyan),
-    SystemLogV2("اليوتيوب", "تحذير", "استهلاك بيانات مرتفع", "منذ 15 دقيقة", V2Amber),
-    SystemLogV2("الصور", "معلومات", "تم نسخ الصور احتياطياً", "منذ 10 دقائق", V2Violet),
-    SystemLogV2("النظام", "خطأ", "فشل في قراءة بطاقة الذاكرة", "منذ 5 دقائق", V2Red),
+private data class ActivityLogRow(
+    val title: String,
+    val status: String,
+    val detail: String,
+    val timestamp: Long,
+    val accent: Color,
+    val icon: ImageVector,
 )
+
+private fun buildActivityLog(
+    sessions: List<ScanSessionEntity>,
+    history: List<ScanHistoryEntry>,
+): List<ActivityLogRow> {
+    val room = sessions.map { session ->
+        val status = session.status.uppercase(Locale.US)
+        val (label, accent, icon) = when (status) {
+            "COMPLETED" -> Triple("مكتمل", V2Green, Icons.Rounded.Check)
+            "SCANNING" -> Triple("قيد الفحص", V2Cyan, Icons.Rounded.Radar)
+            "FAILED" -> Triple("فشل", V2Red, Icons.Rounded.Report)
+            "CANCELLED" -> Triple("ملغي", V2Amber, Icons.Rounded.WarningAmber)
+            "LEGACY_OPERATION" -> Triple("عملية مسجلة", V2Violet, Icons.Rounded.Info)
+            else -> Triple(status, V2Soft, Icons.Rounded.Info)
+        }
+        val detail = buildString {
+            if (session.itemsFound > 0) append("${formatCount(session.itemsFound)} عنصر")
+            if (session.bytesFound > 0) {
+                if (isNotEmpty()) append(" · ")
+                append(formatBytes(session.bytesFound))
+            }
+            if (isEmpty()) append("بدون عناصر مسجلة")
+        }
+        ActivityLogRow(
+            title = serviceLabel(session.serviceId),
+            status = label,
+            detail = detail,
+            timestamp = session.startedAt,
+            accent = accent,
+            icon = icon,
+        )
+    }
+    val roomDeepTimes = sessions.filter { it.serviceId == "deep_scan" }.map { it.startedAt }
+    val saved = history
+        .filter { entry -> roomDeepTimes.none { kotlin.math.abs(it - entry.timestamp) < 5_000L } }
+        .map { entry ->
+            ActivityLogRow(
+                title = "قياس محفوظ",
+                status = "قياس",
+                detail = "${formatCount(entry.appsScanned)} حزمة · " +
+                    "${formatCount(entry.privacyFindings)} نتيجة خصوصية · كاش ${formatBytes(entry.cacheBytes)}",
+                timestamp = entry.timestamp,
+                accent = V2Violet,
+                icon = Icons.Rounded.Timeline,
+            )
+        }
+    return (room + saved).sortedByDescending { it.timestamp }.take(40)
+}
+
+@Composable
+private fun ActivityLogCard(row: ActivityLogRow) {
+    V2GlassCard(
+        Modifier.fillMaxWidth(),
+        padding = 10.dp,
+        radius = 16.dp,
+        glow = row.accent,
+        borderAlpha = .24f,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            V2IconTile(row.icon, row.accent, size = 33.dp, iconSize = 16.dp)
+            Spacer(Modifier.width(9.dp))
+            Column(Modifier.weight(1f)) {
+                KText(row.title, size = 9.6.sp, weight = FontWeight.SemiBold, maxLines = 1)
+                KText(row.detail, size = 9.sp, color = V2Soft, maxLines = 1)
+            }
+            Column(horizontalAlignment = Alignment.End) {
+                KText(formatScanTime(row.timestamp), size = 9.sp, color = V2Muted)
+                Box(
+                    Modifier.clip(RoundedCornerShape(50))
+                        .background(row.accent.withAlpha(.12f))
+                        .border(1.dp, row.accent.withAlpha(.32f), RoundedCornerShape(50))
+                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                ) {
+                    KText(row.status, size = 9.sp, weight = FontWeight.Bold, color = row.accent)
+                }
+            }
+        }
+    }
+}
 
 @Composable
 fun V2SystemLogsScreen(onBack: () -> Unit, onPro: () -> Unit) {
+    val context = LocalContext.current
+    val (refresh, bump) = rememberRefreshCounter()
+    val database = remember(context) { AppDatabase.getDatabase(context.applicationContext) }
+    val sessions by remember(database) { database.scanSessionDao().getRecent(40) }
+        .collectAsState(initial = emptyList())
+    var history by remember { mutableStateOf(emptyList<ScanHistoryEntry>()) }
+    LaunchedEffect(refresh) {
+        history = withContext(Dispatchers.IO) { readScanHistory(context) }
+    }
+    val rows = remember(sessions, history) { buildActivityLog(sessions, history) }
+
     InteriorScaffold(
         onBack = onBack,
         onPro = onPro,
     ) {
-        item { PageHeading("سجلات النظام", "عرض سجلات التطبيقات والنظام", Icons.Rounded.Description, V2Cyan) }
-        item { V2SectionLabel("آخر السجلات", trailing = "${systemLogs.size} سجل") }
-        items(systemLogs.size) { index ->
-            val log = systemLogs[index]
-            V2GlassCard(
-                Modifier.fillMaxWidth(),
-                padding = 10.dp,
-                radius = 16.dp,
-                glow = log.accent,
-                borderAlpha = .24f,
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        Modifier.size(32.dp).clip(RoundedCornerShape(8.dp))
-                            .background(log.accent.withAlpha(.12f))
-                            .border(1.dp, log.accent.withAlpha(.32f), RoundedCornerShape(8.dp)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            when (log.level) {
-                                "خطأ" -> Icons.Rounded.Report
-                                "تحذير" -> Icons.Rounded.WarningAmber
-                                else -> Icons.Rounded.Info
-                            },
-                            null,
-                            tint = log.accent,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                    Spacer(Modifier.width(9.dp))
-                    Column(Modifier.weight(1f)) {
-                        KText(log.app, size = 9.4.sp, weight = FontWeight.SemiBold, maxLines = 1)
-                        KText(log.message, size = 9.sp, color = V2Soft, maxLines = 1)
-                    }
-                    Column(horizontalAlignment = Alignment.End) {
-                        KText(log.time, size = 9.sp, color = V2Muted)
-                        Box(
-                            Modifier.clip(RoundedCornerShape(50))
-                                .background(log.accent.withAlpha(.12f))
-                                .border(1.dp, log.accent.withAlpha(.32f), RoundedCornerShape(50))
-                                .padding(horizontal = 6.dp, vertical = 2.dp),
-                        ) {
-                            KText(log.level, size = 9.sp, weight = FontWeight.Bold, color = log.accent)
-                        }
-                    }
-                }
-            }
+        item { PageHeading("سجل النشاط", "جلسات KNOUX المحلية — لا سجلات نظام خام", Icons.Rounded.Description, V2Cyan) }
+        item {
+            ScopedNotice(
+                "Android لا يسمح لتطبيق عادي بقراءة logcat أو سجلات التطبيقات الأخرى. " +
+                    "هذا السجل يعرض جلسات KNOUX المسجلة في Room والقياسات المحفوظة محلياً فقط.",
+                V2Amber,
+            )
         }
-        item { PreviewNote("السجلات هنا بيانات معاينة حتى تُربط بقراءة النظام الفعلية.") }
+        if (rows.isEmpty()) {
+            item { ScopedNotice("لا توجد جلسات مسجلة بعد. شغّل خدمة مثل الفحص العميق لتظهر جلستها هنا.", V2Amber) }
+        } else {
+            item { V2SectionLabel("آخر النشاط", trailing = "${rows.size} سجل") }
+            rows.forEach { row -> item { ActivityLogCard(row) } }
+        }
+        item { V2GhostButton("تحديث السجل", bump, icon = Icons.Rounded.Refresh, height = 48.dp) }
+        item { PreviewNote("كل صف مرتبط بجلسة Room أو قياس محفوظ فعلي؛ لا أحداث تجريبية.") }
     }
 }
 
@@ -3148,31 +3045,38 @@ fun V2FileExplorerScreen(onBack: () -> Unit, onPro: () -> Unit) {
 fun V2DeviceInfoScreen(onBack: () -> Unit, onPro: () -> Unit) {
     val context = LocalContext.current
     val packageInfo = remember { context.packageManager.getPackageInfo(context.packageName, 0) }
+    val versionCode = remember(packageInfo) { PackageInfoCompat.getLongVersionCode(packageInfo) }
+    val patch = Build.VERSION.SECURITY_PATCH.ifBlank { "غير معلن" }
+    val model = "${Build.MANUFACTURER.replaceFirstChar { it.uppercase() }} ${Build.MODEL}"
     InteriorScaffold(
         onBack = onBack,
         onPro = onPro,
     ) {
-        item { PageHeading("معلومات الجهاز", "عرض مواصفات الجهاز وإصدار النظام", Icons.Rounded.Android, V2Violet) }
+        item { PageHeading("معلومات الجهاز", "قيم حقيقية من Build وحزمة التطبيق", Icons.Rounded.Android, V2Violet) }
         item {
             V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 20.dp, glow = V2Violet, borderAlpha = .42f) {
                 Column {
                     InfoLine("اسم التطبيق", "KNOUX AI Pro", Color.White)
                     HairLine()
-                    InfoLine("الإصدار", "${packageInfo.versionName ?: "1.0.0"} (build ${packageInfo.versionCode})", Color.White)
+                    InfoLine("الإصدار", "${packageInfo.versionName ?: "1.0.0"} (build $versionCode)", Color.White)
                     HairLine()
-                    InfoLine(label = "معرّف الحزمة", value = "com.knoux.ai.pro", accent = Color.White)
+                    InfoLine("معرّف الحزمة", context.packageName, Color.White)
                     HairLine()
-                    InfoLine("نظام التشغيل", "Android", Color.White)
+                    InfoLine("الجهاز", model, Color.White)
                     HairLine()
-                    InfoLine("واجهة المستخدم", "Compose Material 3", Color.White)
+                    InfoLine("نظام التشغيل", "Android ${Build.VERSION.RELEASE} · API ${Build.VERSION.SDK_INT}", Color.White)
                     HairLine()
-                    InfoLine("الاتجاه", "العربية (RTL)", Color.White)
+                    InfoLine("المعمارية", Build.SUPPORTED_ABIS.joinToString(", "), Color.White)
                     HairLine()
-                    InfoLine("النموذج الأولي", "V2 (Arabic-first)", Color.White)
+                    InfoLine("تحديث الأمان", patch, if (patch == "غير معلن") V2Amber else Color.White)
+                    HairLine()
+                    InfoLine("لغة النظام", Locale.getDefault().toLanguageTag(), Color.White)
+                    HairLine()
+                    InfoLine("واجهة المستخدم", "Jetpack Compose · Material 3", Color.White)
                 }
             }
         }
-        item { PreviewNote("معلومات الجهاز 여기 بيانات معاينة حتى تُربط بقراءة النظام الفعلية.") }
+        item { ScopedNotice("القيم أعلاه مقروءة مباشرة من Build وحزمة التطبيق على هذا الجهاز.", V2Green) }
     }
 }
 
@@ -3182,51 +3086,148 @@ fun V2DeviceInfoScreen(onBack: () -> Unit, onPro: () -> Unit) {
 
 @Composable
 fun V2NetworkScanScreen(onBack: () -> Unit, onPro: () -> Unit) {
+    val context = LocalContext.current
+    val (refresh, bump) = rememberRefreshCounter()
+    val facts = rememberDeviceFacts(refresh)
+    var usage by remember { mutableStateOf<NetworkUsageFacts?>(null) }
+    var loading by remember { mutableStateOf(false) }
+    var message by remember { mutableStateOf<String?>(null) }
+    val connectivity = remember(context) {
+        context.getSystemService(Context.CONNECTIVITY_SERVICE) as? android.net.ConnectivityManager
+    }
+    val capabilities = remember(connectivity, refresh) {
+        connectivity?.activeNetwork?.let { connectivity.getNetworkCapabilities(it) }
+    }
+    LaunchedEffect(refresh, facts.usageAccessGranted) {
+        if (!facts.usageAccessGranted) {
+            usage = null
+            loading = false
+            return@LaunchedEffect
+        }
+        loading = true
+        val result = withContext(Dispatchers.IO) { readNetworkUsage(context) }
+        usage = result
+        message = result.error
+        loading = false
+    }
+    val transport = when {
+        capabilities == null -> "غير متصل"
+        capabilities.hasTransport(android.net.NetworkCapabilities.TRANSPORT_VPN) -> "VPN"
+        capabilities.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) -> "Wi-Fi"
+        capabilities.hasTransport(android.net.NetworkCapabilities.TRANSPORT_CELLULAR) -> "بيانات الجوال"
+        capabilities.hasTransport(android.net.NetworkCapabilities.TRANSPORT_ETHERNET) -> "إيثرنت"
+        else -> "شبكة أخرى"
+    }
+    val validated = capabilities?.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true
+    val metered = capabilities?.let {
+        !it.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
+    }
+    val linkKbps = capabilities?.linkDownstreamBandwidthKbps ?: 0
+
     InteriorScaffold(
         onBack = onBack,
         onPro = onPro,
+        bottomBar = { V2GhostButton("تحديث قراءة الشبكة", bump, icon = Icons.Rounded.Refresh, height = 48.dp) },
     ) {
-        item { PageHeading("فحص الشبكة", "فحص الاتصالات واستهلاك البيانات", Icons.Rounded.Wifi, V2Cyan) }
+        item { PageHeading("فحص الشبكة", "حالة الاتصال وعدادات البيانات الحقيقية", Icons.Rounded.Wifi, V2Cyan) }
         item {
-            V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 20.dp, glow = V2Cyan, borderAlpha = .52f) {
+            V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 20.dp, glow = V2Cyan, borderAlpha = .42f) {
                 Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        KText("الشبكة المتصلة", size = 9.6.sp, weight = FontWeight.SemiBold, color = V2Soft)
-                        Spacer(Modifier.weight(1f))
-                        KText("Wi-Fi · آمن", size = 9.2.sp, weight = FontWeight.Bold, color = V2Green)
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        KText("استهلاك البيانات", size = 9.6.sp, weight = FontWeight.SemiBold, color = V2Soft)
-                        Spacer(Modifier.weight(1f))
-                        KText("2.4 GB هذا الشهر", size = 9.2.sp, weight = FontWeight.Bold, color = V2Cyan)
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        KText("أكثر التطبيقات استهلاكاً", size = 9.6.sp, weight = FontWeight.SemiBold, color = V2Soft)
-                        Spacer(Modifier.weight(1f))
-                        KText("اليوتيوب · 45%", size = 9.2.sp, weight = FontWeight.Bold, color = V2Pink)
-                    }
+                    InfoLine("الشبكة المتصلة", transport, if (capabilities == null) V2Amber else V2Green)
+                    HairLine()
+                    InfoLine(
+                        "الإنترنت",
+                        when {
+                            capabilities == null -> "غير متصل"
+                            validated -> "متحقق من النظام"
+                            else -> "متصل بدون تحقق"
+                        },
+                        if (validated) V2Green else V2Amber,
+                    )
+                    HairLine()
+                    InfoLine(
+                        "الشبكة محدودة",
+                        when (metered) {
+                            true -> "محدودة (metered)"
+                            false -> "غير محدودة"
+                            null -> "غير متاح"
+                        },
+                        when (metered) {
+                            true -> V2Amber
+                            false -> V2Green
+                            null -> V2Muted
+                        },
+                    )
+                    HairLine()
+                    InfoLine(
+                        "سرعة الوصلة",
+                        if (linkKbps > 0) "${linkKbps / 1000} Mbps" else "غير معلنة",
+                        V2Soft,
+                    )
+                    HairLine()
+                    InfoLine("VPN", if (facts.vpnActive) "نفق نشط الآن" else "غير نشط", if (facts.vpnActive) V2Cyan else V2Soft)
                 }
             }
         }
-        item { V2SectionLabel("تطبيقات استهلاك البيانات", trailing = "آخر 7 أيام") }
-        item {
-            NetworkRow("اليوتيوب", "45%", V2Pink)
-            NetworkRow("التيك توك", "28%", V2Violet)
-            NetworkRow("الفيسبوك", "15%", V2Blue)
-            NetworkRow("إنستغرام", "12%", V2Pink)
+        item { V2SectionLabel("استهلاك البيانات", trailing = "من بداية الشهر") }
+        when {
+            !facts.usageAccessGranted -> item {
+                ServiceCapabilityCard(
+                    title = "عدادات الشبكة تحتاج وصول الاستخدام",
+                    body = "Android يحجب عدادات البيانات لكل تطبيق عن التطبيقات العادية. امنح KNOUX وصول الاستخدام لعرض أرقام حقيقية بدلاً من تقديرات.",
+                    state = ServiceState.PERMISSION,
+                    actionLabel = "فتح إعدادات وصول الاستخدام",
+                    onAction = { openUsageAccessSettings(context) },
+                )
+            }
+            loading -> item { ScopedNotice("جارٍ قراءة عدادات الشبكة…") }
+            usage == null -> item { ScopedNotice("تعذّرت قراءة عدادات الشبكة على هذا الجهاز.", V2Amber) }
+            else -> usage?.let { snapshot ->
+                item {
+                    V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 20.dp, glow = V2Violet, borderAlpha = .30f) {
+                        Column {
+                            InfoLine("Wi-Fi", snapshot.wifiBytes?.let(::formatBytes) ?: "غير متاح", V2Cyan)
+                            HairLine()
+                            InfoLine("بيانات الجوال", snapshot.mobileBytes?.let(::formatBytes) ?: "غير متاح", V2Violet)
+                            HairLine()
+                            InfoLine("الإجمالي", snapshot.totalBytes?.let(::formatBytes) ?: "غير متاح", V2Green)
+                        }
+                    }
+                }
+                message?.let { text -> item { ScopedNotice(text, V2Amber) } }
+                val total = snapshot.totalBytes ?: 0L
+                if (snapshot.perApp.isEmpty()) {
+                    item {
+                        ScopedNotice(
+                            if (total > 0L) "لم تُعد عدادات لكل تطبيق في هذه الفترة؛ الإجمالي أعلاه مقروء."
+                            else "لا يوجد استهلاك شبكة مسجل من بداية الشهر.",
+                        )
+                    }
+                } else {
+                    item { V2SectionLabel("أكثر التطبيقات استهلاكاً", trailing = "حتى الآن") }
+                    snapshot.perApp.forEach { app ->
+                        item {
+                            NetworkRow(
+                                app.label,
+                                "${formatBytes(app.bytes)} · ${((app.bytes.toDouble() / total.coerceAtLeast(1L)) * 100).roundToInt()}%",
+                                V2Cyan,
+                            )
+                        }
+                    }
+                    item { ScopedNotice("الأسماء من حزم Android المقروءة؛ الأرقام من NetworkStatsManager وليست تقديرية.", V2Green) }
+                }
+            }
         }
-        item { PreviewNote("بيانات الشبكة هنا معاينة تصميمية حتى تُربط بقراءة النظام الفعلية.") }
+        item { PreviewNote("لا تُعرض أرقام شبكة تقديرية. عند غياب وصول الاستخدام تبقى القراءة غير متاحة.") }
     }
 }
 
 @Composable
-private fun NetworkRow(name: String, percent: String, accent: Color) {
+private fun NetworkRow(name: String, value: String, accent: Color) {
     V2GlassCard(Modifier.fillMaxWidth(), padding = 8.dp, radius = 12.dp, glow = accent, borderAlpha = .20f) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            KText(name, size = 9.sp, weight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-            KText(percent, size = 9.sp, weight = FontWeight.Bold, color = accent)
+            KText(name, size = 9.sp, weight = FontWeight.SemiBold, modifier = Modifier.weight(1f), maxLines = 1)
+            KText(value, size = 9.sp, weight = FontWeight.Bold, color = accent)
         }
     }
 }
@@ -3237,43 +3238,198 @@ private fun NetworkRow(name: String, percent: String, accent: Color) {
 
 @Composable
 fun V2SecurityScanScreen(onBack: () -> Unit, onPro: () -> Unit) {
+    val context = LocalContext.current
+    val (refresh, bump) = rememberRefreshCounter()
+    val facts = rememberDeviceFacts(refresh)
+    var sideloaded by remember { mutableStateOf<Int?>(null) }
+    LaunchedEffect(refresh) {
+        sideloaded = withContext(Dispatchers.IO) { readUndeclaredStoreAppCount(context) }
+    }
+    val loading = facts.computedAt == 0L
+    val patch = Build.VERSION.SECURITY_PATCH.ifBlank { "غير معلن" }
+    val patchMonths = remember(patch) {
+        if (patch == "غير معلن") null else runCatching {
+            ChronoUnit.MONTHS.between(LocalDate.parse(patch), LocalDate.now())
+        }.getOrNull()
+    }
+    val score: Int? = if (facts.isLive) {
+        var value = 100
+        if (!facts.lockSecure) value -= 40
+        patchMonths?.let { months -> if (months > 24) value -= 20 else if (months > 12) value -= 10 }
+        value -= (facts.overlayAppCount * 2).coerceAtMost(12)
+        sideloaded?.let { count -> value -= (count * 3).coerceAtMost(15) }
+        value -= (facts.deviceAdminCount * 2).coerceAtMost(6)
+        value.coerceIn(0, 100)
+    } else null
+    val scoreColor = when {
+        score == null -> V2Muted
+        score >= 80 -> V2Green
+        score >= 55 -> V2Amber
+        else -> V2Red
+    }
+    val patchColor = when {
+        patchMonths == null -> V2Muted
+        patchMonths > 24 -> V2Red
+        patchMonths > 12 -> V2Amber
+        else -> V2Green
+    }
+    val patchDetail = when {
+        patch == "غير معلن" -> "التاريخ غير معلن على هذا النظام"
+        patchMonths == null -> "تعذّرت قراءة التاريخ"
+        patchMonths <= 0 -> "أحدث من تاريخ اليوم أو غير قابل للحساب"
+        else -> "منذ $patchMonths شهراً"
+    }
+    val biometric = when (facts.biometricStrength) {
+        2 -> "قوية" to V2Green
+        1 -> "ضعيفة" to V2Amber
+        0 -> "غير مسجلة" to V2Amber
+        else -> "غير متاح" to V2Muted
+    }
+
     InteriorScaffold(
         onBack = onBack,
         onPro = onPro,
+        bottomBar = { V2GhostButton("إعادة قراءة الحالة", bump, icon = Icons.Rounded.Refresh, height = 48.dp) },
     ) {
-        item { PageHeading("فحص الأمان", "فحص الثغرات والمخاطر الأمنية", Icons.Rounded.Shield, V2Pink) }
+        item { PageHeading("فحص الأمان", "حالة إعدادات الجهاز — بلا فحص توقيعات", Icons.Rounded.Shield, V2Pink) }
         item {
-            V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 20.dp, glow = V2Pink, borderAlpha = .52f) {
+            V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 20.dp, glow = V2Pink, borderAlpha = .42f) {
                 Column {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        KText("مستوى الأمان", size = 9.6.sp, weight = FontWeight.SemiBold, color = V2Soft)
-                        Spacer(Modifier.weight(1f))
-                        KText("82%", size = 20.sp, weight = FontWeight.Black, color = V2Green)
+                        Column(Modifier.weight(1f)) {
+                            KText("تقدير محلي", size = 9.6.sp, weight = FontWeight.SemiBold, color = V2Soft)
+                            KText("محسوب من الفحوصات أدناه", size = 8.5.sp, color = V2Muted)
+                        }
+                        KText(
+                            when {
+                                loading -> "…"
+                                score == null -> "غير متاح"
+                                else -> "$score%"
+                            },
+                            size = if (score == null) 11.sp else 20.sp,
+                            weight = FontWeight.Black,
+                            color = scoreColor,
+                        )
                     }
-                    Spacer(Modifier.height(8.dp))
-                    V2ProgressBar(.82f, height = 5.dp, colors = listOf(V2Pink, V2Violet, V2Cyan))
+                    if (score != null) {
+                        Spacer(Modifier.height(8.dp))
+                        V2ProgressBar(score / 100f, height = 5.dp, colors = listOf(V2Pink, V2Violet, V2Cyan))
+                        Spacer(Modifier.height(5.dp))
+                        KText("ليس تقييماً أمنياً معتمداً؛ اقرأ كل بند بنفسك.", size = 8.5.sp, color = V2Muted)
+                    }
                 }
             }
         }
-        item { V2SectionLabel("نتائج الفحص", trailing = "4 فحوصات مكتملة") }
-        item {
-            SecurityRow("الثغرات المعروفة", "لا توجد ثغرات حرجة", V2Green, Icons.Rounded.Check)
-            SecurityRow("التطبيقات الضارة", "لا تطبيقات مشبوهة", V2Green, Icons.Rounded.Check)
-            SecurityRow("شبكة Wi-Fi", "شبكة آمنة ومشفرة", V2Green, Icons.Rounded.Check)
-            SecurityRow("إعدادات القفل", "قفل الشاشة مفعل", V2Green, Icons.Rounded.Check)
+        if (!facts.isLive) {
+            item {
+                ScopedNotice(
+                    if (loading) "جارٍ قراءة حالة الجهاز…"
+                    else "تعذّرت قراءة حالة الجهاز؛ لن نعرض نتائج أمنية غير مقروءة.",
+                    V2Amber,
+                )
+            }
+        } else {
+            item { V2SectionLabel("الفحوصات المقروءة", trailing = "System APIs") }
+            item {
+                SecurityRow(
+                    "قفل الشاشة",
+                    if (facts.lockSecure) "مفعّل" else "غير مفعّل",
+                    if (facts.lockSecure) V2Green else V2Red,
+                    Icons.Rounded.Lock,
+                    "قفل آمن من KeyguardManager",
+                )
+            }
+            item {
+                SecurityRow(
+                    "البصمة / البيومترية",
+                    biometric.first,
+                    biometric.second,
+                    Icons.Rounded.Verified,
+                    "فئة العتاد من BiometricManager",
+                )
+            }
+            item {
+                SecurityRow(
+                    "تحديث الأمان",
+                    patch,
+                    patchColor,
+                    Icons.Rounded.Update,
+                    patchDetail,
+                )
+            }
+            item {
+                SecurityRow(
+                    "الظهور فوق التطبيقات",
+                    if (facts.overlayAppCount == 0) "لا تطبيقات" else "${formatCount(facts.overlayAppCount)} تطبيق",
+                    if (facts.overlayAppCount == 0) V2Green else V2Amber,
+                    Icons.Rounded.Visibility,
+                    "إذن SYSTEM_ALERT_WINDOW المعلن",
+                )
+            }
+            item {
+                SecurityRow(
+                    "مديرو الجهاز",
+                    if (facts.deviceAdminCount == 0) "لا مديرين" else "${formatCount(facts.deviceAdminCount)} تطبيق",
+                    if (facts.deviceAdminCount == 0) V2Green else V2Amber,
+                    Icons.Rounded.Security,
+                    "مستقبلات DEVICE_ADMIN المسجلة",
+                )
+            }
+            item {
+                SecurityRow(
+                    "VPN",
+                    if (facts.vpnActive) "نفق نشط" else "غير نشط",
+                    if (facts.vpnActive) V2Cyan else V2Soft,
+                    Icons.Rounded.Shield,
+                    "من ConnectivityManager الآن",
+                )
+            }
+            item {
+                SecurityRow(
+                    "مصدر التثبيت",
+                    when (sideloaded) {
+                        null -> "غير متاح"
+                        0 -> "كلها من متجر معروف"
+                        else -> "${formatCount(sideloaded ?: 0)} تطبيق بلا مصدر متجر"
+                    },
+                    when (sideloaded) {
+                        null -> V2Muted
+                        0 -> V2Green
+                        else -> V2Amber
+                    },
+                    Icons.Rounded.Apps,
+                    "بيانات installer فقط — ليست حكماً على البرمجيات الخبيثة",
+                )
+            }
         }
-        item { PreviewNote("فحص الأمان هنا بيانات معاينة حتى تُربط بقراءة النظام الفعلية.") }
+        item {
+            ScopedNotice(
+                "لا يفحص KNOUX توقيعات البرمجيات الخبيثة أو سلامة kernel؛ Android لا يمنح تطبيقاً عادياً هذه القدرة. " +
+                    "ما يظهر أعلاه حالة إعدادات ومصادر تثبيت مقروءة من النظام، وليس شهادة أمان.",
+                V2Amber,
+            )
+        }
     }
 }
 
 @Composable
-private fun SecurityRow(title: String, status: String, accent: Color, icon: androidx.compose.ui.graphics.vector.ImageVector) {
-    V2GlassCard(Modifier.fillMaxWidth(), padding = 8.dp, radius = 12.dp, glow = accent, borderAlpha = .20f) {
+private fun SecurityRow(
+    title: String,
+    status: String,
+    accent: Color,
+    icon: ImageVector,
+    detail: String? = null,
+) {
+    V2GlassCard(Modifier.fillMaxWidth(), padding = 9.dp, radius = 12.dp, glow = accent, borderAlpha = .20f) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(icon, null, tint = accent, modifier = Modifier.size(16.dp))
+            Icon(icon, null, tint = accent, modifier = Modifier.size(17.dp))
             Spacer(Modifier.width(8.dp))
-            KText(title, size = 9.sp, weight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-            KText(status, size = 9.sp, color = V2Soft)
+            Column(Modifier.weight(1f)) {
+                KText(title, size = 9.4.sp, weight = FontWeight.SemiBold, maxLines = 1)
+                detail?.let { KText(it, size = 8.2.sp, color = V2Muted, maxLines = 2) }
+            }
+            Spacer(Modifier.width(6.dp))
+            KText(status, size = 9.sp, weight = FontWeight.Bold, color = accent, maxLines = 2, align = TextAlign.End)
         }
     }
 }
@@ -3282,50 +3438,125 @@ private fun SecurityRow(title: String, status: String, accent: Color, icon: andr
  * Notification Manager
  * ------------------------------------------------------------------ */
 
+private val notificationAccents = listOf(V2Cyan, V2Violet, V2Amber, V2Pink, V2Blue, V2Green)
+
+private fun notificationImportance(importance: Int): String = when (importance) {
+    NotificationManager.IMPORTANCE_HIGH -> "أهمية عالية"
+    NotificationManager.IMPORTANCE_DEFAULT -> "أهمية افتراضية"
+    NotificationManager.IMPORTANCE_LOW -> "أهمية منخفضة"
+    NotificationManager.IMPORTANCE_MIN -> "أهمية دنيا"
+    NotificationManager.IMPORTANCE_NONE -> "مغلقة"
+    else -> "أهمية غير معروفة"
+}
+
 @Composable
 fun V2NotificationManagerScreen(onBack: () -> Unit, onPro: () -> Unit) {
+    val context = LocalContext.current
+    val (refresh, bump) = rememberRefreshCounter()
+    val facts = rememberDeviceFacts(refresh)
+    var message by remember { mutableStateOf<String?>(null) }
+    val ownEnabled = remember(refresh) { NotificationManagerCompat.from(context).areNotificationsEnabled() }
+    val channels = remember(refresh) {
+        if (Build.VERSION.SDK_INT >= 26) {
+            (context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager)
+                ?.notificationChannels.orEmpty()
+        } else emptyList()
+    }
+    val apps = remember(facts.installedApps) {
+        facts.installedApps
+            .filter { !it.isSystem && it.packageName != context.packageName }
+            .sortedBy { it.label }
+    }
     InteriorScaffold(
         onBack = onBack,
         onPro = onPro,
+        bottomBar = { V2GhostButton("تحديث القائمة", bump, icon = Icons.Rounded.Refresh, height = 48.dp) },
     ) {
-        item { PageHeading("إدارة الإشعارات", "التحكم في إشعارات التطبيقات", Icons.Rounded.Notifications, V2Amber) }
-        item { V2SectionLabel("التطبيقات التي ترسل إشعارات", trailing = "12 تطبيق") }
+        item { PageHeading("إدارة الإشعارات", "فتح إعدادات كل تطبيق في النظام", Icons.Rounded.Notifications, V2Amber) }
         item {
-            NotificationRow("واتساب", "4 إشعارات جديدة", V2Green, true)
-            NotificationRow("التيك توك", "2 إشعارات جديدة", V2Violet, true)
-            NotificationRow("اليوتيوب", "لا إشعارات", V2Pink, false)
-            NotificationRow("الفيسبوك", "6 إشعارات جديدة", V2Blue, true)
-            NotificationRow("إنستغرام", "لا إشعارات", V2Amber, false)
-            NotificationRow("الرسائل", "لا إشعارات", V2Cyan, false)
+            ScopedNotice(
+                "Android لا يسمح لتطبيق بقراءة إشعارات التطبيقات الأخرى أو عدّها أو تغييرها. " +
+                    "كل صف يفتح شاشة إشعارات التطبيق في إعدادات النظام.",
+                V2Amber,
+            )
         }
-        item { PreviewNote("إدارة الإشعارات تفتح إعدادات النظام للتطبيقات المحددة.") }
+        message?.let { text -> item { ScopedNotice(text, V2Amber) } }
+        item { V2SectionLabel("إشعارات KNOUX", trailing = "هذا التطبيق") }
+        item {
+            V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 20.dp, glow = V2Amber, borderAlpha = .32f) {
+                Column {
+                    InfoLine("حالة الإشعارات", if (ownEnabled) "مفعّلة" else "معطّلة", if (ownEnabled) V2Green else V2Amber)
+                    HairLine()
+                    InfoLine(
+                        "قنوات الإشعارات",
+                        if (Build.VERSION.SDK_INT >= 26) "${channels.size} قناة" else "غير متاحة قبل Android 8",
+                        V2Cyan,
+                    )
+                    channels.take(6).forEach { channel ->
+                        HairLine()
+                        InfoLine(channel.name.toString(), notificationImportance(channel.importance), V2Soft)
+                    }
+                }
+            }
+        }
+        item {
+            V2GhostButton(
+                "إعدادات إشعارات KNOUX",
+                { openAppNotificationSettings(context, context.packageName) },
+                height = 48.dp,
+            )
+        }
+        item { V2SectionLabel("تطبيقات مثبتة", trailing = "${apps.size} تطبيق") }
+        when {
+            facts.computedAt == 0L -> item { ScopedNotice("جارٍ قراءة قائمة التطبيقات…") }
+            apps.isEmpty() -> item { ScopedNotice("لم تُقرأ تطبيقات مستخدم قابلة للإدارة.", V2Amber) }
+            else -> apps.forEachIndexed { index, app ->
+                item {
+                    NotificationAppRow(
+                        label = app.label,
+                        packageName = app.packageName,
+                        accent = notificationAccents[index % notificationAccents.size],
+                    ) { openAppNotificationSettings(context, app.packageName) }
+                }
+            }
+        }
+        item { PreviewNote("لا أعداد إشعارات وهمية هنا؛ الحالة الحقيقية تُدار في إعدادات Android.") }
     }
 }
 
 @Composable
-private fun NotificationRow(name: String, status: String, accent: Color, enabled: Boolean) {
-    V2GlassCard(Modifier.fillMaxWidth(), padding = 8.dp, radius = 12.dp, glow = accent, borderAlpha = .20f) {
+private fun NotificationAppRow(
+    label: String,
+    packageName: String,
+    accent: Color,
+    onClick: () -> Unit,
+) {
+    val icon = rememberAppIcon(packageName)
+    V2GlassCard(
+        Modifier.fillMaxWidth().heightIn(min = 52.dp).clickable(onClick = onClick),
+        padding = 9.dp,
+        radius = 14.dp,
+        glow = accent,
+        borderAlpha = .20f,
+    ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                Modifier.size(32.dp).clip(RoundedCornerShape(8.dp))
-                    .background(accent.withAlpha(.12f))
-                    .border(1.dp, accent.withAlpha(.32f), RoundedCornerShape(8.dp)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(Icons.Rounded.Notifications, null, tint = accent, modifier = Modifier.size(16.dp))
+            if (icon != null) {
+                Image(
+                    bitmap = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(32.dp).clip(RoundedCornerShape(9.dp)),
+                )
+            } else {
+                V2IconTile(Icons.Rounded.Notifications, accent, size = 32.dp, iconSize = 16.dp)
             }
             Spacer(Modifier.width(9.dp))
             Column(Modifier.weight(1f)) {
-                KText(name, size = 9.4.sp, weight = FontWeight.SemiBold, maxLines = 1)
-                KText(status, size = 9.sp, color = V2Soft, maxLines = 1)
+                KText(label, size = 9.8.sp, weight = FontWeight.SemiBold, maxLines = 1)
+                KText(packageName, size = 8.2.sp, color = V2Muted, maxLines = 1)
             }
-            Box(
-                Modifier.clip(RoundedCornerShape(50))
-                    .background(if (enabled) V2Green.withAlpha(.20f) else V2Red.withAlpha(.20f))
-                    .border(1.dp, if (enabled) V2Green.withAlpha(.40f) else V2Red.withAlpha(.40f), RoundedCornerShape(50))
-                    .padding(horizontal = 6.dp, vertical = 2.dp),
-            ) {
-                KText(if (enabled) "مفعل" else "معطل", size = 9.sp, weight = FontWeight.Bold, color = if (enabled) V2Green else V2Red)
+            Column(horizontalAlignment = Alignment.End) {
+                KText("إعدادات النظام", size = 8.6.sp, weight = FontWeight.Bold, color = accent)
+                Icon(Icons.Rounded.ChevronLeft, null, tint = V2Soft, modifier = Modifier.size(14.dp))
             }
         }
     }

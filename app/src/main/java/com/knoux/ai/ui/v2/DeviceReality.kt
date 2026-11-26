@@ -3,6 +3,7 @@ package com.knoux.ai.ui.v2
 import android.app.ActivityManager
 import android.app.AppOpsManager
 import android.app.KeyguardManager
+import android.app.usage.NetworkStatsManager
 import android.app.usage.StorageStatsManager
 import android.app.usage.UsageStatsManager
 import android.content.ComponentName
@@ -41,6 +42,7 @@ import java.io.File
 import java.io.InputStream
 import java.security.MessageDigest
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -223,6 +225,28 @@ data class ScanHistoryEntry(
     val storageUsedBytes: Long,
     val batteryLevel: Int?,
 )
+
+/** One UID's month-to-date traffic, named from PackageManager. */
+data class NetworkAppUsage(
+    val label: String,
+    val packageName: String,
+    val bytes: Long,
+)
+
+/**
+ * Month-to-date counters from NetworkStatsManager. A null side means that
+ * transport could not be queried; it is never replaced with a sample number.
+ */
+data class NetworkUsageFacts(
+    val wifiBytes: Long? = null,
+    val mobileBytes: Long? = null,
+    val perApp: List<NetworkAppUsage> = emptyList(),
+    val error: String? = null,
+) {
+    val measured: Boolean get() = wifiBytes != null || mobileBytes != null
+    val totalBytes: Long?
+        get() = if (!measured) null else (wifiBytes ?: 0L) + (mobileBytes ?: 0L)
+}
 
 data class DeviceFacts(
     val battery: BatteryFacts = BatteryFacts(),
@@ -1343,6 +1367,117 @@ fun saveScanHistory(context: Context, entry: ScanHistoryEntry) {
         .toSet()
     prefs.edit().putStringSet(SCAN_HISTORY_KEY, next).apply()
 }
+
+/**
+ * Month-to-date traffic from NetworkStatsManager. The platform gates this
+ * behind the Usage Access app-op; without it the queries throw and every
+ * field stays null so the screen can say "unavailable" honestly.
+ */
+internal fun readNetworkUsage(
+    context: Context,
+    now: Long = System.currentTimeMillis(),
+): NetworkUsageFacts {
+    val manager = context.getSystemService(Context.NETWORK_STATS_SERVICE) as? NetworkStatsManager
+        ?: return NetworkUsageFacts(error = "عدادات الشبكة غير متاحة على هذا النظام")
+    val monthStart = Calendar.getInstance().apply {
+        timeInMillis = now
+        set(Calendar.DAY_OF_MONTH, 1)
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }.timeInMillis
+
+    fun deviceBytes(type: Int): Long? = runCatching {
+        val stats = manager.querySummary(type, null, monthStart, now)
+        val bucket = android.app.usage.NetworkStats.Bucket()
+        var total = 0L
+        while (stats.hasNextBucket()) {
+            stats.getNextBucket(bucket)
+            total += bucket.getRxBytes() + bucket.getTxBytes()
+        }
+        stats.close()
+        total
+    }.getOrNull()
+
+    val wifi = deviceBytes(ConnectivityManager.TYPE_WIFI)
+    val mobile = deviceBytes(ConnectivityManager.TYPE_MOBILE)
+
+    val perUid = mutableMapOf<Int, Long>()
+    listOf(ConnectivityManager.TYPE_WIFI, ConnectivityManager.TYPE_MOBILE).forEach { type ->
+        runCatching {
+            val stats = manager.querySummary(type, null, monthStart, now)
+            val bucket = android.app.usage.NetworkStats.Bucket()
+            while (stats.hasNextBucket()) {
+                stats.getNextBucket(bucket)
+                if (bucket.getUid() >= 0) {
+                    val bytes = bucket.getRxBytes() + bucket.getTxBytes()
+                    if (bytes > 0L) {
+                        perUid[bucket.getUid()] = (perUid[bucket.getUid()] ?: 0L) + bytes
+                    }
+                }
+            }
+            stats.close()
+        }
+    }
+
+    val pm = context.packageManager
+    val perApp = perUid.entries
+        .sortedByDescending { it.value }
+        .take(24)
+        .mapNotNull { (uid, bytes) ->
+            val packageName = pm.getPackagesForUid(uid)?.firstOrNull() ?: return@mapNotNull null
+            val label = runCatching {
+                pm.getApplicationLabel(pm.getApplicationInfo(packageName, 0)).toString()
+            }.getOrNull() ?: packageName
+            NetworkAppUsage(label = label, packageName = packageName, bytes = bytes)
+        }
+        .distinctBy { it.packageName }
+        .take(6)
+
+    return NetworkUsageFacts(
+        wifiBytes = wifi,
+        mobileBytes = mobile,
+        perApp = perApp,
+        error = if (wifi == null && mobile == null) {
+            "تعذّرت قراءة عدادات الشبكة؛ تحقق من وصول الاستخدام"
+        } else null,
+    )
+}
+
+/**
+ * User apps whose installer is missing or outside the known stores. This is
+ * installer metadata, not a malware verdict; system packages are excluded
+ * because preinstalled apps often have no installer string.
+ */
+internal fun readUndeclaredStoreAppCount(context: Context): Int? = runCatching {
+    val pm = context.packageManager
+    val apps = if (android.os.Build.VERSION.SDK_INT >= 33) {
+        pm.getInstalledApplications(PackageManager.ApplicationInfoFlags.of(0))
+    } else {
+        @Suppress("DEPRECATION")
+        pm.getInstalledApplications(0)
+    }
+    val stores = setOf(
+        "com.android.vending",
+        "com.google.android.packageinstaller",
+        "com.samsung.android.galaxyapps",
+        "com.sec.android.app.samsungapps",
+        "com.huawei.appmarket",
+        "com.amazon.venezia",
+    )
+    apps.count { info ->
+        if (info.packageName == context.packageName) return@count false
+        if (info.flags and ApplicationInfo.FLAG_SYSTEM != 0) return@count false
+        val installer = if (android.os.Build.VERSION.SDK_INT >= 30) {
+            runCatching { pm.getInstallSourceInfo(info.packageName).installingPackageName }.getOrNull()
+        } else {
+            @Suppress("DEPRECATION")
+            runCatching { pm.getInstallerPackageName(info.packageName) }.getOrNull()
+        }
+        installer == null || installer !in stores
+    }
+}.getOrNull()
 
 /* ------------------------------------------------------------------ *
  * Reports & History aggregates (sec10). Real counts from the Room

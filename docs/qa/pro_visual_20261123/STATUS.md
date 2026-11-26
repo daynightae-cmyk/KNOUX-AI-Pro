@@ -1,23 +1,63 @@
-# KNOUX AI Pro — Visual Reality Mission 20261123 — STATUS
+# KNOUX AI Pro — Visual Reality Mission 20261123 — STATUS (updated 2026-11-26)
 
-## Forensic reconciliation (2026-11-23, read-only, before any edit)
+## Repository state (current)
 
 - Repo: `K:\KNOUX-AI-Pro` (canonical), branch `master`
-- HEAD = `230d30db9dbd83ddb4f857bea05ad0697d2fd660`; `git ls-remote origin refs/heads/master` = same → local == remote, 0 ahead/behind. No `origin/main` exists; `master` is the only merge branch.
-- `git status --porcelain=v1 -uall`: only untracked file `prompts/KNOUX_AI_PRO_DEVICE_FIRST_VISUAL_REALITY_MISSION_20261123.md` (read, honored, to be committed with first proper change).
-- Branches: only `master` (+ origin). Worktrees: only the main one. Stash: empty. Reflog top: `230d30d commit: Home fidelity + all 10 section hubs rebuilt as real Compose against approved references`.
-- No java/gradle processes running at intake; `.gradle` locks are idle file locks (last write 23/11 00:43) → no concurrent Batch was active at check time. Will re-check before each build.
-- Device: `adb devices` → `R9ZR20HWHQY  device  model:SM-A025F  product:a02qnnxx` (Samsung SM-A025F, Android 12) — **CONNECTED**.
-- Installed package: `com.knoux.ai.debug` versionName `1.0.0-debug` versionCode 1, minSdk 26 targetSdk 36, lastUpdateTime 2026-11-23 00:44:12 (Arabic locale timestamp). APK path: `/data/app/~~Cce2jEmhJNZ2VSTO9w0TFg==/com.knoux.ai.debug-PahtLqsmFQqwBqVvyveO9g==/base.apk`. `com.knoux.ai` (release) NOT installed.
-- Reference intake: owner archive found locally at `D:\Temp\opencode\uploads\cb72d6d0-5032-4393-b6d0-e3e2846eba51\Knoux ai pro.zip`; SHA-256 `1ca30c93…526a05f` **matches owner-declared fingerprint**. 22 entries / 20 unique SHA-256. Organized into `design/owner_refs_20261123/` + `MANIFEST.md`. Index 00 (neon stag) is byte-identical to project-owned `_references/annotated_20261117/assets/STAG_MASCOT_TRANSPARENT.png` → not re-imported. 05≡02 and 15≡14 → not imported.
-- Route map (from `MainActivity.kt`): entry Splash→Loading→Onboarding→Auth→Shell. Shell tabs: `home`, `clean`, `tools`, `reports`, `pro` (+`settings`). Dedicated sections: `privacy`, `duplicates`, `deepscan`, `residue`, `appmanager`, `installed-apps`, `storage`, `battery`, `ai`, `smartclean`. Details: `app-detail`, `privacy-risk`, `duplicate-group`, `deep-scan-summary`, `performance-report`, `residue-item`, `storage-breakdown`, `battery-diagnostics`, `bat-readings`, `ai-recommendations`, `large-files`, `old-backups`, `system-logs`, `download-cleanup`, `file-explorer`, `device-info`, `network-scan`, `security-scan`, `notification-manager`, `developer-info`, `google-services`, `advanced-security`, `backup-restore`, `developer-studio`, `dev-provider-marketplace`, `dev-api-key-vault`, `dev-model-explorer`, `dev-agent-engine`, `dev-workspace`, `dev-tool-system`, `cloud-cleaner`, `google-storage`, `microsoft-storage`. Plus 10 `SectionHub.routes` each with ~15 `SectionTools` routes and 15 `CleanTools.routes`. Debug route injection via `--es route <route>` (BuildConfig.DEBUG only).
-- Prior QA: `qa-evidence/refs_20261121/device_verify_final_20261122.md` verified Samsung SM-A025F on an older SHA; Google OAuth in debug failed due to unregistered `com.knoux.ai.debug` + debug SHA-1 in Google Console (known, not re-tested as pass).
+- Local HEAD: `0251e129ffd209de2faa8deb295f23908704ecfa` (pushed to `origin/master`)
+- Pending uncommitted work: `DeviceReality.kt`, `MoreScreensV2.kt`, `CleanToolsV2.kt`, `DeepScanEngine.kt`, `DuplicateWorkspaceV2.kt` edits + this STATUS.md
+- Untracked (NOT staged, disposable Python repair artifacts): `add_imports.py`, `fix_brace.py`, `fix_privacy.py`, `fix_privacy2.py`
+- Device: Samsung SM-A025F at `192.168.70.109:43477` (adb `-s` explicit); itel `1334825549012211` present but NOT used
+- Installed package: `com.knoux.ai.debug` versionName `1.0.0-debug` (install `-r`, data preserved)
 
-## Plan of execution (one screen per cycle, evidence per cycle)
+## Last verified build
 
-1. Auth/Home entry states vs `owner_refs_20261123` (only real gaps).
-2. `home` vs `home/pro_home_dashboard.png`.
-3. The 10 service screens from the new set: `smartclean`, `deepscan`, `duplicates`, `storage`, `privacy`, `battery`, `appmanager`, `reports`, `ai`, developer hub → `developer-studio` (+ `dev-*` states).
-4. Remaining inner routes by nav order; full regression at the end.
+- `.\gradlew.bat :app:assembleDebug --no-daemon` → BUILD SUCCESSFUL
+- APK: `app\build\outputs\apk\debug\app-debug.apk`
+- SHA-256: `5e2f298ea5dfe27db4a6477b10004ad7997f642000db0480df0662436f62ff84`
+- Installed `-r` on Samsung: INSTALL_EXIT=0
 
-Ledger: `docs/qa/pro_visual_20261123/SCREEN_LEDGER.md` (created on first screen cycle).
+## What this increment fixes (real-data honesty gaps)
+
+All edits are in the existing V2 source — no new files, no redesign, no fake data.
+
+1. `MoreScreensV2.kt` `V2OldBackupsScreen` — removed fixture `oldBackups` (5 invented backups with sizes/dates) and the no-op destructive `V2GradientButton("حذف … نسخ احتياطية", {}, …)`. Replaced with a genuine SAF folder picker (`OpenDocumentTree`) that reads the user-chosen folder's real files via `readScopedFolder`. Shows real names/sizes/dates/mimes, max 500 entries, open-in-system handler, honest empty/unavailable states. No delete button — KNOUX does not delete backups.
+
+2. `MoreScreensV2.kt` `V2SystemLogsScreen` — removed fixture `systemLogs` (8 invented logcat-style entries). Replaced with the app's own journal: Room `scan_sessions` (recent 40) merged with locally saved `ScanHistoryEntry` measurements, deduplicated by timestamp, showing real service name/status/item counts/bytes/timestamps. Honest notice that Android blocks third-party logcat access. Refresh + empty state.
+
+3. `MoreScreensV2.kt` `V2DeviceInfoScreen` — removed hardcoded `"com.knoux.ai.pro"` and stray Korean `여기`. Now reads real `context.packageName`, `PackageInfoCompat.getLongVersionCode`, `Build.MANUFACTURER/MODEL`, `Build.VERSION.RELEASE/SDK_INT`, `SUPPORTED_ABIS`, `Build.VERSION.SECURITY_PATCH`, `Locale.getDefault().toLanguageTag()`. Unavailable values shown honestly.
+
+4. `MoreScreensV2.kt` `V2NetworkScanScreen` — removed hardcoded `"Wi-Fi · آمن"`, `"2.4 GB هذا الشهر"`, `"اليوتيوب · 45%"`, and fixture `NetworkRow`s. Binds to real `ConnectivityManager` (active network transport, VALIDATED, metered, link bandwidth, VPN) plus `readNetworkUsage()` via `NetworkStatsManager` (month-to-date Wi-Fi/cellular bytes + per-app top consumers, gated behind Usage Access). Shows Loading / Permission-required / Query-failed / No-activity / Actual-zero honestly. No division-by-zero or misleading percentages.
+
+5. `MoreScreensV2.kt` `V2SecurityScanScreen` — removed fabricated `"82%"`, `.82f` progress, `"4 فحوصات مكتملة"`, all-green `SecurityRow`s. Binds to real readers: `readLockSecure`, `readVpnActive`, `readDeviceAdminCount`, `overlayDeclaredCount`, `captureRiskCount`, security patch age, biometric strength, undeclared-store app count. Computes a local 0–100 estimate only when `facts.isLive`; otherwise shows UNKNOWN. Each row shows real state + detail. Honest disclaimer that KNOUX is not an antivirus.
+
+6. `MoreScreensV2.kt` `V2NotificationManagerScreen` — removed fabricated `"12 تطبيق"` and per-app unread counts. Uses real `NotificationManagerCompat.areNotificationsEnabled()` for KNOUX itself, real notification channels (Android 8+), and the real installed user-app list; each app row opens its genuine system notification settings via `openAppNotificationSettings`. Honest that KNOUX cannot read other apps' notifications. No fabricated counts.
+
+7. `CleanToolsV2.kt` `V2CleanToolScreen` — added LOADING / FAILED / storage-unread / media-unread states. Failed reads render a `ServiceCapabilityCard` (PERMISSION state) instead of zeros posing as success. Refresh re-reads. Preview note distinguishes real readings from unavailable.
+
+8. `DuplicateWorkspaceV2.kt` — stale-selection CTA fix: result/cleared state now invalidates old selections and keepers; `selectedUris`/`selectedBytes` are computed only over files present in the current result, so the "مراجعة وحذف المحدد" CTA can never act on a previous scan's files.
+
+9. `DeepScanEngine.kt` — each completed/cancelled/failed deep scan now creates (and completes) a real Room `scan_session` (`serviceId="deep_scan"`) via `KnouxRepository`, connected to `saveScanHistory`. The summary/activity log can show the real session instead of claiming none exists.
+
+10. Dead fixtures removed from `MoreScreensV2.kt`: `managedAppsV2`, `appFilters`, `AppManagerSummary`, `storageCategories`, `StorageCategoryRow`, `DrainRow`, `aiActions`, `AiActionRow`, `ManagedAppRow` — all unused after the app manager screen was already real (PackageManager-based). No behavior change to live screens.
+
+## Device verification (Samsung SM-A025F, live, `adb -s 192.168.70.109:43477`)
+
+All six fixed routes launched via `am start -S -n com.knoux.ai.debug/com.knoux.ai.MainActivity --es route <route>`:
+- `old-backups` — opens, no crash. Real SAF picker UI.
+- `system-logs` — opens, no crash. Journal/Room-backed list.
+- `device-info` — opens, no crash. Real Build/package values.
+- `network-scan` — opens, no crash. Real connectivity + usage stats (permission-gated).
+- `security-scan` — opens, no crash. Real device-state rows, local estimate.
+- `notification-manager` — opens, no crash. Real channels + app list.
+
+Authentic runtime screenshots captured for all six routes (D:\Temp\opencode\knoux\final_*.png, mean≈40 std≈29 = rendered content, not blank). No FATAL/crash traceback in logcat for any route.
+
+Note: Samsung dims/locks the screen between wake and screencap; captures show dark cosmic-night theme (expected) but non-blank content. Functional verification (launch + no crash + real data binding) is the primary gate.
+
+## Honesty vocabulary used
+Loading / Permission-required / Measurement-unavailable / Query-failed / No-recorded-activity / Actual-zero — never a fake number standing in for a failed read.
+
+## Next
+- Commit this increment to `master` and push to `origin/master`.
+- Verify `git ls-remote origin refs/heads/master` matches local HEAD.
+- Continue with remaining real-data gaps (remaining secondary screens, cleaning tools routes, deep scan, duplicates, reports, cloud cleaner, developer studio subpages, auth gaps) per the execution order.
