@@ -8,9 +8,12 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -57,6 +60,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -723,7 +727,10 @@ private fun HubRefScreenFrame(
                             title = title,
                             subtitle = config.heroSubtitle,
                             heroArt = config.heroArt,
-                            stagArt = config.stagArt,
+                            // Section crops carry a baked rectangular sky. The
+                            // canonical alpha cutout composites cleanly into
+                            // the live scene instead of pasting a bitmap card.
+                            stagArt = R.drawable.knoux_stag_home,
                             dense = config.dense,
                         )
                     }
@@ -750,7 +757,7 @@ private fun HubRefScreenFrame(
                     item { Spacer(Modifier.height(if (config.dense) 7.dp else 12.dp)) }
                     item { HubRefCta(config.ctaLabel, config.ctaArt, config.dense) { navigate(config.ctaRoute) } }
                     item { Spacer(Modifier.height(if (config.dense) 6.dp else 10.dp)) }
-                    item { HubRefProBanner(config.bannerTitle, config.bannerSubtitle, config.stagArt, config.dense, onPro) }
+                    item { HubRefProBanner(config.bannerTitle, config.bannerSubtitle, R.drawable.knoux_stag_home, config.dense, onPro) }
                     item { Spacer(Modifier.height(6.dp)) }
                     if (!config.dense) item { LiveReadNotice() }
                 }
@@ -813,121 +820,45 @@ private fun HubRefTopBar(
     onProfile: (() -> Unit)? = null,
     onNotifications: (() -> Unit)? = null,
 ) {
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .height(56.dp)
-            .padding(horizontal = 2.dp),
-    ) {
-        Row(Modifier.align(Alignment.CenterStart), verticalAlignment = Alignment.CenterVertically) {
-            if (onProfile != null) {
-                // Root destination: profile + notifications, exactly like Home.
-                RefCircleButton(Icons.Rounded.Person, "الحساب", onProfile)
-                if (onNotifications != null) {
-                    RefCircleButton(Icons.Rounded.NotificationsNone, "التنبيهات", onNotifications)
-                }
-            } else {
-                RefCircleButton(Icons.AutoMirrored.Rounded.ArrowBack, "رجوع", onBack)
-            }
-        }
-        Row(
-            Modifier.align(Alignment.Center),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            // Official stag — fixed size on every hub, standing on a lit
-            // ground plane so the header stays balanced. No float: grounded.
-            HubRefHeaderStag(Modifier.size(width = 30.dp, height = 48.dp))
-            Spacer(Modifier.width(6.dp))
-            Image(
-                painter = painterResource(R.drawable.knoux_symbol_alpha),
-                contentDescription = "KNOUX",
-                modifier = Modifier.height(22.dp),
-            )
-            Spacer(Modifier.width(5.dp))
-            Image(
-                painter = painterResource(R.drawable.knoux_wordmark_alpha),
-                contentDescription = "knoux ai",
-                modifier = Modifier.height(13.dp),
-            )
-            Spacer(Modifier.width(7.dp))
-            Row(
-                Modifier
-                    .clip(RoundedCornerShape(50))
-                    .background(Brush.horizontalGradient(listOf(Color(0xFF3A2404), Color(0xFF241503))))
-                    .border(1.2.dp, Brush.horizontalGradient(listOf(RefGold, RefGoldBright, RefGold)), RoundedCornerShape(50))
-                    .clickable(onClickLabel = "Pro", onClick = onPro)
-                    .padding(horizontal = 8.dp, vertical = 3.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                KText("PRO", size = 9.sp, weight = FontWeight.Black, color = RefGoldBright, letterSpacing = .7.sp)
-            }
-        }
-        Box(Modifier.align(Alignment.CenterEnd)) {
-            RefMenuButton("القائمة", onMenu)
-        }
-    }
+    V2TopBar(
+        mode = if (onProfile != null) V2TopMode.HOME else V2TopMode.INTERIOR,
+        onBack = onBack,
+        onProfile = onProfile ?: {},
+        onNotifications = onNotifications ?: {},
+        onMenu = onMenu,
+        onPro = onPro,
+    )
 }
 
 /* ------------------------------------------------------------------ *
- * Header stag — official asset, FIXED size on every hub, grounded on a
- * lit night plane (owner: «بمقاس ثابت وتحته الأرض ليكون معتدل»).
+ * Hero stage — one continuous cinematic composition, never two pasted
+ * rectangles. The reference emblem is edge-feathered into the live sky and
+ * the canonical alpha stag shares the same light pool and orbital ground.
  * ------------------------------------------------------------------ */
 
-@Composable
-private fun HubRefHeaderStag(modifier: Modifier = Modifier) {
-    Box(modifier) {
-        // Tight-cropped official stag (alpha bbox of knoux_stag_official.png,
-        // art unchanged). 959×1203 → 30dp wide ≈ 38dp tall.
-        Image(
-            painter = painterResource(R.drawable.knoux_stag_home),
-            contentDescription = null,
-            modifier = Modifier.align(Alignment.TopCenter).width(30.dp).height(38.dp),
-            contentScale = ContentScale.Fit,
+private fun Modifier.hubArtFeather(): Modifier = this
+    .graphicsLayer { compositingStrategy = androidx.compose.ui.graphics.CompositingStrategy.Offscreen }
+    .drawWithContent {
+        drawContent()
+        drawRect(
+            brush = Brush.horizontalGradient(
+                0f to Color.Transparent,
+                .13f to Color.Black,
+                .86f to Color.Black,
+                1f to Color.Transparent,
+            ),
+            blendMode = androidx.compose.ui.graphics.BlendMode.DstIn,
         )
-        // Ground drawn OVER the hoof tips so the stag stands ON terrain,
-        // exactly like the grounded Home stag — but header-scale.
-        Canvas(Modifier.fillMaxSize()) {
-            val cx = size.width * .5f
-            val gy = size.height - 7.dp.toPx()
-            // Cyan ground glow pooling beneath the outcrop.
-            drawOval(
-                Brush.radialGradient(listOf(V2Cyan.withAlpha(.30f), Color(0xFF7A2DFF).withAlpha(.18f), Color.Transparent), center = Offset(cx, gy), radius = size.width * .75f),
-                topLeft = Offset(cx - size.width * .75f, gy - 6.dp.toPx()),
-                size = Size(size.width * 1.5f, 12.dp.toPx()),
-            )
-            // Rock body: dark indigo mass fading into the header below.
-            drawOval(
-                Brush.verticalGradient(listOf(Color(0xFF33176B), Color(0xFF150A38), Color.Transparent)),
-                topLeft = Offset(cx - size.width * .52f, gy - 2.5.dp.toPx()),
-                size = Size(size.width * 1.04f, 9.dp.toPx()),
-            )
-            // Lit top plane the hooves stand on.
-            drawOval(
-                Brush.verticalGradient(listOf(Color(0xFF4A2590), Color(0xFF2A1157))),
-                topLeft = Offset(cx - size.width * .46f, gy - 3.dp.toPx()),
-                size = Size(size.width * .92f, 5.dp.toPx()),
-            )
-            // Contact shadow under the hooves.
-            drawOval(
-                Color.Black.withAlpha(.5f),
-                topLeft = Offset(cx - size.width * .30f, gy - 2.dp.toPx()),
-                size = Size(size.width * .60f, 3.dp.toPx()),
-            )
-            // Cyan-lit crest edge.
-            drawOval(
-                Brush.horizontalGradient(listOf(Color.Transparent, V2Cyan.withAlpha(.8f), Color(0xFF4DD9FF).withAlpha(.9f), Color.Transparent)),
-                topLeft = Offset(cx - size.width * .46f, gy - 3.dp.toPx()),
-                size = Size(size.width * .92f, 5.dp.toPx()),
-                style = Stroke(.9.dp.toPx()),
-            )
-        }
+        drawRect(
+            brush = Brush.verticalGradient(
+                0f to Color.Transparent,
+                .16f to Color.Black,
+                .82f to Color.Black,
+                1f to Color.Transparent,
+            ),
+            blendMode = androidx.compose.ui.graphics.BlendMode.DstIn,
+        )
     }
-}
-
-/* ------------------------------------------------------------------ *
- * Hero stage — gold title + bar, subtitle, emblem on orbit base.
- * The stag now lives in the header (owner directive, fixed size).
- * ------------------------------------------------------------------ */
 
 @Composable
 private fun HubRefHeroStage(title: String, subtitle: String, heroArt: Int, stagArt: Int, dense: Boolean = false) {
@@ -935,17 +866,92 @@ private fun HubRefHeroStage(title: String, subtitle: String, heroArt: Int, stagA
     val breath = rememberInfiniteTransition(label = "hubRefHero")
     val float by breath.animateFloat(
         initialValue = 0f,
-        targetValue = if (motion) -3f else 0f,
-        animationSpec = infiniteRepeatable(tween(4200, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        targetValue = if (motion) -4f else 0f,
+        animationSpec = infiniteRepeatable(tween(4600, easing = FastOutSlowInEasing), RepeatMode.Reverse),
         label = "heroFloat",
     )
-    Box(Modifier.fillMaxWidth().height(if (dense) 150.dp else 184.dp)) {
-        Column(Modifier.fillMaxWidth().padding(top = 2.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    val stagFloat by breath.animateFloat(
+        initialValue = 1f,
+        targetValue = if (motion) -3f else 1f,
+        animationSpec = infiniteRepeatable(tween(5200, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "heroStagFloat",
+    )
+    Box(Modifier.fillMaxWidth().height(if (dense) 158.dp else 188.dp)) {
+        Box(
+            Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .height(if (dense) 116.dp else 140.dp),
+            contentAlignment = Alignment.BottomCenter,
+        ) {
+            Canvas(Modifier.fillMaxSize()) {
+                val cx = size.width * .46f
+                val baseCy = size.height - 11.dp.toPx()
+                drawOval(
+                    Brush.radialGradient(
+                        listOf(V2Cyan.withAlpha(.30f), V2Violet.withAlpha(.22f), Color.Transparent),
+                        center = Offset(cx, baseCy),
+                        radius = size.width * .42f,
+                    ),
+                    topLeft = Offset(cx - size.width * .42f, baseCy - 15.dp.toPx()),
+                    size = Size(size.width * .84f, 30.dp.toPx()),
+                )
+                for (i in 0 until 4) {
+                    drawOval(
+                        brush = Brush.sweepGradient(
+                            listOf(Color.Transparent, V2Cyan, V2Violet, RefGold, V2Pink, Color.Transparent),
+                            center = Offset(cx, baseCy),
+                        ),
+                        topLeft = Offset(cx - size.width * (.23f + i * .045f), baseCy - (5 + i * 3.2f).dp.toPx()),
+                        size = Size(size.width * (.46f + i * .09f), (10 + i * 6.4f).dp.toPx()),
+                        style = Stroke((1.7f - i * .28f).dp.toPx()),
+                        alpha = .78f - i * .14f,
+                    )
+                }
+            }
+            Image(
+                painter = painterResource(heroArt),
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .offset(x = (-16).dp, y = (-4).dp)
+                    .fillMaxWidth(.80f)
+                    .height(if (dense) 112.dp else 136.dp)
+                    .hubArtFeather()
+                    .graphicsLayer { translationY = float.dp.toPx() * .55f },
+                contentScale = ContentScale.Fit,
+            )
+        }
+        Image(
+            painter = painterResource(stagArt),
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(end = 2.dp, bottom = 2.dp)
+                .height(if (dense) 124.dp else 148.dp)
+                .graphicsLayer {
+                    translationY = stagFloat.dp.toPx()
+                    alpha = .94f
+                },
+            contentScale = ContentScale.Fit,
+        )
+        // The title floats on a clean contrast lane above the artwork. It is
+        // drawn last so antlers and the emblem can never cut through a glyph.
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(
+                        listOf(Color(0xFF090426).copy(alpha = .72f), Color.Transparent),
+                    ),
+                )
+                .padding(top = 2.dp, bottom = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Approved art: cyan tick LEFT of the gold title.
                 Box(
                     Modifier
-                        .width(4.dp)
+                        .width(3.dp)
                         .height(22.dp)
                         .clip(RoundedCornerShape(2.dp))
                         .background(Brush.verticalGradient(listOf(V2Cyan, V2Blue))),
@@ -958,6 +964,10 @@ private fun HubRefHeroStage(title: String, subtitle: String, heroArt: Int, stagA
                         fontSize = 21.sp,
                         fontWeight = FontWeight.Black,
                         textDirection = TextDirection.Rtl,
+                        shadow = androidx.compose.ui.graphics.Shadow(
+                            color = Color.Black.copy(alpha = .72f),
+                            blurRadius = 10f,
+                        ),
                     ),
                     maxLines = 1,
                 )
@@ -965,54 +975,18 @@ private fun HubRefHeroStage(title: String, subtitle: String, heroArt: Int, stagA
             Spacer(Modifier.height(3.dp))
             Text(
                 subtitle,
-                style = TextStyle(color = Color.White.withAlpha(.88f), fontSize = 11.sp, fontWeight = FontWeight.Medium, textDirection = TextDirection.Rtl),
+                style = TextStyle(
+                    color = Color.White.withAlpha(.90f),
+                    fontSize = 10.5.sp,
+                    fontWeight = FontWeight.Medium,
+                    textDirection = TextDirection.Rtl,
+                    shadow = androidx.compose.ui.graphics.Shadow(Color.Black.copy(alpha = .8f), blurRadius = 8f),
+                ),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(horizontal = 12.dp),
             )
         }
-        // Emblem centered on its orbit base; base rings drawn beneath it.
-        Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(if (dense) 104.dp else 130.dp), contentAlignment = Alignment.BottomCenter) {
-            Canvas(Modifier.fillMaxSize()) {
-                val cx = size.width * .5f
-                val baseCy = size.height - 12.dp.toPx()
-                drawOval(
-                    Brush.radialGradient(listOf(V2Cyan.withAlpha(.30f), V2Violet.withAlpha(.22f), Color.Transparent), center = Offset(cx, baseCy), radius = size.width * .40f),
-                    topLeft = Offset(cx - size.width * .40f, baseCy - 14.dp.toPx()),
-                    size = Size(size.width * .80f, 28.dp.toPx()),
-                )
-                for (i in 0 until 4) {
-                    drawOval(
-                        brush = Brush.sweepGradient(listOf(Color.Transparent, V2Cyan, V2Violet, RefGold, V2Pink, Color.Transparent), center = Offset(cx, baseCy)),
-                        topLeft = Offset(cx - size.width * (.24f + i * .05f), baseCy - (5 + i * 3.4f).dp.toPx()),
-                        size = Size(size.width * (.48f + i * .10f), (10 + i * 6.8f).dp.toPx()),
-                        style = Stroke((1.8f - i * .3f).dp.toPx()),
-                        alpha = .85f - i * .15f,
-                    )
-                }
-            }
-            Image(
-                painter = painterResource(heroArt),
-                contentDescription = null,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .offset(y = (-6).dp)
-                    .height(if (dense) 100.dp else 128.dp)
-                    .graphicsLayer { translationY = float.dp.toPx() * .6f },
-                contentScale = ContentScale.Fit,
-            )
-        }
-        // Approved art: the neon stag stands on the ridge at the RIGHT of the
-        // hero stage, antlers level with the title, hooves above the orbit base.
-        Image(
-            painter = painterResource(stagArt),
-            contentDescription = null,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = if (dense) 3.dp else 5.dp)
-                .height(if (dense) 96.dp else 120.dp)
-                .graphicsLayer { translationY = float.dp.toPx() * .35f },
-            contentScale = ContentScale.Fit,
-        )
     }
 }
 
@@ -1356,13 +1330,43 @@ private fun HubRefGrid(cards: List<HubRefCard>, navigate: (String) -> Unit, dens
 @Composable
 private fun HubRefValueCard(card: HubRefCard, modifier: Modifier = Modifier, dense: Boolean = false, onClick: () -> Unit) {
     val shape = RoundedCornerShape(if (dense) 16.dp else 18.dp)
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val pressScale = rememberKnouxPressScale(pressed)
     Column(
         modifier
+            .graphicsLayer {
+                scaleX = pressScale
+                scaleY = pressScale
+                translationY = if (pressed) 1.5.dp.toPx() else 0f
+            }
             .clip(shape)
-            .background(Brush.verticalGradient(listOf(Color(0xFF22124C), Color(0xFF170B38))))
-            .border(1.2.dp, Brush.linearGradient(listOf(card.accent.withAlpha(.85f), V2Violet.withAlpha(.55f), card.accent.withAlpha(.7f))), shape)
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        if (pressed) Color(0xFF2D1960) else Color(0xFF22124C),
+                        Color(0xFF12082F),
+                    ),
+                ),
+            )
+            .border(
+                1.2.dp,
+                Brush.linearGradient(
+                    listOf(
+                        card.accent.withAlpha(if (pressed) 1f else .82f),
+                        V2Violet.withAlpha(.55f),
+                        card.accent.withAlpha(.70f),
+                    ),
+                ),
+                shape,
+            )
             .semantics { contentDescription = "${card.title}، ${card.value}" }
-            .clickable(role = Role.Button, onClick = onClick)
+            .clickable(
+                interactionSource = interaction,
+                indication = LocalIndication.current,
+                role = Role.Button,
+                onClick = onClick,
+            )
             .padding(horizontal = 6.dp, vertical = if (dense) 6.dp else 9.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -1402,18 +1406,31 @@ private fun HubRefValueCard(card: HubRefCard, modifier: Modifier = Modifier, den
 @Composable
 private fun HubRefCompactCard(card: HubRefCard, modifier: Modifier = Modifier, onClick: () -> Unit) {
     val shape = RoundedCornerShape(16.dp)
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val pressScale = rememberKnouxPressScale(pressed, .95f)
     val edge = if (card.gold) {
         Brush.linearGradient(listOf(RefGoldBright, RefGold, Color(0xFFB87A1E)))
     } else {
-        Brush.linearGradient(listOf(card.accent.withAlpha(.85f), V2Violet.withAlpha(.5f), card.accent.withAlpha(.7f)))
+        Brush.linearGradient(listOf(card.accent.withAlpha(if (pressed) 1f else .82f), V2Violet.withAlpha(.5f), card.accent.withAlpha(.7f)))
     }
     Column(
         modifier
+            .graphicsLayer {
+                scaleX = pressScale
+                scaleY = pressScale
+                translationY = if (pressed) 1.5.dp.toPx() else 0f
+            }
             .clip(shape)
-            .background(Brush.verticalGradient(listOf(Color(0xFF22124C), Color(0xFF170B38))))
+            .background(Brush.verticalGradient(listOf(if (pressed) Color(0xFF2D1960) else Color(0xFF22124C), Color(0xFF140932))))
             .border(1.3.dp, edge, shape)
             .semantics { contentDescription = "${card.title}، ${card.value}" }
-            .clickable(role = Role.Button, onClick = onClick)
+            .clickable(
+                interactionSource = interaction,
+                indication = LocalIndication.current,
+                role = Role.Button,
+                onClick = onClick,
+            )
             .padding(horizontal = 4.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -1471,6 +1488,9 @@ private fun HubRefCompactCard(card: HubRefCard, modifier: Modifier = Modifier, o
 private fun HubRefCta(label: String, art: Int? = null, dense: Boolean = false, onClick: () -> Unit) {
     val shape = RoundedCornerShape(50)
     val motion = rememberMotionEnabled()
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val pressScale = rememberKnouxPressScale(pressed, .975f)
     val transition = rememberInfiniteTransition(label = "hubRefCta")
     val shine by transition.animateFloat(
         initialValue = -.3f,
@@ -1481,12 +1501,21 @@ private fun HubRefCta(label: String, art: Int? = null, dense: Boolean = false, o
     Box(
         Modifier
             .fillMaxWidth()
-            .height(if (dense) 46.dp else 50.dp)
+            .height(if (dense) 48.dp else 52.dp)
+            .graphicsLayer {
+                scaleX = pressScale
+                scaleY = pressScale
+            }
             .clip(shape)
             .background(Brush.horizontalGradient(listOf(Color(0xFF0FB6E8), Color(0xFF3F6CF0), Color(0xFF8A2BE2), Color(0xFFB01FD8))))
             .border(1.4.dp, Brush.horizontalGradient(listOf(V2Cyan.withAlpha(.9f), Color.White.withAlpha(.5f), V2Pink.withAlpha(.9f))), shape)
             .semantics { contentDescription = label }
-            .clickable(role = Role.Button, onClick = onClick),
+            .clickable(
+                interactionSource = interaction,
+                indication = LocalIndication.current,
+                role = Role.Button,
+                onClick = onClick,
+            ),
         contentAlignment = Alignment.Center,
     ) {
         Canvas(Modifier.fillMaxSize()) {

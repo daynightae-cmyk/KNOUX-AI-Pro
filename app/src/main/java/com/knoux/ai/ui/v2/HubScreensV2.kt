@@ -919,23 +919,50 @@ fun V2SmartCleanScreen(onBack: () -> Unit, onOpenDeepScan: () -> Unit, onPro: ()
                 scene = { modifier -> ServiceArtScene(ServiceSpecs.smartClean, modifier) },
                 showIdentityLine = false,
                 action = {
-                    KnouxRunOrbBlock(
-                        progress = when {
-                            cleanState.isScanning -> null
-                            cleanState.loaded -> 1f
-                            else -> 0f
-                        },
-                        running = cleanState.isScanning,
-                        enabled = !busy,
-                        label = when {
-                            cleanState.isScanning -> "جارٍ قراءة كاش KNOUX…"
-                            !cleanState.loaded -> "اضغط لتشغيل الخدمة"
-                            else -> "اضغط لإعادة قراءة الكاش"
-                        },
-                        accent = V2Cyan,
-                        accent2 = V2Violet,
-                        onTap = { if (!busy) cleaner.rescan() },
-                    )
+                    Column(
+                        Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        KnouxRunOrbBlock(
+                            progress = when {
+                                cleanState.isScanning -> null
+                                cleanState.loaded -> 1f
+                                else -> 0f
+                            },
+                            running = cleanState.isScanning,
+                            enabled = !busy,
+                            label = when {
+                                cleanState.isScanning -> "جارٍ قراءة كاش KNOUX…"
+                                !cleanState.loaded -> "اضغط لتشغيل الخدمة"
+                                else -> "اضغط لإعادة قراءة الكاش"
+                            },
+                            accent = V2Cyan,
+                            accent2 = V2Violet,
+                            onTap = { if (!busy) cleaner.rescan() },
+                        )
+                        // The orb reads/re-reads; this is the real gated cleanup
+                        // action for KNOUX's own cache, not a fake button.
+                        if (
+                            cleanState.loaded &&
+                            cacheBytes > 0L &&
+                            !busy &&
+                            cleanState.gate in setOf(
+                                OperationGate.IDLE,
+                                OperationGate.VERIFIED,
+                                OperationGate.PARTIAL,
+                                OperationGate.CANCELLED,
+                                OperationGate.ERROR,
+                            )
+                        ) {
+                            Spacer(Modifier.height(7.dp))
+                            V2BrightGoldButton(
+                                text = "مراجعة وتنظيف $cacheText",
+                                onClick = { cleaner.prepareClearOwnCache() },
+                                icon = Icons.Rounded.CleaningServices,
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                            )
+                        }
+                    }
                 },
                 listState = rememberLazyListState(),
             ) {

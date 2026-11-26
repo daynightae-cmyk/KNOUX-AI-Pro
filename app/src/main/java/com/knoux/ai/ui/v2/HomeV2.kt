@@ -467,56 +467,15 @@ private fun RefHomeHeader(
     onNotifications: () -> Unit,
     onPro: () -> Unit,
 ) {
-    CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
-        Box(Modifier.fillMaxWidth().height(56.dp).windowInsetsPadding(WindowInsets.statusBars)) {
-            // Real 48dp touch targets; the discs stay compact like the art.
-            Row(
-                Modifier.align(Alignment.CenterStart),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                RefHeaderCircle(Icons.Rounded.Person, "الحساب", onProfile)
-                RefHeaderCircle(Icons.Rounded.NotificationsNone, "التنبيهات", onNotifications)
-            }
-            // Center lockup: official geometric K + knoux ai wordmark + gold PRO capsule.
-            Row(
-                Modifier.align(Alignment.Center),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
-            ) {
-                Image(
-                    painter = painterResource(R.drawable.knoux_symbol_alpha),
-                    contentDescription = "KNOUX",
-                    modifier = Modifier.height(22.dp),
-                )
-                Spacer(Modifier.width(5.dp))
-                Image(
-                    painter = painterResource(R.drawable.knoux_wordmark_alpha),
-                    contentDescription = "knoux ai",
-                    modifier = Modifier.height(13.dp),
-                )
-                Spacer(Modifier.width(7.dp))
-                Row(
-                    Modifier
-                        .clip(RoundedCornerShape(50))
-                        .background(Brush.horizontalGradient(listOf(Color(0xFF3A2404), Color(0xFF241503))))
-                        .border(1.2.dp, Brush.horizontalGradient(listOf(RefGold, RefGoldBright, RefGold)), RoundedCornerShape(50))
-                        .clickable(onClickLabel = "Pro", onClick = onPro)
-                        .padding(horizontal = 8.dp, vertical = 3.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    CrownGold(size = 12.dp, color = RefGold)
-                    Spacer(Modifier.width(3.dp))
-                    CompositionLocalProvider(LocalKnouxOnDark provides true) {
-                        KText("PRO", size = 9.sp, weight = FontWeight.Black, color = RefGoldBright, letterSpacing = .7.sp)
-                    }
-                }
-            }
-            // Right: single gold hamburger, identical to every inner screen.
-            Box(Modifier.align(Alignment.CenterEnd)) {
-                RefMenuButton("القائمة", onMenu)
-            }
-        }
-    }
+    // The parent LazyColumn already applies the status-bar inset. Keeping the
+    // inset in one place prevents the logo from drifting down on tall phones.
+    V2TopBar(
+        mode = V2TopMode.HOME,
+        onMenu = onMenu,
+        onProfile = onProfile,
+        onNotifications = onNotifications,
+        onPro = onPro,
+    )
 }
 
 /* ------------------------------------------------------------------ *

@@ -9,6 +9,7 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
@@ -217,17 +218,6 @@ fun KnouxApp(startRoute: String? = null, startDayMode: Boolean? = null) {
     }
     val dayActive = KnouxDayState.enabled
 
-    // Status-bar glyphs follow the world: dark icons on porcelain, light on
-    // the night sky. The entry art stays night-lit, so its stage keeps light
-    // icons even when the shell behind it is porcelain.
-    val view = LocalView.current
-    androidx.compose.runtime.SideEffect {
-        val window = (view.context as? android.app.Activity)?.window ?: return@SideEffect
-        val nightStage = entryStage != EntryStage.Shell
-        WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars =
-            dayActive && !nightStage
-    }
-
     // Leave splash exactly once, into the initialization stage: the approved
     // loading art runs its showcase window while StartupCoordinator finishes.
     // The loading stage itself hands off to the real destination when ready.
@@ -257,6 +247,18 @@ fun KnouxApp(startRoute: String? = null, startDayMode: Boolean? = null) {
     val nav = rememberNavController()
     val backStackEntry by nav.currentBackStackEntryAsState()
     val route = backStackEntry?.destination?.route ?: ROUTE_HOME
+    // Home and the ten reference hubs are complete night worlds, including
+    // their navigation chrome. Do not let the global Day preference leave a
+    // porcelain footer or dark status glyphs over their approved cosmic art.
+    val nightWorldRoute = route == ROUTE_HOME || SectionHub.byRoute(route) != null
+    val view = LocalView.current
+    androidx.compose.runtime.SideEffect {
+        val window = (view.context as? android.app.Activity)?.window ?: return@SideEffect
+        val nightStage = entryStage != EntryStage.Shell || nightWorldRoute
+        val controller = WindowCompat.getInsetsController(window, view)
+        controller.isAppearanceLightStatusBars = dayActive && !nightStage
+        controller.isAppearanceLightNavigationBars = dayActive && !nightStage
+    }
 
     val open: (String) -> Unit = { target ->
         nav.navigate(target) { launchSingleTop = true }
@@ -349,9 +351,14 @@ fun KnouxApp(startRoute: String? = null, startDayMode: Boolean? = null) {
                     contentWindowInsets = WindowInsets(0, 0, 0, 0),
                     bottomBar = {
                         if (route != SETTINGS_ROUTE) {
+                            CompositionLocalProvider(
+                                LocalDayMode provides (dayActive && !nightWorldRoute),
+                                LocalKnouxOnDark provides nightWorldRoute,
+                            ) {
                             Column(
                                 Modifier
                                     .fillMaxWidth()
+                                    .background(if (nightWorldRoute) Color(0xFF08031E) else Color.Transparent)
                                     .windowInsetsPadding(WindowInsets.navigationBars),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
@@ -359,6 +366,7 @@ fun KnouxApp(startRoute: String? = null, startDayMode: Boolean? = null) {
                                     selectedRoute = route,
                                     onSelect = { tab -> openTab(tab) },
                                 )
+                            }
                             }
                         }
                     },

@@ -3,17 +3,22 @@ package com.knoux.ai.ui.v2
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -32,8 +37,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.Send
-import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.Call
 import androidx.compose.material.icons.rounded.ChevronLeft
@@ -51,6 +56,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -763,18 +769,43 @@ fun V2TopBar(
     onPro: () -> Unit = {},
     showMenu: Boolean = true,
 ) {
-    // Approved header from the 941×1672 artboard, shared by every routed
-    // screen: small circular profile/notification/back controls at the start,
-    // the official KNOUX lockup dead centre, and the gold hamburger at the end.
-    // No flat text pills, no duplicate menu, no competing oversized discs.
-    // The menu always has a real destination: an explicit handler, or Settings.
     val navigate = LocalServiceNavigate.current
+    val motion = rememberMotionEnabled()
+    val ambient = rememberInfiniteTransition(label = "knouxHeader")
+    val brandBreath by ambient.animateFloat(
+        initialValue = 1f,
+        targetValue = if (motion) 1.018f else 1f,
+        animationSpec = infiniteRepeatable(
+            tween(3200, easing = FastOutSlowInEasing),
+            RepeatMode.Reverse,
+        ),
+        label = "headerBrandBreath",
+    )
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         Box(
             modifier
                 .fillMaxWidth()
-                .height(56.dp)
-                .padding(horizontal = 8.dp),
+                .height(60.dp)
+                .padding(horizontal = 6.dp)
+                .drawBehind {
+                    // A nearly invisible baseline visually joins the chrome to
+                    // the living sky without putting the header inside a pill.
+                    val y = size.height - 1.dp.toPx()
+                    drawLine(
+                        brush = Brush.horizontalGradient(
+                            listOf(
+                                Color.Transparent,
+                                V2Violet.copy(alpha = .16f),
+                                V2Cyan.copy(alpha = .20f),
+                                RefGold.copy(alpha = .12f),
+                                Color.Transparent,
+                            ),
+                        ),
+                        start = Offset(size.width * .08f, y),
+                        end = Offset(size.width * .92f, y),
+                        strokeWidth = .7.dp.toPx(),
+                    )
+                },
         ) {
             Row(
                 Modifier.align(Alignment.CenterStart),
@@ -784,12 +815,18 @@ fun V2TopBar(
                     RefCircleButton(Icons.Rounded.Person, "الحساب", onProfile)
                     RefCircleButton(Icons.Rounded.NotificationsNone, "التنبيهات", onNotifications)
                 } else {
-                    RefCircleButton(Icons.Rounded.ArrowBack, "رجوع", onBack)
+                    RefCircleButton(Icons.AutoMirrored.Rounded.ArrowBack, "رجوع", onBack)
                 }
             }
 
             BrandLockupV2(
-                modifier = Modifier.align(Alignment.Center).fillMaxWidth(.60f),
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .fillMaxWidth(.62f)
+                    .graphicsLayer {
+                        scaleX = brandBreath
+                        scaleY = brandBreath
+                    },
                 onPro = onPro,
             )
 
@@ -800,6 +837,17 @@ fun V2TopBar(
             }
         }
     }
+}
+
+/** Shared physical press response for cards and prominent actions. */
+@Composable
+internal fun rememberKnouxPressScale(pressed: Boolean, pressedScale: Float = .965f): Float {
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) pressedScale else 1f,
+        animationSpec = spring(dampingRatio = .66f, stiffness = Spring.StiffnessMedium),
+        label = "knouxPressScale",
+    )
+    return scale
 }
 
 /**
@@ -813,26 +861,68 @@ internal fun RefCircleButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val day = LocalDayMode.current
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) .88f else 1f,
+        animationSpec = spring(dampingRatio = .62f, stiffness = Spring.StiffnessMedium),
+        label = "headerCirclePress",
+    )
     Box(
         modifier
             .size(48.dp)
-            .clickable(onClickLabel = label, onClick = onClick)
+            .clip(CircleShape)
+            .clickable(
+                interactionSource = interaction,
+                indication = LocalIndication.current,
+                role = androidx.compose.ui.semantics.Role.Button,
+                onClickLabel = label,
+                onClick = onClick,
+            )
             .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
     ) {
         Box(
             Modifier
                 .size(36.dp)
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                    rotationZ = if (pressed) -3f else 0f
+                }
                 .clip(CircleShape)
-                .background(Brush.radialGradient(listOf(Color(0xFF1B1240), Color(0xFF0B0722))))
+                .background(
+                    if (day) {
+                        Brush.radialGradient(listOf(Color.White, Color(0xFFE9E3F5)))
+                    } else {
+                        Brush.radialGradient(
+                            listOf(
+                                if (pressed) Color(0xFF2B1B5B) else Color(0xFF1B1240),
+                                Color(0xFF0B0722),
+                            ),
+                        )
+                    },
+                )
                 .border(
                     1.2.dp,
-                    Brush.linearGradient(listOf(V2Violet.withAlpha(.85f), V2Cyan.withAlpha(.55f), V2Violet.withAlpha(.85f))),
+                    Brush.linearGradient(
+                        if (day) {
+                            listOf(DayViolet.copy(alpha = .62f), DayCyan.copy(alpha = .64f), DayViolet.copy(alpha = .62f))
+                        } else {
+                            listOf(V2Violet.copy(alpha = .88f), V2Cyan.copy(alpha = .68f), V2Pink.copy(alpha = .56f))
+                        },
+                    ),
                     CircleShape,
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, null, tint = Color.White.withAlpha(.94f), modifier = Modifier.size(18.dp))
+            Icon(
+                icon,
+                null,
+                tint = if (day) DayInk else Color.White.copy(alpha = .94f),
+                modifier = Modifier.size(18.dp),
+            )
         }
     }
 }
@@ -841,20 +931,44 @@ internal fun RefCircleButton(
 @Composable
 internal fun RefMenuButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val day = LocalDayMode.current
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) .90f else 1f,
+        animationSpec = spring(dampingRatio = .58f, stiffness = Spring.StiffnessMedium),
+        label = "headerMenuPress",
+    )
     Box(
         modifier
             .size(48.dp)
-            .clickable(onClickLabel = label, onClick = onClick)
+            .clip(RoundedCornerShape(14.dp))
+            .clickable(
+                interactionSource = interaction,
+                indication = LocalIndication.current,
+                role = androidx.compose.ui.semantics.Role.Button,
+                onClickLabel = label,
+                onClick = onClick,
+            )
             .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
     ) {
         Box(
             Modifier
                 .size(36.dp)
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                    rotationZ = if (pressed) 2f else 0f
+                }
                 .clip(RoundedCornerShape(11.dp))
                 .background(
-                    if (day) Brush.verticalGradient(listOf(Color(0xFFF4EAD8), Color(0xFFE7D7BC)))
-                    else Brush.verticalGradient(listOf(Color(0xFF241503), Color(0xFF120A02)))
+                    if (day) Brush.verticalGradient(listOf(Color(0xFFFFF7E8), Color(0xFFE7D7BC)))
+                    else Brush.verticalGradient(
+                        listOf(
+                            if (pressed) Color(0xFF3A2506) else Color(0xFF241503),
+                            Color(0xFF120A02),
+                        ),
+                    ),
                 )
                 .border(
                     1.3.dp,
@@ -944,18 +1058,18 @@ fun BrandLockupV2(modifier: Modifier = Modifier, onPro: (() -> Unit)? = null) {
     val day = LocalDayMode.current
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
         Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.Center) {
-            // The official white company seal leads the lockup on every V2
-            // screen; its halo breathes and orbits, the pearl disc stays lit.
-            com.knoux.ai.ui.components.BrandSeal(
-                size = 30.dp,
-                haloColor = if (day) DayViolet else V2Violet,
+            // One canonical lockup everywhere: geometric K + wordmark + gold
+            // PRO. The pearl seal and the miniature stag belong to other
+            // contexts, never inside this compact navigation header.
+            Image(
+                painter = painterResource(R.drawable.knoux_symbol_alpha),
+                contentDescription = "KNOUX",
+                modifier = Modifier.height(24.dp),
             )
-            Spacer(Modifier.width(6.dp))
+            Spacer(Modifier.width(5.dp))
             Image(
                 painter = painterResource(R.drawable.knoux_wordmark_alpha),
                 contentDescription = "knoux ai",
-                // The wordmark is white-on-transparent night art; on porcelain
-                // it is re-inked to the day violet so the brand stays legible.
                 colorFilter = if (day) androidx.compose.ui.graphics.ColorFilter.tint(DayViolet) else null,
                 modifier = Modifier.height(14.5.dp),
             )
@@ -969,18 +1083,18 @@ fun BrandLockupV2(modifier: Modifier = Modifier, onPro: (() -> Unit)? = null) {
                         } else Modifier
                     ),
             ) {
-                ProPill()
+                ProPill(showCrown = true)
             }
         }
     }
 }
 
 @Composable
-fun ProPill(modifier: Modifier = Modifier) {
+fun ProPill(modifier: Modifier = Modifier, showCrown: Boolean = false) {
     val proTheme = LocalProTheme.current
     val active = LocalProActive.current
     val shape = RoundedCornerShape(50)
-    Box(
+    Row(
         modifier
             .clip(shape)
             .background(
@@ -990,12 +1104,14 @@ fun ProPill(modifier: Modifier = Modifier) {
                     Brush.horizontalGradient(listOf(Color(0x33FFC857), Color(0x0EFFC857)))
                 }
             )
-            .border(1.dp, if (active) proTheme.goldBright.withAlpha( .9f) else proTheme.amber.withAlpha( .72f), shape)
+            .border(1.dp, if (active) proTheme.goldBright.withAlpha(.9f) else proTheme.amber.withAlpha(.72f), shape)
             .padding(horizontal = 9.dp, vertical = 3.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        // The active pill is a gold island; its dark text must never be
-        // re-inked by day mode. The inactive pill reads as amber text on
-        // porcelain, deepened for contrast.
+        if (showCrown) {
+            CrownGold(size = 11.dp, color = if (active) proTheme.deep else proTheme.goldBright)
+            Spacer(Modifier.width(3.dp))
+        }
         CompositionLocalProvider(LocalKnouxOnDark provides active) {
             KText(
                 if (active) "PRO ✓" else "PRO",

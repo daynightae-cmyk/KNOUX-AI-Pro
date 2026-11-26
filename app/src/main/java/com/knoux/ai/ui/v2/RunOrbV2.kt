@@ -77,78 +77,78 @@ internal fun KnouxRunOrb(
     onTap: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val motion = rememberMotionEnabled()
     val transition = rememberInfiniteTransition(label = "knoux-orb")
     val spin by transition.animateFloat(
         initialValue = 0f,
-        targetValue = 360f,
+        targetValue = if (motion) 360f else 0f,
         animationSpec = infiniteRepeatable(
-            animation = tween(if (running) 1600 else 9000, easing = LinearEasing),
+            animation = tween(if (running) 1700 else 11000, easing = LinearEasing),
             repeatMode = RepeatMode.Restart,
         ),
         label = "orb-spin",
     )
     val counterSpin by transition.animateFloat(
         initialValue = 360f,
-        targetValue = 0f,
+        targetValue = if (motion) 0f else 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(if (running) 2400 else 14000, easing = LinearEasing),
+            animation = tween(if (running) 2500 else 16000, easing = LinearEasing),
             repeatMode = RepeatMode.Restart,
         ),
         label = "orb-counter-spin",
     )
     val breath by transition.animateFloat(
-        initialValue = .92f,
-        targetValue = 1.06f,
+        initialValue = .96f,
+        targetValue = if (motion) 1.045f else .96f,
         animationSpec = infiniteRepeatable(
-            animation = tween(if (running) 620 else 2600, easing = LinearEasing),
+            animation = tween(if (running) 720 else 3000, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse,
         ),
         label = "orb-breath",
     )
     val spark by transition.animateFloat(
         initialValue = 0f,
-        targetValue = 360f,
+        targetValue = if (motion) 360f else 0f,
         animationSpec = infiniteRepeatable(
-            animation = tween(if (running) 1100 else 6000, easing = LinearEasing),
+            animation = tween(if (running) 1300 else 7600, easing = LinearEasing),
             repeatMode = RepeatMode.Restart,
         ),
         label = "orb-spark",
     )
-    // The purple K jewel turns in 3D inside the sphere: a slow yaw sway plus a
-    // gentle float, so it reads as a sculpted object, not a flat sticker.
     val jewelYaw by transition.animateFloat(
-        initialValue = -26f,
-        targetValue = 26f,
+        initialValue = if (motion) -14f else 0f,
+        targetValue = if (motion) 14f else 0f,
         animationSpec = infiniteRepeatable(
-            animation = tween(if (running) 1500 else 3400, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+            animation = tween(if (running) 1700 else 4200, easing = androidx.compose.animation.core.FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse,
         ),
         label = "orb-jewel-yaw",
     )
     val jewelFloat by transition.animateFloat(
         initialValue = -1f,
-        targetValue = 1f,
+        targetValue = if (motion) 1f else -1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(if (running) 1100 else 2400, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+            animation = tween(if (running) 1300 else 2800, easing = androidx.compose.animation.core.FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse,
         ),
         label = "orb-jewel-float",
     )
-    val pulse = if (running) breath else 1f
+    val pulse = when {
+        !motion -> 1f
+        running -> breath
+        else -> 1f + (breath - 1f) * .16f
+    }
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
-    val motion = rememberMotionEnabled()
     val haptics = LocalHapticFeedback.current
-    // The orb answers the finger: it settles under the press and springs back
-    // on release, so the start control feels physical, not painted.
     val pressScale by animateFloatAsState(
-        targetValue = if (pressed) .93f else 1f,
-        animationSpec = tween(if (pressed) 90 else 240),
+        targetValue = if (pressed) .91f else 1f,
+        animationSpec = tween(if (pressed) 80 else 260),
         label = "orb-press",
     )
     val pressGlow by animateFloatAsState(
         targetValue = if (pressed) 1f else 0f,
-        animationSpec = tween(140),
+        animationSpec = tween(150),
         label = "orb-press-glow",
     )
 
@@ -159,9 +159,6 @@ internal fun KnouxRunOrb(
                 val s = pulse * pressScale
                 scaleX = s
                 scaleY = s
-                // A running orb must stay fully lit: the halo and progress arc
-                // are the evidence that work is happening. Only a genuinely
-                // unavailable orb fades back.
                 alpha = if (enabled || running) 1f else .45f
             }
             .clip(CircleShape)
@@ -191,54 +188,36 @@ internal fun KnouxRunOrb(
             val r = this.size.minDimension / 2f
             drawHalo(r, running, accent, accent2)
             drawOrbits(r, spin, counterSpin, running, accent, accent2)
-            // No glass sphere anymore: the purple K emblem IS the control.
-            // A soft violet cushion of light seats it in space instead.
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(
-                        accent2.copy(alpha = if (running) .30f else .18f),
-                        Color.Transparent,
-                    ),
-                    center = center,
-                    radius = r * .66f,
-                ),
-                radius = r * .66f,
-            )
-            drawSpark(r * .92f, spark, accent)
+            // The one service control: a dark glass heart, a single luminous
+            // orbital family and the official K. No second radar/play button.
+            drawCore(r * .70f, accent, accent2)
+            drawSpark(r * .91f, spark, accent)
             if (pressGlow > 0f) {
-                // A light bloom under the finger while pressed.
                 drawCircle(
                     brush = Brush.radialGradient(
-                        listOf(Color.White.copy(alpha = .18f * pressGlow), Color.Transparent),
+                        listOf(Color.White.copy(alpha = .20f * pressGlow), Color.Transparent),
                         center = center,
-                        radius = r * .9f,
+                        radius = r * .88f,
                     ),
-                    radius = r * .9f,
+                    radius = r * .88f,
                 )
             }
-            if (running && progress != null) drawProgress(r, progress, accent)
+            if (progress != null) drawProgress(r, progress, accent)
             if (running && progress == null) drawIndeterminate(r, spin, accent)
         }
-        // The purple K mark IS the start button — it replaced the circular
-        // orb in every service. A press tilts it into the screen (3D push)
-        // and the whole control springs back; the rim arc still reports real
-        // progress. The app's launcher identity keeps its original logo.
-        val jewelMotion = rememberMotionEnabled()
         androidx.compose.foundation.Image(
             painter = androidx.compose.ui.res.painterResource(com.knoux.ai.R.drawable.knoux_symbol_alpha),
             contentDescription = null,
             modifier = Modifier
-                .size(size * .74f)
+                .size(size * .47f)
                 .graphicsLayer {
-                    if (jewelMotion) {
-                        rotationY = jewelYaw
-                        rotationX = 6f * jewelFloat + 16f * pressGlow
-                        translationY = jewelFloat * size.toPx() * .022f
-                        cameraDistance = 10f * density
-                        val depth = 1f + .04f * jewelFloat
-                        scaleX = depth
-                        scaleY = depth
-                    }
+                    rotationY = jewelYaw
+                    rotationX = 4f * jewelFloat + 13f * pressGlow
+                    translationY = jewelFloat * size.toPx() * .018f
+                    cameraDistance = 12f * density
+                    val depth = 1f + .025f * jewelFloat
+                    scaleX = depth
+                    scaleY = depth
                 },
         )
     }
