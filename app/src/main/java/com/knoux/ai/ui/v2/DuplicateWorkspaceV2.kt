@@ -64,6 +64,11 @@ internal fun V2DuplicatesWorkspace(
         lifecycle.addObserver(observer)
         onDispose { lifecycle.removeObserver(observer) }
     }
+
+    // Real device facts for the royal stage ribbon
+    val (refresh, bump) = rememberRefreshCounter()
+    val facts = rememberDeviceFacts(refresh)
+
     val mediaAllowed = remember(permissionRevision) {
         duplicateReadPermissions().any { context.checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED }
     }
@@ -116,142 +121,169 @@ internal fun V2DuplicatesWorkspace(
     }
 
     // Day world lets the porcelain shell show through; night keeps its own sky.
-    Column(
-        Modifier.fillMaxSize()
+    // Local copies for smart-cast of delegated state properties (used in metric, action, content)
+    val progress = state.progress
+    val result = state.result
+
+    Box(
+        Modifier
+            .fillMaxSize()
             .background(if (LocalDayMode.current) Color.Transparent else V2Deep)
             .windowInsetsPadding(WindowInsets.statusBars)
     ) {
-        V2TopBar(V2TopMode.INTERIOR, onBack = onBack, onPro = onPro)
-        LazyColumn(
-            modifier = Modifier.weight(1f),
-            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(18.dp),
-        ) {
-            item {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    V2LuxuryIdentity(
-                        title = "الملفات المكررة",
-                        english = "DUPLICATE FINDER",
-                        subtitle = "احتفظ بالأفضل. راجع الباقي. واحذف بقرارك.",
+        Column(Modifier.fillMaxSize()) {
+            V2TopBar(V2TopMode.INTERIOR, onBack = onBack, onPro = onPro)
+            FixedServiceScreen(
+                spec = ServiceSpecs.duplicates,
+                status = when {
+                    state.scanning -> "جارٍ الفحص…"
+                    state.result != null -> "نتيجة جاهزة"
+                    state.scanCancelled -> "مُوقَّف"
+                    state.error != null -> "خطأ"
+                    else -> if (mediaAllowed) "جاهز للتشغيل" else "تحتاج صلاحية الوسائط"
+                },
+                statusColor = when {
+                    state.scanning -> V2Amber
+                    state.result != null -> V2Green
+                    state.scanCancelled -> V2Amber
+                    state.error != null -> V2Red
+                    else -> if (mediaAllowed) V2Violet else V2Muted
+                },
+                metric = when {
+                    state.scanning && progress != null -> "${progress.completedFiles} / ${progress.totalFiles}"
+                    result != null -> "${formatCount(result.groups.sumOf { it.files.size })} ملف في ${formatCount(result.groups.size)} مجموعة"
+                    state.scanCancelled -> state.message ?: "تم الإيقاف"
+                    state.error != null -> state.error
+                    else -> if (!mediaAllowed) "اضغط للسماح بالوسائط" else "اضغط الزر الدائري لبدء الفحص"
+                },
+                scene = { sceneModifier -> ServiceArtScene(ServiceSpecs.duplicates, sceneModifier) },
+                ribbonSlots = listOf(
+                    HeroRibbonSlot(
+                        Icons.Rounded.FolderCopy,
+                        if (facts.computedAt > 0L) formatCount(facts.installedCount) else "—",
+                        "تطبيق مثبت",
+                        V2Cyan,
+                    ),
+                    HeroRibbonSlot(
+                        Icons.Rounded.Storage,
+                        if (facts.computedAt > 0L) formatBytes(facts.storage.freeBytes) else "—",
+                        "مساحة متاحة",
+                        V2Green,
+                    ),
+                    HeroRibbonSlot(
+                        Icons.Rounded.Memory,
+                        if (facts.computedAt > 0L) formatBytes(facts.ownCacheBytes) else "—",
+                        "كاش KNOUX",
+                        V2Pink,
+                    ),
+                    HeroRibbonSlot(
+                        Icons.Rounded.Shield,
+                        if (facts.computedAt > 0L) formatCount(facts.sensitiveAppCount) else "—",
+                        "تطبيق حساس",
+                        V2Violet,
+                    ),
+                ),
+                action = {
+                    // The universal K orb: the only way this service starts.
+                    KnouxRunOrbBlock(
+                        progress = when {
+                            state.scanning && progress != null && progress.totalFiles > 0 ->
+                                (progress.completedFiles.toFloat() / progress.totalFiles).coerceIn(0f, 1f)
+                            state.scanning -> null
+                            result != null -> 1f
+                            else -> 0f
+                        },
+                        running = state.scanning,
+                        enabled = !state.busy && mediaAllowed,
+                        label = when {
+                            state.scanning -> progress?.phase ?: "جارٍ الفحص…"
+                            result != null -> "اضغط لفحص جديد"
+                            else -> if (!mediaAllowed) "اضغط للسماح بالوسائط" else "اضغط لبدء الفحص"
+                        },
                         accent = V2Cyan,
+                        accent2 = V2Violet,
+                        size = 148.dp,
+                        onTap = { if (!state.busy && mediaAllowed) startScan() },
                     )
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Icon(Icons.Rounded.Shield, null, tint = V2Green, modifier = Modifier.size(15.dp))
-                        Spacer(Modifier.width(5.dp))
-                        KText("تحليل على جهازك · صورك لا تُرفع لأي خادم", size = 10.sp, color = V2Soft)
+                },
+                showIdentityLine = false,
+                content = {
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        DuplicateModeButton("المحتوى", Icons.Rounded.ContentCopy, mode == DuplicateScanMode.EXACT,
+                            enabled = !state.busy && mediaAllowed, modifier = Modifier.weight(1f)) {
+                            mode = DuplicateScanMode.EXACT
+                            model.selectMode(mode)
+                        }
+                        DuplicateModeButton("الصور", Icons.Rounded.ImageSearch, mode == DuplicateScanMode.VISUAL,
+                            enabled = !state.busy && mediaAllowed, modifier = Modifier.weight(1f)) {
+                            mode = DuplicateScanMode.VISUAL
+                            model.selectMode(mode)
+                        }
+                        DuplicateModeButton("الأسماء", Icons.Rounded.TextFields, mode == DuplicateScanMode.NAME,
+                            enabled = !state.busy && mediaAllowed, modifier = Modifier.weight(1f)) {
+                            mode = DuplicateScanMode.NAME
+                            model.selectMode(mode)
+                        }
                     }
-                }
-            }
-            item {
-                // The universal K orb: the only way this service starts.
-                val progress = state.progress
-                KnouxRunOrbBlock(
-                    progress = when {
-                        state.scanning && progress != null && progress.totalFiles > 0 ->
-                            (progress.completedFiles.toFloat() / progress.totalFiles).coerceIn(0f, 1f)
-                        state.scanning -> null
-                        state.result != null -> 1f
-                        else -> 0f
-                    },
-                    running = state.scanning,
-                    enabled = !state.busy,
-                    label = when {
-                        state.scanning -> progress?.phase ?: "جارٍ الفحص…"
-                        state.result != null -> "اضغط لفحص جديد"
-                        else -> if (!mediaAllowed) "اضغط للسماح بالوسائط" else "اضغط لبدء الفحص"
-                    },
-                    accent = V2Cyan,
-                    accent2 = V2Violet,
-                    size = 148.dp,
-                    onTap = { if (!state.busy) startScan() },
-                )
-            }
-            item {
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    DuplicateModeButton("المحتوى", Icons.Rounded.ContentCopy, mode == DuplicateScanMode.EXACT,
-                        enabled = !state.busy, modifier = Modifier.weight(1f)) {
-                        mode = DuplicateScanMode.EXACT
-                        model.selectMode(mode)
-                    }
-                    DuplicateModeButton("الصور", Icons.Rounded.ImageSearch, mode == DuplicateScanMode.VISUAL,
-                        enabled = !state.busy, modifier = Modifier.weight(1f)) {
-                        mode = DuplicateScanMode.VISUAL
-                        model.selectMode(mode)
-                    }
-                    DuplicateModeButton("الأسماء", Icons.Rounded.TextFields, mode == DuplicateScanMode.NAME,
-                        enabled = !state.busy, modifier = Modifier.weight(1f)) {
-                        mode = DuplicateScanMode.NAME
-                        model.selectMode(mode)
-                    }
-                }
-            }
-            if (mode == DuplicateScanMode.VISUAL) item {
+            if (mode == DuplicateScanMode.VISUAL) {
                 DuplicateNotice("التشابه مش تطابق", "تحليل بصري محلي، وليس إثباتًا لتكرار المحتوى. راجع كل صورة بنفسك؛ لا يوجد تحديد تلقائي هنا.", V2Amber)
             }
-            if (mode == DuplicateScanMode.NAME) item {
+            if (mode == DuplicateScanMode.NAME) {
                 DuplicateNotice("نفس الاسم مش نفس المحتوى", "المجموعات هنا ملفات تشترك في الاسم فقط. افتح كل ملف وقارن قبل ما تحدد أي حذف.", V2Violet)
             }
-            if (state.scanning || state.operating || state.restoring) item {
+            if (state.scanning || state.operating || state.restoring) {
                 DuplicateProgressPanel(state)
             }
-            if (state.awaitingSystem) item {
+            if (state.awaitingSystem) {
                 DuplicateNotice("طلب حذف محفوظ", "موافقة Android لم تُحسم هنا بعد. لو نافذة النظام اتقفلت، أعد التحقق؛ لن نكرر الحذف أو نخمن الموافقة.", V2Amber)
                 TextButton(onClick = { model.recoverInterrupted(context) }, modifier = Modifier.heightIn(min = 48.dp)) {
                     KText("إعادة التحقق من الطلب", size = 14.sp, color = V2Cyan)
                 }
             }
-            state.deletion?.let { deletion -> item { DuplicateOutcomePanel(deletion) } }
-            (state.error ?: viewerError)?.let { message -> item {
+            state.deletion?.let { deletion -> DuplicateOutcomePanel(deletion) }
+            (state.error ?: viewerError)?.let { message ->
                 DuplicateNotice("محتاج مراجعة", message, V2Amber)
-            } }
-            if (state.scanCancelled) item {
+            }
+            if (state.scanCancelled) {
                 DuplicateNotice("الفحص اتوقف", state.message ?: "النتيجة غير مكتملة. أعد الفحص وقت ما تحب.", V2Amber)
             }
-            val result = state.result
             if (result != null) {
-                item { DuplicateResultHeader(result, state.mode) }
-                if (result.warnings.isNotEmpty() || result.partialAccess) item {
+                DuplicateResultHeader(result, state.mode)
+                if (result.warnings.isNotEmpty() || result.partialAccess) {
                     DuplicateNotice("نطاق الفحص محدود بالصلاحيات", buildString {
                         if (result.partialAccess) append("تم فحص الملفات المسموح بها فقط؛ النتيجة ليست إثباتًا لفحص المكتبة كاملة. ")
                         append(result.warnings.distinct().joinToString("\n"))
                     }, V2Amber)
                 }
                 if (groups.isNotEmpty()) {
-                    item {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            listOf("الكل", "صور", "فيديو").forEachIndexed { index, text ->
-                                FilterChip(selected = filter == index, onClick = { filter = index }, enabled = !state.operating,
-                                    label = { KText(text, size = 13.sp, color = if (filter == index) V2Cyan else V2Soft) },
-                                    modifier = Modifier.heightIn(min = 48.dp))
-                            }
-                        }
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            if (state.mode != DuplicateScanMode.VISUAL) TextButton(
-                                enabled = !state.busy,
-                                onClick = {
-                                    // Select every non-keeper copy across all visible groups.
-                                    visible.forEach { group ->
-                                        val keeper = duplicateKeeper(group, keepers)
-                                        group.files.forEach { file ->
-                                            if (file.uriString != keeper) selected[file.uriString] = true
-                                        }
-                                    }
-                                },
-                                modifier = Modifier.heightIn(min = 48.dp),
-                            ) { KText("تحديد الكل", size = 13.sp, weight = FontWeight.Bold, color = V2Cyan) }
-                            if (selectedUris.isNotEmpty()) TextButton(onClick = { selected.clear() }, enabled = !state.busy,
-                                modifier = Modifier.heightIn(min = 48.dp)) { KText("إلغاء التحديد", size = 13.sp, color = V2Soft) }
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        listOf("الكل", "صور", "فيديو").forEachIndexed { index, text ->
+                            FilterChip(selected = filter == index, onClick = { filter = index }, enabled = !state.operating,
+                                label = { KText(text, size = 13.sp, color = if (filter == index) V2Cyan else V2Soft) },
+                                modifier = Modifier.heightIn(min = 48.dp))
                         }
                     }
-                    items(visible, key = { it.id }) { group ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        if (state.mode != DuplicateScanMode.VISUAL) TextButton(
+                            enabled = !state.busy,
+                            onClick = {
+                                visible.forEach { group ->
+                                    val keeper = duplicateKeeper(group, keepers)
+                                    group.files.forEach { file ->
+                                        if (file.uriString != keeper) selected[file.uriString] = true
+                                    }
+                                }
+                            },
+                            modifier = Modifier.heightIn(min = 48.dp),
+                        ) { KText("تحديد الكل", size = 13.sp, weight = FontWeight.Bold, color = V2Cyan) }
+                        if (selectedUris.isNotEmpty()) TextButton(onClick = { selected.clear() }, enabled = !state.busy,
+                            modifier = Modifier.heightIn(min = 48.dp)) { KText("إلغاء التحديد", size = 13.sp, color = V2Soft) }
+                    }
+                    visible.forEach { group ->
                         DuplicateReviewCard(group, duplicateKeeper(group, keepers), selectedUris, !state.busy,
                             onReview = { reviewGroupId = group.id }, onToggle = ::toggle, onPreview = ::preview)
                     }
-                } else item {
+                } else {
                     DuplicateNotice(
                         if (result.warnings.isEmpty() && !result.partialAccess) "لا مجموعات في النطاق المفحوص" else "لم تظهر مجموعات في الملفات المقروءة",
                         when (state.mode) {
@@ -261,7 +293,7 @@ internal fun V2DuplicatesWorkspace(
                         }, V2Green,
                     )
                 }
-            } else if (!state.scanning && !state.scanCancelled && !state.operating) item {
+            } else if (!state.scanning && !state.scanCancelled && !state.operating) {
                 Surface(color = V2Panel, shape = RoundedCornerShape(24.dp), border = BorderStroke(1.dp, V2Cyan.copy(alpha = .24f))) {
                     Column(Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -274,8 +306,10 @@ internal fun V2DuplicatesWorkspace(
                     }
                 }
             }
-            item { Spacer(Modifier.height(4.dp)) }
+            Spacer(Modifier.height(4.dp))
         }
+        ) // closes FixedServiceScreen
+        // Pinned bottom CTA bar (outside FixedServiceScreen so it stays visible)
         Surface(color = V2Panel2, tonalElevation = 0.dp) {
             Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (selectedUris.isNotEmpty()) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -303,6 +337,7 @@ internal fun V2DuplicatesWorkspace(
             }
         }
     }
+    } // closes Box
     val review = groups.firstOrNull { it.id == reviewGroupId }
     if (review != null) Dialog(onDismissRequest = { reviewGroupId = null }) {
         Surface(color = V2Panel2, shape = RoundedCornerShape(24.dp)) {

@@ -478,6 +478,7 @@ private fun ToolsTip() {
 
 @Composable
 fun V2ReportsScreen(
+    onBack: () -> Unit,
     onOpenDetail: () -> Unit,
     onMenu: () -> Unit,
     onPro: () -> Unit,
@@ -495,43 +496,89 @@ fun V2ReportsScreen(
     val roomSessions = roomRepository.recentSessions(100)
         .collectAsState(initial = emptyList()).value
 
+    val live = facts.computedAt > 0L
+    val sessionsCount = roomSessions.size
+
     Box(
         Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)
     ) {
         Column(Modifier.fillMaxSize()) {
-            V2TopBar(
-                V2TopMode.HOME,
-                onMenu = onMenu,
-                onPro = onPro,
-                onProfile = onProfile,
-                onNotifications = onNotifications,
-            )
-            LazyColumn(
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 20.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                item {
-                    ServiceBanner(
-                        spec = ServiceSpecs.reports,
-                        status = if (facts.computedAt > 0L) "قراءة مباشرة" else "جاري القراءة",
-                        statusColor = if (facts.computedAt > 0L) V2Green else V2Amber,
-                        metric = "${formatCount(roomSessions.size)} جلسة في Room",
+            V2TopBar(V2TopMode.INTERIOR, onBack = onBack, onPro = onPro)
+            FixedServiceScreen(
+                spec = ServiceSpecs.reports,
+                status = if (live) "قراءة مباشرة" else "جاري القراءة…",
+                statusColor = if (live) V2Green else V2Amber,
+                metric = if (live) "${formatCount(sessionsCount)} جلسة في Room" else "—",
+                scene = { sceneModifier -> ServiceArtScene(ServiceSpecs.reports, sceneModifier) },
+                ribbonSlots = listOf(
+                    HeroRibbonSlot(
+                        Icons.Rounded.History,
+                        if (live) formatCount(sessionsCount) else "—",
+                        "جلسة Room",
+                        V2Amber,
+                    ),
+                    HeroRibbonSlot(
+                        Icons.Rounded.Storage,
+                        if (live) formatBytes(facts.storage.freeBytes) else "—",
+                        "مساحة متاحة",
+                        V2Cyan,
+                    ),
+                    HeroRibbonSlot(
+                        Icons.Rounded.Shield,
+                        if (live) formatCount(facts.sensitiveAppCount) else "—",
+                        "تطبيق حساس",
+                        V2Violet,
+                    ),
+                    HeroRibbonSlot(
+                        Icons.Rounded.Apps,
+                        if (live) formatCount(facts.installedCount) else "—",
+                        "تطبيق مثبت",
+                        V2Pink,
+                    ),
+                ),
+                action = {
+                    KnouxRunOrbBlock(
+                        progress = if (live) 1f else 0f,
+                        running = false,
+                        enabled = live,
+                        label = if (live) "اضغط لإعادة قراءة التقارير" else "جاري القراءة…",
+                        accent = V2Amber,
+                        accent2 = V2Cyan,
+                        size = 118.dp,
+                        onTap = { bump() },
                     )
-                }
-                item { ReportScoreCard(facts) }
-                item { ReportSnapshotCard(facts, onRefresh = bump) }
-                item { ReportsRoomAuditCard() }
-                item { CatalogCoverageCard() }
-                item {
+                },
+                showIdentityLine = false,
+                content = {
+                    ReportScoreCard(facts)
+                    ReportSnapshotCard(facts, onRefresh = bump)
+                    ReportsRoomAuditCard()
+                    CatalogCoverageCard()
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        ReportMiniStat(formatBytes(facts.storage.freeBytes), "مساحة متاحة", Icons.Rounded.Storage, V2Cyan, Modifier.weight(1f))
-                        ReportMiniStat("${formatCount(facts.sensitiveAppCount)}", "تطبيق حساس", Icons.Rounded.Shield, V2Violet, Modifier.weight(1f))
-                        ReportMiniStat("${formatCount(facts.installedCount)}", "تطبيق مثبت", Icons.Rounded.Apps, V2Pink, Modifier.weight(1f))
+                        ReportMiniStat(
+                            if (live) formatBytes(facts.storage.freeBytes) else "—",
+                            "مساحة متاحة",
+                            Icons.Rounded.Storage,
+                            V2Cyan,
+                            Modifier.weight(1f),
+                        )
+                        ReportMiniStat(
+                            if (live) formatCount(facts.sensitiveAppCount) else "—",
+                            "تطبيق حساس",
+                            Icons.Rounded.Shield,
+                            V2Violet,
+                            Modifier.weight(1f),
+                        )
+                        ReportMiniStat(
+                            if (live) formatCount(facts.installedCount) else "—",
+                            "تطبيق مثبت",
+                            Icons.Rounded.Apps,
+                            V2Pink,
+                            Modifier.weight(1f),
+                        )
                     }
-                }
-                item { ReportHistoryCard(history = history, onScan = { navigate("deepscan") }) }
-                item { V2SectionLabel("التقارير الأخيرة", trailing = "محلي") }
-                item {
+                    ReportHistoryCard(history = history, onScan = { navigate("deepscan") })
+                    V2SectionLabel("التقارير الأخيرة", trailing = "محلي")
                     ReportRow(
                         "تقرير الأداء الأسبوعي",
                         if (history.size < 2) "غير متاح · تحتاج قراءتين محفوظتين على الأقل"
@@ -540,8 +587,6 @@ fun V2ReportsScreen(
                         V2Amber,
                         { navigate("deepscan") },
                     )
-                }
-                item {
                     ReportRow(
                         "سجل عمليات الفحص",
                         if (history.isEmpty()) "لا فحص محفوظ بعد" else "${history.size} عملية محفوظة محليًا",
@@ -549,26 +594,22 @@ fun V2ReportsScreen(
                         V2Pink,
                         { navigate("deepscan") },
                     )
-                }
-                item {
                     ReportRow(
                         "حالة الخصوصية",
-                        "${formatCount(facts.sensitiveAppCount)} تطبيقًا بأذونات حساسة",
+                        if (live) "${formatCount(facts.sensitiveAppCount)} تطبيقًا بأذونات حساسة" else "—",
                         Icons.Rounded.Shield,
                         V2Violet,
                         { navigate("privacy") },
                     )
-                }
-                item { ServiceSubGrid(ServiceSpecs.reports) }
-                item {
+                    ServiceSubGrid(ServiceSpecs.reports)
                     Spacer(Modifier.height(1.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Rounded.Verified, null, tint = V2Green, modifier = Modifier.size(12.dp))
                         Spacer(Modifier.width(4.dp))
                         KText("البطاقات أعلاه مقروءة من الجهاز. تقرير الاتجاه الأسبوعي غير متاح حتى تتراكم قراءات كافية.", size = 9.sp, color = V2Muted)
                     }
-                }
-            }
+                },
+            )
         }
     }
 }

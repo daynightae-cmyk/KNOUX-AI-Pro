@@ -381,8 +381,17 @@ private fun readBattery(context: Context): BatteryFacts {
     )
 }
 
-private fun readStorage(): StorageFacts = runCatching {
-    val stat = StatFs(Environment.getDataDirectory().absolutePath)
+/**
+ * Real capacity of the volume the app lives on.
+ *
+ * `StatFs("/data")` is blocked on Android 11+ (API 30) — the mount is hidden
+ * from ordinary apps and the call yields zero blocks, which would paint a
+ * measured "0 B" on every storage surface. The app's own data directory sits
+ * on the same volume and is always readable, so it is the path used here; the
+ * reading is verified against [StorageFacts.isMeasured] before it is shown.
+ */
+private fun readStorage(context: Context): StorageFacts = runCatching {
+    val stat = StatFs(context.filesDir.absolutePath)
     val total = stat.blockCountLong * stat.blockSizeLong
     val free = stat.availableBlocksLong * stat.blockSizeLong
     StorageFacts(totalBytes = total, freeBytes = free)
@@ -1145,7 +1154,7 @@ private fun hasUsageAccess(context: Context): Boolean = runCatching {
  */
 internal object DeviceReaders {
     fun battery(context: Context): BatteryFacts = readBattery(context)
-    fun storage(): StorageFacts = readStorage()
+    fun storage(context: Context): StorageFacts = readStorage(context)
     fun installedApps(context: Context): List<InstalledAppFacts> = readInstalledApps(context)
     fun privacyGroups(context: Context, apps: List<InstalledAppFacts>): List<AppPermissionGroup> =
         readPrivacyGroups(context, apps)
@@ -1157,7 +1166,7 @@ internal object DeviceReaders {
 
 fun readDeviceFacts(context: Context, withSizes: Boolean = true): DeviceFacts {
     val battery = readBattery(context)
-    val storage = readStorage()
+    val storage = readStorage(context)
     val apps = readInstalledApps(context, withSizes)
     val cache = ownCacheBytes(context)
     val media = readMedia(context)

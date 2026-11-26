@@ -970,36 +970,55 @@ fun V2ResidueScreen(onBack: () -> Unit, onReview: () -> Unit, onPro: () -> Unit)
         )
     }
 
+    val live = facts.computedAt > 0L
+
     Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.statusBars)) {
         Column(Modifier.fillMaxSize()) {
             V2TopBar(V2TopMode.INTERIOR, onBack = onBack, onPro = onPro)
-            LazyColumn(
-                Modifier.weight(1f),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(9.dp),
-            ) {
-                item {
-                    ServiceBanner(
-                        spec = ServiceSpecs.residue,
-                        status = "كاش KNOUX مقروء",
-                        statusColor = V2Green,
-                        metric = "$cacheText · ${formatCount(facts.ownCacheFiles)} ملف",
-                        showIdentityLine = false,
-                    )
-                }
-                item {
-                    // The universal K orb: the only way this service starts.
+            FixedServiceScreen(
+                spec = ServiceSpecs.residue,
+                status = if (live) "كاش KNOUX مقروء" else "جاري القراءة…",
+                statusColor = if (live) V2Green else V2Amber,
+                metric = if (live) "$cacheText · ${formatCount(facts.ownCacheFiles)} ملف" else "—",
+                scene = { sceneModifier -> ServiceArtScene(ServiceSpecs.residue, sceneModifier) },
+                ribbonSlots = listOf(
+                    HeroRibbonSlot(
+                        Icons.Rounded.Layers,
+                        if (live) formatBytes(cacheBytes) else "—",
+                        "كاش KNOUX",
+                        V2Violet,
+                    ),
+                    HeroRibbonSlot(
+                        Icons.Rounded.Folder,
+                        if (live) formatBytes(filesStats.first) else "—",
+                        "ملفات دائمة",
+                        V2Cyan,
+                    ),
+                    HeroRibbonSlot(
+                        Icons.Rounded.Storage,
+                        if (live) formatBytes(facts.storage.freeBytes) else "—",
+                        "مساحة متاحة",
+                        V2Green,
+                    ),
+                    HeroRibbonSlot(
+                        Icons.Rounded.Apps,
+                        if (live) formatCount(facts.installedCount) else "—",
+                        "تطبيق مثبت",
+                        V2Pink,
+                    ),
+                ),
+                action = {
                     KnouxRunOrbBlock(
                         progress = when {
                             refreshing -> null
-                            facts.computedAt > 0L -> 1f
+                            live -> 1f
                             else -> 0f
                         },
                         running = refreshing,
                         enabled = !refreshing,
                         label = when {
                             refreshing -> "جارٍ قراءة البقايا…"
-                            facts.computedAt > 0L -> "اضغط لإعادة قراءة البقايا"
+                            live -> "اضغط لإعادة قراءة البقايا"
                             else -> "اضغط لتشغيل الخدمة"
                         },
                         accent = V2Violet,
@@ -1011,33 +1030,28 @@ fun V2ResidueScreen(onBack: () -> Unit, onReview: () -> Unit, onPro: () -> Unit)
                             }
                         },
                     )
-                }
-                item {
+                },
+                showIdentityLine = false,
+                content = {
                     ResidueHeroCard(
                         cacheBytes = cacheBytes,
                         fileCount = facts.ownCacheFiles,
                         freeBytes = facts.storage.freeBytes,
                     )
-                }
-                item {
                     RealResidueRow(
                         title = "ذاكرة KNOUX المؤقتة",
                         subtitle = "${formatCount(facts.ownCacheFiles)} ملفًا · ${cacheFiles.firstOrNull()?.name ?: "لا ملفات"}",
-                        value = cacheText,
+                        value = if (live) cacheText else "—",
                         accent = V2Violet,
                         icon = Icons.Rounded.Layers,
                     )
-                }
-                item {
                     RealResidueRow(
                         title = "ملفات KNOUX الدائمة",
                         subtitle = "${formatCount(filesStats.second)} ملفًا · بيانات التطبيق، لا تُحذف تلقائيًا",
-                        value = formatBytes(filesStats.first),
+                        value = if (live) formatBytes(filesStats.first) else "—",
                         accent = V2Cyan,
                         icon = Icons.Rounded.Folder,
                     )
-                }
-                item {
                     RealResidueRow(
                         title = "بقايا التطبيقات الأخرى",
                         subtitle = "Android يحجب كاش التطبيقات الأخرى — افتح إعدادات التخزين",
@@ -1046,8 +1060,6 @@ fun V2ResidueScreen(onBack: () -> Unit, onReview: () -> Unit, onPro: () -> Unit)
                         icon = Icons.Rounded.Storage,
                         onClick = { openStorageSettings(context) },
                     )
-                }
-                item {
                     RealResidueRow(
                         title = "حزم APK المتبقية",
                         subtitle = "غير مقروءة في Scoped Storage على Android 11",
@@ -1055,12 +1067,10 @@ fun V2ResidueScreen(onBack: () -> Unit, onReview: () -> Unit, onPro: () -> Unit)
                         accent = V2Pink,
                         icon = Icons.Rounded.Description,
                     )
-                }
-                if (cacheFiles.isNotEmpty()) {
-                    item { CacheFilesCard(cacheFiles) }
-                }
-                if (lastFreed != null) {
-                    item {
+                    if (cacheFiles.isNotEmpty()) {
+                        CacheFilesCard(cacheFiles)
+                    }
+                    if (lastFreed != null) {
                         V2GlassCard(
                             Modifier.fillMaxWidth(),
                             padding = 10.dp,
@@ -1078,16 +1088,14 @@ fun V2ResidueScreen(onBack: () -> Unit, onReview: () -> Unit, onPro: () -> Unit)
                             }
                         }
                     }
-                }
-                item { ServiceSubGrid(ServiceSpecs.residue) }
-                item { ResidueSafetyCard(cacheBytes) }
-                item {
+                    ServiceSubGrid(ServiceSpecs.residue)
+                    ResidueSafetyCard(cacheBytes)
                     PreviewNote(
                         "القيم المقروءة تخص كاش وملفات KNOUX على هذا الهاتف. كاش التطبيقات الأخرى " +
                             "يظل مقيدًا بنظام Android ويُدار من إعدادات النظام."
                     )
-                }
-            }
+                },
+            )
             V2GradientButton(
                 if (cacheBytes > 0L) "تنظيف $cacheText" else "إعادة الفحص",
                 onClick = {

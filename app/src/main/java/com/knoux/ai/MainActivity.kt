@@ -484,6 +484,7 @@ private fun AppNavHost(
 
         composable(ROUTE_REPORTS) {
             V2ReportsScreen(
+                onBack = goBack,
                 onOpenDetail = { open("performance-report") },
                 onMenu = { open(SETTINGS_ROUTE) },
                 onPro = { open(ROUTE_PRO) },

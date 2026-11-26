@@ -258,7 +258,7 @@ private fun ScopedNotice(text: String, accent: Color = V2Cyan) {
     }
 }
 
-private data class ScopedDocument(
+internal data class ScopedDocument(
     val uri: Uri,
     val name: String,
     val bytes: Long?,
@@ -280,7 +280,7 @@ private fun readSelectedDocument(context: Context, uri: Uri): ScopedDocument {
     }
 }
 
-private fun readScopedFolder(context: Context, tree: Uri, documentId: String): List<ScopedDocument> {
+internal fun readScopedFolder(context: Context, tree: Uri, documentId: String): List<ScopedDocument> {
     val children = DocumentsContract.buildChildDocumentsUriUsingTree(tree, documentId)
     val projection = arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID, DocumentsContract.Document.COLUMN_DISPLAY_NAME,
         DocumentsContract.Document.COLUMN_SIZE, DocumentsContract.Document.COLUMN_MIME_TYPE,

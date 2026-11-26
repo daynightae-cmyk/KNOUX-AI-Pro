@@ -204,7 +204,7 @@ internal class DeepScanViewModel : ViewModel() {
                 battery = DeviceReaders.battery(context),
             )
             DeepScanStage.STORAGE -> facts.copy(
-                storage = DeviceReaders.storage(),
+                storage = DeviceReaders.storage(context),
             )
             DeepScanStage.APPS -> {
                 val apps = DeviceReaders.installedApps(context)
