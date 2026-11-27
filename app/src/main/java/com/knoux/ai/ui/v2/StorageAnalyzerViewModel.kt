@@ -68,6 +68,7 @@ class StorageAnalyzerViewModel(
                 val cacheBytes = facts.ownCacheBytes
                 val otherBytes = (facts.storage.usedBytes - mediaBytes - cacheBytes).coerceAtLeast(0L)
 
+                // Only create scan session after successful fact reading
                 val sessionId = withContext(Dispatchers.IO) {
                     val id = repository.createScanSession(
                         serviceId = SERVICE_ID,
@@ -101,7 +102,7 @@ class StorageAnalyzerViewModel(
                     }
                     repository.completeScanSession(
                         sessionId = id,
-                        status = if (facts.computedAt > 0L) "COMPLETED" else "PARTIAL",
+                        status = if (facts.computedAt > 0L && facts.media.readSucceeded) "COMPLETED" else "PARTIAL",
                         permissionGranted = facts.media.permissionGranted,
                         itemsFound = facts.media.images + facts.media.videos,
                         bytesFound = mediaBytes,
@@ -191,7 +192,9 @@ class StorageAnalyzerViewModel(
                 val ctx = appContext
                 withContext(Dispatchers.IO) { repository.recordConsent(opId, granted = true) }
 
-                val before = withContext(Dispatchers.IO) { ownCacheBytes(ctx).first }
+                // Use the stored measuredBefore from prepareClearOwnCache as the baseline.
+                // Re-measure after the clear to verify actual bytes freed.
+                val before = _state.measuredBefore
                 val freed = withContext(Dispatchers.IO) { clearOwnCache(ctx) }
                 val after = withContext(Dispatchers.IO) { ownCacheBytes(ctx).first }
 
@@ -243,6 +246,9 @@ class StorageAnalyzerViewModel(
 
     fun cancelClearOwnCache() {
         val opId = _state.operationId ?: return
+        // Do not cancel if operation is already executing - the destructive action
+        // has begun and cannot be safely undone mid-flight.
+        if (_state.gate == OperationGate.RUNNING) return
         _state = _state.copy(gate = OperationGate.CANCELLED, operationMessage = "تم الإلغاء بدون أي تغيير")
         launchLatest {
             withContext(Dispatchers.IO) {
