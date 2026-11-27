@@ -184,8 +184,15 @@ class CleaningWorkflowViewModel(application: Application, repository: KnouxRepos
 
     /** Toggle selection with safety invariants.
      * Rejects unknown, stale-session, protected, and keeper URIs.
-     * Preserves the retained-copy invariant for duplicate groups. */
+     * Preserves the retained-copy invariant for duplicate groups.
+     * Rejects changes while a cleanup operation is pending or executing. */
     fun toggleSelection(uri: String, isSelected: Boolean) {
+        // Block selection changes while an operation is pending or executing
+        if (_state.executionStatus == ExecutionStatus.AWAITING_SYSTEM ||
+            _state.executionStatus == ExecutionStatus.EXECUTING) {
+            return
+        }
+
         val currentSelection = _state.selection
         val currentScanResult = _state.scanResult
 
@@ -246,8 +253,15 @@ class CleaningWorkflowViewModel(application: Application, repository: KnouxRepos
         return false
     }
 
-    /** Select all eligible candidates while preserving at least one retained copy per duplicate group. */
+    /** Select all eligible candidates while preserving at least one retained copy per duplicate group.
+     * Rejects changes while a cleanup operation is pending or executing. */
     fun selectAllEligible() {
+        // Block selection changes while an operation is pending or executing
+        if (_state.executionStatus == ExecutionStatus.AWAITING_SYSTEM ||
+            _state.executionStatus == ExecutionStatus.EXECUTING) {
+            return
+        }
+
         val currentScanResult = _state.scanResult ?: return
         val protectedUris = _state.selection.protectedUris
 
@@ -283,6 +297,11 @@ class CleaningWorkflowViewModel(application: Application, repository: KnouxRepos
     }
 
     fun clearSelection() {
+        // Block selection changes while an operation is pending or executing
+        if (_state.executionStatus == ExecutionStatus.AWAITING_SYSTEM ||
+            _state.executionStatus == ExecutionStatus.EXECUTING) {
+            return
+        }
         // Preserve protection state - only clear selected items, not protected
         _state = _state.copy(selection = _state.selection.copy(
             selectedUris = emptySet(),
@@ -291,6 +310,12 @@ class CleaningWorkflowViewModel(application: Application, repository: KnouxRepos
     }
 
     fun addProtected(uri: String) {
+        // Block protection changes while an operation is pending or executing
+        if (_state.executionStatus == ExecutionStatus.AWAITING_SYSTEM ||
+            _state.executionStatus == ExecutionStatus.EXECUTING) {
+            return
+        }
+
         val currentSelection = _state.selection
         val currentScanResult = _state.scanResult
 
@@ -314,6 +339,11 @@ class CleaningWorkflowViewModel(application: Application, repository: KnouxRepos
     }
 
     fun removeProtected(uri: String) {
+        // Block protection changes while an operation is pending or executing
+        if (_state.executionStatus == ExecutionStatus.AWAITING_SYSTEM ||
+            _state.executionStatus == ExecutionStatus.EXECUTING) {
+            return
+        }
         _state = _state.copy(selection = _state.selection.copy(
             protectedUris = _state.selection.protectedUris - uri,
         ))
@@ -342,11 +372,14 @@ class CleaningWorkflowViewModel(application: Application, repository: KnouxRepos
         val protected = _state.selection.protectedUris
         if (selected.any { it in protected }) return
 
+        // Prevent operation replacement while another is pending or executing
+        if (_state.executionStatus == ExecutionStatus.AWAITING_SYSTEM ||
+            _state.executionStatus == ExecutionStatus.EXECUTING) {
+            return
+        }
+
         // Revalidate keeper invariant before preparing operation
         if (wouldViolateKeeperInvariant(selected, _state.scanResult)) return
-
-        // Prevent operation replacement while another is pending
-        if (pendingOperation != null && !pendingOperation!!.completed) return
 
         _state = _state.copy(executionStatus = ExecutionStatus.AWAITING_SYSTEM)
 
@@ -359,12 +392,10 @@ class CleaningWorkflowViewModel(application: Application, repository: KnouxRepos
                 val preOpData = withContext(Dispatchers.IO) {
                     uris.associateWith { uri ->
                         val u = Uri.parse(uri)
-                        val exists = ctx.contentResolver.query(u, arrayOf("_id"), null, null, null)?.use {
-                            it.moveToFirst()
-                        } ?: false
-                        val size = ctx.contentResolver.query(u, arrayOf(android.provider.OpenableColumns.SIZE), null, null, null)?.use {
-                            it.moveToFirst(); it.getLong(0)
-                        } ?: 0L
+                        val cursor = ctx.contentResolver.query(u, arrayOf("_id"), null, null, null)
+                        val exists = cursor?.use { it.moveToFirst() } ?: false
+                        val sizeCursor = ctx.contentResolver.query(u, arrayOf(android.provider.OpenableColumns.SIZE), null, null, null)
+                        val size = sizeCursor?.use { it.moveToFirst(); it.getLong(0) } ?: 0L
                         Pair(exists, size)
                     }
                 }
@@ -647,8 +678,11 @@ class CleaningWorkflowViewModel(application: Application, repository: KnouxRepos
 
     /** Prepare cache cleanup operation with distinct operation type. */
     fun prepareCacheCleanup() {
-        // Prevent operation replacement while another is pending
-        if (pendingOperation != null && !pendingOperation!!.completed) return
+        // Prevent operation replacement while another is pending or executing
+        if (_state.executionStatus == ExecutionStatus.AWAITING_SYSTEM ||
+            _state.executionStatus == ExecutionStatus.EXECUTING) {
+            return
+        }
 
         _state = _state.copy(executionStatus = ExecutionStatus.AWAITING_SYSTEM)
 

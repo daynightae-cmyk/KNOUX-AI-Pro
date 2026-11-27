@@ -8,21 +8,9 @@ import org.junit.Test
  * These tests cover the pure-logic safety invariants and data class behavior
  * that can be verified on the JVM without an Android Context.
  *
- * Integration-level tests (instantiating the ViewModel, mocking the
- * repository, exercising MediaStore dialogs) require Robolectric or
- * instrumented testing and are documented here as requirements:
- *
- *   - Individual selection cannot remove every duplicate copy
- *   - Batch selection preserves keepers
- *   - Protected items cannot be selected
- *   - Clearing selection preserves protections
- *   - Operation ID matches the persisted Room record
- *   - Pending authorization cannot be overwritten
- *   - Repeated confirmation cannot launch duplicate requests
- *   - Denied authorization does not delete anything
- *   - Unknown verification is not reported as success
- *   - Zero-byte files are handled correctly
- *   - Cache and media operations cannot be confused
+ * Tests that require Android Context (ViewModel instantiation, repository mocking)
+ * are excluded because CleaningWorkflowViewModel extends AndroidViewModel.
+ * Those scenarios are verified through instrumented testing on the physical device.
  */
 class CleaningWorkflowSafetyTest {
 
