@@ -1,6 +1,14 @@
 package com.knoux.ai.ui.v2
 
+import android.app.Activity
+import android.app.PendingIntent
 import android.content.Context
+import android.content.IntentSender
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.IntentSenderRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -21,12 +29,14 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.IconButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Apps
 import androidx.compose.material.icons.rounded.BarChart
 import androidx.compose.material.icons.rounded.Cached
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.CleaningServices
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.Folder
@@ -60,6 +70,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 /* ------------------------------------------------------------------ *
  * Smart Clean - fifteen separately routed services
@@ -223,6 +234,21 @@ fun V2CleanToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
         else -> "${formatBytes(storage.freeBytes)} متاحة"
     }
 
+    // Cleaning workflow ViewModel for shared state across 15 routes
+    val workflowViewModel: CleaningWorkflowViewModel = viewModel()
+    val workflowState = workflowViewModel.state
+
+    // Launcher for MediaStore.createDeleteRequest system dialog
+    val deleteRequestLauncher = rememberLauncherForActivityResult<IntentSenderRequest, ActivityResult>(
+        ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            workflowViewModel.onMediaStoreDeleteResult(true)
+        } else {
+            workflowViewModel.onMediaStoreDeleteResult(false)
+        }
+    }
+
     Box(
         Modifier
             .fillMaxSize()
@@ -296,21 +322,21 @@ fun V2CleanToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
                         }
                     }
                     when (tool.route) {
-                        "clean-scope" -> scope.scopeItems(facts, navigate)
-                        "clean-scan" -> scope.scanItems(facts, navigate)
-                        "clean-classify" -> scope.classifyItems(facts, total, other)
-                        "clean-filters" -> scope.filterItems(facts)
-                        "clean-preview" -> scope.previewItems(facts)
-                        "clean-protected" -> scope.protectedItems(facts)
-                        "clean-selection" -> scope.selectionItems(facts, navigate)
-                        "clean-impact" -> scope.impactItems(facts, navigate)
-                        "clean-confirm" -> scope.confirmItems(facts, navigate)
-                        "clean-history" -> scope.historyItems(history, navigate)
-                        "clean-large" -> scope.largeItems(facts, navigate)
-                        "clean-media-mix" -> scope.mediaMixItems(facts, navigate)
-                        "clean-buckets" -> scope.bucketItems(facts, navigate)
-                        "clean-free-plan" -> scope.freePlanItems(facts, navigate)
-                        "clean-cache-audit" -> scope.cacheAuditItems(facts, navigate)
+                        "clean-scope" -> scope.scopeItems(facts, workflowState, workflowViewModel, navigate)
+                        "clean-scan" -> scope.scanItems(facts, workflowState, workflowViewModel, navigate)
+                        "clean-classify" -> scope.classifyItems(facts, workflowState, workflowViewModel, total, other)
+                        "clean-filters" -> scope.filterItems(facts, workflowState, workflowViewModel)
+                        "clean-preview" -> scope.previewItems(facts, workflowState, workflowViewModel)
+                        "clean-protected" -> scope.protectedItems(facts, workflowState, workflowViewModel)
+                        "clean-selection" -> scope.selectionItems(facts, workflowState, workflowViewModel, navigate)
+                        "clean-impact" -> scope.impactItems(facts, workflowState, workflowViewModel, navigate)
+                        "clean-confirm" -> scope.confirmItems(facts, workflowState, workflowViewModel, navigate, deleteRequestLauncher)
+                        "clean-history" -> scope.historyItems(history, workflowState, workflowViewModel, navigate)
+                        "clean-large" -> scope.largeItems(facts, workflowState, workflowViewModel, navigate)
+                        "clean-media-mix" -> scope.mediaMixItems(facts, workflowState, workflowViewModel, navigate)
+                        "clean-buckets" -> scope.bucketItems(facts, workflowState, workflowViewModel, navigate)
+                        "clean-free-plan" -> scope.freePlanItems(facts, workflowState, workflowViewModel, navigate)
+                        "clean-cache-audit" -> scope.cacheAuditItems(facts, workflowState, workflowViewModel, navigate)
                     }
                 }
                 item {
@@ -336,7 +362,12 @@ fun V2CleanToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
 
 /* ----------------------------- content ----------------------------- */
 
-private fun androidx.compose.foundation.lazy.LazyListScope.scopeItems(facts: DeviceFacts, navigate: (String) -> Unit) {
+private fun androidx.compose.foundation.lazy.LazyListScope.scopeItems(
+    facts: DeviceFacts,
+    workflowState: CleaningWorkflowState,
+    workflowViewModel: CleaningWorkflowViewModel,
+    navigate: (String) -> Unit,
+) {
     item { V2SectionLabel("نطاق القراءة", trailing = "هذا الهاتف") }
     item {
         V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 20.dp, glow = V2Cyan, borderAlpha = .32f) {
@@ -357,9 +388,57 @@ private fun androidx.compose.foundation.lazy.LazyListScope.scopeItems(facts: Dev
             onClick = { navigate("storage-breakdown") },
         )
     }
+    // Show scan status from workflow
+    if (workflowState.scanStatus != ScanStatus.IDLE) {
+        item {
+            V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 16.dp, glow = V2Cyan, borderAlpha = .24f) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row {
+                        V2IconTile(Icons.Rounded.Radar, V2Cyan, size = 28.dp, iconSize = 14.dp)
+                        Spacer(Modifier.width(8.dp))
+                        Column(Modifier.weight(1f)) {
+                            KText("حالة الفحص: ${workflowState.scanMessage}", size = 9.5.sp, weight = FontWeight.Bold, color = V2Cyan)
+                            if (workflowState.scanProgress > 0f) {
+                                androidx.compose.foundation.layout.Box(
+                                    Modifier.fillMaxWidth().height(4.dp).background(V2Cyan.withAlpha(.15f)),
+                                    contentAlignment = Alignment.CenterStart,
+                                ) {
+                                    androidx.compose.foundation.layout.Box(
+                                        Modifier
+                                            .width((workflowState.scanProgress * 100).toInt().dp)
+                                            .height(4.dp)
+                                            .background(V2Cyan)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    item {
+        CleanActionCard(
+            title = if (workflowState.scanStatus == ScanStatus.SCANNING) "جاري الفحص..." else "بدء فحص كامل",
+            body = "فحص التخزين والتطبيقات والوسائط والكاش مع حفظ النتيجة في السجل المحلي.",
+            action = if (workflowState.scanStatus == ScanStatus.SCANNING) "انتظر" else "بدء الفحص",
+            icon = Icons.Rounded.Radar,
+            onClick = {
+                if (workflowState.scanStatus != ScanStatus.SCANNING) {
+                    workflowViewModel.startFullScan()
+                }
+            },
+            enabled = workflowState.scanStatus != ScanStatus.SCANNING,
+        )
+    }
 }
 
-private fun androidx.compose.foundation.lazy.LazyListScope.scanItems(facts: DeviceFacts, navigate: (String) -> Unit) {
+private fun androidx.compose.foundation.lazy.LazyListScope.scanItems(
+    facts: DeviceFacts,
+    workflowState: CleaningWorkflowState,
+    workflowViewModel: CleaningWorkflowViewModel,
+    navigate: (String) -> Unit,
+) {
     item { V2SectionLabel("نتيجة الفحص", trailing = if (facts.computedAt > 0L) "مباشر" else "بانتظار القراءة") }
     item {
         V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 20.dp, glow = V2Cyan, borderAlpha = .34f) {
@@ -384,9 +463,30 @@ private fun androidx.compose.foundation.lazy.LazyListScope.scanItems(facts: Devi
             onClick = { navigate("deepscan") },
         )
     }
+    // Show workflow scan results if available
+    workflowState.scanResult?.let { result ->
+        item { V2SectionLabel("نتائج الفحص المشترك", trailing = "${result.duplicateGroups.size} مجموعة تكرار") }
+        item {
+            V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 16.dp, glow = V2Cyan, borderAlpha = .24f) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    CleanFactRow(Icons.Rounded.Layers, "مجموعات التكرار", "${result.duplicateGroups.size}", V2Violet)
+                    CleanFactRow(Icons.Rounded.Delete, "مساحة قابلة للاسترجاع", formatBytes(result.reclaimableDuplicateBytes), V2Pink)
+                    CleanFactRow(Icons.Rounded.Cached, "كاش KNOUX", formatBytes(result.cacheBytes), V2Amber)
+                    CleanFactRow(Icons.Rounded.Image, "الصور", formatBytes(result.imagesBytes), V2Pink)
+                    CleanFactRow(Icons.Rounded.Layers, "الفيديو", formatBytes(result.videosBytes), V2Violet)
+                }
+            }
+        }
+    }
 }
 
-private fun androidx.compose.foundation.lazy.LazyListScope.classifyItems(facts: DeviceFacts, total: Long, other: Long) {
+private fun androidx.compose.foundation.lazy.LazyListScope.classifyItems(
+    facts: DeviceFacts,
+    workflowState: CleaningWorkflowState,
+    workflowViewModel: CleaningWorkflowViewModel,
+    total: Long,
+    other: Long,
+) {
     item { V2SectionLabel("التصنيف", trailing = "من MediaStore") }
     item {
         V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 20.dp, glow = V2Violet, borderAlpha = .32f) {
@@ -422,13 +522,17 @@ private fun androidx.compose.foundation.lazy.LazyListScope.classifyItems(facts: 
     }
 }
 
-private fun androidx.compose.foundation.lazy.LazyListScope.filterItems(facts: DeviceFacts) {
-    item { FilterBody(facts) }
+private fun androidx.compose.foundation.lazy.LazyListScope.filterItems(
+    facts: DeviceFacts,
+    workflowState: CleaningWorkflowState,
+    workflowViewModel: CleaningWorkflowViewModel,
+) {
+    item { FilterBody(facts, workflowViewModel) }
     item { PreviewNote("عمر الملف غير مقروء في هذه النسخة لأن MediaStore لم يُطلب منه DATE_ADDED بعد؛ لا نعرض عمرًا تقديريًا.") }
 }
 
 @Composable
-private fun FilterBody(facts: DeviceFacts) {
+private fun FilterBody(facts: DeviceFacts, workflowViewModel: CleaningWorkflowViewModel) {
     var minMb by remember { mutableIntStateOf(50) }
     val filtered = facts.media.largestFiles.filter { it.sizeBytes >= minMb.toLong() * 1024L * 1024L }
     V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 20.dp, glow = V2Amber, borderAlpha = .32f) {
@@ -457,11 +561,19 @@ private fun FilterBody(facts: DeviceFacts) {
                 size = 9.sp,
                 color = V2Muted,
             )
+            // Sync with workflow filter state
+            if (workflowViewModel.state.filterState.minSizeMb != minMb) {
+                workflowViewModel.applyFilter(minMb)
+            }
         }
     }
 }
 
-private fun androidx.compose.foundation.lazy.LazyListScope.previewItems(facts: DeviceFacts) {
+private fun androidx.compose.foundation.lazy.LazyListScope.previewItems(
+    facts: DeviceFacts,
+    workflowState: CleaningWorkflowState,
+    workflowViewModel: CleaningWorkflowViewModel,
+) {
     item { V2SectionLabel("أكبر الملفات", trailing = if (facts.media.permissionGranted) "MediaStore" else "بعد المنح") }
     if (!facts.media.permissionGranted) {
         item {
@@ -488,10 +600,22 @@ private fun androidx.compose.foundation.lazy.LazyListScope.previewItems(facts: D
                 )
             }
         }
+        // Show workflow selection state
+        if (workflowState.selection.selectedUris.isNotEmpty()) {
+            item {
+                V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 16.dp, glow = V2Cyan, borderAlpha = .24f) {
+                    KText("${workflowState.selection.selectedUris.size} ملف محدد · ${formatBytes(workflowState.selection.selectedBytes)}", size = 9.sp, color = V2Cyan)
+                }
+            }
+        }
     }
 }
 
-private fun androidx.compose.foundation.lazy.LazyListScope.protectedItems(facts: DeviceFacts) {
+private fun androidx.compose.foundation.lazy.LazyListScope.protectedItems(
+    facts: DeviceFacts,
+    workflowState: CleaningWorkflowState,
+    workflowViewModel: CleaningWorkflowViewModel,
+) {
     item {
         V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 20.dp, glow = V2Green, borderAlpha = .34f) {
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -521,9 +645,32 @@ private fun androidx.compose.foundation.lazy.LazyListScope.protectedItems(facts:
             }
         }
     }
+    // Show protected items from workflow
+    if (workflowState.selection.protectedUris.isNotEmpty()) {
+        item { V2SectionLabel("ملفات محمية في الجلسة", trailing = "${workflowState.selection.protectedUris.size} ملف") }
+        workflowState.selection.protectedUris.take(5).forEach { uri ->
+            item {
+                V2GlassCard(Modifier.fillMaxWidth(), padding = 10.dp, radius = 12.dp, glow = V2Green, borderAlpha = .2f) {
+                    Row {
+                        Icon(Icons.Rounded.Shield, null, tint = V2Green, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(8.dp))
+                        KText(uri.take(60), size = 9.sp, color = V2Soft, modifier = Modifier.weight(1f))
+                        IconButton(onClick = { workflowViewModel.removeProtected(uri) }) {
+                            Icon(Icons.Rounded.Close, null, tint = V2Amber, modifier = Modifier.size(16.dp))
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
-private fun androidx.compose.foundation.lazy.LazyListScope.selectionItems(facts: DeviceFacts, navigate: (String) -> Unit) {
+private fun androidx.compose.foundation.lazy.LazyListScope.selectionItems(
+    facts: DeviceFacts,
+    workflowState: CleaningWorkflowState,
+    workflowViewModel: CleaningWorkflowViewModel,
+    navigate: (String) -> Unit,
+) {
     item { V2SectionLabel("مجموعات حقيقية", trailing = "${facts.media.duplicateGroups.size} مجموعة") }
     if (facts.media.duplicateGroups.isEmpty()) {
         item {
@@ -552,9 +699,46 @@ private fun androidx.compose.foundation.lazy.LazyListScope.selectionItems(facts:
             onClick = { navigate("duplicates") },
         )
     }
+    // Show workflow selection state
+    if (workflowState.selection.selectedUris.isNotEmpty()) {
+        item { V2SectionLabel("التحديد الحالي", trailing = "${workflowState.selection.selectedUris.size} ملف · ${formatBytes(workflowState.selection.selectedBytes)}") }
+        item {
+            V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 16.dp, glow = V2Cyan, borderAlpha = .24f) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row {
+                        KText("ملفات محددة: ${workflowState.selection.selectedUris.size}", size = 9.sp, weight = FontWeight.Bold, color = V2Cyan)
+                        Spacer(Modifier.width(8.dp))
+                        KText("إجمالي: ${formatBytes(workflowState.selection.selectedBytes)}", size = 9.sp, color = V2Soft)
+                    }
+                    Row {
+                        CleanActionCard(
+                            title = "تحديد الكل المؤهل",
+                            body = "يحدد جميع الملفات القابلة للحذف مع استثناء المحمية",
+                            action = "تحديد",
+                            icon = Icons.Rounded.CheckCircle,
+                            onClick = { workflowViewModel.selectAllEligible() },
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        CleanActionCard(
+                            title = "إلغاء التحديد",
+                            body = "يمسح كل التحديدات الحالية",
+                            action = "مسح",
+                            icon = Icons.Rounded.Delete,
+                            onClick = { workflowViewModel.clearSelection() },
+                        )
+                    }
+                }
+            }
+        }
+    }
 }
 
-private fun androidx.compose.foundation.lazy.LazyListScope.impactItems(facts: DeviceFacts, navigate: (String) -> Unit) {
+private fun androidx.compose.foundation.lazy.LazyListScope.impactItems(
+    facts: DeviceFacts,
+    workflowState: CleaningWorkflowState,
+    workflowViewModel: CleaningWorkflowViewModel,
+    navigate: (String) -> Unit,
+) {
     item { V2SectionLabel("المساحة الآن", trailing = "${(facts.storage.usedFraction * 100).toInt()}% مستخدمة") }
     item {
         V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 20.dp, glow = V2Cyan, borderAlpha = .34f) {
@@ -584,9 +768,28 @@ private fun androidx.compose.foundation.lazy.LazyListScope.impactItems(facts: De
             onClick = { navigate("storage-breakdown") },
         )
     }
+    // Show workflow impact if selection exists
+    if (workflowState.selection.selectedUris.isNotEmpty()) {
+        item { V2SectionLabel("أثر التحديد الحالي", trailing = "مباشر") }
+        item {
+            V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 16.dp, glow = V2Pink, borderAlpha = .24f) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    CleanFactRow(Icons.Rounded.Delete, "سيتم تحرير", formatBytes(workflowState.selection.selectedBytes), V2Pink)
+                    CleanFactRow(Icons.Rounded.CheckCircle, "ملفات محددة", "${workflowState.selection.selectedUris.size}", V2Cyan)
+                    CleanFactRow(Icons.Rounded.Shield, "محمية", "${workflowState.selection.protectedUris.size}", V2Green)
+                }
+            }
+        }
+    }
 }
 
-private fun androidx.compose.foundation.lazy.LazyListScope.confirmItems(facts: DeviceFacts, navigate: (String) -> Unit) {
+private fun androidx.compose.foundation.lazy.LazyListScope.confirmItems(
+    facts: DeviceFacts,
+    workflowState: CleaningWorkflowState,
+    workflowViewModel: CleaningWorkflowViewModel,
+    navigate: (String) -> Unit,
+    deleteRequestLauncher: ActivityResultLauncher<IntentSenderRequest>,
+) {
     item {
         V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 20.dp, glow = V2Pink, borderAlpha = .34f) {
             Column {
@@ -619,9 +822,50 @@ private fun androidx.compose.foundation.lazy.LazyListScope.confirmItems(facts: D
             onClick = { navigate("duplicates") },
         )
     }
+    // Show workflow confirmation state
+    if (workflowState.executionStatus == ExecutionStatus.AWAITING_SYSTEM) {
+        item { V2SectionLabel("في انتظار التأكيد", trailing = "اضغط للتأكيد") }
+        item {
+            V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 16.dp, glow = V2Amber, borderAlpha = .3f) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    KText("هناك ${workflowState.selection.selectedUris.size} ملف جاهز للحذف", size = 9.sp, weight = FontWeight.Bold, color = V2Amber)
+                    KText("المساحة المحررة: ${formatBytes(workflowState.selection.selectedBytes)}", size = 9.sp, color = V2Soft)
+                    KText(workflowState.executionMessage ?: "في انتظار تأكيدك", size = 8.sp, color = V2Muted)
+                    Row {
+                        CleanActionCard(
+                            title = "تأكيد الحذف",
+                            body = "سيتم عرض حوار Android الرسمي للحذف",
+                            action = "تأكيد",
+                            icon = Icons.Rounded.CheckCircle,
+                            onClick = {
+                                workflowViewModel.confirmCleanupExecution { pendingIntent ->
+                                    deleteRequestLauncher.launch(
+                                        androidx.activity.result.IntentSenderRequest.Builder(pendingIntent.intentSender).build()
+                                    )
+                                }
+                            },
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        CleanActionCard(
+                            title = "إلغاء",
+                            body = "إلغاء عملية الحذف",
+                            action = "إلغاء",
+                            icon = Icons.Rounded.Close,
+                            onClick = { workflowViewModel.cancelCurrentOperation() },
+                        )
+                    }
+                }
+            }
+        }
+    }
 }
 
-private fun androidx.compose.foundation.lazy.LazyListScope.historyItems(history: List<ScanHistoryEntry>, navigate: (String) -> Unit) {
+private fun androidx.compose.foundation.lazy.LazyListScope.historyItems(
+    history: List<ScanHistoryEntry>,
+    workflowState: CleaningWorkflowState,
+    workflowViewModel: CleaningWorkflowViewModel,
+    navigate: (String) -> Unit,
+) {
     item { V2SectionLabel("آخر القراءات", trailing = "${history.size}/24") }
     if (history.isEmpty()) {
         item {
@@ -659,12 +903,31 @@ private fun androidx.compose.foundation.lazy.LazyListScope.historyItems(history:
             onClick = { navigate("performance-report") },
         )
     }
+    // Show workflow operation history if available
+    workflowState.lastOperationResult?.let { opResult ->
+        item { V2SectionLabel("آخر عملية تنظيف", trailing = "من الجلسة الحالية") }
+        item {
+            V2GlassCard(Modifier.fillMaxWidth(), padding = 10.dp, radius = 16.dp, glow = V2Pink, borderAlpha = .24f) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    V2IconTile(Icons.Rounded.Delete, V2Pink, size = 34.dp, iconSize = 17.dp)
+                    Spacer(Modifier.width(8.dp))
+                    Column(Modifier.weight(1f)) {
+                        KText("تم في ${formatScanTime(opResult.timestamp)}", size = 9.2.sp, weight = FontWeight.Bold)
+                        KText("${formatCount(opResult.deletedCount)} ملف محذوف · ${formatBytes(opResult.freedBytes)} محررة", size = 9.sp, color = V2Soft)
+                    }
+                    KText("${opResult.failedCount} فشل", size = 9.sp, weight = FontWeight.Bold, color = if (opResult.failedCount > 0) V2Red else V2Green)
+                }
+            }
+        }
+    }
 }
 
 /* ---------------------- expanded lenses ---------------------- */
 
 private fun androidx.compose.foundation.lazy.LazyListScope.largeItems(
     facts: DeviceFacts,
+    workflowState: CleaningWorkflowState,
+    workflowViewModel: CleaningWorkflowViewModel,
     navigate: (String) -> Unit,
 ) {
     item { V2SectionLabel("أكبر الملفات", trailing = if (facts.media.permissionGranted) "MediaStore" else "بعد المنح") }
@@ -701,10 +964,16 @@ private fun androidx.compose.foundation.lazy.LazyListScope.largeItems(
             onClick = { navigate("duplicates") },
         )
     }
+    // Show workflow selection state
+    if (workflowState.selection.selectedUris.isNotEmpty()) {
+        item { V2SectionLabel("التحديد الحالي", trailing = "${workflowState.selection.selectedUris.size} ملف · ${formatBytes(workflowState.selection.selectedBytes)}") }
+    }
 }
 
 private fun androidx.compose.foundation.lazy.LazyListScope.mediaMixItems(
     facts: DeviceFacts,
+    workflowState: CleaningWorkflowState,
+    workflowViewModel: CleaningWorkflowViewModel,
     navigate: (String) -> Unit,
 ) {
     item { V2SectionLabel("مزيج الوسائط", trailing = if (facts.media.permissionGranted) "مباشر" else "بعد المنح") }
@@ -735,9 +1004,18 @@ private fun androidx.compose.foundation.lazy.LazyListScope.mediaMixItems(
             onClick = { navigate("storage") },
         )
     }
+    // Show workflow selection state
+    if (workflowState.selection.selectedUris.isNotEmpty()) {
+        item { V2SectionLabel("التحديد الحالي", trailing = "${workflowState.selection.selectedUris.size} ملف · ${formatBytes(workflowState.selection.selectedBytes)}") }
+    }
 }
 
-private fun androidx.compose.foundation.lazy.LazyListScope.bucketItems(facts: DeviceFacts, navigate: (String) -> Unit) {
+private fun androidx.compose.foundation.lazy.LazyListScope.bucketItems(
+    facts: DeviceFacts,
+    workflowState: CleaningWorkflowState,
+    workflowViewModel: CleaningWorkflowViewModel,
+    navigate: (String) -> Unit,
+) {
     item { V2SectionLabel("المجلدات الأثقل", trailing = if (facts.media.permissionGranted) "من الملفات المقروءة" else "بعد المنح") }
     if (!facts.media.permissionGranted || facts.media.largestFiles.isEmpty()) {
         item {
@@ -773,9 +1051,22 @@ private fun androidx.compose.foundation.lazy.LazyListScope.bucketItems(facts: De
             onClick = { navigate("clean-large") },
         )
     }
+    // Show workflow buckets if available
+    workflowState.scanResult?.buckets?.take(5)?.forEach { bucket ->
+        item {
+            V2GlassCard(Modifier.fillMaxWidth(), padding = 10.dp, radius = 12.dp, glow = V2Violet, borderAlpha = .2f) {
+                CleanFactRow(Icons.Rounded.Folder, bucket.name, "${formatCount(bucket.fileCount)} ملف · ${formatBytes(bucket.totalBytes)}", V2Violet)
+            }
+        }
+    }
 }
 
-private fun androidx.compose.foundation.lazy.LazyListScope.freePlanItems(facts: DeviceFacts, navigate: (String) -> Unit) {
+private fun androidx.compose.foundation.lazy.LazyListScope.freePlanItems(
+    facts: DeviceFacts,
+    workflowState: CleaningWorkflowState,
+    workflowViewModel: CleaningWorkflowViewModel,
+    navigate: (String) -> Unit,
+) {
     item { V2SectionLabel("خطة المساحة", trailing = "قراءة مباشرة") }
     item {
         V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 20.dp, glow = V2Cyan, borderAlpha = .32f) {
@@ -801,9 +1092,26 @@ private fun androidx.compose.foundation.lazy.LazyListScope.freePlanItems(facts: 
             onClick = { navigate("smartclean") },
         )
     }
+    // Show workflow selection impact
+    if (workflowState.selection.selectedUris.isNotEmpty()) {
+        item { V2SectionLabel("أثر الخطة الحالية", trailing = "مباشر") }
+        item {
+            V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 16.dp, glow = V2Cyan, borderAlpha = .24f) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    CleanFactRow(Icons.Rounded.Delete, "تحرير مخطط", formatBytes(workflowState.selection.selectedBytes), V2Pink)
+                    CleanFactRow(Icons.Rounded.CheckCircle, "ملفات محددة", "${workflowState.selection.selectedUris.size}", V2Cyan)
+                }
+            }
+        }
+    }
 }
 
-private fun androidx.compose.foundation.lazy.LazyListScope.cacheAuditItems(facts: DeviceFacts, navigate: (String) -> Unit) {
+private fun androidx.compose.foundation.lazy.LazyListScope.cacheAuditItems(
+    facts: DeviceFacts,
+    workflowState: CleaningWorkflowState,
+    workflowViewModel: CleaningWorkflowViewModel,
+    navigate: (String) -> Unit,
+) {
     item { V2SectionLabel("كاش KNOUX", trailing = "داخل التطبيق") }
     item {
         V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 20.dp, glow = V2Green, borderAlpha = .34f) {
@@ -828,6 +1136,36 @@ private fun androidx.compose.foundation.lazy.LazyListScope.cacheAuditItems(facts
             icon = Icons.Rounded.CleaningServices,
             onClick = { navigate("smartclean") },
         )
+    }
+    // Show workflow cache audit
+    if (workflowState.executionStatus == ExecutionStatus.AWAITING_SYSTEM && workflowState.scanResult != null) {
+        item { V2SectionLabel("تنظيف الكاش", trailing = "جاهز للتنفيذ") }
+        item {
+            V2GlassCard(Modifier.fillMaxWidth(), padding = 12.dp, radius = 16.dp, glow = V2Green, borderAlpha = .3f) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    KText("كاش KNOUX الحالي: ${formatBytes(workflowState.scanResult!!.cacheBytes)}", size = 9.sp, weight = FontWeight.Bold, color = V2Green)
+                    KText("عدد الملفات: ${workflowState.scanResult!!.cacheFiles}", size = 9.sp, color = V2Soft)
+                    KText("سيتم تحرير المساحة بعد تأكيدك", size = 8.sp, color = V2Muted)
+                    Row {
+                        CleanActionCard(
+                            title = "تأكيد تنظيف الكاش",
+                            body = "سيتم حذف ملفات الكاش المؤقتة فقط",
+                            action = "تأكيد",
+                            icon = Icons.Rounded.Cached,
+                            onClick = { workflowViewModel.confirmClearOwnCacheExecution() },
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        CleanActionCard(
+                            title = "إلغاء",
+                            body = "إلغاء تنظيف الكاش",
+                            action = "إلغاء",
+                            icon = Icons.Rounded.Close,
+                            onClick = { workflowViewModel.cancelCurrentOperation() },
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -865,17 +1203,18 @@ private fun CleanActionCard(
     action: String,
     icon: ImageVector,
     onClick: () -> Unit,
+    enabled: Boolean = true,
 ) {
     V2GlassCard(Modifier.fillMaxWidth(), padding = 10.dp, radius = 17.dp, glow = V2Cyan, borderAlpha = .26f) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            V2IconTile(icon, V2Cyan, size = 34.dp, iconSize = 17.dp)
+            V2IconTile(icon, if (enabled) V2Cyan else V2Muted, size = 34.dp, iconSize = 17.dp)
             Spacer(Modifier.width(8.dp))
             Column(Modifier.weight(1f)) {
-                KText(title, size = 9.4.sp, weight = FontWeight.Bold)
-                KText(body, size = 9.sp, lineHeight = 10.6.sp, color = V2Soft)
+                KText(title, size = 9.4.sp, weight = FontWeight.Bold, color = if (enabled) Color.Unspecified else V2Muted)
+                KText(body, size = 9.sp, lineHeight = 10.6.sp, color = if (enabled) V2Soft else V2Muted)
             }
-            androidx.compose.material3.TextButton(onClick = onClick) {
-                androidx.compose.material3.Text(action, color = V2Cyan, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            androidx.compose.material3.TextButton(onClick = onClick, enabled = enabled) {
+                androidx.compose.material3.Text(action, color = if (enabled) V2Cyan else V2Muted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
             }
         }
     }

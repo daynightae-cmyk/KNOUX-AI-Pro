@@ -1,6 +1,12 @@
 package com.knoux.ai.ui.v2
 
 import android.app.Application
+import android.content.Context
+import android.content.Intent
+import android.content.IntentSender
+import android.net.Uri
+import android.provider.MediaStore
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -10,6 +16,14 @@ import com.knoux.ai.database.OperationRequestEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.UUID
+
+/** Result of MediaStore deletion with per-item outcomes. */
+data class MediaStoreDeletionResult(
+    val freedBytes: Long,
+    val deletedCount: Int,
+    val failedCount: Int,
+    val itemResults: List<OperationItemOutcomeEntity>,
+)
 
 /** Shared state for the 15-route cleaning workflow. */
 class CleaningWorkflowViewModel(application: Application, repository: KnouxRepository) :
@@ -178,10 +192,16 @@ class CleaningWorkflowViewModel(application: Application, repository: KnouxRepos
         ))
     }
 
-    /** Execute the actual cleanup with Android-mediated deletion. */
-    fun executeCleanup(
-        onSystemDialogNeeded: (String) -> Unit,
-    ) {
+    fun removeProtected(uri: String) {
+        _state = _state.copy(selection = _state.selection.copy(
+            protectedUris = _state.selection.protectedUris - uri,
+        ))
+    }
+
+    /** Execute the actual cleanup with Android-mediated deletion.
+     *  Prepares the operation and sets state to AWAITING_SYSTEM.
+     *  The confirmation screen must call confirmCleanupExecution() after user confirms. */
+    fun executeCleanup() {
         val selected = _state.selection.selectedUris
         if (selected.isEmpty() || _state.scanResult == null) return
 
@@ -204,33 +224,45 @@ class CleaningWorkflowViewModel(application: Application, repository: KnouxRepos
                 _state = _state.copy(
                     executionStatus = ExecutionStatus.AWAITING_SYSTEM,
                     currentOperationId = opId,
+                    executionMessage = "في انتظار تأكيدك للحذف",
                 )
+            } catch (e: Exception) {
+                _state = _state.copy(
+                    executionStatus = ExecutionStatus.FAILED,
+                    executionMessage = "فشل التحضير: ${e.message ?: "خطأ غير معروف"}",
+                )
+            }
+        }
+    }
 
+    /** Called after user explicitly confirms deletion on the confirmation screen.
+     *  Executes MediaStore.createDeleteRequest for proper Android-mediated deletion. */
+    fun confirmCleanupExecution(onSystemDialogNeeded: (android.app.PendingIntent) -> Unit) {
+        val selected = _state.selection.selectedUris
+        val opId = _state.currentOperationId
+        if (selected.isEmpty() || opId == null || _state.scanResult == null) return
+
+        _state = _state.copy(executionStatus = ExecutionStatus.EXECUTING)
+
+        launchLatest {
+            try {
                 withContext(Dispatchers.IO) { repository.recordConsent(opId, granted = true) }
 
-                val uris = selected.map { android.net.Uri.parse(it) }.toList()
-                val (freed, deletedCount, failedCount) = withContext(Dispatchers.IO) {
-                    executeMediaStoreDeletion(uris)
+                val uris = selected.map { Uri.parse(it) }.toList()
+
+                // Use MediaStore.createDeleteRequest for proper Android-mediated deletion
+                val result = withContext(Dispatchers.IO) {
+                    executeMediaStoreDeletionWithAuth(uris, onSystemDialogNeeded)
                 }
 
-                val after = withContext(Dispatchers.IO) { readDeviceFacts(appContext) }
-                DeviceFactsCache.publish(after)
+                val afterFacts = withContext(Dispatchers.IO) { readDeviceFacts(appContext) }
+                DeviceFactsCache.publish(afterFacts)
 
                 withContext(Dispatchers.IO) {
                     repository.recordItemOutcomes(
                         opId,
-                        uris.map { uri ->
-                            OperationItemOutcomeEntity(
-                                operationId = opId,
-                                itemId = uri.toString(),
-                                result = if (deletedCount > 0) "SUCCESS" else "FAILED",
-                                postQueryExists = false,
-                                measuredBytes = freed / deletedCount.coerceAtLeast(1),
-                                providerError = if (failedCount > 0) "partial" else null,
-                                completedAt = System.currentTimeMillis(),
-                            )
-                        },
-                        finalStatus = if (failedCount == 0) "VERIFIED" else "PARTIAL",
+                        result.itemResults,
+                        finalStatus = if (result.failedCount == 0) "VERIFIED" else "PARTIAL",
                     )
                 }
 
@@ -242,9 +274,9 @@ class CleaningWorkflowViewModel(application: Application, repository: KnouxRepos
                     scanResult = _state.scanResult,
                     selection = SelectionState(),
                     lastOperationResult = OperationResult(
-                        freedBytes = freed,
-                        deletedCount = deletedCount,
-                        failedCount = failedCount,
+                        freedBytes = result.freedBytes,
+                        deletedCount = result.deletedCount,
+                        failedCount = result.failedCount,
                         timestamp = System.currentTimeMillis(),
                     ),
                 )
@@ -260,28 +292,256 @@ class CleaningWorkflowViewModel(application: Application, repository: KnouxRepos
         }
     }
 
-    private suspend fun executeMediaStoreDeletion(uris: List<android.net.Uri>): Triple<Long, Int, Int> {
+    private suspend fun executeMediaStoreDeletionWithAuth(
+        uris: List<Uri>,
+        onSystemDialogNeeded: (android.app.PendingIntent) -> Unit,
+    ): MediaStoreDeletionResult {
         var freed = 0L
         var deleted = 0
         var failed = 0
+        val itemResults = mutableListOf<OperationItemOutcomeEntity>()
+
+        val ctx = appContext
+
+        // For Android 11+ (API 30+), use MediaStore.createDeleteRequest for proper authorization
+        if (android.os.Build.VERSION.SDK_INT >= 30 && uris.isNotEmpty()) {
+            try {
+                val deleteRequest = MediaStore.createDeleteRequest(ctx.contentResolver, uris)
+                if (deleteRequest != null) {
+                    // Launch the system dialog - this must be handled by the calling Activity
+                    onSystemDialogNeeded(deleteRequest)
+                    // After user confirms, we'll do per-item verification in the callback
+                    // For now, return empty results - the actual results will be recorded
+                    // after the system dialog completes via the activity result
+                    return MediaStoreDeletionResult(0L, 0, 0, emptyList())
+                }
+            } catch (_: Exception) {
+                // Fall back to direct deletion
+            }
+        }
+
+        // Fallback: direct deletion with per-item verification (for older Android or if createDeleteRequest unavailable)
         uris.forEach { uri ->
             try {
                 val ctx = appContext
                 val size = ctx.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.SIZE), null, null, null)?.use {
                     it.moveToFirst(); it.getLong(0)
                 } ?: 0L
+
+                // Check if URI exists before deletion
+                val existsBefore = ctx.contentResolver.query(uri, arrayOf("_id"), null, null, null)?.use {
+                    it.moveToFirst()
+                } ?: false
+
                 val result = ctx.contentResolver.delete(uri, null, null)
-                if (result > 0) {
+
+                // Post-operation verification: check if URI actually gone
+                val existsAfter = ctx.contentResolver.query(uri, arrayOf("_id"), null, null, null)?.use {
+                    it.moveToFirst()
+                } ?: false
+
+                val verified = existsBefore && !existsAfter
+                if (verified) {
                     freed += size
                     deleted++
-                } else {
+                    itemResults.add(OperationItemOutcomeEntity(
+                        operationId = _state.currentOperationId ?: "",
+                        itemId = uri.toString(),
+                        result = "SUCCESS",
+                        postQueryExists = false,
+                        measuredBytes = size,
+                        providerError = null,
+                        completedAt = System.currentTimeMillis(),
+                    ))
+                } else if (existsBefore && existsAfter) {
+                    // Still exists - deletion failed
                     failed++
+                    itemResults.add(OperationItemOutcomeEntity(
+                        operationId = _state.currentOperationId ?: "",
+                        itemId = uri.toString(),
+                        result = "FAILED",
+                        postQueryExists = true,
+                        measuredBytes = 0L,
+                        providerError = "Deletion did not remove the item",
+                        completedAt = System.currentTimeMillis(),
+                    ))
+                } else {
+                    // Didn't exist before or unknown
+                    failed++
+                    itemResults.add(OperationItemOutcomeEntity(
+                        operationId = _state.currentOperationId ?: "",
+                        itemId = uri.toString(),
+                        result = "NOT_FOUND",
+                        postQueryExists = false,
+                        measuredBytes = 0L,
+                        providerError = "Item not found or already deleted",
+                        completedAt = System.currentTimeMillis(),
+                    ))
                 }
-            } catch (_: Exception) {
+            } catch (e: Exception) {
                 failed++
+                itemResults.add(OperationItemOutcomeEntity(
+                    operationId = _state.currentOperationId ?: "",
+                    itemId = uri.toString(),
+                    result = "FAILED",
+                    postQueryExists = false,
+                    measuredBytes = 0L,
+                    providerError = e.message,
+                    completedAt = System.currentTimeMillis(),
+                ))
             }
         }
-        return Triple(freed, deleted, failed)
+
+        return MediaStoreDeletionResult(freed, deleted, failed, itemResults)
+    }
+
+    /** Handle the result from MediaStore.createDeleteRequest system dialog. */
+    fun onMediaStoreDeleteResult(granted: Boolean) {
+        val opId = _state.currentOperationId
+        if (opId == null || _state.scanResult == null) return
+
+        if (!granted) {
+            // User denied - record cancellation
+            _state = _state.copy(
+                executionStatus = ExecutionStatus.CANCELLED,
+                executionMessage = "تم إلغاء الحذف من قبلك",
+            )
+            launchLatest {
+                withContext(Dispatchers.IO) {
+                    repository.recordConsent(opId, granted = false)
+                }
+            }
+            return
+        }
+
+        // User granted - execute per-item verification
+        val selected = _state.selection.selectedUris
+        val uris = selected.map { Uri.parse(it) }.toList()
+
+        launchLatest {
+            try {
+                val result = withContext(Dispatchers.IO) {
+                    executeMediaStoreDeletionVerification(uris)
+                }
+
+                val afterFacts = withContext(Dispatchers.IO) { readDeviceFacts(appContext) }
+                DeviceFactsCache.publish(afterFacts)
+
+                withContext(Dispatchers.IO) {
+                    repository.recordItemOutcomes(
+                        opId,
+                        result.itemResults,
+                        finalStatus = if (result.failedCount == 0) "VERIFIED" else "PARTIAL",
+                    )
+                }
+
+                val refreshed = withContext(Dispatchers.IO) { readDeviceFacts(appContext) }
+                DeviceFactsCache.publish(refreshed)
+
+                _state = _state.copy(
+                    executionStatus = ExecutionStatus.COMPLETED,
+                    scanResult = _state.scanResult,
+                    selection = SelectionState(),
+                    lastOperationResult = OperationResult(
+                        freedBytes = result.freedBytes,
+                        deletedCount = result.deletedCount,
+                        failedCount = result.failedCount,
+                        timestamp = System.currentTimeMillis(),
+                    ),
+                )
+            } catch (e: Exception) {
+                withContext(Dispatchers.IO) {
+                    _state.currentOperationId?.let { repository.updateOperationStatus(it, "ERROR") }
+                }
+                _state = _state.copy(
+                    executionStatus = ExecutionStatus.FAILED,
+                    executionMessage = e.message ?: "فشل التنظيف",
+                )
+            }
+        }
+    }
+
+    private suspend fun executeMediaStoreDeletionVerification(
+        uris: List<Uri>
+    ): MediaStoreDeletionResult {
+        var freed = 0L
+        var deleted = 0
+        var failed = 0
+        val itemResults = mutableListOf<OperationItemOutcomeEntity>()
+
+        val ctx = appContext
+
+        uris.forEach { uri ->
+            try {
+                val size = ctx.contentResolver.query(uri, arrayOf(android.provider.OpenableColumns.SIZE), null, null, null)?.use {
+                    it.moveToFirst(); it.getLong(0)
+                } ?: 0L
+
+                // Check if URI exists before deletion
+                val existsBefore = ctx.contentResolver.query(uri, arrayOf("_id"), null, null, null)?.use {
+                    it.moveToFirst()
+                } ?: false
+
+                val result = ctx.contentResolver.delete(uri, null, null)
+
+                // Post-operation verification: check if URI actually gone
+                val existsAfter = ctx.contentResolver.query(uri, arrayOf("_id"), null, null, null)?.use {
+                    it.moveToFirst()
+                } ?: false
+
+                val verified = existsBefore && !existsAfter
+                if (verified) {
+                    freed += size
+                    deleted++
+                    itemResults.add(OperationItemOutcomeEntity(
+                        operationId = _state.currentOperationId ?: "",
+                        itemId = uri.toString(),
+                        result = "SUCCESS",
+                        postQueryExists = false,
+                        measuredBytes = size,
+                        providerError = null,
+                        completedAt = System.currentTimeMillis(),
+                    ))
+                } else if (existsBefore && existsAfter) {
+                    // Still exists - deletion failed
+                    failed++
+                    itemResults.add(OperationItemOutcomeEntity(
+                        operationId = _state.currentOperationId ?: "",
+                        itemId = uri.toString(),
+                        result = "FAILED",
+                        postQueryExists = true,
+                        measuredBytes = 0L,
+                        providerError = "Deletion did not remove the item",
+                        completedAt = System.currentTimeMillis(),
+                    ))
+                } else {
+                    // Didn't exist before or unknown
+                    failed++
+                    itemResults.add(OperationItemOutcomeEntity(
+                        operationId = _state.currentOperationId ?: "",
+                        itemId = uri.toString(),
+                        result = "NOT_FOUND",
+                        postQueryExists = false,
+                        measuredBytes = 0L,
+                        providerError = "Item not found or already deleted",
+                        completedAt = System.currentTimeMillis(),
+                    ))
+                }
+            } catch (e: Exception) {
+                failed++
+                itemResults.add(OperationItemOutcomeEntity(
+                    operationId = _state.currentOperationId ?: "",
+                    itemId = uri.toString(),
+                    result = "FAILED",
+                    postQueryExists = false,
+                    measuredBytes = 0L,
+                    providerError = e.message,
+                    completedAt = System.currentTimeMillis(),
+                ))
+            }
+        }
+
+        return MediaStoreDeletionResult(freed, deleted, failed, itemResults)
     }
 
     fun cancelCurrentOperation() {
@@ -296,15 +556,96 @@ class CleaningWorkflowViewModel(application: Application, repository: KnouxRepos
         )
     }
 
-    // Alias for compatibility with CleanToolsV2.kt
-    fun removeProtected(uri: String) {
-        _state = _state.copy(selection = _state.selection.copy(
-            protectedUris = _state.selection.protectedUris - uri,
-        ))
+    fun confirmClearOwnCache() {
+        launchLatest {
+            try {
+                val ctx = appContext
+                val opId = withContext(Dispatchers.IO) {
+                    repository.createOperationRequest(
+                        scanSessionId = _state.lastScanId ?: "",
+                        serviceId = "cleaning_workflow",
+                        requestedAction = "clear_own_cache",
+                        selectionCount = 1,
+                        keeperIds = null,
+                        exclusionIds = null,
+                        predictedEligibleBytes = withContext(Dispatchers.IO) { ownCacheBytes(ctx).first },
+                    )
+                }
+                _state = _state.copy(
+                    executionStatus = ExecutionStatus.AWAITING_SYSTEM,
+                    currentOperationId = opId,
+                )
+            } catch (e: Exception) {
+                _state = _state.copy(
+                    executionStatus = ExecutionStatus.FAILED,
+                    executionMessage = "فشل التحضير: ${e.message ?: "خطأ غير معروف"}",
+                )
+            }
+        }
     }
 
-    fun confirmClearOwnCache() {
-        cancelCurrentOperation()
+    fun confirmClearOwnCacheExecution() {
+        val opId = _state.currentOperationId
+        if (opId == null) return
+
+        _state = _state.copy(executionStatus = ExecutionStatus.EXECUTING)
+
+        launchLatest {
+            try {
+                withContext(Dispatchers.IO) { repository.recordConsent(opId, granted = true) }
+
+                val ctx = appContext
+                val before = withContext(Dispatchers.IO) { ownCacheBytes(ctx).first }
+                val freed = withContext(Dispatchers.IO) { clearOwnCache(ctx) }
+                val after = withContext(Dispatchers.IO) { ownCacheBytes(ctx).first }
+                val verified = after < before
+                val freedBytes = before - after
+
+                val opId = _state.currentOperationId ?: ""
+                withContext(Dispatchers.IO) {
+                    repository.recordItemOutcomes(
+                        opId,
+                        listOf(
+                            OperationItemOutcomeEntity(
+                                operationId = opId,
+                                itemId = "knoux_own_cache",
+                                result = if (verified) "SUCCESS" else "NO_CHANGE",
+                                postQueryExists = after > 0L,
+                                measuredBytes = freedBytes,
+                                providerError = null,
+                                completedAt = System.currentTimeMillis(),
+                            )
+                        ),
+                        finalStatus = if (verified) "VERIFIED" else "PARTIAL",
+                    )
+                }
+
+                val refreshed = withContext(Dispatchers.IO) { readDeviceFacts(appContext) }
+                DeviceFactsCache.publish(refreshed)
+
+                _state = _state.copy(
+                    executionStatus = ExecutionStatus.COMPLETED,
+                    scanResult = _state.scanResult?.copy(
+                        cacheBytes = after,
+                        cacheFiles = withContext(Dispatchers.IO) { ownCacheBytes(appContext).second },
+                    ),
+                    lastOperationResult = OperationResult(
+                        freedBytes = freedBytes,
+                        deletedCount = if (verified) 1 else 0,
+                        failedCount = if (verified) 0 else 1,
+                        timestamp = System.currentTimeMillis(),
+                    ),
+                )
+            } catch (e: Exception) {
+                withContext(Dispatchers.IO) {
+                    _state.currentOperationId?.let { repository.updateOperationStatus(it, "ERROR") }
+                }
+                _state = _state.copy(
+                    executionStatus = ExecutionStatus.FAILED,
+                    executionMessage = e.message ?: "فشل تنظيف الكاش",
+                )
+            }
+        }
     }
 }
 
