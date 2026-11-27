@@ -15,7 +15,13 @@ import com.knoux.ai.database.OperationItemOutcomeEntity
 import com.knoux.ai.database.OperationRequestEntity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.util.UUID
+
+/** Verification result for post-operation existence checks. */
+enum class VerificationResult {
+    EXISTS,           // Item confirmed to exist
+    CONFIRMED_ABSENT, // Item confirmed to be absent (deleted)
+    UNKNOWN,          // Query unavailable or permission denied
+}
 
 /** Immutable snapshot of a pending cleanup operation.
  * Captures all details needed for the system request and post-operation verification,
@@ -25,6 +31,7 @@ data class PendingCleanupOperation(
     val scanSessionId: String,
     val requestedAction: String,
     val authorizedUris: List<String>,
+    val preOperationExistence: Map<String, Boolean>, // true = existed before operation
     val preOperationSizes: Map<String, Long>,
     val protectedUris: Set<String>,
     val executionType: String, // "media_delete" or "cache_clear"
@@ -153,18 +160,38 @@ class CleaningWorkflowViewModel(application: Application, repository: KnouxRepos
         _state = _state.copy(filterState = _state.filterState.copy(minSizeMb = minSizeMb))
     }
 
+    /** Returns all URIs known from the current scan result (duplicate groups + largest files). */
+    private fun knownUris(): Set<String> {
+        return _state.scanResult?.let { result ->
+            (result.duplicateGroups.flatMap { it.uris } + result.largestFiles.map { it.uriString }).toSet()
+        } ?: emptySet()
+    }
+
+    /** Returns URIs that must be retained (at least one copy per duplicate group). */
+    private fun requiredRetainedUris(): Set<String> {
+        val result = _state.scanResult ?: return emptySet()
+        val protectedUris = _state.selection.protectedUris
+        val retained = mutableSetOf<String>()
+        result.duplicateGroups.forEach { group ->
+            // The first URI in each group is the designated keeper/retained copy
+            val keeper = group.uris.firstOrNull()
+            if (keeper != null && keeper !in protectedUris) {
+                retained.add(keeper)
+            }
+        }
+        return retained
+    }
+
     /** Toggle selection with safety invariants.
-     * Rejects unknown, stale-session, protected, and keeper URIs. */
+     * Rejects unknown, stale-session, protected, and keeper URIs.
+     * Preserves the retained-copy invariant for duplicate groups. */
     fun toggleSelection(uri: String, isSelected: Boolean) {
         val currentSelection = _state.selection
         val currentScanResult = _state.scanResult
 
-        // Validate URI is known and eligible
-        val knownUris = currentScanResult?.let { result ->
-            (result.duplicateGroups.flatMap { it.uris } + result.largestFiles.map { it.uriString }).toSet()
-        } ?: emptySet()
-
-        if (uri !in knownUris) {
+        // Validate URI is known
+        val known = knownUris()
+        if (uri !in known) {
             // Unknown candidate - reject silently
             return
         }
@@ -174,18 +201,49 @@ class CleaningWorkflowViewModel(application: Application, repository: KnouxRepos
             return
         }
 
-        val newSelected = if (isSelected) {
-            currentSelection.selectedUris + uri
-        } else {
-            currentSelection.selectedUris - uri
+        // Reject required retained copies (keepers)
+        val retained = requiredRetainedUris()
+        if (uri in retained) {
+            return
+        }
+
+        // If deselecting, always allow
+        if (!isSelected) {
+            val newSelected = currentSelection.selectedUris - uri
+            val newBytes = calculateSelectedBytes(newSelected, currentScanResult)
+            _state = _state.copy(selection = _state.selection.copy(
+                selectedUris = newSelected,
+                selectedBytes = newBytes,
+            ))
+            return
+        }
+
+        // If selecting, check keeper invariant: ensure at least one copy per group remains unselected
+        val newSelected = currentSelection.selectedUris + uri
+        if (wouldViolateKeeperInvariant(newSelected, currentScanResult)) {
+            return
         }
 
         val newBytes = calculateSelectedBytes(newSelected, currentScanResult)
-
         _state = _state.copy(selection = _state.selection.copy(
             selectedUris = newSelected,
             selectedBytes = newBytes,
         ))
+    }
+
+    /** Checks whether selecting the given set would leave any duplicate group with zero retained copies. */
+    private fun wouldViolateKeeperInvariant(selected: Set<String>, scanResult: ScanResult?): Boolean {
+        if (scanResult == null) return false
+        val protectedUris = _state.selection.protectedUris
+        scanResult.duplicateGroups.forEach { group ->
+            val groupUris = group.uris.toSet()
+            val unselectedInGroup = groupUris - selected - protectedUris
+            if (unselectedInGroup.isEmpty()) {
+                // All copies in this group are either selected or protected - violation
+                return true
+            }
+        }
+        return false
     }
 
     /** Select all eligible candidates while preserving at least one retained copy per duplicate group. */
@@ -237,10 +295,12 @@ class CleaningWorkflowViewModel(application: Application, repository: KnouxRepos
         val currentScanResult = _state.scanResult
 
         // Reject unknown URIs
-        val knownUris = currentScanResult?.let { result ->
-            (result.duplicateGroups.flatMap { it.uris } + result.largestFiles.map { it.uriString }).toSet()
-        } ?: emptySet()
-        if (uri !in knownUris) return
+        val known = knownUris()
+        if (uri !in known) return
+
+        // A required keeper cannot be protected (it must remain available for retention)
+        val retained = requiredRetainedUris()
+        if (uri in retained) return
 
         val newProtected = currentSelection.protectedUris + uri
         val newSelected = currentSelection.selectedUris - uri
@@ -282,31 +342,56 @@ class CleaningWorkflowViewModel(application: Application, repository: KnouxRepos
         val protected = _state.selection.protectedUris
         if (selected.any { it in protected }) return
 
+        // Revalidate keeper invariant before preparing operation
+        if (wouldViolateKeeperInvariant(selected, _state.scanResult)) return
+
+        // Prevent operation replacement while another is pending
+        if (pendingOperation != null && !pendingOperation!!.completed) return
+
         _state = _state.copy(executionStatus = ExecutionStatus.AWAITING_SYSTEM)
 
         launchLatest {
             try {
-                val opId = UUID.randomUUID().toString()
-                val scanSessionId = _state.lastScanId ?: ""
+                val ctx = appContext
                 val uris = selected.toList()
 
-                // Capture pre-operation sizes for verification
-                val ctx = appContext
-                val preOperationSizes = withContext(Dispatchers.IO) {
+                // Capture pre-operation existence and sizes for verification
+                val preOpData = withContext(Dispatchers.IO) {
                     uris.associateWith { uri ->
                         val u = Uri.parse(uri)
-                        ctx.contentResolver.query(u, arrayOf(android.provider.OpenableColumns.SIZE), null, null, null)?.use {
+                        val exists = ctx.contentResolver.query(u, arrayOf("_id"), null, null, null)?.use {
+                            it.moveToFirst()
+                        } ?: false
+                        val size = ctx.contentResolver.query(u, arrayOf(android.provider.OpenableColumns.SIZE), null, null, null)?.use {
                             it.moveToFirst(); it.getLong(0)
                         } ?: 0L
+                        Pair(exists, size)
                     }
                 }
 
-                // Create immutable pending operation snapshot
+                val preOperationExistence = preOpData.mapValues { (_, pair) -> pair.first }
+                val preOperationSizes = preOpData.mapValues { (_, pair) -> pair.second }
+
+                // Create operation request in Room (consent not yet given) - use returned ID
+                val opId = withContext(Dispatchers.IO) {
+                    repository.createOperationRequest(
+                        scanSessionId = _state.lastScanId ?: "",
+                        serviceId = "cleaning_workflow",
+                        requestedAction = "cleanup_selected",
+                        selectionCount = uris.size,
+                        keeperIds = null,
+                        exclusionIds = null,
+                        predictedEligibleBytes = _state.selection.selectedBytes,
+                    )
+                }
+
+                // Create immutable pending operation snapshot using the persisted ID
                 val pendingOp = PendingCleanupOperation(
                     operationId = opId,
-                    scanSessionId = scanSessionId,
+                    scanSessionId = _state.lastScanId ?: "",
                     requestedAction = "cleanup_selected",
                     authorizedUris = uris,
+                    preOperationExistence = preOperationExistence,
                     preOperationSizes = preOperationSizes,
                     protectedUris = _state.selection.protectedUris,
                     executionType = "media_delete",
@@ -316,19 +401,6 @@ class CleaningWorkflowViewModel(application: Application, repository: KnouxRepos
                     completed = false,
                 )
                 pendingOperation = pendingOp
-
-                // Create operation request in Room (consent not yet given)
-                withContext(Dispatchers.IO) {
-                    repository.createOperationRequest(
-                        scanSessionId = scanSessionId,
-                        serviceId = "cleaning_workflow",
-                        requestedAction = "cleanup_selected",
-                        selectionCount = uris.size,
-                        keeperIds = null,
-                        exclusionIds = null,
-                        predictedEligibleBytes = _state.selection.selectedBytes,
-                    )
-                }
 
                 _state = _state.copy(
                     executionStatus = ExecutionStatus.AWAITING_SYSTEM,
@@ -350,6 +422,7 @@ class CleaningWorkflowViewModel(application: Application, repository: KnouxRepos
      *  Does NOT execute deletion yet - only launches the authorization dialog. */
     fun requestMediaStoreDeletion(onSystemDialogNeeded: (PendingIntent) -> Unit) {
         val pendingOp = pendingOperation ?: return
+        if (pendingOp.executionType != "media_delete") return
         if (pendingOp.systemAuthorized || pendingOp.completed) return
 
         val uris = pendingOp.authorizedUris.map { Uri.parse(it) }
@@ -425,64 +498,90 @@ class CleaningWorkflowViewModel(application: Application, repository: KnouxRepos
 
                 pendingOp.authorizedUris.forEach { uriString ->
                     val uri = Uri.parse(uriString)
+                    val preExisted = pendingOp.preOperationExistence[uriString] ?: false
                     val preSize = pendingOp.preOperationSizes[uriString] ?: 0L
 
                     // Post-operation verification: check if URI is actually gone
                     val existsAfter = ctx.contentResolver.query(uri, arrayOf("_id"), null, null, null)?.use {
                         it.moveToFirst()
-                    } ?: false
+                    }
 
-                    val preExisted = preSize > 0L
+                    val verification = when {
+                        existsAfter == null -> VerificationResult.UNKNOWN
+                        existsAfter == true -> VerificationResult.EXISTS
+                        existsAfter == false -> VerificationResult.CONFIRMED_ABSENT
+                        else -> VerificationResult.UNKNOWN
+                    }
 
-                    if (preExisted && !existsAfter) {
-                        // Confirmed: existed before, now gone = successfully deleted
-                        freedBytes += preSize
-                        deletedCount++
-                        itemResults.add(OperationItemOutcomeEntity(
-                            operationId = pendingOp.operationId,
-                            itemId = uriString,
-                            result = "SUCCESS",
-                            postQueryExists = false,
-                            measuredBytes = preSize,
-                            providerError = null,
-                            completedAt = System.currentTimeMillis(),
-                        ))
-                    } else if (preExisted && existsAfter) {
-                        // Existed before and still exists = deletion failed
-                        failedCount++
-                        itemResults.add(OperationItemOutcomeEntity(
-                            operationId = pendingOp.operationId,
-                            itemId = uriString,
-                            result = "FAILED",
-                            postQueryExists = true,
-                            measuredBytes = 0L,
-                            providerError = "Deletion did not remove the item",
-                            completedAt = System.currentTimeMillis(),
-                        ))
-                    } else if (!preExisted && !existsAfter) {
-                        // Didn't exist before and still doesn't = not found (already deleted or never existed)
-                        failedCount++
-                        itemResults.add(OperationItemOutcomeEntity(
-                            operationId = pendingOp.operationId,
-                            itemId = uriString,
-                            result = "NOT_FOUND",
-                            postQueryExists = false,
-                            measuredBytes = 0L,
-                            providerError = "Item did not exist before operation",
-                            completedAt = System.currentTimeMillis(),
-                        ))
-                    } else {
-                        // Didn't exist before but exists now = unknown state
-                        failedCount++
-                        itemResults.add(OperationItemOutcomeEntity(
-                            operationId = pendingOp.operationId,
-                            itemId = uriString,
-                            result = "UNVERIFIED",
-                            postQueryExists = true,
-                            measuredBytes = 0L,
-                            providerError = "Unable to verify pre-operation state",
-                            completedAt = System.currentTimeMillis(),
-                        ))
+                    when (verification) {
+                        VerificationResult.CONFIRMED_ABSENT -> {
+                            if (preExisted) {
+                                // Existed before, now confirmed absent = successfully deleted
+                                freedBytes += preSize
+                                deletedCount++
+                                itemResults.add(OperationItemOutcomeEntity(
+                                    operationId = pendingOp.operationId,
+                                    itemId = uriString,
+                                    result = "SUCCESS",
+                                    postQueryExists = false,
+                                    measuredBytes = preSize,
+                                    providerError = null,
+                                    completedAt = System.currentTimeMillis(),
+                                ))
+                            } else {
+                                // Didn't exist before and still absent = NOT_FOUND
+                                failedCount++
+                                itemResults.add(OperationItemOutcomeEntity(
+                                    operationId = pendingOp.operationId,
+                                    itemId = uriString,
+                                    result = "NOT_FOUND",
+                                    postQueryExists = false,
+                                    measuredBytes = 0L,
+                                    providerError = "Item did not exist before operation",
+                                    completedAt = System.currentTimeMillis(),
+                                ))
+                            }
+                        }
+                        VerificationResult.EXISTS -> {
+                            // Existed before and still exists = deletion failed
+                            if (preExisted) {
+                                failedCount++
+                                itemResults.add(OperationItemOutcomeEntity(
+                                    operationId = pendingOp.operationId,
+                                    itemId = uriString,
+                                    result = "FAILED",
+                                    postQueryExists = true,
+                                    measuredBytes = 0L,
+                                    providerError = "Deletion did not remove the item",
+                                    completedAt = System.currentTimeMillis(),
+                                ))
+                            } else {
+                                // Didn't exist before but exists now = UNKNOWN state
+                                failedCount++
+                                itemResults.add(OperationItemOutcomeEntity(
+                                    operationId = pendingOp.operationId,
+                                    itemId = uriString,
+                                    result = "UNVERIFIED",
+                                    postQueryExists = true,
+                                    measuredBytes = 0L,
+                                    providerError = "Unable to verify pre-operation state",
+                                    completedAt = System.currentTimeMillis(),
+                                ))
+                            }
+                        }
+                        VerificationResult.UNKNOWN -> {
+                            // Query unavailable or permission denied - not confirmed absence
+                            failedCount++
+                            itemResults.add(OperationItemOutcomeEntity(
+                                operationId = pendingOp.operationId,
+                                itemId = uriString,
+                                result = "UNVERIFIED",
+                                postQueryExists = false,
+                                measuredBytes = 0L,
+                                providerError = "Post-operation verification unavailable",
+                                completedAt = System.currentTimeMillis(),
+                            ))
+                        }
                     }
                 }
 
@@ -548,6 +647,9 @@ class CleaningWorkflowViewModel(application: Application, repository: KnouxRepos
 
     /** Prepare cache cleanup operation with distinct operation type. */
     fun prepareCacheCleanup() {
+        // Prevent operation replacement while another is pending
+        if (pendingOperation != null && !pendingOperation!!.completed) return
+
         _state = _state.copy(executionStatus = ExecutionStatus.AWAITING_SYSTEM)
 
         launchLatest {
@@ -562,14 +664,26 @@ class CleaningWorkflowViewModel(application: Application, repository: KnouxRepos
                     return@launchLatest
                 }
 
-                val opId = UUID.randomUUID().toString()
-                val scanSessionId = _state.lastScanId ?: ""
+                // Create operation request in Room (consent not yet given) - use returned ID
+                val opId = withContext(Dispatchers.IO) {
+                    repository.createOperationRequest(
+                        scanSessionId = _state.lastScanId ?: "",
+                        serviceId = "cleaning_workflow",
+                        requestedAction = "clear_own_cache",
+                        selectionCount = 1,
+                        keeperIds = null,
+                        exclusionIds = null,
+                        predictedEligibleBytes = cacheBytes,
+                    )
+                }
 
+                // Create immutable pending operation snapshot using the persisted ID
                 val pendingOp = PendingCleanupOperation(
                     operationId = opId,
-                    scanSessionId = scanSessionId,
+                    scanSessionId = _state.lastScanId ?: "",
                     requestedAction = "clear_own_cache",
                     authorizedUris = listOf("knoux_own_cache"),
+                    preOperationExistence = mapOf("knoux_own_cache" to true),
                     preOperationSizes = mapOf("knoux_own_cache" to cacheBytes),
                     protectedUris = emptySet(),
                     executionType = "cache_clear",
@@ -579,18 +693,6 @@ class CleaningWorkflowViewModel(application: Application, repository: KnouxRepos
                     completed = false,
                 )
                 pendingOperation = pendingOp
-
-                withContext(Dispatchers.IO) {
-                    repository.createOperationRequest(
-                        scanSessionId = scanSessionId,
-                        serviceId = "cleaning_workflow",
-                        requestedAction = "clear_own_cache",
-                        selectionCount = 1,
-                        keeperIds = null,
-                        exclusionIds = null,
-                        predictedEligibleBytes = cacheBytes,
-                    )
-                }
 
                 _state = _state.copy(
                     executionStatus = ExecutionStatus.AWAITING_SYSTEM,
