@@ -235,6 +235,7 @@ fun V2CleanToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 10.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
+                val scope = this
                 item {
                     ServiceBanner(
                         spec = CleanTools.bannerSpec(tool),
@@ -295,21 +296,21 @@ fun V2CleanToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
                         }
                     }
                     when (tool.route) {
-                        "clean-scope" -> scopeItems(facts, navigate)
-                        "clean-scan" -> scanItems(facts, navigate)
-                        "clean-classify" -> classifyItems(facts, total, other)
-                        "clean-filters" -> filterItems(facts)
-                        "clean-preview" -> previewItems(facts)
-                        "clean-protected" -> protectedItems(facts)
-                        "clean-selection" -> selectionItems(facts, navigate)
-                        "clean-impact" -> impactItems(facts, navigate)
-                        "clean-confirm" -> confirmItems(facts, navigate)
-                        "clean-history" -> historyItems(history, navigate)
-                        "clean-large" -> largeItems(facts, navigate)
-                        "clean-media-mix" -> mediaMixItems(facts, navigate)
-                        "clean-buckets" -> bucketItems(facts, navigate)
-                        "clean-free-plan" -> freePlanItems(facts, navigate)
-                        "clean-cache-audit" -> cacheAuditItems(facts, navigate)
+                        "clean-scope" -> scope.scopeItems(facts, navigate)
+                        "clean-scan" -> scope.scanItems(facts, navigate)
+                        "clean-classify" -> scope.classifyItems(facts, total, other)
+                        "clean-filters" -> scope.filterItems(facts)
+                        "clean-preview" -> scope.previewItems(facts)
+                        "clean-protected" -> scope.protectedItems(facts)
+                        "clean-selection" -> scope.selectionItems(facts, navigate)
+                        "clean-impact" -> scope.impactItems(facts, navigate)
+                        "clean-confirm" -> scope.confirmItems(facts, navigate)
+                        "clean-history" -> scope.historyItems(history, navigate)
+                        "clean-large" -> scope.largeItems(facts, navigate)
+                        "clean-media-mix" -> scope.mediaMixItems(facts, navigate)
+                        "clean-buckets" -> scope.bucketItems(facts, navigate)
+                        "clean-free-plan" -> scope.freePlanItems(facts, navigate)
+                        "clean-cache-audit" -> scope.cacheAuditItems(facts, navigate)
                     }
                 }
                 item {
