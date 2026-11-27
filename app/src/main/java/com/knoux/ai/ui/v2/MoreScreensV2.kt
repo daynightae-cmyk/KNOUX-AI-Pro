@@ -14,6 +14,7 @@ import com.knoux.ai.database.AppDatabase
 import com.knoux.ai.database.KnouxRepository
 import com.knoux.ai.database.OperationItemOutcomeEntity
 import com.knoux.ai.database.ScanSessionEntity
+import com.knoux.ai.database.StorageSnapshotEntity
 import com.knoux.ai.ui.v2.markKnouxOnboardingSeen
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -35,6 +36,11 @@ import androidx.compose.foundation.layout.heightIn
 import android.provider.DocumentsContract
 import android.provider.OpenableColumns
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.core.content.FileProvider
+import kotlinx.coroutines.Dispatchers
+import java.io.File
+import java.nio.charset.StandardCharsets
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
@@ -101,7 +107,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
@@ -2208,12 +2214,166 @@ fun V2StorageBreakdownScreen(onBack: () -> Unit, onPro: () -> Unit) {
             }
         }
         item {
+            StorageExportButton(context = context) { _ ->
+                // Export complete - message handled internally
+            }
+        }
+        item {
             PreviewNote(
                 "التفصيل يعرض الفئات التي يوفّرها Android فعليًا. تحليل كل مجلد على حدة يحتاج صلاحية " +
                     "Scoped Storage خاصة، ولا تُعرض أرقام تقديرية بدلًا منها."
             )
         }
     }
+}
+
+/**
+ * Exports storage analyzer history to a CSV file and shares it via Android's share sheet.
+ * Includes storage snapshots, scan sessions, and operation outcomes.
+ */
+@Composable
+private fun StorageExportButton(
+    context: Context,
+    onExportComplete: (String?) -> Unit,
+) {
+    var exporting by remember { mutableStateOf(false) }
+    var exportMessage by remember { mutableStateOf<String?>(null) }
+    val database = remember(context) { AppDatabase.getDatabase(context.applicationContext) }
+    val repository = remember(database) { KnouxRepository(database) }
+    val scope = rememberCoroutineScope()
+
+    V2GlassCard(
+        Modifier.fillMaxWidth(),
+        padding = 12.dp,
+        radius = 16.dp,
+        glow = V2Cyan,
+        borderAlpha = .28f,
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Rounded.Download, null, tint = V2Cyan, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(8.dp))
+                KText(
+                    if (exporting) "جاري إنشاء ملف التصدير…" else "تصدير تقرير التخزين",
+                    size = 11.sp,
+                    weight = FontWeight.Bold,
+                    color = V2Cyan,
+                )
+            }
+            KText(
+                "ينشئ ملف CSV بقراءات StatFs الفعلية، لقطات MediaStore، وسجل العمليات من Room. " +
+                    "يحتوي على الطوابع الزمنية، الوحدات، ومؤشرات البيانات غير المتاحة.",
+                size = 9.sp,
+                color = V2Soft,
+                lineHeight = 12.sp,
+            )
+            exportMessage?.let { msg ->
+                KText(msg, size = 9.sp, color = if (msg.startsWith("تم")) V2Green else V2Amber, weight = FontWeight.Medium)
+            }
+            if (!exporting) {
+                V2GradientButton(
+                    "تصدير ومشاركة CSV",
+                    {
+                        exporting = true
+                        exportMessage = null
+                        scope.launch {
+                            val result = withContext(Dispatchers.IO) {
+                                generateAndShareStorageExport(context, repository)
+                            }
+                            exporting = false
+                            exportMessage = result
+                            onExportComplete(result)
+                        }
+                    },
+                    icon = Icons.Rounded.Download,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            } else {
+                LinearProgressIndicator(
+                    modifier = Modifier.fillMaxWidth().height(4.dp),
+                    color = V2Cyan,
+                    trackColor = V2Soft.copy(alpha = .12f),
+                )
+            }
+        }
+    }
+}
+
+private suspend fun generateAndShareStorageExport(
+    context: Context,
+    repository: KnouxRepository,
+): String? {
+    val database = AppDatabase.getDatabase(context.applicationContext)
+    val snapshots = database.storageSnapshotDao().getRecent(100).first()
+    val sessions = database.scanSessionDao().getRecent(100).first()
+    val operations = database.operationRequestDao().getRecent(100).first()
+    val outcomes = database.operationItemOutcomeDao().summaries().first()
+
+    val csv = buildString {
+        // Storage Snapshots
+        appendLine("=== Storage Snapshots ===")
+        appendLine("id,recordedAt,totalBytes,usedBytes,freeBytes,mediaBytes,cacheBytes,otherBytes,scope")
+        for (s in snapshots) {
+            appendLine("${s.id},${s.recordedAt},${s.totalBytes},${s.usedBytes},${s.freeBytes},${s.mediaBytes},${s.cacheBytes},${s.otherBytes},${s.scope}")
+        }
+        appendLine("")
+
+        // Scan Sessions
+        appendLine("=== Scan Sessions ===")
+        appendLine("id,serviceId,serviceName,startedAt,endedAt,status,permissionGranted,itemsFound,bytesFound,bytesReclaimable,deviceModel,apiLevel")
+        for (s in sessions) {
+            appendLine("${s.id},${s.serviceId},${s.serviceName},${s.startedAt},${s.endedAt ?: ""},${s.status},${s.permissionGranted},${s.itemsFound},${s.bytesFound},${s.bytesReclaimable},${s.deviceModel ?: ""},${s.apiLevel ?: ""}")
+        }
+        appendLine("")
+
+        // Operation Requests
+        appendLine("=== Operation Requests ===")
+        appendLine("id,scanSessionId,serviceId,requestedAction,selectionCount,keeperIds,exclusionIds,predictedEligibleBytes,consentGiven,consentAt,createdAt,status")
+        for (o in operations) {
+            appendLine("${o.id},${o.scanSessionId},${o.serviceId},${o.requestedAction},${o.selectionCount},${o.keeperIds ?: ""},${o.exclusionIds ?: ""},${o.predictedEligibleBytes ?: ""},${o.consentGiven},${o.consentAt ?: ""},${o.createdAt},${o.status}")
+        }
+        appendLine("")
+
+        // Operation Outcomes Summary
+        appendLine("=== Operation Outcomes Summary ===")
+        appendLine("operationId,itemCount,measuredBytes,successCount,noChangeCount")
+        for (oc in outcomes) {
+            appendLine("${oc.operationId},${oc.itemCount},${oc.measuredBytes},${oc.successCount},${oc.noChangeCount}")
+        }
+        appendLine("")
+
+        // Metadata
+        appendLine("=== Export Metadata ===")
+        appendLine("exportedAt,${System.currentTimeMillis()}")
+        appendLine("deviceModel,${Build.MODEL}")
+        appendLine("apiLevel,${Build.VERSION.SDK_INT}")
+        appendLine("appVersion,${context.packageManager.getPackageInfo(context.packageName, 0).versionName}")
+    }
+
+    // Write to file in cache dir
+    val file = File(context.cacheDir, "knoux_storage_export_${System.currentTimeMillis()}.csv")
+    file.writeText(csv, StandardCharsets.UTF_8)
+
+    // Share via FileProvider
+    val uri = androidx.core.content.FileProvider.getUriForFile(
+        context,
+        "${context.packageName}.fileprovider",
+        file,
+    )
+
+    val intent = Intent(Intent.ACTION_SEND).apply {
+        type = "text/csv"
+        putExtra(Intent.EXTRA_STREAM, uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        putExtra(Intent.EXTRA_SUBJECT, "KNOUX Storage Export")
+        putExtra(Intent.EXTRA_TEXT, "Storage analyzer export from KNOUX AI Pro")
+    }
+
+    val chooser = Intent.createChooser(intent, "مشاركة تقرير التخزين")
+    chooser.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    context.startActivity(chooser)
+
+    return "تم إنشاء التصدير: ${file.name} (${formatBytes(file.length())})"
 }
 
 @Composable

@@ -59,6 +59,7 @@ class StorageAnalyzerViewModel(
         lastTrigger = trigger
         _state = _state.copy(isScanning = true, scanError = null)
         launchLatest {
+            var sessionId: String? = null
             try {
                 val ctx = appContext
                 val facts = withContext(Dispatchers.IO) { readDeviceFacts(ctx) }
@@ -69,7 +70,7 @@ class StorageAnalyzerViewModel(
                 val otherBytes = (facts.storage.usedBytes - mediaBytes - cacheBytes).coerceAtLeast(0L)
 
                 // Only create scan session after successful fact reading
-                val sessionId = withContext(Dispatchers.IO) {
+                sessionId = withContext(Dispatchers.IO) {
                     val id = repository.createScanSession(
                         serviceId = SERVICE_ID,
                         serviceName = "Storage Analyzer",
@@ -130,6 +131,12 @@ class StorageAnalyzerViewModel(
                     gate = if (_state.gate == OperationGate.RUNNING) _state.gate else OperationGate.IDLE,
                 )
             } catch (e: Exception) {
+                // If session was created but completion failed, mark it as FAILED
+                sessionId?.let { id ->
+                    withContext(Dispatchers.IO) {
+                        repository.completeScanSession(id, "FAILED", false, 0, 0L, 0L)
+                    }
+                }
                 _state = _state.copy(
                     isScanning = false,
                     scanError = e.message ?: "تعذّر قراءة التخزين",
@@ -192,9 +199,10 @@ class StorageAnalyzerViewModel(
                 val ctx = appContext
                 withContext(Dispatchers.IO) { repository.recordConsent(opId, granted = true) }
 
-                // Use the stored measuredBefore from prepareClearOwnCache as the baseline.
-                // Re-measure after the clear to verify actual bytes freed.
-                val before = _state.measuredBefore
+                // Re-measure immediately before execution to account for concurrent changes.
+                // The stored measuredBefore is the preparation baseline; we measure again
+                // right before clearing to show the user the actual current value.
+                val before = withContext(Dispatchers.IO) { ownCacheBytes(ctx).first }
                 val freed = withContext(Dispatchers.IO) { clearOwnCache(ctx) }
                 val after = withContext(Dispatchers.IO) { ownCacheBytes(ctx).first }
 
@@ -231,6 +239,7 @@ class StorageAnalyzerViewModel(
                         else -> "مفيش كاش قابل للمسح"
                     },
                     measuredAfter = after,
+                    measuredBefore = before, // Update with actual pre-execution measurement
                 )
             } catch (e: Exception) {
                 withContext(Dispatchers.IO) {
@@ -246,9 +255,10 @@ class StorageAnalyzerViewModel(
 
     fun cancelClearOwnCache() {
         val opId = _state.operationId ?: return
-        // Do not cancel if operation is already executing - the destructive action
-        // has begun and cannot be safely undone mid-flight.
-        if (_state.gate == OperationGate.RUNNING) return
+        // Do not cancel if operation is already executing or has completed -
+        // the destructive action has begun or finished and cannot be safely undone.
+        // Only allow cancellation when awaiting user consent (AWAITING_CONSENT).
+        if (_state.gate != OperationGate.AWAITING_CONSENT) return
         _state = _state.copy(gate = OperationGate.CANCELLED, operationMessage = "تم الإلغاء بدون أي تغيير")
         launchLatest {
             withContext(Dispatchers.IO) {
