@@ -169,14 +169,19 @@ internal class DuplicateWorkspaceViewModel : ViewModel() {
         if (state.value.busy) return
         val snapshot = state.value.result ?: return
         val sessionId = state.value.sessionId ?: return
-        val plan = try {
+        val result = try {
             buildDuplicateDeletePlan(snapshot.groups, selected, keeperOverrides)
         } catch (error: IllegalArgumentException) {
             mutableState.update { it.copy(error = error.message) }
             return
         }
+        val plan = result.plan
+        // Warn if selection was truncated due to batch limit
+        if (result.wasTruncated) {
+            mutableState.update { it.copy(message = "تم تحديد ${result.totalSelected} نسخة؛ ستُحذف أول ${result.batchSize} في هذه الدفعة. الباقي (${result.remainingUris.size}) يفضل للدفعة التالية.") }
+        }
         val app = context.applicationContext
-        mutableState.update { it.copy(operating = true, deletion = null, error = null, message = "بنتحقق من النسخ المحفوظة والمحددة قبل فتح موافقة Android…") }
+        mutableState.update { it.copy(operating = true, deletion = null, error = null) }
         operationJob = viewModelScope.launch {
             var operationId: String? = null
             try {

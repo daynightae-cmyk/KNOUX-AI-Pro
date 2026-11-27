@@ -7,7 +7,10 @@ class DuplicateActionSafetyTest {
     private fun file(uri: String, bytes: Long = 12L) = DuplicateScanFile(uri, uri, bytes, false, null)
     private fun group(kind: DuplicateMatchKind = DuplicateMatchKind.EXACT) =
         DuplicateScanGroup("g", listOf(file("keeper"), file("copy1"), file("copy2")), kind)
-    private fun plan() = buildDuplicateDeletePlan(listOf(group()), setOf("copy1", "copy2"), emptyMap())
+private fun group4(kind: DuplicateMatchKind = DuplicateMatchKind.EXACT) =
+        DuplicateScanGroup("g", listOf(file("keeper"), file("copy1"), file("copy2"), file("copy3")), kind)
+    private fun planResult() = buildDuplicateDeletePlan(listOf(group()), setOf("copy1", "copy2"), emptyMap())
+    private fun plan() = planResult().plan
 
     @Test fun bulkSelectionNeverIncludesKeeperOrVisualCandidates() {
         val visual = DuplicateScanGroup("v", listOf(file("visual-keeper"), file("similar")), DuplicateMatchKind.VISUAL)
@@ -27,9 +30,14 @@ class DuplicateActionSafetyTest {
     }
 
     @Test fun selectedBatchIsBoundedButNeverChangesTheKeeper() {
-        val plan = buildDuplicateDeletePlan(listOf(group()), setOf("copy1", "copy2"), emptyMap(), batchLimit = 1)
+        val result = buildDuplicateDeletePlan(listOf(group()), setOf("copy1", "copy2"), emptyMap(), batchLimit = 1)
+        val plan = result.plan
         assertEquals(1, plan.files.size)
         assertEquals("keeper", plan.keepers.single().uriString)
+        assertTrue(result.wasTruncated)
+        assertEquals(2, result.totalSelected)
+        assertEquals(1, result.batchSize)
+        assertEquals(1, result.remainingUris.size)
     }
 
     @Test fun successRequiresProviderAbsenceAndAStillPresentKeeper() {
@@ -91,5 +99,34 @@ class DuplicateActionSafetyTest {
         assertEquals("PARTIAL", result.status)
         assertEquals(2, result.unknownCount)
         assertTrue(result.deletedUris.isEmpty())
+    }
+
+    @Test fun zeroByteFilesAreAllowedInDeletePlan() {
+        val zeroByteFile = file("zero", 0L)
+        val keeper = file("keeper", 12L)
+        val g = DuplicateScanGroup("g", listOf(keeper, zeroByteFile), DuplicateMatchKind.EXACT)
+        val result = buildDuplicateDeletePlan(listOf(g), setOf("zero"), emptyMap())
+        val plan = result.plan
+        assertEquals(1, plan.files.size)
+        assertEquals(0L, plan.files.first().sizeBytes)
+        assertEquals("keeper", plan.keepers.single().uriString)
+        assertFalse(result.wasTruncated)
+    }
+
+    @Test(expected = IllegalArgumentException::class) fun unknownSizeFilesAreRejectedInDeletePlan() {
+        val unknownSizeFile = file("unknown", -1L)
+        val keeper = file("keeper", 12L)
+        val g = DuplicateScanGroup("g", listOf(keeper, unknownSizeFile), DuplicateMatchKind.EXACT)
+        buildDuplicateDeletePlan(listOf(g), setOf("unknown"), emptyMap())
+    }
+
+    @Test fun batchLimitTruncatesSelectionAndReportsRemaining() {
+        val g = group4()
+        val result = buildDuplicateDeletePlan(listOf(g), setOf("copy1", "copy2", "copy3"), emptyMap(), batchLimit = 2)
+        assertTrue(result.wasTruncated)
+        assertEquals(3, result.totalSelected)
+        assertEquals(2, result.batchSize)
+        assertEquals(1, result.remainingUris.size)
+        assertEquals(2, result.plan.files.size)
     }
 }

@@ -26,12 +26,26 @@ internal fun exactDuplicateExtras(
         .filterNot { it in protected }.toSet()
 }
 
+/** Result of building a delete plan, including batch limit transparency. */
+internal data class DuplicateDeletePlanResult(
+    /** The plan for the first batch (up to batchLimit items). */
+    val plan: DuplicateDeletePlan,
+    /** Total number of selected items. */
+    val totalSelected: Int,
+    /** Number of items in this batch. */
+    val batchSize: Int,
+    /** Items that exceed the batch limit and require a subsequent operation. */
+    val remainingUris: Set<String>,
+    /** Whether the selection was truncated due to batch limit. */
+    val wasTruncated: Boolean,
+)
+
 internal fun buildDuplicateDeletePlan(
     groups: List<DuplicateScanGroup>,
     selected: Set<String>,
     overrides: Map<String, String>,
     batchLimit: Int = 2000,
-): DuplicateDeletePlan {
+): DuplicateDeletePlanResult {
     require(selected.isNotEmpty()) { "حدّد النسخ التي تريد حذفها أولًا." }
     require(batchLimit > 0)
     val touched = groups.filter { group -> group.files.any { it.uriString in selected } }
@@ -42,9 +56,21 @@ internal fun buildDuplicateDeletePlan(
     require(keepers.none { it.uriString in selected }) { "لا يمكن حذف النسخة المحفوظة من المجموعة." }
     val known = touched.flatMap { it.files }.associateBy { it.uriString }
     require(selected.all { it in known }) { "التحديد قديم؛ أعد الفحص قبل الحذف." }
-    val files = selected.map { known.getValue(it) }.sortedBy { it.uriString }.take(batchLimit)
-    require(files.all { it.sizeBytes > 0L }) { "تعذّر قياس بعض الملفات؛ أعد الفحص." }
-    return DuplicateDeletePlan(files, keepers, touched)
+    val sortedFiles = selected.map { known.getValue(it) }.sortedBy { it.uriString }
+    val wasTruncated = sortedFiles.size > batchLimit
+    val batchFiles = sortedFiles.take(batchLimit)
+    // Zero-byte files are valid and deletable (they free 0 bytes). Only reject
+    // files with unknown size (sizeBytes < 0) which means the scan couldn't
+    // determine their size. Unknown size != zero size.
+    require(batchFiles.all { it.sizeBytes >= 0L }) { "تعذّر قياس بعض الملفات (حجم غير معروف)؛ أعد الفحص." }
+    val remainingUris = if (wasTruncated) sortedFiles.drop(batchLimit).map { it.uriString }.toSet() else emptySet()
+    return DuplicateDeletePlanResult(
+        plan = DuplicateDeletePlan(batchFiles, keepers, touched),
+        totalSelected = sortedFiles.size,
+        batchSize = batchFiles.size,
+        remainingUris = remainingUris,
+        wasTruncated = wasTruncated,
+    )
 }
 
 internal data class DuplicateDeleteVerification(

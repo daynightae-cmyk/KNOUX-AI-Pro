@@ -366,7 +366,8 @@ internal fun V2DuplicatesWorkspace(
             KText("هنعيد التحقق من الملفات والنسخة المحفوظة، وبعدها Android هيطلب موافقتك. الحذف ده مش سلة استرجاع؛ احتفظ بنسخة احتياطية لو الملفات مهمة.", size = 14.sp, color = V2Soft)
             if (state.mode == DuplicateScanMode.VISUAL) KText("دي صور متشابهة، وممكن يكون بينها تفاصيل مختلفة. تأكيدك يعني إنك راجعتها واخترت حذفها.", size = 14.sp, color = V2Amber)
             if (state.mode == DuplicateScanMode.NAME) KText("دي ملفات بنفس الاسم، ومحتواها ممكن يختلف. تأكيدك يعني إنك راجعت كل ملف قبل الحذف.", size = 14.sp, color = V2Amber)
-            if (selectedUris.size > 2000) KText("هنطلب موافقة النظام على أول 2000 نسخة في الدفعة. الباقي يفضل محدد للدفعة التالية.", size = 13.sp, color = V2Amber)
+            // Batch limit transparency: show if selection exceeds Android MediaStore limit
+            if (selectedUris.size > 2000) KText("هنطلب موافقة النظام على أول 2000 نسخة في هذه الدفعة. الباقي (${selectedUris.size - 2000}) يفضل محدد للدفعة التالية.", size = 13.sp, color = V2Amber)
         } },
         dismissButton = { TextButton(onClick = { confirmDeletion = false }) { KText("رجوع للمراجعة", size = 14.sp, color = V2Soft) } },
         confirmButton = { TextButton(onClick = {
