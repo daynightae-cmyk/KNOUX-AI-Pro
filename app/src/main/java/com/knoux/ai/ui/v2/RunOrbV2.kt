@@ -233,7 +233,7 @@ internal fun KnouxRunOrb(
  * the single gateway that starts whatever service the user is looking at.
  */
 @Composable
-internal fun KnouxRunOrbBlock(
+fun KnouxRunOrbBlock(
     progress: Float?,
     running: Boolean,
     enabled: Boolean,

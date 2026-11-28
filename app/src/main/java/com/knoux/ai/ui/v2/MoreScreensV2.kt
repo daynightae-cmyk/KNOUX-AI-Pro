@@ -166,7 +166,7 @@ private fun V2PageHeading(
 
 /** Legacy wrapper - uses InteriorScaffold for backward compatibility with existing screens. */
 @Composable
-private fun InteriorScaffold(
+fun InteriorScaffold(
     onBack: () -> Unit,
     onPro: () -> Unit,
     bottomBar: (@Composable () -> Unit)? = null,
@@ -196,7 +196,7 @@ private fun InteriorScaffold(
 
 /** Legacy wrapper - uses PageHeading for backward compatibility. */
 @Composable
-private fun PageHeading(
+fun PageHeading(
     title: String,
     subtitle: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
@@ -333,7 +333,7 @@ private fun HairLine() {
 }
 
 @Composable
-internal fun PreviewNote(text: String) {
+fun PreviewNote(text: String) {
     Row(
         Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,

@@ -95,7 +95,7 @@ private fun tr(icon: ImageVector, label: String, value: String, accent: Color) =
 
 private fun percent(f: DeviceFacts): String = "${(f.storage.usedFraction * 100).toInt()}%"
 
-private fun mediaSummary(f: DeviceFacts): String =
+fun mediaSummary(f: DeviceFacts): String =
     if (f.media.permissionGranted) {
         "${formatCount(f.media.images + f.media.videos)} ملفًا · ${formatBytes(f.media.imagesBytes + f.media.videosBytes)}"
     } else {

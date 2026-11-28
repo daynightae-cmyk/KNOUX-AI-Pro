@@ -377,6 +377,23 @@ fun V2SectionToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
         )
         return
     }
+    // Residue section uses dedicated screens for each tool
+    if (def.section == "residue") {
+        when (route) {
+            "res-sources" -> V2ResidueSourcesScreen(onBack = onBack, onPro = onPro)
+            "res-scan" -> V2ResidueScanScreen(onBack = onBack, onPro = onPro)
+            "res-candidates" -> V2ResidueCandidatesScreen(onBack = onBack, onPro = onPro)
+            "res-groups" -> V2ResidueGroupsScreen(onBack = onBack, onPro = onPro)
+            "res-link" -> V2ResidueLinkScreen(onBack = onBack, onPro = onPro)
+            "res-detail" -> V2ResidueDetailScreen(onBack = onBack, onPro = onPro)
+            "res-risk" -> V2ResidueRiskScreen(onBack = onBack, onPro = onPro)
+            "res-exclusions" -> V2ResidueExclusionsScreen(onBack = onBack, onPro = onPro)
+            "res-confirm" -> V2ResidueConfirmScreen(onBack = onBack, onPro = onPro)
+            "res-history" -> V2ResidueHistoryScreen(onBack = onBack, onPro = onPro)
+            else -> V2ResidueScreen(onBack = onBack, onReview = { /* no-op */ }, onPro = onPro)
+        }
+        return
+    }
     val context = LocalContext.current
     val navigate = LocalServiceNavigate.current
     val (refresh, _) = rememberRefreshCounter()

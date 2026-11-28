@@ -97,6 +97,16 @@ import com.knoux.ai.ui.v2.V2ProScreen
 import com.knoux.ai.ui.v2.V2ReportsScreen
 import com.knoux.ai.ui.v2.V2ResidueReviewScreen
 import com.knoux.ai.ui.v2.V2ResidueScreen
+import com.knoux.ai.ui.v2.V2ResidueSourcesScreen
+import com.knoux.ai.ui.v2.V2ResidueScanScreen
+import com.knoux.ai.ui.v2.V2ResidueCandidatesScreen
+import com.knoux.ai.ui.v2.V2ResidueGroupsScreen
+import com.knoux.ai.ui.v2.V2ResidueLinkScreen
+import com.knoux.ai.ui.v2.V2ResidueDetailScreen
+import com.knoux.ai.ui.v2.V2ResidueRiskScreen
+import com.knoux.ai.ui.v2.V2ResidueExclusionsScreen
+import com.knoux.ai.ui.v2.V2ResidueConfirmScreen
+import com.knoux.ai.ui.v2.V2ResidueHistoryScreen
 import com.knoux.ai.ui.v2.V2ScanSummaryScreen
 import com.knoux.ai.ui.v2.V2SettingsScreenV2
 import com.knoux.ai.ui.v2.V2SmartCleanScreen
