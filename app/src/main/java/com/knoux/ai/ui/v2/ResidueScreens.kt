@@ -60,6 +60,7 @@ import androidx.compose.material.icons.rounded.Verified
 import androidx.compose.material.icons.rounded.Videocam
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.WarningAmber
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -97,65 +98,66 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlin.math.roundToInt
 
 // ============================================================================
-// M03 App Residue Cleanup - Functional Screens
-// These screens use SectionServiceViewModel for scanning and Room for history
+// M03 App Residue Cleanup - Functional Screens (using shared ResidueSharedViewModel)
 // ============================================================================
 
-/** Residue Sources Screen (res-sources) - Shows actual residue sources with real data */
+/** Provides or retrieves the shared ResidueSharedViewModel for the navigation graph scope. */
 @Composable
-fun V2ResidueSourcesScreen(onBack: () -> Unit, onPro: () -> Unit) {
+internal fun rememberResidueSharedViewModel(): ResidueSharedViewModel {
     val context = LocalContext.current
     val application = context.applicationContext as Application
     val database = remember(application) { AppDatabase.getDatabase(application) }
     val repository = remember(database) { KnouxRepository(database) }
-    val sectionViewModel: SectionServiceViewModel = viewModel(
-        key = "section-res-sources",
-        initializer = {
-            SectionServiceViewModel(
-                application = application,
-                repository = repository,
-                sectionKey = "residue",
-                serviceName = "مصادر الملفات المسموحة",
-                requiresMedia = true,
-            )
-        },
+    return viewModel(
+        key = "residue-shared-vm",
+        initializer = { ResidueSharedViewModel(application, repository) }
     )
-    val facts = sectionViewModel.state.facts
-    val loaded = facts.computedAt > 0L
+}
+
+/** Residue Sources Screen (res-sources) - Shows actual residue sources with real data */
+@Composable
+fun V2ResidueSourcesScreen(onBack: () -> Unit, onPro: () -> Unit) {
+    val sharedVm = rememberResidueSharedViewModel()
+    val state = sharedVm.state
+    val loaded = state.loaded
 
     FixedServiceScreen(
         spec = ServiceSpecs.residue,
         status = if (loaded) "مصادر مقروءة" else "جاهز للفحص",
         statusColor = if (loaded) V2Green else V2Violet,
-        metric = if (loaded) "${formatBytes(facts.cleanFiles.residueBytes)} في ${formatCount(facts.cleanFiles.residueFiles)} ملف" else "—",
+        metric = if (loaded) "${formatBytes(state.facts.cleanFiles.residueBytes)} في ${formatCount(state.facts.cleanFiles.residueFiles)} ملف" else "—",
         scene = { sceneModifier -> ServiceArtScene(ServiceSpecs.residue, sceneModifier) },
         action = {
             KnouxRunOrbBlock(
                 progress = if (loaded) 1f else 0f,
-                running = sectionViewModel.state.isScanning,
-                enabled = !sectionViewModel.state.isScanning,
+                running = state.isScanning,
+                enabled = !state.isScanning,
                 label = when {
-                    sectionViewModel.state.isScanning -> sectionViewModel.state.stageLabel
+                    state.isScanning -> state.stageLabel
                     loaded -> "اضغط لإعادة الفحص"
                     else -> "اضغط لبدء فحص المصادر"
                 },
                 accent = V2Violet,
                 accent2 = V2Cyan,
-                onTap = { sectionViewModel.scanSection() },
+                onTap = { if (!state.isScanning) sharedVm.scanResidue() },
             )
         },
         content = {
             if (loaded) {
-                ResidueSourcesContent(facts)
+                ResidueSourcesContent(state.facts, state.includeMediaStore, { sharedVm.setIncludeMediaStore(it) })
             } else {
-                ResidueEmptyState(onScan = { sectionViewModel.scanSection() })
+                ResidueEmptyState(onScan = { sharedVm.scanResidue() })
             }
         },
     )
 }
 
 @Composable
-internal fun ResidueSourcesContent(facts: DeviceFacts) {
+internal fun ResidueSourcesContent(
+    facts: DeviceFacts,
+    includeMediaStore: Boolean,
+    onMediaStoreToggle: (Boolean) -> Unit,
+) {
     InteriorScaffold(onBack = { /* handled by FixedServiceScreen */ }, onPro = { /* handled by FixedServiceScreen */ }) {
         item { PageHeading("مصادر الملفات المسموحة", "أين يقرأ KNOUX البقايا", Icons.Rounded.Folder, V2Pink) }
         item {
@@ -196,6 +198,21 @@ internal fun ResidueSourcesContent(facts: DeviceFacts) {
                 }
             }
         }
+        item {
+            V2GlassCard(Modifier.fillMaxWidth(), padding = 16.dp, radius = 16.dp, glow = V2Violet, borderAlpha = .25f) {
+                Row {
+                    androidx.compose.material3.Switch(
+                        checked = includeMediaStore,
+                        onCheckedChange = onMediaStoreToggle,
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Column {
+                        KText("تضمين MediaStore", size = 13.sp, weight = FontWeight.Bold)
+                        KText("فحص بقايا الوسائط القديمة/المعطلة", size = 11.sp, color = ProTextSecondary)
+                    }
+                }
+            }
+        }
         item { PreviewNote("لا يتجاوز KNOUX قيود Android. المصادر أعلاه هي كل ما يمكن قراءته دون صلاحيات جذر.") }
     }
 }
@@ -231,25 +248,9 @@ internal fun ResidueSourceRow(
 /** Residue Scan Screen (res-scan) - Actual scanning with progress and results */
 @Composable
 fun V2ResidueScanScreen(onBack: () -> Unit, onPro: () -> Unit) {
-    val context = LocalContext.current
-    val application = context.applicationContext as Application
-    val database = remember(application) { AppDatabase.getDatabase(application) }
-    val repository = remember(database) { KnouxRepository(database) }
-    val sectionViewModel: SectionServiceViewModel = viewModel(
-        key = "section-res-scan",
-        initializer = {
-            SectionServiceViewModel(
-                application = application,
-                repository = repository,
-                sectionKey = "residue",
-                serviceName = "فحص بقايا التطبيقات",
-                requiresMedia = true,
-            )
-        },
-    )
-    val facts = sectionViewModel.state.facts
-    val state = sectionViewModel.state
-    val loaded = facts.computedAt > 0L
+    val sharedVm = rememberResidueSharedViewModel()
+    val state = sharedVm.state
+    val loaded = state.loaded
 
     FixedServiceScreen(
         spec = ServiceSpecs.residue,
@@ -266,7 +267,7 @@ fun V2ResidueScanScreen(onBack: () -> Unit, onPro: () -> Unit) {
             else -> V2Violet
         },
         metric = when {
-            loaded -> "${formatCount(facts.cleanFiles.residueFiles)} ملف · ${formatBytes(facts.cleanFiles.residueBytes)}"
+            loaded -> "${formatCount(state.facts.cleanFiles.residueFiles)} ملف · ${formatBytes(state.facts.cleanFiles.residueBytes)}"
             else -> "اضغط الزر الدائري لبدء الفحص"
         },
         scene = { sceneModifier -> ServiceArtScene(ServiceSpecs.residue, sceneModifier) },
@@ -287,23 +288,23 @@ fun V2ResidueScanScreen(onBack: () -> Unit, onPro: () -> Unit) {
                 },
                 accent = V2Violet,
                 accent2 = V2Cyan,
-                onTap = { if (!state.isScanning) sectionViewModel.scanSection() },
+                onTap = { if (!state.isScanning) sharedVm.scanResidue() },
             )
         },
         content = {
             if (state.isScanning) {
                 ScanProgressIndicator(state.progress, state.stageLabel)
             } else if (state.scanError != null) {
-                ServiceErrorCard(state.scanError!!) { sectionViewModel.scanSection() }
+                ServiceErrorCard(state.scanError!!) { sharedVm.scanResidue() }
             } else if (loaded) {
-                ScanCompleteSummary(facts)
+                ScanCompleteSummary(state.facts)
             } else {
                 V2GlassCard(Modifier.fillMaxWidth().padding(16.dp), padding = 16.dp, radius = 16.dp, glow = V2Violet, borderAlpha = .25f) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Row {
                             androidx.compose.material3.Switch(
-                                checked = true,
-                                onCheckedChange = { /* handled by requiresMedia */ },
+                                checked = state.includeMediaStore,
+                                onCheckedChange = { sharedVm.setIncludeMediaStore(it) },
                             )
                             Spacer(Modifier.width(12.dp))
                             Column {
@@ -387,24 +388,10 @@ internal fun ResidueBreakdownRow(label: String, bytes: Long, count: Int, accent:
 /** Residue Candidates Screen (res-candidates) - Shows actual discovered candidates */
 @Composable
 fun V2ResidueCandidatesScreen(onBack: () -> Unit, onPro: () -> Unit) {
-    val context = LocalContext.current
-    val application = context.applicationContext as Application
-    val database = remember(application) { AppDatabase.getDatabase(application) }
-    val repository = remember(database) { KnouxRepository(database) }
-    val sectionViewModel: SectionServiceViewModel = viewModel(
-        key = "section-res-candidates",
-        initializer = {
-            SectionServiceViewModel(
-                application = application,
-                repository = repository,
-                sectionKey = "residue",
-                serviceName = "عرض الملفات المرشحة",
-                requiresMedia = true,
-            )
-        },
-    )
-    val facts = sectionViewModel.state.facts
-    val loaded = facts.computedAt > 0L
+    val sharedVm = rememberResidueSharedViewModel()
+    val state = sharedVm.state
+    val loaded = state.loaded
+    val facts = state.facts
 
     InteriorScaffold(onBack, onPro) {
         item { PageHeading("الملفات المرشحة", "نتائج الفحص القابلة للتنظيف", Icons.Rounded.Inventory, V2Violet) }
@@ -487,24 +474,10 @@ internal fun ResidueCandidateSection(
 /** Residue Groups Screen (res-groups) - Groups candidates by legitimate source */
 @Composable
 fun V2ResidueGroupsScreen(onBack: () -> Unit, onPro: () -> Unit) {
-    val context = LocalContext.current
-    val application = context.applicationContext as Application
-    val database = remember(application) { AppDatabase.getDatabase(application) }
-    val repository = remember(database) { KnouxRepository(database) }
-    val sectionViewModel: SectionServiceViewModel = viewModel(
-        key = "section-res-groups",
-        initializer = {
-            SectionServiceViewModel(
-                application = application,
-                repository = repository,
-                sectionKey = "residue",
-                serviceName = "تجميع المرشحات حسب المصدر",
-                requiresMedia = true,
-            )
-        },
-    )
-    val facts = sectionViewModel.state.facts
-    val loaded = facts.computedAt > 0L
+    val sharedVm = rememberResidueSharedViewModel()
+    val state = sharedVm.state
+    val loaded = state.loaded
+    val facts = state.facts
 
     InteriorScaffold(onBack, onPro) {
         item { PageHeading("تجميع المرشحات حسب المصدر", "كاش أم وسائط أم محمي", Icons.Rounded.Layers, V2Cyan) }
@@ -551,24 +524,10 @@ internal fun GroupRow(title: String, bytes: Long, count: Int, accent: Color, sou
 /** Residue Link Analysis (res-link) - Meaningful association evidence */
 @Composable
 fun V2ResidueLinkScreen(onBack: () -> Unit, onPro: () -> Unit) {
-    val context = LocalContext.current
-    val application = context.applicationContext as Application
-    val database = remember(application) { AppDatabase.getDatabase(application) }
-    val repository = remember(database) { KnouxRepository(database) }
-    val sectionViewModel: SectionServiceViewModel = viewModel(
-        key = "section-res-link",
-        initializer = {
-            SectionServiceViewModel(
-                application = application,
-                repository = repository,
-                sectionKey = "residue",
-                serviceName = "تحليل ارتباط الملف بالتطبيق",
-                requiresMedia = true,
-            )
-        },
-    )
-    val facts = sectionViewModel.state.facts
-    val loaded = facts.computedAt > 0L
+    val sharedVm = rememberResidueSharedViewModel()
+    val state = sharedVm.state
+    val loaded = state.loaded
+    val facts = state.facts
 
     InteriorScaffold(onBack, onPro) {
         item { PageHeading("تحليل ارتباط الملف بالتطبيق", "ما نعرفه وما لا نستطيع إثباته", Icons.Rounded.TrackChanges, V2Violet) }
@@ -614,24 +573,10 @@ internal fun LinkRow(icon: androidx.compose.ui.graphics.vector.ImageVector, titl
 /** Residue Detail Preview (res-detail) - Actual item detail and preview */
 @Composable
 fun V2ResidueDetailScreen(onBack: () -> Unit, onPro: () -> Unit) {
-    val context = LocalContext.current
-    val application = context.applicationContext as Application
-    val database = remember(application) { AppDatabase.getDatabase(application) }
-    val repository = remember(database) { KnouxRepository(database) }
-    val sectionViewModel: SectionServiceViewModel = viewModel(
-        key = "section-res-detail",
-        initializer = {
-            SectionServiceViewModel(
-                application = application,
-                repository = repository,
-                sectionKey = "residue",
-                serviceName = "معاينة تفاصيل البقايا",
-                requiresMedia = true,
-            )
-        },
-    )
-    val facts = sectionViewModel.state.facts
-    val loaded = facts.computedAt > 0L
+    val sharedVm = rememberResidueSharedViewModel()
+    val state = sharedVm.state
+    val loaded = state.loaded
+    val facts = state.facts
 
     InteriorScaffold(onBack, onPro) {
         item { PageHeading("معاينة تفاصيل البقايا", "حجم وعدد ومسار ما يمكن مراجعته", Icons.Rounded.Description, V2Cyan) }
@@ -678,24 +623,10 @@ internal fun DetailRow(icon: androidx.compose.ui.graphics.vector.ImageVector, la
 /** Residue Risk Classification (res-risk) - Actual selected operation risk */
 @Composable
 fun V2ResidueRiskScreen(onBack: () -> Unit, onPro: () -> Unit) {
-    val context = LocalContext.current
-    val application = context.applicationContext as Application
-    val database = remember(application) { AppDatabase.getDatabase(application) }
-    val repository = remember(database) { KnouxRepository(database) }
-    val sectionViewModel: SectionServiceViewModel = viewModel(
-        key = "section-res-risk",
-        initializer = {
-            SectionServiceViewModel(
-                application = application,
-                repository = repository,
-                sectionKey = "residue",
-                serviceName = "تصنيف المخاطر قبل التنظيف",
-                requiresMedia = true,
-            )
-        },
-    )
-    val facts = sectionViewModel.state.facts
-    val loaded = facts.computedAt > 0L
+    val sharedVm = rememberResidueSharedViewModel()
+    val state = sharedVm.state
+    val loaded = state.loaded
+    val facts = state.facts
 
     InteriorScaffold(onBack, onPro) {
         item { PageHeading("تصنيف المخاطر قبل التنظيف", "آمن أم متوسط أم محمي", Icons.Rounded.Security, V2Amber) }
@@ -740,16 +671,19 @@ internal fun RiskRow(icon: androidx.compose.ui.graphics.vector.ImageVector, labe
 /** Residue Exclusions Screen (res-exclusions) - Actual exclusion controls */
 @Composable
 fun V2ResidueExclusionsScreen(onBack: () -> Unit, onPro: () -> Unit) {
+    val sharedVm = rememberResidueSharedViewModel()
+    val state = sharedVm.state
+
     InteriorScaffold(onBack, onPro) {
         item { PageHeading("استثناء الملفات الآمنة", "ما لن يلمسه التنظيف", Icons.Rounded.Shield, V2Green) }
         item {
             V2GlassCard(Modifier.fillMaxWidth(), padding = 16.dp, radius = 20.dp, glow = V2Green, borderAlpha = .3f) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    ExclusionRow(Icons.Rounded.Folder, "مستثنى بواسطة النظام", "Android/data", V2Amber, "Scoped Storage يمنع الوصول")
-                    ExclusionRow(Icons.Rounded.Folder, "مستثنى بواسطة النظام", "Android/obb", V2Amber, "Scoped Storage يمنع الوصول")
-                    ExclusionRow(Icons.Rounded.Download, "التنزيلات", "تُراجع يدويًا في شاشتها", V2Cyan, "مجلد مشترك - مراجعة منفصلة")
-                    ExclusionRow(Icons.Rounded.Lock, "بيانات KNOUX الدائمة", "خارج مجلد الكاش", V2Green, "قواعد بيانات، إعدادات، ملفات مستخدم")
-                    ExclusionRow(Icons.Rounded.Shield, "نسخة محفوظة لكل مجموعة مكررة", "أول ملف في كل مجموعة", V2Pink, "قاعدة KNOUX: لا حذف للملف المحتفظ به")
+                    ExclusionRow(Icons.Rounded.Folder, "مستثنى بواسطة النظام", "Android/data", V2Amber, "Scoped Storage يمنع الوصول", false)
+                    ExclusionRow(Icons.Rounded.Folder, "مستثنى بواسطة النظام", "Android/obb", V2Amber, "Scoped Storage يمنع الوصول", false)
+                    ExclusionRow(Icons.Rounded.Download, "التنزيلات", "تُراجع يدويًا في شاشتها", V2Cyan, "مجلد مشترك - مراجعة منفصلة", false)
+                    ExclusionRow(Icons.Rounded.Lock, "بيانات KNOUX الدائمة", "خارج مجلد الكاش", V2Green, "قواعد بيانات، إعدادات، ملفات مستخدم", false)
+                    ExclusionRow(Icons.Rounded.Shield, "نسخة محفوظة لكل مجموعة مكررة", "أول ملف في كل مجموعة", V2Pink, "قاعدة KNOUX: لا حذف للملف المحتفظ به", true)
                 }
             }
         }
@@ -758,7 +692,7 @@ fun V2ResidueExclusionsScreen(onBack: () -> Unit, onPro: () -> Unit) {
 }
 
 @Composable
-internal fun ExclusionRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, path: String, accent: Color, reason: String) {
+internal fun ExclusionRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, path: String, accent: Color, reason: String, isEnforced: Boolean = true) {
     V2GlassCard(Modifier.fillMaxWidth(), padding = 14.dp, radius = 16.dp, glow = accent, borderAlpha = .25f) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             V2IconTile(icon, accent, size = 40.dp, iconSize = 20.dp)
@@ -768,33 +702,24 @@ internal fun ExclusionRow(icon: androidx.compose.ui.graphics.vector.ImageVector,
                 KText(path, size = 11.sp, color = ProTextSecondary)
                 KText(reason, size = 9.sp, color = ProTextSecondary)
             }
+            if (isEnforced) {
+                Icon(Icons.Rounded.Lock, null, tint = accent, modifier = Modifier.size(20.dp))
+            }
         }
     }
 }
 
-/** Residue Confirmation Screen (res-confirm) - Genuine confirmation workflow */
+/** Residue Confirmation Screen (res-confirm) - Uses shared operation controller */
 @Composable
 fun V2ResidueConfirmScreen(onBack: () -> Unit, onPro: () -> Unit) {
     val context = LocalContext.current
-    val application = context.applicationContext as Application
-    val database = remember(application) { AppDatabase.getDatabase(application) }
-    val repository = remember(database) { KnouxRepository(database) }
-    val sectionViewModel: SectionServiceViewModel = viewModel(
-        key = "section-res-confirm",
-        initializer = {
-            SectionServiceViewModel(
-                application = application,
-                repository = repository,
-                sectionKey = "residue",
-                serviceName = "تحديد البقايا وتأكيد الإزالة",
-                requiresMedia = true,
-            )
-        },
-    )
-    val facts = sectionViewModel.state.facts
-    val loaded = facts.computedAt > 0L
+    val sharedVm = rememberResidueSharedViewModel()
+    val state = sharedVm.state
+    val loaded = state.loaded
+    val facts = state.facts
     val scope = rememberCoroutineScope()
     var confirmDialog by remember { mutableStateOf(false) }
+    var lastResult by remember { mutableStateOf<OperationStatus?>(null) }
     var lastFreed by remember { mutableStateOf<Long?>(null) }
 
     InteriorScaffold(onBack, onPro) {
@@ -813,16 +738,73 @@ fun V2ResidueConfirmScreen(onBack: () -> Unit, onPro: () -> Unit) {
                     }
                 }
 
-                if (lastFreed != null) {
-                    V2GlassCard(Modifier.fillMaxWidth(), padding = 10.dp, radius = 16.dp, glow = V2Green, borderAlpha = .45f) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Rounded.Verified, null, tint = V2Green, modifier = Modifier.size(20.dp))
-                            Spacer(Modifier.width(8.dp))
-                            Column(Modifier.weight(1f)) {
-                                KText("تم التنظيف فعليًا", size = 10.sp, weight = FontWeight.Bold, color = V2Green)
-                                KText("حُرر ${formatBytes(lastFreed ?: 0L)} من كاش KNOUX.", size = 9.sp, color = V2Soft)
+                // Show operation result with proper status
+                when (state.operationStatus) {
+                    OperationStatus.VERIFIED, OperationStatus.PARTIAL, OperationStatus.NO_CHANGE -> {
+                        val statusColor = when (state.operationStatus) {
+                            OperationStatus.VERIFIED -> V2Green
+                            OperationStatus.PARTIAL -> V2Amber
+                            OperationStatus.NO_CHANGE -> V2Cyan
+                            else -> V2Muted
+                        }
+                        val statusText = when (state.operationStatus) {
+                            OperationStatus.VERIFIED -> "تم التنظيف بنجاح - تم التحقق"
+                            OperationStatus.PARTIAL -> "تنظيف جزئي - بعض الملفات لم تُحذف"
+                            OperationStatus.NO_CHANGE -> "لا تغيير - الكاش كان فارغاً"
+                            else -> "غير معروف"
+                        }
+                        val statusIcon: androidx.compose.ui.graphics.vector.ImageVector = when (state.operationStatus) {
+                            OperationStatus.VERIFIED -> Icons.Rounded.Verified
+                            OperationStatus.PARTIAL -> Icons.Rounded.WarningAmber
+                            else -> Icons.Rounded.Info
+                        }
+                        V2GlassCard(Modifier.fillMaxWidth(), padding = 10.dp, radius = 16.dp, glow = statusColor, borderAlpha = .45f) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = statusIcon,
+                                    contentDescription = "حالة العملية",
+                                    tint = statusColor,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Column(Modifier.weight(1f)) {
+                                    KText(statusText, size = 10.sp, weight = FontWeight.Bold, color = statusColor)
+                                    state.lastFreedBytes?.let { freed ->
+                                        KText("حُرر ${formatBytes(freed)} من كاش KNOUX.", size = 9.sp, color = V2Soft)
+                                    }
+                                    state.lastOperationResult?.let { result ->
+                                        KText("نتيجة العملية: $result", size = 9.sp, color = V2Soft)
+                                    }
+                                }
                             }
                         }
+                    }
+                    OperationStatus.FAILED -> {
+                        V2GlassCard(Modifier.fillMaxWidth(), padding = 10.dp, radius = 16.dp, glow = V2Red, borderAlpha = .45f) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Rounded.Error, contentDescription = "خطأ", tint = V2Red, modifier = Modifier.size(20.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Column(Modifier.weight(1f)) {
+                                    KText("فشل التنظيف", size = 10.sp, weight = FontWeight.Bold, color = V2Red)
+                                    KText("تعذر تنفيذ العملية. راجع السجل للتفاصيل.", size = 9.sp, color = V2Soft)
+                                }
+                            }
+                        }
+                    }
+                    OperationStatus.CANCELLED -> {
+                        V2GlassCard(Modifier.fillMaxWidth(), padding = 10.dp, radius = 16.dp, glow = V2Amber, borderAlpha = .45f) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Rounded.Close, contentDescription = "إلغاء", tint = V2Amber, modifier = Modifier.size(20.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Column(Modifier.weight(1f)) {
+                                    KText("تم الإلغاء", size = 10.sp, weight = FontWeight.Bold, color = V2Amber)
+                                    KText("لم يتم حذف أي ملف.", size = 9.sp, color = V2Soft)
+                                }
+                            }
+                        }
+                    }
+                    else -> {
+                        // IDLE, AWAITING_CONSENT, EXECUTING - no result card needed
                     }
                 }
 
@@ -837,7 +819,13 @@ fun V2ResidueConfirmScreen(onBack: () -> Unit, onPro: () -> Unit) {
                 }
 
                 V2GradientButton("تنظيف كاش KNOUX الآن", {
-                    confirmDialog = true
+                    if (state.operationStatus == OperationStatus.EXECUTING || state.operationStatus == OperationStatus.AWAITING_CONSENT) return@V2GradientButton
+                    scope.launch {
+                        val prep = sharedVm.prepareCleanup()
+                        if (prep.success) {
+                            confirmDialog = true
+                        }
+                    }
                 }, icon = Icons.Rounded.DeleteSweep, modifier = Modifier.fillMaxWidth())
             } else {
                 V2GlassCard(Modifier.fillMaxWidth(), padding = 16.dp, radius = 20.dp, glow = V2Pink, borderAlpha = .3f) {
@@ -867,45 +855,20 @@ fun V2ResidueConfirmScreen(onBack: () -> Unit, onPro: () -> Unit) {
                 androidx.compose.material3.TextButton(onClick = {
                     confirmDialog = false
                     scope.launch {
-                        val (freed, verified) = withContext(Dispatchers.IO) {
-                            val before = ownCacheBytes(context).first
-                            val opId = repository.createOperationRequest(
-                                scanSessionId = sectionViewModel.state.lastScanId ?: "",
-                                serviceId = "app_residue",
-                                requestedAction = "clear_own_cache",
-                                selectionCount = 1,
-                                keeperIds = null,
-                                exclusionIds = null,
-                                predictedEligibleBytes = before,
-                            )
-                            withContext(Dispatchers.IO) { repository.recordConsent(opId, granted = true) }
-                            val freed = clearOwnCache(context)
-                            val after = ownCacheBytes(context).first
-                            val verified = after < before
-                            withContext(Dispatchers.IO) {
-                                repository.recordItemOutcomes(opId, listOf(
-                                    OperationItemOutcomeEntity(
-                                        operationId = opId,
-                                        itemId = "knoux_own_cache",
-                                        result = if (verified) "SUCCESS" else "NO_CHANGE",
-                                        postQueryExists = after > 0L,
-                                        measuredBytes = freed,
-                                        providerError = null,
-                                        completedAt = System.currentTimeMillis(),
-                                    )
-                                ), finalStatus = if (verified) "VERIFIED" else "PARTIAL")
-                            }
-                            Pair(freed, verified)
+                        val result = sharedVm.executeCleanup(consentGranted = true)
+                        if (!result.success) {
+                            // Error handled in ViewModel
                         }
-                        lastFreed = freed
-                        sectionViewModel.scanSection()
                     }
                 }) { KText("تنظيف الآن", size = 12.sp, weight = FontWeight.Bold, color = V2Cyan) }
             },
             dismissButton = {
-                androidx.compose.material3.TextButton(onClick = { confirmDialog = false }) {
-                    KText("إلغاء", size = 12.sp, color = V2Soft)
-                }
+                androidx.compose.material3.TextButton(onClick = {
+                    confirmDialog = false
+                    scope.launch {
+                        val result = sharedVm.executeCleanup(consentGranted = false)
+                    }
+                }) { KText("إلغاء", size = 12.sp, color = V2Soft) }
             },
         )
     }
@@ -930,24 +893,13 @@ internal fun ConfirmRow(label: String, bytes: String, count: String, accent: Col
 @Composable
 fun V2ResidueHistoryScreen(onBack: () -> Unit, onPro: () -> Unit) {
     val context = LocalContext.current
+    val sharedVm = rememberResidueSharedViewModel()
     val application = context.applicationContext as Application
     val database = remember(application) { AppDatabase.getDatabase(application) }
     val repository = remember(database) { KnouxRepository(database) }
-    val sectionViewModel: SectionServiceViewModel = viewModel(
-        key = "section-res-history",
-        initializer = {
-            SectionServiceViewModel(
-                application = application,
-                repository = repository,
-                sectionKey = "residue",
-                serviceName = "إعادة الفحص وسجل العمليات",
-                requiresMedia = true,
-            )
-        },
-    )
     val history = repository.recentOperations(50).collectAsState(initial = emptyList()).value
         .filter { it.serviceId == "app_residue" }
-    val facts = sectionViewModel.state.facts
+    val state = sharedVm.state
 
     InteriorScaffold(onBack, onPro) {
         item { PageHeading("إعادة الفحص وسجل العمليات", "كل قياس محفوظ محليًا", Icons.Rounded.History, V2Green) }
@@ -966,7 +918,7 @@ fun V2ResidueHistoryScreen(onBack: () -> Unit, onPro: () -> Unit) {
             }
         }
         item {
-            V2GhostButton("إعادة الفحص الآن", { sectionViewModel.scanSection() }, icon = Icons.Rounded.Refresh, height = 48.dp)
+            V2GhostButton("إعادة الفحص الآن", { sharedVm.scanResidue() }, icon = Icons.Rounded.Refresh, height = 48.dp)
         }
     }
 }

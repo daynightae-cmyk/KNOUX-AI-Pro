@@ -390,7 +390,7 @@ fun V2SectionToolScreen(route: String, onBack: () -> Unit, onPro: () -> Unit) {
             "res-exclusions" -> V2ResidueExclusionsScreen(onBack = onBack, onPro = onPro)
             "res-confirm" -> V2ResidueConfirmScreen(onBack = onBack, onPro = onPro)
             "res-history" -> V2ResidueHistoryScreen(onBack = onBack, onPro = onPro)
-            else -> V2ResidueScreen(onBack = onBack, onReview = { /* no-op */ }, onPro = onPro)
+            else -> V2ResidueScreen(onBack = onBack, onReview = { /* navigate to res-confirm for review */ }, onPro = onPro)
         }
         return
     }
