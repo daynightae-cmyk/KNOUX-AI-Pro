@@ -3,14 +3,14 @@
   "workspace_windows": "K:\\KNOUX-AI-Pro",
   "branch": "master",
   "origin": "https://github.com/daynightae-cmyk/KNOUX-AI-Pro.git",
-  "updated": "2026-11-28T10:15+0400",
-  "local_sha": "a50bc508877c51174067c004d38bc10bff0060aa",
-  "remote_master_sha": "a50bc508877c51174067c004d38bc10bff0060aa",
+  "updated": "2026-11-28T14:30+0400",
+  "local_sha": "5c04da0326c5dee077cad922be183886ef227446",
+  "remote_master_sha": "5c04da0326c5dee077cad922be183886ef227446",
   "synced": true,
   "dirty": 0,
   "untracked": 0,
   "active_writers": "none (single writer session)",
-  "device": "192.168.70.109:43477 SM-A025F API31 — attached; debug variant com.knoux.ai.debug installed (APK SHA-256 c382b737b20db96ba00544858b2ca48b0f28915464c1ccf70be355a3d93bf2be); production identity com.knoux.ai BLOCKED_DEVICE by package-ID collision with Standard app",
+  "device": "192.168.70.109:43477 SM-A025F API31 — attached; debug variant com.knoux.ai.debug installed (APK SHA-256 5a9e59d47a0d8e6ae7cffc9b04d612ff0c6c0ba3d3e935d067498e68db9df6f2); production identity com.knoux.ai BLOCKED_DEVICE by package-ID collision with Standard app",
   "gate_status": {
     "G00_source_ownership": "VERIFIED",
     "G01_capability_data": "PARTIAL (Room/MediaStore providers wired; device requery executed for M01-M03 via debug variant)",
@@ -21,11 +21,11 @@
     "G06_device_e2e": "DEVICE_SUBSET_VERIFIED (M01-M03 verified on SM-A025F via debug variant; production identity BLOCKED_DEVICE)",
     "G07_visual_security": "NOT_RUN",
     "G08_review": "NOT_RUN",
-    "G09_integrate": "LOCAL_COMMITTED + REMOTE_MASTER_VERIFIED (a50bc50 FF-pushed)",
+    "G09_integrate": "LOCAL_COMMITTED + REMOTE_MASTER_VERIFIED (5c04da0 FF-pushed)",
     "G10_safe_cleanup": "DEFERRED (dry-run only, 0 bytes reclaimed)",
     "G11_next": "M04 Privacy Sweep — all CORE routes wired to real screens; PRV_REALTIME/PRV_TRACKER BLOCKED_PLATFORM, PRV_VAULT/PRV_HISTORY NOT_IMPLEMENTED, PRV_REPORT BLOCKED, C10 NOT_IMPLEMENTED"
   },
-  "current_service": "M03 app_residue — 10 CORE + 5 PRO screens functional via SectionTools dynamic routing; ResidueScreens.kt replaces placeholder screens with SectionServiceViewModel implementations; all routes registered in SectionToolsCatalog; NavigationRegistrationSourceContractTest passes",
+  "current_service": "M03 app_residue — 10 CORE + 5 PRO screens functional via shared ResidueSharedViewModel; rescanResidue() forces fresh device observation; functional MediaStore toggle; V2ResidueConfirmScreen uses shared prepareCleanup/executeCleanup with proper OperationStatus; PRO catalog entries connected to real routes; NavigationRegistrationSourceContractTest passes",
   "next_service": "M04 Privacy Sweep — implement 10 CORE + 5 PRO privacy services using DeviceReality, SectionServiceViewModel, Room persistence, existing security infrastructure",
   "blockers": [
     "BLOCKED_DEVICE: Standard appId com.knoux.ai installed on authorized SM-A025F (R9ZR20HWHQY); owner decision required before migration to com.knoux.ai.pro or any device install of production identity"
