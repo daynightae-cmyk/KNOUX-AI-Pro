@@ -29,6 +29,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.CheckBox
+import androidx.compose.material.icons.rounded.CheckBoxOutlineBlank
 import androidx.compose.material.icons.rounded.CleaningServices
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Delete
@@ -43,6 +45,7 @@ import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Inventory
 import androidx.compose.material.icons.rounded.Layers
 import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.LockOpen
 import androidx.compose.material.icons.rounded.Memory
 import androidx.compose.material.icons.rounded.Radar
 import androidx.compose.material.icons.rounded.Refresh
@@ -98,7 +101,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlin.math.roundToInt
 
 // ============================================================================
-// M03 App Residue Cleanup - Functional Screens (using shared ResidueSharedViewModel)
+// M03 App Residue Cleanup - Functional Screens (using corrected ResidueSharedViewModel)
 // ============================================================================
 
 /** Provides or retrieves the shared ResidueSharedViewModel for the navigation graph scope. */
@@ -385,7 +388,7 @@ internal fun ResidueBreakdownRow(label: String, bytes: Long, count: Int, accent:
     }
 }
 
-/** Residue Candidates Screen (res-candidates) - Shows actual discovered candidates */
+/** Residue Candidates Screen (res-candidates) - Shows actual discovered candidates with selection */
 @Composable
 fun V2ResidueCandidatesScreen(onBack: () -> Unit, onPro: () -> Unit) {
     val sharedVm = rememberResidueSharedViewModel()
@@ -407,28 +410,56 @@ fun V2ResidueCandidatesScreen(onBack: () -> Unit, onPro: () -> Unit) {
                             accent = V2Pink,
                             icon = Icons.Rounded.Memory,
                             detail = "ملفات مؤقتة في cache · code_cache · external_cache",
+                            itemId = "knoux_own_cache",
+                            isSelected = state.selectedItems.contains("knoux_own_cache"),
+                            isProtected = state.protectedItems.contains("knoux_own_cache"),
+                            onToggle = { sharedVm.toggleCandidateSelection("knoux_own_cache", facts.ownCacheBytes) },
+                            onProtect = { sharedVm.addProtectedItem("knoux_own_cache") },
+                            onUnprotect = { sharedVm.removeProtectedItem("knoux_own_cache") },
                         )
                         // Media duplicates
                         if (facts.media.duplicateGroups.isNotEmpty()) {
-                            ResidueCandidateSection(
-                                title = "وسائط مكررة",
-                                count = facts.media.duplicateCandidates,
-                                bytes = facts.media.duplicateGroups.sumOf { it.reclaimableBytes },
-                                accent = V2Violet,
-                                icon = Icons.Rounded.ContentCopy,
-                                detail = "${formatCount(facts.media.duplicateGroups.size)} مجموعات مطابقة",
-                            )
+                            facts.media.duplicateGroups.forEachIndexed { groupIndex, group ->
+                                group.uris.forEachIndexed { uriIndex, uri ->
+                                    val isKeeper = uriIndex == 0
+                                    if (!isKeeper) {
+                                        ResidueCandidateSection(
+                                            title = "مكرر: ${group.uris.first()}",
+                                            count = 1,
+                                            bytes = group.sizeBytes,
+                                            accent = V2Violet,
+                                            icon = Icons.Rounded.ContentCopy,
+                                            detail = "مجموعة مكررة ${groupIndex + 1} - ${group.count} نسخ",
+                                            itemId = uri,
+                                            isSelected = state.selectedItems.contains(uri),
+                                            isProtected = state.protectedItems.contains(uri),
+                                            onToggle = { sharedVm.toggleCandidateSelection(uri, group.sizeBytes) },
+                                            onProtect = { sharedVm.addProtectedItem(uri) },
+                                            onUnprotect = { sharedVm.removeProtectedItem(uri) },
+                                            isKeeper = isKeeper,
+                                        )
+                                    }
+                                }
+                            }
                         }
                         // Large media files
                         if (facts.media.largestFiles.isNotEmpty()) {
-                            ResidueCandidateSection(
-                                title = "أكبر ملفات الوسائط",
-                                count = facts.media.largestFiles.size,
-                                bytes = facts.media.largestFiles.sumOf { it.sizeBytes },
-                                accent = V2Cyan,
-                                icon = Icons.Rounded.Image,
-                                detail = "أكبر ${formatCount(facts.media.largestFiles.size)} ملف من MediaStore",
-                            )
+                            facts.media.largestFiles.forEach { file ->
+                                ResidueCandidateSection(
+                                    title = file.name,
+                                    count = 1,
+                                    bytes = file.sizeBytes,
+                                    accent = V2Cyan,
+                                    icon = if (file.isVideo) Icons.Rounded.Videocam else Icons.Rounded.Image,
+                                    detail = "ملف وسائط كبير · ${file.bucket}",
+                                    itemId = file.uriString,
+                                    isSelected = state.selectedItems.contains(file.uriString),
+                                    isProtected = state.protectedItems.contains(file.uriString),
+                                    onToggle = { sharedVm.toggleCandidateSelection(file.uriString, file.sizeBytes) },
+                                    onProtect = { sharedVm.addProtectedItem(file.uriString) },
+                                    onUnprotect = { sharedVm.removeProtectedItem(file.uriString) },
+                                )
+                            }
                         }
                     }
                 }
@@ -453,6 +484,13 @@ internal fun ResidueCandidateSection(
     accent: Color,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     detail: String,
+    itemId: String,
+    isSelected: Boolean,
+    isProtected: Boolean,
+    onToggle: () -> Unit,
+    onProtect: () -> Unit,
+    onUnprotect: () -> Unit,
+    isKeeper: Boolean = false,
 ) {
     V2GlassCard(Modifier.fillMaxWidth(), padding = 14.dp, radius = 16.dp, glow = accent, borderAlpha = .25f) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -462,11 +500,43 @@ internal fun ResidueCandidateSection(
                 Row {
                     KText(title, size = 14.sp, weight = FontWeight.Bold)
                     Spacer(Modifier.width(8.dp))
-                    StatusPill("${formatCount(count)} ملف", accent)
+                    if (isKeeper) {
+                        StatusPill("حارس", V2Green)
+                    } else if (isProtected) {
+                        StatusPill("محمي", V2Amber)
+                    } else if (isSelected) {
+                        StatusPill("محدد", accent)
+                    } else {
+                        StatusPill("${formatCount(count)} ملف", accent)
+                    }
                 }
                 KText(detail, size = 11.sp, color = ProTextSecondary)
             }
-            KText(formatBytes(bytes), size = 13.sp, weight = FontWeight.Bold, color = accent)
+            Column(horizontalAlignment = Alignment.End) {
+                if (isProtected) {
+                    Icon(Icons.Rounded.Lock, null, tint = V2Amber, modifier = Modifier.size(20.dp))
+                } else if (isSelected) {
+                    Icon(Icons.Rounded.CheckCircle, null, tint = accent, modifier = Modifier.size(20.dp))
+                    KText(formatBytes(bytes), size = 13.sp, weight = FontWeight.Bold, color = accent)
+                } else {
+                    KText(formatBytes(bytes), size = 13.sp, weight = FontWeight.Bold, color = accent)
+                }
+                // Selection/protection actions
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    if (isProtected) {
+                        androidx.compose.material3.IconButton(onClick = onUnprotect) {
+                            Icon(Icons.Rounded.LockOpen, contentDescription = "إزالة الحماية", tint = V2Amber, modifier = Modifier.size(20.dp))
+                        }
+                    } else {
+                        androidx.compose.material3.IconButton(onClick = onToggle) {
+                            Icon(if (isSelected) Icons.Rounded.CheckBox else Icons.Rounded.CheckBoxOutlineBlank, contentDescription = if (isSelected) "إلغاء التحديد" else "تحديد", tint = accent, modifier = Modifier.size(20.dp))
+                        }
+                        androidx.compose.material3.IconButton(onClick = onProtect) {
+                            Icon(Icons.Rounded.Shield, contentDescription = "حماية", tint = V2Amber, modifier = Modifier.size(20.dp))
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -485,11 +555,11 @@ fun V2ResidueGroupsScreen(onBack: () -> Unit, onPro: () -> Unit) {
             if (loaded) {
                 V2GlassCard(Modifier.fillMaxWidth(), padding = 16.dp, radius = 20.dp, glow = V2Cyan, borderAlpha = .3f) {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        GroupRow("كاش KNOUX مؤكد", facts.ownCacheBytes, facts.ownCacheFiles, V2Pink, "مجلدات cache الخاصة بالتطبيق")
-                        GroupRow("صور MediaStore", facts.media.imagesBytes, facts.media.images, V2Violet, "مقروءة بإذن الوسائط")
-                        GroupRow("فيديو MediaStore", facts.media.videosBytes, facts.media.videos, V2Violet, "مقروءة بإذن الوسائط")
-                        GroupRow("مجموعات مكررة", facts.media.duplicateGroups.sumOf { it.reclaimableBytes }, facts.media.duplicateCandidates, V2Amber, "مطابقة محتوى SHA-256")
-                        GroupRow("نظام وتطبيقات أخرى", (facts.storage.usedBytes - facts.ownCacheBytes - facts.media.imagesBytes - facts.media.videosBytes).coerceAtLeast(0L), 0, V2Amber, "مقيد بواسطة Scoped Storage")
+                        GroupRow("كاش KNOUX مؤكد", facts.ownCacheBytes, facts.ownCacheFiles, V2Pink, "مجلدات cache الخاصة بالتطبيق", state.protectedItems.contains("knoux_own_cache"), state.selectedItems.contains("knoux_own_cache"))
+                        GroupRow("صور MediaStore", facts.media.imagesBytes, facts.media.images, V2Violet, "مقروءة بإذن الوسائط", false, false)
+                        GroupRow("فيديو MediaStore", facts.media.videosBytes, facts.media.videos, V2Violet, "مقروءة بإذن الوسائط", false, false)
+                        GroupRow("مجموعات مكررة", facts.media.duplicateGroups.sumOf { it.reclaimableBytes }, facts.media.duplicateCandidates, V2Amber, "مطابقة محتوى SHA-256", false, false)
+                        GroupRow("نظام وتطبيقات أخرى", (facts.storage.usedBytes - facts.ownCacheBytes - facts.media.imagesBytes - facts.media.videosBytes).coerceAtLeast(0L), 0, V2Amber, "مقيد بواسطة Scoped Storage", false, false)
                     }
                 }
             } else {
@@ -506,13 +576,22 @@ fun V2ResidueGroupsScreen(onBack: () -> Unit, onPro: () -> Unit) {
 }
 
 @Composable
-internal fun GroupRow(title: String, bytes: Long, count: Int, accent: Color, sourceDetail: String) {
+internal fun GroupRow(title: String, bytes: Long, count: Int, accent: Color, sourceDetail: String, isProtected: Boolean, isSelected: Boolean) {
     V2GlassCard(Modifier.fillMaxWidth(), padding = 14.dp, radius = 16.dp, glow = accent, borderAlpha = .25f) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             V2IconTile(icon = Icons.Rounded.Folder, accent = accent, size = 40.dp, iconSize = 20.dp)
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                KText(title, size = 14.sp, weight = FontWeight.Bold)
+                Row {
+                    KText(title, size = 14.sp, weight = FontWeight.Bold)
+                    if (isProtected) {
+                        Spacer(Modifier.width(8.dp))
+                        StatusPill("محمي", V2Amber)
+                    } else if (isSelected) {
+                        Spacer(Modifier.width(8.dp))
+                        StatusPill("محدد", accent)
+                    }
+                }
                 KText("${formatCount(count)} ملف · ${formatBytes(bytes)}", size = 11.sp, color = ProTextSecondary)
                 KText(sourceDetail, size = 9.sp, color = ProTextSecondary)
             }
@@ -668,7 +747,7 @@ internal fun RiskRow(icon: androidx.compose.ui.graphics.vector.ImageVector, labe
     }
 }
 
-/** Residue Exclusions Screen (res-exclusions) - Actual exclusion controls */
+/** Residue Exclusions Screen (res-exclusions) - Actual exclusion controls with protection management */
 @Composable
 fun V2ResidueExclusionsScreen(onBack: () -> Unit, onPro: () -> Unit) {
     val sharedVm = rememberResidueSharedViewModel()
@@ -679,11 +758,13 @@ fun V2ResidueExclusionsScreen(onBack: () -> Unit, onPro: () -> Unit) {
         item {
             V2GlassCard(Modifier.fillMaxWidth(), padding = 16.dp, radius = 20.dp, glow = V2Green, borderAlpha = .3f) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    ExclusionRow(Icons.Rounded.Folder, "مستثنى بواسطة النظام", "Android/data", V2Amber, "Scoped Storage يمنع الوصول", false)
-                    ExclusionRow(Icons.Rounded.Folder, "مستثنى بواسطة النظام", "Android/obb", V2Amber, "Scoped Storage يمنع الوصول", false)
-                    ExclusionRow(Icons.Rounded.Download, "التنزيلات", "تُراجع يدويًا في شاشتها", V2Cyan, "مجلد مشترك - مراجعة منفصلة", false)
-                    ExclusionRow(Icons.Rounded.Lock, "بيانات KNOUX الدائمة", "خارج مجلد الكاش", V2Green, "قواعد بيانات، إعدادات، ملفات مستخدم", false)
-                    ExclusionRow(Icons.Rounded.Shield, "نسخة محفوظة لكل مجموعة مكررة", "أول ملف في كل مجموعة", V2Pink, "قاعدة KNOUX: لا حذف للملف المحتفظ به", true)
+                    ExclusionRow(Icons.Rounded.Folder, "مستثنى بواسطة النظام", "Android/data", V2Amber, "Scoped Storage يمنع الوصول", false, false, null, null)
+                    ExclusionRow(Icons.Rounded.Folder, "مستثنى بواسطة النظام", "Android/obb", V2Amber, "Scoped Storage يمنع الوصول", false, false, null, null)
+                    ExclusionRow(Icons.Rounded.Download, "التنزيلات", "تُراجع يدويًا في شاشتها", V2Cyan, "مجلد مشترك - مراجعة منفصلة", false, false, null, null)
+                    ExclusionRow(Icons.Rounded.Lock, "بيانات KNOUX الدائمة", "خارج مجلد الكاش", V2Green, "قواعد بيانات، إعدادات، ملفات مستخدم", false, false, null, null)
+                    ExclusionRow(Icons.Rounded.Shield, "نسخة محفوظة لكل مجموعة مكررة", "أول ملف في كل مجموعة", V2Pink, "قاعدة KNOUX: لا حذف للملف المحتفظ به", true, false,
+                        onProtect = { /* system enforced */ },
+                        onUnprotect = { /* system enforced */ })
                 }
             }
         }
@@ -692,7 +773,17 @@ fun V2ResidueExclusionsScreen(onBack: () -> Unit, onPro: () -> Unit) {
 }
 
 @Composable
-internal fun ExclusionRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, path: String, accent: Color, reason: String, isEnforced: Boolean = true) {
+internal fun ExclusionRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    path: String,
+    accent: Color,
+    reason: String,
+    isSystemEnforced: Boolean,
+    isProtected: Boolean,
+    onProtect: (() -> Unit)?,
+    onUnprotect: (() -> Unit)?,
+) {
     V2GlassCard(Modifier.fillMaxWidth(), padding = 14.dp, radius = 16.dp, glow = accent, borderAlpha = .25f) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             V2IconTile(icon, accent, size = 40.dp, iconSize = 20.dp)
@@ -702,14 +793,22 @@ internal fun ExclusionRow(icon: androidx.compose.ui.graphics.vector.ImageVector,
                 KText(path, size = 11.sp, color = ProTextSecondary)
                 KText(reason, size = 9.sp, color = ProTextSecondary)
             }
-            if (isEnforced) {
+            if (isSystemEnforced) {
                 Icon(Icons.Rounded.Lock, null, tint = accent, modifier = Modifier.size(20.dp))
+            } else if (isProtected) {
+                androidx.compose.material3.IconButton(onClick = onUnprotect!!) {
+                    Icon(Icons.Rounded.LockOpen, contentDescription = "إزالة الحماية", tint = V2Amber, modifier = Modifier.size(20.dp))
+                }
+            } else {
+                androidx.compose.material3.IconButton(onClick = onProtect!!) {
+                    Icon(Icons.Rounded.Shield, contentDescription = "حماية", tint = V2Amber, modifier = Modifier.size(20.dp))
+                }
             }
         }
     }
 }
 
-/** Residue Confirmation Screen (res-confirm) - Uses shared operation controller */
+/** Residue Confirmation Screen (res-confirm) - Uses shared operation controller with proper lifecycle */
 @Composable
 fun V2ResidueConfirmScreen(onBack: () -> Unit, onPro: () -> Unit) {
     val context = LocalContext.current
@@ -718,9 +817,25 @@ fun V2ResidueConfirmScreen(onBack: () -> Unit, onPro: () -> Unit) {
     val loaded = state.loaded
     val facts = state.facts
     val scope = rememberCoroutineScope()
+
+    // Dialog state derived from authoritative operation state
     var confirmDialog by remember { mutableStateOf(false) }
-    var lastResult by remember { mutableStateOf<OperationStatus?>(null) }
-    var lastFreed by remember { mutableStateOf<Long?>(null) }
+    var lastError by remember { mutableStateOf<String?>(null) }
+
+    // Sync dialog visibility with operation state
+    LaunchedEffect(state.operationStatus) {
+        when (state.operationStatus) {
+            OperationStatus.AWAITING_CONSENT -> confirmDialog = true
+            OperationStatus.EXECUTING, OperationStatus.VERIFIED, OperationStatus.PARTIAL,
+            OperationStatus.NO_CHANGE, OperationStatus.FAILED, OperationStatus.CANCELLED -> {
+                confirmDialog = false
+            }
+            else -> { /* IDLE, PREPARING - no dialog */ }
+        }
+    }
+
+    // Handle dialog dismissal as explicit cancellation
+    val onDialogDismiss = { sharedVm.cancelPendingOperation() }
 
     InteriorScaffold(onBack, onPro) {
         item { PageHeading("تحديد البقايا وتأكيد الإزالة", "قرارك قبل أي مسح فعلي", Icons.Rounded.DeleteSweep, V2Pink) }
@@ -735,76 +850,65 @@ fun V2ResidueConfirmScreen(onBack: () -> Unit, onPro: () -> Unit) {
                         if (facts.cleanFiles.oldCacheBytes > 0) {
                             ConfirmRow("كاش قديمة", formatBytes(facts.cleanFiles.oldCacheBytes), "${formatCount(facts.cleanFiles.oldCacheFiles)} ملف", V2Amber)
                         }
+                        // Show selected items count if any
+                        if (state.selectedItems.isNotEmpty()) {
+                            ConfirmRow("محدد يدويًا", formatBytes(state.selectedBytes), "${formatCount(state.selectedItems.size)} ملف", V2Cyan)
+                        }
                     }
                 }
 
-                // Show operation result with proper status
+                // Show operation result with proper status from authoritative state
                 when (state.operationStatus) {
-                    OperationStatus.VERIFIED, OperationStatus.PARTIAL, OperationStatus.NO_CHANGE -> {
-                        val statusColor = when (state.operationStatus) {
-                            OperationStatus.VERIFIED -> V2Green
-                            OperationStatus.PARTIAL -> V2Amber
-                            OperationStatus.NO_CHANGE -> V2Cyan
-                            else -> V2Muted
-                        }
-                        val statusText = when (state.operationStatus) {
-                            OperationStatus.VERIFIED -> "تم التنظيف بنجاح - تم التحقق"
-                            OperationStatus.PARTIAL -> "تنظيف جزئي - بعض الملفات لم تُحذف"
-                            OperationStatus.NO_CHANGE -> "لا تغيير - الكاش كان فارغاً"
-                            else -> "غير معروف"
-                        }
-                        val statusIcon: androidx.compose.ui.graphics.vector.ImageVector = when (state.operationStatus) {
-                            OperationStatus.VERIFIED -> Icons.Rounded.Verified
-                            OperationStatus.PARTIAL -> Icons.Rounded.WarningAmber
-                            else -> Icons.Rounded.Info
-                        }
-                        V2GlassCard(Modifier.fillMaxWidth(), padding = 10.dp, radius = 16.dp, glow = statusColor, borderAlpha = .45f) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = statusIcon,
-                                    contentDescription = "حالة العملية",
-                                    tint = statusColor,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(Modifier.width(8.dp))
-                                Column(Modifier.weight(1f)) {
-                                    KText(statusText, size = 10.sp, weight = FontWeight.Bold, color = statusColor)
-                                    state.lastFreedBytes?.let { freed ->
-                                        KText("حُرر ${formatBytes(freed)} من كاش KNOUX.", size = 9.sp, color = V2Soft)
-                                    }
-                                    state.lastOperationResult?.let { result ->
-                                        KText("نتيجة العملية: $result", size = 9.sp, color = V2Soft)
-                                    }
-                                }
-                            }
-                        }
+                    OperationStatus.IDLE -> { /* No result to show */ }
+                    OperationStatus.PREPARING -> { /* Preparation in progress */ }
+                    OperationStatus.AWAITING_CONSENT -> { /* Dialog handles this */ }
+                    OperationStatus.VERIFIED -> {
+                        OperationResultCard(
+                            title = "تم التنظيف بنجاح - تم التحقق",
+                            message = state.lastFreedBytes?.let { "حُرر ${formatBytes(it)} من كاش KNOUX." } ?: "",
+                            result = state.lastOperationResult ?: "SUCCESS",
+                            color = V2Green,
+                            icon = Icons.Rounded.Verified,
+                        )
+                    }
+                    OperationStatus.PARTIAL -> {
+                        OperationResultCard(
+                            title = "تنظيف جزئي - بعض الملفات لم تُحذف",
+                            message = state.lastFreedBytes?.let { "حُرر ${formatBytes(it)} من كاش KNOUX." } ?: "",
+                            result = state.lastOperationResult ?: "PARTIAL",
+                            color = V2Amber,
+                            icon = Icons.Rounded.WarningAmber,
+                        )
+                    }
+                    OperationStatus.NO_CHANGE -> {
+                        OperationResultCard(
+                            title = "لا تغيير - الكاش كان فارغاً",
+                            message = "",
+                            result = state.lastOperationResult ?: "NO_CHANGE",
+                            color = V2Cyan,
+                            icon = Icons.Rounded.Info,
+                        )
                     }
                     OperationStatus.FAILED -> {
-                        V2GlassCard(Modifier.fillMaxWidth(), padding = 10.dp, radius = 16.dp, glow = V2Red, borderAlpha = .45f) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Rounded.Error, contentDescription = "خطأ", tint = V2Red, modifier = Modifier.size(20.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Column(Modifier.weight(1f)) {
-                                    KText("فشل التنظيف", size = 10.sp, weight = FontWeight.Bold, color = V2Red)
-                                    KText("تعذر تنفيذ العملية. راجع السجل للتفاصيل.", size = 9.sp, color = V2Soft)
-                                }
-                            }
-                        }
+                        OperationResultCard(
+                            title = "فشل التنظيف",
+                            message = "تعذر تنفيذ العملية. راجع السجل للتفاصيل.",
+                            result = state.lastOperationResult ?: "ERROR",
+                            color = V2Red,
+                            icon = Icons.Rounded.Error,
+                        )
                     }
                     OperationStatus.CANCELLED -> {
-                        V2GlassCard(Modifier.fillMaxWidth(), padding = 10.dp, radius = 16.dp, glow = V2Amber, borderAlpha = .45f) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Rounded.Close, contentDescription = "إلغاء", tint = V2Amber, modifier = Modifier.size(20.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Column(Modifier.weight(1f)) {
-                                    KText("تم الإلغاء", size = 10.sp, weight = FontWeight.Bold, color = V2Amber)
-                                    KText("لم يتم حذف أي ملف.", size = 9.sp, color = V2Soft)
-                                }
-                            }
-                        }
+                        OperationResultCard(
+                            title = "تم الإلغاء",
+                            message = "لم يتم حذف أي ملف.",
+                            result = state.lastOperationResult ?: "CANCELLED",
+                            color = V2Amber,
+                            icon = Icons.Rounded.Close,
+                        )
                     }
-                    else -> {
-                        // IDLE, AWAITING_CONSENT, EXECUTING - no result card needed
+                    OperationStatus.EXECUTING -> {
+                        ExecutingCard()
                     }
                 }
 
@@ -815,15 +919,19 @@ fun V2ResidueConfirmScreen(onBack: () -> Unit, onPro: () -> Unit) {
                         KText("• حذف الوسائط له مسار منفصل وحوار MediaStore رسمي", size = 11.sp, color = ProTextSecondary)
                         KText("• الملفات المستثناة (Android/data, Android/obb) لا تُمس", size = 11.sp, color = ProTextSecondary)
                         KText("• لا يمكن استعادة الملفات المحذوفة من MediaStore إلا من السلة", size = 11.sp, color = ProTextSecondary)
+                        KText("• الملفات المحمية والمحددة كحارس لا تُحذف", size = 11.sp, color = ProTextSecondary)
                     }
                 }
 
+                // Prepare button - only enabled in IDLE or final states
                 V2GradientButton("تنظيف كاش KNOUX الآن", {
-                    if (state.operationStatus == OperationStatus.EXECUTING || state.operationStatus == OperationStatus.AWAITING_CONSENT) return@V2GradientButton
+                    if (!state.canPrepareCleanup) return@V2GradientButton
                     scope.launch {
                         val prep = sharedVm.prepareCleanup()
                         if (prep.success) {
                             confirmDialog = true
+                        } else {
+                            lastError = prep.errorMessage
                         }
                     }
                 }, icon = Icons.Rounded.DeleteSweep, modifier = Modifier.fillMaxWidth())
@@ -839,9 +947,18 @@ fun V2ResidueConfirmScreen(onBack: () -> Unit, onPro: () -> Unit) {
         item { PreviewNote("مسح الكاش لا يمس صورك أو فيديوهاتك. حذف الوسائط له مسار منفصل وحوار MediaStore رسمي.") }
     }
 
+    // Error toast
+    lastError?.let { error ->
+        LaunchedEffect(error) {
+            // In a real app, show a snackbar/toast
+            lastError = null
+        }
+    }
+
+    // Confirmation dialog - lifecycle bound to AWAITING_CONSENT state
     if (confirmDialog) {
         androidx.compose.material3.AlertDialog(
-            onDismissRequest = { confirmDialog = false },
+            onDismissRequest = onDialogDismiss,
             title = { KText("تنظيف بقايا KNOUX", size = 16.sp, weight = FontWeight.Bold) },
             text = {
                 KText(
@@ -855,19 +972,19 @@ fun V2ResidueConfirmScreen(onBack: () -> Unit, onPro: () -> Unit) {
                 androidx.compose.material3.TextButton(onClick = {
                     confirmDialog = false
                     scope.launch {
-                        val result = sharedVm.executeCleanup(consentGranted = true)
+                        val result = sharedVm.executeCleanup(
+                            operationId = state.pendingOperationId!!,
+                            consentGranted = true
+                        )
                         if (!result.success) {
-                            // Error handled in ViewModel
+                            lastError = result.errorMessage
                         }
                     }
                 }) { KText("تنظيف الآن", size = 12.sp, weight = FontWeight.Bold, color = V2Cyan) }
             },
             dismissButton = {
                 androidx.compose.material3.TextButton(onClick = {
-                    confirmDialog = false
-                    scope.launch {
-                        val result = sharedVm.executeCleanup(consentGranted = false)
-                    }
+                    onDialogDismiss()
                 }) { KText("إلغاء", size = 12.sp, color = V2Soft) }
             },
         )
@@ -885,6 +1002,52 @@ internal fun ConfirmRow(label: String, bytes: String, count: String, accent: Col
                 KText(count, size = 11.sp, color = ProTextSecondary)
             }
             KText(bytes, size = 13.sp, weight = FontWeight.Bold, color = accent)
+        }
+    }
+}
+
+@Composable
+internal fun OperationResultCard(
+    title: String,
+    message: String,
+    result: String,
+    color: Color,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+) {
+    V2GlassCard(Modifier.fillMaxWidth(), padding = 10.dp, radius = 16.dp, glow = color, borderAlpha = .45f) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = icon,
+                contentDescription = "حالة العملية",
+                tint = color,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(Modifier.width(8.dp))
+            Column(Modifier.weight(1f)) {
+                KText(title, size = 10.sp, weight = FontWeight.Bold, color = color)
+                if (message.isNotBlank()) {
+                    KText(message, size = 9.sp, color = V2Soft)
+                }
+                KText("نتيجة العملية: $result", size = 9.sp, color = V2Soft)
+            }
+        }
+    }
+}
+
+@Composable
+internal fun ExecutingCard() {
+    V2GlassCard(Modifier.fillMaxWidth(), padding = 10.dp, radius = 16.dp, glow = V2Violet, borderAlpha = .45f) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(20.dp),
+                color = V2Violet,
+                strokeWidth = 3.dp,
+            )
+            Spacer(Modifier.width(8.dp))
+            Column(Modifier.weight(1f)) {
+                KText("جاري التنفيذ…", size = 10.sp, weight = FontWeight.Bold, color = V2Violet)
+                KText("الرجاء عدم إغلاق التطبيق", size = 9.sp, color = V2Soft)
+            }
         }
     }
 }

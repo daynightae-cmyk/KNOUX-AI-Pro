@@ -111,7 +111,7 @@ object ServiceCatalog150 {
         pro("residue_own_cache", "app_residue", 1, "كاش KNOUX نفسه", "res-sources"),
         pro("residue_accessible_candidates", "app_residue", 2, "مرشحات الوصول المصرح به", "res-candidates", "يعرض الملفات المرشحة من كاش KNOUX ووسائط MediaStore"),
         pro("residue_saf_profiles", "app_residue", 3, "ملفات SAF محفوظة", null, "إدارة ملفات SAF غير منفذة — يتطلب SAF picker و ScopedGrantEntity"),
-        pro("residue_safe_trash", "app_residue", 4, "سلة آمنة", "res-confirm", "تحذيرات السلة معروضة؛ كاش KNOUX حذف دائم، MediaStore يستخدم سلة النظام"),
+        pro("residue_safe_trash", "app_residue", 4, "سلة آمنة", null, "سلة البقايا الآمنة غير منفذة — يتطلب MediaStore trash API أو quarantine خاص بالتطبيق"),
         pro("residue_history", "app_residue", 5, "تاريخ البقايا", "res-history", "سجل العمليات من Room مع إعادة فحص"),
     )
 
